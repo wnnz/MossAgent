@@ -21,12 +21,17 @@ public sealed class WorkspaceRunExecutor(
         var request = new AgentRunRequest(
             state.Provider,
             state.Model,
-            history.Select(WorkspaceConversationMapper.ToModelMessage).ToArray(),
+            history.Where(message => message.Role != MessageRole.Tool)
+                .Select(WorkspaceConversationMapper.ToModelMessage).ToArray(),
             context);
         var failed = false;
         await foreach (var agentEvent in agent.RunAsync(request, cancellationToken))
         {
             failed |= agentEvent is AgentFailureEvent;
+            if (agentEvent is AgentToolEvent tool)
+            {
+                await PersistToolEventAsync(state.Task.Id, tool, cancellationToken);
+            }
             await present(agentEvent);
         }
 
@@ -34,6 +39,19 @@ public sealed class WorkspaceRunExecutor(
             state.Task,
             state.Assistant.Content,
             failed ? AgentTaskStatus.Failed : AgentTaskStatus.Completed,
+            cancellationToken);
+    }
+
+    private async Task PersistToolEventAsync(
+        Guid taskId,
+        AgentToolEvent tool,
+        CancellationToken cancellationToken)
+    {
+        await workspaces.AppendMessageAsync(
+            new ConversationMessage(
+                Guid.NewGuid(), taskId, MessageRole.Tool,
+                WorkspaceToolMessageSerializer.Serialize(tool),
+                DateTimeOffset.UtcNow, tool.CallId),
             cancellationToken);
     }
 }

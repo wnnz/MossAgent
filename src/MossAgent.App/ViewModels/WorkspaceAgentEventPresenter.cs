@@ -21,8 +21,10 @@ internal static class WorkspaceAgentEventPresenter
                     assistant.Append(text.Delta);
                     break;
                 case AgentToolEvent tool:
-                    messages.Add(new ChatMessageViewModel(
-                        "工具", $"{tool.ToolName}: {tool.Result.Summary}"));
+                    messages.Add(ChatMessageViewModel.CreateTool(
+                        new ToolConversationPayload(
+                            tool.ToolName, tool.Result.IsSuccess,
+                            tool.Result.Summary, tool.Result.Content)));
                     break;
                 case AgentStatusEvent status:
                     setActivity(status.Status);

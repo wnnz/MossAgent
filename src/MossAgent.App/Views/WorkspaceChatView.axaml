@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:views="clr-namespace:MossAgent.App.Views"
+             xmlns:vm="clr-namespace:MossAgent.App.ViewModels"
              x:Class="MossAgent.App.Views.WorkspaceChatView"
              x:CompileBindings="False">
   <UserControl.Styles>
@@ -77,8 +78,94 @@
                 <Grid ColumnDefinitions="86,*">
                   <TextBlock Text="{Binding Role}" FontSize="11" FontWeight="SemiBold"
                              Classes="muted" Margin="0,3,14,0" />
-                  <SelectableTextBlock Grid.Column="1" Text="{Binding Content}"
-                                       TextWrapping="Wrap" FontSize="13" LineHeight="21" />
+                  <ItemsControl Grid.Column="1" ItemsSource="{Binding Blocks}"
+                                IsVisible="{Binding IsRegularMessage}">
+                    <ItemsControl.Styles>
+                      <Style Selector="ContentPresenter">
+                        <Setter Property="Margin" Value="0,0,0,8" />
+                      </Style>
+                    </ItemsControl.Styles>
+                    <ItemsControl.DataTemplates>
+                      <DataTemplate DataType="vm:ChatTextBlockViewModel">
+                        <Grid>
+                          <SelectableTextBlock Text="{Binding Text}" TextWrapping="Wrap"
+                                               FontSize="13" LineHeight="21"
+                                               IsVisible="{Binding IsBody}" />
+                          <SelectableTextBlock Text="{Binding Text}" TextWrapping="Wrap"
+                                               FontSize="16" FontWeight="SemiBold"
+                                               Margin="0,3,0,2"
+                                               IsVisible="{Binding IsHeading}" />
+                          <Grid ColumnDefinitions="22,*" IsVisible="{Binding IsListItem}">
+                            <TextBlock Text="{Binding Prefix}" Classes="muted"
+                                       FontSize="12" Margin="2,2,0,0" />
+                            <SelectableTextBlock Grid.Column="1" Text="{Binding Text}"
+                                                 TextWrapping="Wrap" FontSize="13"
+                                                 LineHeight="21" />
+                          </Grid>
+                          <Border BorderBrush="{DynamicResource BorderDefaultBrush}"
+                                  BorderThickness="2,0,0,0" Padding="10,1"
+                                  IsVisible="{Binding IsQuote}">
+                            <SelectableTextBlock Text="{Binding Text}" TextWrapping="Wrap"
+                                                 Classes="muted" FontSize="13" />
+                          </Border>
+                        </Grid>
+                      </DataTemplate>
+                      <DataTemplate DataType="vm:ChatCodeBlockViewModel">
+                        <Border Background="{DynamicResource AppBackgroundBrush}"
+                                BorderBrush="{DynamicResource BorderDefaultBrush}"
+                                BorderThickness="1" CornerRadius="8">
+                          <Grid RowDefinitions="Auto,*">
+                            <Border Background="{DynamicResource CardSubtleBackgroundBrush}"
+                                    BorderBrush="{DynamicResource BorderSubtleBrush}"
+                                    BorderThickness="0,0,0,1" Padding="10,5">
+                              <TextBlock Text="{Binding Language}" Classes="subtle"
+                                         FontSize="10" FontFamily="Consolas" />
+                            </Border>
+                            <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto"
+                                          MaxHeight="360" Padding="10,8">
+                              <SelectableTextBlock Text="{Binding Code}" FontFamily="Consolas"
+                                                   FontSize="12" LineHeight="18" />
+                            </ScrollViewer>
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.DataTemplates>
+                  </ItemsControl>
+
+                  <Border Grid.Column="1" IsVisible="{Binding IsTool}"
+                          Background="{DynamicResource CardSubtleBackgroundBrush}"
+                          BorderBrush="{DynamicResource BorderSubtleBrush}"
+                          BorderThickness="1" CornerRadius="8">
+                    <Grid RowDefinitions="Auto,Auto">
+                      <Button Classes="ghost" Padding="10,7"
+                              HorizontalAlignment="Stretch"
+                              HorizontalContentAlignment="Stretch"
+                              Command="{Binding ToggleToolCommand}">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                          <TextBlock Text="{Binding ExpandGlyph}" Classes="subtle"
+                                     VerticalAlignment="Center" />
+                          <StackPanel Grid.Column="1">
+                            <TextBlock Text="{Binding Tool.ToolName}" FontFamily="Consolas"
+                                       FontSize="11.5" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding Tool.Summary}" Classes="muted"
+                                       FontSize="11" TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="2" Text="{Binding ToolStatus}"
+                                     Classes="subtle" FontSize="10"
+                                     VerticalAlignment="Center" />
+                        </Grid>
+                      </Button>
+                      <Border Grid.Row="1" IsVisible="{Binding IsToolExpanded}"
+                              BorderBrush="{DynamicResource BorderSubtleBrush}"
+                              BorderThickness="0,1,0,0" Padding="10,8">
+                        <ScrollViewer MaxHeight="260" HorizontalScrollBarVisibility="Auto">
+                          <SelectableTextBlock Text="{Binding Tool.Details}"
+                                               FontFamily="Consolas" FontSize="11.5"
+                                               TextWrapping="Wrap" />
+                        </ScrollViewer>
+                      </Border>
+                    </Grid>
+                  </Border>
                 </Grid>
               </Border>
             </DataTemplate>

@@ -5,8 +5,15 @@ namespace MossAgent.App.ViewModels;
 
 internal static class WorkspaceConversationMapper
 {
-    public static ChatMessageViewModel ToChatMessage(ConversationMessage message) =>
-        new(ToDisplayRole(message.Role), message.Content);
+    public static ChatMessageViewModel ToChatMessage(ConversationMessage message)
+    {
+        if (message.Role == MessageRole.Tool
+            && WorkspaceToolMessageSerializer.TryDeserialize(message.Content, out var tool))
+        {
+            return ChatMessageViewModel.CreateTool(tool!);
+        }
+        return new ChatMessageViewModel(ToDisplayRole(message.Role), message.Content);
+    }
 
     public static ModelMessage ToModelMessage(ConversationMessage message) =>
         new(ToModelRole(message.Role), message.Content, message.ToolCallId);
