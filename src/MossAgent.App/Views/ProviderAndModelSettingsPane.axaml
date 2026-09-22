@@ -94,7 +94,7 @@
           <StackPanel Spacing="9" Margin="4">
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Text="{Binding Providers.EditorTitle}" FontSize="16" FontWeight="SemiBold" />
-              <Button Grid.Column="1" Content="✕" Classes="ghost" Command="{Binding Providers.CloseFormCommand}" />
+              <Button Grid.Column="1" Content="✕" Classes="ghost icon" Command="{Binding Providers.CloseFormCommand}" />
             </Grid>
             <TextBlock Text="供应商名称" Classes="muted" FontSize="12" />
             <TextBox Text="{Binding Providers.Name}" PlaceholderText="例如 OpenAI / DeepSeek" />
@@ -131,7 +131,7 @@
           <StackPanel Spacing="9" Margin="4">
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Text="配置模型" FontSize="16" FontWeight="SemiBold" />
-              <Button Grid.Column="1" Content="✕" Classes="ghost" Command="{Binding Models.CloseFormCommand}" />
+              <Button Grid.Column="1" Content="✕" Classes="ghost icon" Command="{Binding Models.CloseFormCommand}" />
             </Grid>
             <TextBlock Text="模型 ID" Classes="muted" FontSize="12" />
             <TextBox Text="{Binding Models.ModelId}" PlaceholderText="例如 gpt-5" />

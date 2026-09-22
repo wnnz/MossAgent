@@ -15,12 +15,49 @@
   <Border Background="{DynamicResource SidebarBackgroundBrush}"
           BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,1,0"
           Padding="10,10">
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto">
-      <Grid ColumnDefinitions="*,Auto" Margin="6,2,4,12">
-        <TextBlock Text="工作区" FontWeight="SemiBold" FontSize="13"
-                   VerticalAlignment="Center" />
-        <Button Grid.Column="1" Content="＋" Classes="ghost" Width="26" Height="26"
-                Padding="0" FontSize="14" ToolTip.Tip="添加项目">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto">
+      <StackPanel Grid.Row="0" Spacing="2" Margin="0,0,0,14">
+        <Button Classes="ghost" HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Left" Padding="9,9" MinHeight="40"
+                Command="{Binding NewTaskCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBlock Text="✎" FontSize="18" Width="24" TextAlignment="Center" />
+            <TextBlock Text="新建任务" FontSize="13" FontWeight="SemiBold" />
+          </StackPanel>
+        </Button>
+        <Button Classes="ghost" HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Left" Padding="9,9" MinHeight="40"
+                Command="{Binding $parent[Window].DataContext.SelectInspectorTabCommand}"
+                CommandParameter="diff">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBlock Text="⌘" FontSize="18" Width="24" TextAlignment="Center" />
+            <TextBlock Text="代码审查" FontSize="13" />
+          </StackPanel>
+        </Button>
+        <Button Classes="ghost" HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Left" Padding="9,9" MinHeight="40"
+                Command="{Binding $parent[Window].DataContext.SelectInspectorTabCommand}"
+                CommandParameter="terminal">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBlock Text="›_" FontFamily="Consolas" FontSize="16" Width="24" TextAlignment="Center" />
+            <TextBlock Text="终端" FontSize="13" />
+          </StackPanel>
+        </Button>
+        <Button Classes="ghost" HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Left" Padding="9,9" MinHeight="40"
+                Command="{Binding $parent[Window].DataContext.SelectInspectorTabCommand}"
+                CommandParameter="browser">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBlock Text="◎" FontSize="18" Width="24" TextAlignment="Center" />
+            <TextBlock Text="浏览器" FontSize="13" />
+          </StackPanel>
+        </Button>
+      </StackPanel>
+
+      <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="8,0,4,6">
+        <TextBlock Text="项目" Classes="subtle" FontSize="11"
+                   FontWeight="SemiBold" VerticalAlignment="Center" />
+        <Button Grid.Column="1" Content="＋" Classes="ghost icon" ToolTip.Tip="添加项目">
           <Button.Flyout>
             <Flyout Placement="BottomEdgeAlignedLeft"
                     IsOpen="{Binding ProjectEditor.IsOpen, Mode=TwoWay}">
@@ -51,8 +88,8 @@
                                     IsVisible="{Binding IsSecondary}" Content="设为主要"
                                     Padding="8,3" FontSize="10.5"
                                     Command="{Binding SetPrimaryCommand}" />
-                            <Button Grid.Column="3" Classes="ghost" Content="×" Width="26"
-                                    Padding="0" Command="{Binding RemoveCommand}"
+                            <Button Grid.Column="3" Classes="ghost icon" Content="×"
+                                    Command="{Binding RemoveCommand}"
                                     ToolTip.Tip="移除目录" />
                           </Grid>
                         </Border>
@@ -75,57 +112,44 @@
         </Button>
       </Grid>
 
-      <Button Grid.Row="1" Classes="ghost" HorizontalAlignment="Stretch"
-              HorizontalContentAlignment="Left" Padding="9,7"
-              Command="{Binding NewTaskCommand}">
-        <StackPanel Orientation="Horizontal" Spacing="9">
-          <TextBlock Text="＋" FontSize="15" VerticalAlignment="Center" />
-          <TextBlock Text="新建任务" FontSize="13" FontWeight="SemiBold"
-                     VerticalAlignment="Center" />
-        </StackPanel>
-      </Button>
-
-      <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,10,0,2">
-        <TextBox Text="{Binding TaskSearch.Query}" PlaceholderText="搜索当前项目的任务"
-                 FontSize="11.5" Padding="8,5" />
-        <Button Grid.Column="1" Content="×" Classes="ghost" Width="26" Padding="0"
-                IsVisible="{Binding TaskSearch.HasQuery}"
-                Command="{Binding TaskSearch.ClearCommand}" ToolTip.Tip="清除搜索" />
-      </Grid>
-
-      <TextBlock Grid.Row="3" Text="项目" Classes="subtle" FontSize="11"
-                 FontWeight="SemiBold" Margin="8,16,8,6" />
-
-      <ListBox Grid.Row="4" ItemsSource="{Binding Projects}"
+      <ListBox Grid.Row="2" ItemsSource="{Binding Projects}"
                SelectedItem="{Binding SelectedProject}"
-               MaxHeight="180" Margin="0,0,0,4">
+               MaxHeight="150" Margin="0,0,0,2">
         <ListBox.ItemTemplate>
           <DataTemplate>
-            <Grid ColumnDefinitions="20,*" Margin="1">
-              <TextBlock Text="◇" Classes="muted" FontSize="12"
+            <Grid ColumnDefinitions="26,*" Margin="1">
+              <TextBlock Text="▱" Classes="muted" FontSize="17"
                          HorizontalAlignment="Center" VerticalAlignment="Center" />
               <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="12.5"
-                         Margin="5,0,0,0" TextTrimming="CharacterEllipsis"
+                         Margin="6,0,0,0" TextTrimming="CharacterEllipsis"
                          VerticalAlignment="Center" />
             </Grid>
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>
 
-      <Grid Grid.Row="5" ColumnDefinitions="*,Auto,Auto" Margin="8,12,4,6">
-        <TextBlock Text="任务" Classes="subtle" FontSize="11"
+      <Grid Grid.Row="3" ColumnDefinitions="*,Auto" Margin="0,4,0,2">
+        <TextBox Text="{Binding TaskSearch.Query}" PlaceholderText="搜索当前项目的任务"
+                 FontSize="11.5" Padding="8,5" />
+        <Button Grid.Column="1" Content="×" Classes="ghost icon"
+                IsVisible="{Binding TaskSearch.HasQuery}"
+                Command="{Binding TaskSearch.ClearCommand}" ToolTip.Tip="清除搜索" />
+      </Grid>
+
+      <Grid Grid.Row="4" ColumnDefinitions="*,Auto,Auto" Margin="8,8,4,4">
+        <TextBlock Text="最近任务" Classes="subtle" FontSize="11"
                    FontWeight="SemiBold" VerticalAlignment="Center" />
-        <Button Grid.Column="1" Content="✎" Classes="ghost" Width="24" Height="24"
-                Padding="0" Command="{Binding TaskManagement.BeginRenameCommand}"
+        <Button Grid.Column="1" Content="✎" Classes="ghost icon"
+                Command="{Binding TaskManagement.BeginRenameCommand}"
                 IsVisible="{Binding SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}"
                 ToolTip.Tip="重命名所选任务" />
-        <Button Grid.Column="2" Content="↓" Classes="ghost" Width="24" Height="24"
-                Padding="0" Command="{Binding TaskManagement.ArchiveCommand}"
+        <Button Grid.Column="2" Content="↓" Classes="ghost icon"
+                Command="{Binding TaskManagement.ArchiveCommand}"
                 IsVisible="{Binding SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}"
                 ToolTip.Tip="归档所选任务" />
       </Grid>
 
-      <Grid Grid.Row="6" RowDefinitions="Auto,*,Auto">
+      <Grid Grid.Row="5" RowDefinitions="Auto,*,Auto">
         <Border IsVisible="{Binding TaskManagement.IsEditing}"
                 Background="{DynamicResource CardSubtleBackgroundBrush}"
                 BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
@@ -145,7 +169,7 @@
           <ListBox.ItemTemplate>
             <DataTemplate>
               <Grid ColumnDefinitions="*,Auto" Margin="1">
-                <TextBlock Text="{Binding Title}" FontSize="12.5"
+                <TextBlock Text="{Binding Title}" FontSize="12.5" Margin="24,0,0,0"
                            TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="{Binding Status}" Classes="subtle"
                            FontSize="9" Margin="6,0,0,0" VerticalAlignment="Center" />
@@ -180,13 +204,13 @@
         </StackPanel>
       </Grid>
 
-      <Border Grid.Row="7" BorderBrush="{DynamicResource BorderSubtleBrush}"
+      <Border Grid.Row="6" BorderBrush="{DynamicResource BorderSubtleBrush}"
               BorderThickness="0,1,0,0" Padding="0,8,0,0" Margin="0,8,0,0">
         <Button Classes="ghost" Padding="8,7" HorizontalAlignment="Stretch"
                 HorizontalContentAlignment="Left"
                 Command="{Binding $parent[Window].DataContext.OpenSettingsCommand}">
           <StackPanel Orientation="Horizontal" Spacing="9">
-            <TextBlock Text="⚙" FontSize="13" Classes="muted" />
+            <TextBlock Text="⚙" FontSize="17" Width="24" TextAlignment="Center" Classes="muted" />
             <TextBlock Text="设置" FontSize="12.5" />
           </StackPanel>
         </Button>

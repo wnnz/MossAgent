@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Interactivity;
 
 namespace MossAgent.App.Views;
 
@@ -13,6 +12,4 @@ public partial class WorkspaceChatView : UserControl
         InitializeComponent();
     }
 
-    private void HandleApprovalPolicySelected(object? sender, RoutedEventArgs args) =>
-        ApprovalPolicyButton.Flyout?.Hide();
 }

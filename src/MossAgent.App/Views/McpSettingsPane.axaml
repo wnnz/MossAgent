@@ -53,7 +53,7 @@
           <StackPanel Spacing="9" Margin="4">
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Text="{Binding EditorTitle}" FontSize="16" FontWeight="SemiBold" />
-              <Button Grid.Column="1" Content="✕" Classes="ghost" Command="{Binding CloseFormCommand}" />
+              <Button Grid.Column="1" Content="✕" Classes="ghost icon" Command="{Binding CloseFormCommand}" />
             </Grid>
             <TextBlock Text="Server 名称" Classes="muted" FontSize="12" />
             <TextBox Text="{Binding Name}" PlaceholderText="例如 filesystem" />

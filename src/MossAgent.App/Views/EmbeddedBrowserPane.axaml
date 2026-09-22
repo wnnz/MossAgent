@@ -16,9 +16,9 @@
     <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,5">
       <ComboBox ItemsSource="{Binding Tabs}" SelectedItem="{Binding SelectedTab}"
                 DisplayMemberBinding="{Binding Title}" />
-      <Button Grid.Column="1" Content="+" Command="{Binding NewTabCommand}" Margin="5,0,0,0"
+      <Button Grid.Column="1" Content="+" Classes="ghost icon" Command="{Binding NewTabCommand}" Margin="5,0,0,0"
               ToolTip.Tip="新建标签页" />
-      <Button Grid.Column="2" Content="×" Command="{Binding CloseTabCommand}" Margin="5,0,0,0"
+      <Button Grid.Column="2" Content="×" Classes="ghost icon" Command="{Binding CloseTabCommand}" Margin="5,0,0,0"
               ToolTip.Tip="关闭当前标签页" />
     </Grid>
     <Border Grid.Row="3" Background="#FFFFFF" BorderBrush="#303630" BorderThickness="1">

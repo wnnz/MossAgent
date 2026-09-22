@@ -9,7 +9,8 @@ public sealed class WorkspaceRunState(
     AiProvider provider,
     ModelProfile model,
     ObservableCollection<ChatMessageViewModel> messages,
-    ChatMessageViewModel assistant) : IDisposable
+    ChatMessageViewModel assistant,
+    string? attachmentContext = null) : IDisposable
 {
     private readonly Lock _cancellationLock = new();
     private CancellationTokenSource? _cancellation = new();
@@ -20,6 +21,7 @@ public sealed class WorkspaceRunState(
     public ModelProfile Model { get; } = model;
     public ObservableCollection<ChatMessageViewModel> Messages { get; } = messages;
     public ChatMessageViewModel Assistant { get; } = assistant;
+    public string? AttachmentContext { get; } = attachmentContext;
     public CancellationToken CancellationToken
     {
         get

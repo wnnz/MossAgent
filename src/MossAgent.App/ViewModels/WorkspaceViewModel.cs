@@ -26,6 +26,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         WorkspaceRunTracker runs,
         WorkspaceRunController runController,
         WorkspaceTaskPanelCoordinator panels,
+        WorkspaceAttachmentManagerViewModel attachments,
         WorkspaceRepositoryStatusViewModel repositoryStatus,
         WorkspaceCatalogViewModel catalog)
     {
@@ -33,6 +34,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         _runs = runs;
         _runController = runController;
         _panels = panels;
+        Attachments = attachments;
         RepositoryStatus = repositoryStatus;
         Catalog = catalog;
         Catalog.ActiveMessagesProvider = _runs.GetMessages;
@@ -48,6 +50,7 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     public WorkspaceCatalogViewModel Catalog { get; }
     public ModelPickerViewModel ModelPicker { get; }
+    public WorkspaceAttachmentManagerViewModel Attachments { get; }
     public WorkspaceRepositoryStatusViewModel RepositoryStatus { get; }
     public ObservableCollection<ChatMessageViewModel> Messages => Catalog.Messages;
     public IAsyncRelayCommand RefreshCommand { get; }
@@ -131,6 +134,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         var existingTask = Catalog.SelectedTask;
         var provider = SelectedProvider!;
         var model = SelectedModel! with { ReasoningEffort = ModelPicker.EffectiveReasoningEffort };
+        var attachmentContext = Attachments.BuildContext();
         var visibleMessages = existingTask is null ? [] : Messages.ToList();
         ComposerText = string.Empty;
         _isStarting = true;
@@ -141,7 +145,9 @@ public sealed class WorkspaceViewModel : ObservableObject
             var assistant = new ChatMessageViewModel("MossAgent", string.Empty);
             var messages = new ObservableCollection<ChatMessageViewModel>(visibleMessages)
                 { new("你", prompt), assistant };
-            var state = new WorkspaceRunState(task, project, provider, model, messages, assistant);
+            var state = new WorkspaceRunState(
+                task, project, provider, model, messages, assistant, attachmentContext);
+            Attachments.Clear();
             _runs.Add(state);
             Catalog.UpsertTask(task);
             Catalog.ShowActiveMessages(task.Id);
@@ -184,6 +190,7 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     private void HandleSelectionChanged()
     {
+        Attachments.Clear();
         _ = RepositoryStatus.RefreshAsync(Catalog.SelectedProject, Catalog.SelectedTask);
         OnPropertyChanged(nameof(EmptySessionTitle));
         var task = Catalog.SelectedTask;

@@ -6,11 +6,13 @@ using MossAgent.Mcp;
 using MossAgent.Application.Models;
 using MossAgent.Application.Agent;
 using MossAgent.Application.Artifacts;
+using MossAgent.Application.Attachments;
 using MossAgent.Application.Networking;
 using MossAgent.App.ViewModels;
 using MossAgent.Infrastructure.Persistence;
 using MossAgent.Infrastructure.Networking;
 using MossAgent.Infrastructure.Git;
+using MossAgent.Infrastructure.Attachments;
 using MossAgent.Application.Git;
 using MossAgent.Providers;
 using MossAgent.Providers.OpenAi;
@@ -43,6 +45,7 @@ internal static class AppComposition
         services.AddSingleton<IBrowserConfigurationRepository, SqliteBrowserConfigurationRepository>();
         services.AddSingleton<IMcpConfigurationRepository, SqliteMcpConfigurationRepository>();
         services.AddSingleton<IWorkspaceRepository, SqliteWorkspaceRepository>();
+        services.AddSingleton<IWorkspaceAttachmentReader, WorkspaceAttachmentReader>();
         services.AddSingleton<ITaskArtifactPaths, TaskArtifactPaths>();
         services.AddSingleton<IBrowserProfilePaths, BrowserProfilePaths>();
         services.AddSingleton<IGitWorktreeService, GitWorktreeService>();
@@ -119,6 +122,7 @@ internal static class AppComposition
         services.AddSingleton<ModelSettingsViewModel>();
         services.AddSingleton<WorkspaceTaskFactory>();
         services.AddSingleton<WorkspaceProjectService>();
+        services.AddSingleton<WorkspaceAttachmentManagerViewModel>();
         services.AddSingleton<WorkspaceRunTracker>();
         services.AddSingleton<WorkspaceRunExecutor>();
         services.AddSingleton<WorkspaceRunController>();
@@ -134,6 +138,7 @@ internal static class AppComposition
         services.AddSingleton<WorkspaceViewModel>();
         services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<IFolderPickerService, AvaloniaFolderPickerService>();
+        services.AddSingleton<IFilePickerService, AvaloniaFilePickerService>();
         services.AddSingleton<MainWindowViewModel>();
         return services.BuildServiceProvider(validateScopes: true);
     }

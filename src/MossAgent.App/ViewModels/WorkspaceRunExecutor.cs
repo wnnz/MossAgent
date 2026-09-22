@@ -18,11 +18,14 @@ public sealed class WorkspaceRunExecutor(
         CancellationToken cancellationToken)
     {
         var history = await workspaces.GetMessagesAsync(state.Task.Id, cancellationToken);
+        var messages = history.Where(message => message.Role != MessageRole.Tool)
+            .Select(WorkspaceConversationMapper.ToModelMessage).ToList();
+        WorkspaceAttachmentContextAppender.AppendToLastUserMessage(
+            messages, state.AttachmentContext);
         var request = new AgentRunRequest(
             state.Provider,
             state.Model,
-            history.Where(message => message.Role != MessageRole.Tool)
-                .Select(WorkspaceConversationMapper.ToModelMessage).ToArray(),
+            messages,
             context);
         var failed = false;
         await foreach (var agentEvent in agent.RunAsync(request, cancellationToken))
