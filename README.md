@@ -8,7 +8,8 @@ forming a single application-wide dependency graph.
 ## Current implementation
 
 - Avalonia task workbench with persisted task history, conversation restore,
-  follow-up turns, project roots, worktrees, and approval controls.
+  follow-up turns, project roots, worktrees, concurrent task runs, per-task
+  cancellation, and queued approval controls.
 - SQLite persistence for projects, tasks, messages, proxies, providers, and
   per-provider model configuration.
 - Native streaming adapters for OpenAI Responses, Anthropic Messages, and
@@ -80,5 +81,5 @@ real model discovery, streaming text, and a file write/read tool loop without
 printing or persisting its API key.
 
 The next release-hardening work is installer/signing, localization resources,
-full WebView2 UI automation on a deterministic local page, and broader
-long-running/concurrent-task soak testing.
+full WebView2 UI automation on a deterministic local page, and end-to-end
+long-running task soak testing.

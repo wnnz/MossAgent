@@ -180,15 +180,20 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     private async Task PresentEventAsync(WorkspaceRunState state, AgentEvent agentEvent)
     {
+        await WorkspaceAgentEventPresenter.PresentAsync(
+            agentEvent, state.Assistant, state.Messages,
+            status => SetActivity(state, status),
+            presented => CompleteEventPresentation(state, presented));
+    }
+
+    private void CompleteEventPresentation(WorkspaceRunState state, AgentEvent agentEvent)
+    {
         if (agentEvent is AgentToolEvent { ToolName: "git.diff", Result.Content: { } diff }
             && Catalog.SelectedTask?.Id == state.Task.Id)
         {
             _panels.ShowDiff(diff);
         }
 
-        await WorkspaceAgentEventPresenter.PresentAsync(
-            agentEvent, state.Assistant, state.Messages,
-            status => SetActivity(state, status));
         Catalog.ShowActiveMessages(state.Task.Id);
     }
 

@@ -10,7 +10,8 @@ internal static class WorkspaceAgentEventPresenter
         AgentEvent agentEvent,
         ChatMessageViewModel assistant,
         ObservableCollection<ChatMessageViewModel> messages,
-        Action<string> setActivity)
+        Action<string> setActivity,
+        Action<AgentEvent> afterPresent)
     {
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
@@ -33,7 +34,8 @@ internal static class WorkspaceAgentEventPresenter
                     setActivity("任务已完成。");
                     break;
             }
+
+            afterPresent(agentEvent);
         });
     }
 }
-

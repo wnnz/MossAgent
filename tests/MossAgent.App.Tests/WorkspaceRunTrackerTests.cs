@@ -64,6 +64,24 @@ public sealed class WorkspaceRunTrackerTests
         Assert.False(second.IsCancellationRequested);
     }
 
+    [Fact]
+    public void CancelAndRemoveCanRaceSafely()
+    {
+        using var tracker = new WorkspaceRunTracker();
+
+        for (var iteration = 0; iteration < 100; iteration++)
+        {
+            var state = CreateState($"task-{iteration}");
+            tracker.Add(state);
+
+            Parallel.Invoke(
+                () => Parallel.For(0, 100, _ => tracker.Cancel(state.Task.Id)),
+                () => tracker.Remove(state.Task.Id));
+
+            Assert.False(tracker.IsRunning(state.Task.Id));
+        }
+    }
+
     private static WorkspaceRunState CreateState(string title)
     {
         var projectId = Guid.NewGuid();

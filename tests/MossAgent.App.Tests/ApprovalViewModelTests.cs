@@ -72,6 +72,28 @@ public sealed class ApprovalViewModelTests
         Assert.False(viewModel.IsPending);
     }
 
+    [Fact]
+    public async Task RequestAsync_ProcessesLargeQueueWithoutLosingResults()
+    {
+        var viewModel = new ApprovalViewModel();
+        var results = Enumerable.Range(0, 128)
+            .Select(index => viewModel.RequestAsync(
+                CreateDescriptor($"tool_{index}"),
+                CreateRequest($"call_{index}"),
+                TestContext.Current.CancellationToken).AsTask())
+            .ToArray();
+
+        for (var index = 0; index < results.Length; index++)
+        {
+            var approved = index % 2 == 0;
+            Assert.Equal($"tool_{index}", viewModel.ToolName);
+            (approved ? viewModel.ApproveCommand : viewModel.DenyCommand).Execute(null);
+            Assert.Equal(approved, await results[index]);
+        }
+
+        Assert.False(viewModel.IsPending);
+    }
+
     private static ToolDescriptor CreateDescriptor(string name) =>
         new(name, $"Approve {name}", "{}", ToolRiskLevel.Mutation, ToolCapability.FileWrite);
 

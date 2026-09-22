@@ -52,6 +52,10 @@ Avalonia UI
   UI or agent code.
 - Platform-specific facilities implement portable ports and stay outside the
   domain and application projects.
+- Each active task owns an isolated run state and cancellation source. Agent
+  event presentation crosses the Avalonia dispatcher before touching UI-bound
+  observable collections, while tool approvals are serialized through a
+  cancellation-aware queue.
 
 When a feature does not fit these boundaries, update the architecture first;
 do not work around it with cross-project references or global state.
