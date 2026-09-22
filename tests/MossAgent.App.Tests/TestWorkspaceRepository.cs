@@ -6,6 +6,9 @@ namespace MossAgent.App.Tests;
 internal sealed class TestWorkspaceRepository : IWorkspaceRepository
 {
     public ProjectProfile? SavedProject { get; private set; }
+    public AgentTask? SavedTask { get; private set; }
+    public List<(Guid TaskId, bool IsArchived)> ArchiveOperations { get; } = [];
+    public IReadOnlyList<AgentTask> ArchivedTasks { get; set; } = [];
 
     public Task<IReadOnlyList<ProjectProfile>> GetProjectsAsync(
         CancellationToken cancellationToken) =>
@@ -22,8 +25,25 @@ internal sealed class TestWorkspaceRepository : IWorkspaceRepository
         CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<AgentTask>>([]);
 
-    public Task SaveTaskAsync(AgentTask task, CancellationToken cancellationToken) =>
-        Task.CompletedTask;
+    public Task<IReadOnlyList<AgentTask>> GetArchivedTasksAsync(
+        Guid projectId,
+        CancellationToken cancellationToken) =>
+        Task.FromResult(ArchivedTasks);
+
+    public Task SaveTaskAsync(AgentTask task, CancellationToken cancellationToken)
+    {
+        SavedTask = task;
+        return Task.CompletedTask;
+    }
+
+    public Task SetTaskArchivedAsync(
+        Guid taskId,
+        bool isArchived,
+        CancellationToken cancellationToken)
+    {
+        ArchiveOperations.Add((taskId, isArchived));
+        return Task.CompletedTask;
+    }
 
     public Task<IReadOnlyList<ConversationMessage>> GetMessagesAsync(
         Guid taskId,

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Data.Sqlite;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 
@@ -53,21 +54,34 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
         await using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT id,project_id,title,approval_policy,status,created_at,updated_at,worktree_path
-            FROM agent_tasks WHERE project_id=$project ORDER BY updated_at DESC;
+            FROM agent_tasks
+            WHERE project_id=$project
+              AND NOT EXISTS (
+                  SELECT 1 FROM archived_agent_tasks archived
+                  WHERE archived.task_id=agent_tasks.id)
+            ORDER BY updated_at DESC;
             """;
         command.Parameters.AddWithValue("$project", projectId.ToString());
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        var results = new List<AgentTask>();
-        while (await reader.ReadAsync(cancellationToken))
-        {
-            results.Add(new AgentTask(
-                Guid.Parse(reader.GetString(0)), Guid.Parse(reader.GetString(1)), reader.GetString(2),
-                (ApprovalPolicy)reader.GetInt32(3), (AgentTaskStatus)reader.GetInt32(4),
-                DateTimeOffset.Parse(reader.GetString(5)), DateTimeOffset.Parse(reader.GetString(6)),
-                reader.IsDBNull(7) ? null : reader.GetString(7)));
-        }
+        return await ReadTasksAsync(command, cancellationToken);
+    }
 
-        return results;
+    public async Task<IReadOnlyList<AgentTask>> GetArchivedTasksAsync(
+        Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = connections.Create();
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT task.id,task.project_id,task.title,task.approval_policy,task.status,
+                   task.created_at,task.updated_at,task.worktree_path
+            FROM agent_tasks task
+            INNER JOIN archived_agent_tasks archived ON archived.task_id=task.id
+            WHERE task.project_id=$project
+            ORDER BY archived.archived_at DESC;
+            """;
+        command.Parameters.AddWithValue("$project", projectId.ToString());
+        return await ReadTasksAsync(command, cancellationToken);
     }
 
     public async Task SaveTaskAsync(AgentTask task, CancellationToken cancellationToken)
@@ -89,6 +103,26 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
         command.Parameters.AddWithValue("$created", task.CreatedAt.ToString("O"));
         command.Parameters.AddWithValue("$updated", task.UpdatedAt.ToString("O"));
         command.Parameters.AddWithValue("$worktree", (object?)task.WorktreePath ?? DBNull.Value);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    public async Task SetTaskArchivedAsync(
+        Guid taskId,
+        bool isArchived,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = connections.Create();
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = isArchived
+            ? """
+              INSERT INTO archived_agent_tasks(task_id,archived_at)
+              VALUES($task,$archived)
+              ON CONFLICT(task_id) DO UPDATE SET archived_at=$archived;
+              """
+            : "DELETE FROM archived_agent_tasks WHERE task_id=$task;";
+        command.Parameters.AddWithValue("$task", taskId.ToString());
+        command.Parameters.AddWithValue("$archived", DateTimeOffset.UtcNow.ToString("O"));
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
@@ -137,5 +171,22 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
         command.Parameters.AddWithValue("$tool", (object?)message.ToolCallId ?? DBNull.Value);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
-}
 
+    private static async Task<IReadOnlyList<AgentTask>> ReadTasksAsync(
+        SqliteCommand command,
+        CancellationToken cancellationToken)
+    {
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        var results = new List<AgentTask>();
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            results.Add(new AgentTask(
+                Guid.Parse(reader.GetString(0)), Guid.Parse(reader.GetString(1)), reader.GetString(2),
+                (ApprovalPolicy)reader.GetInt32(3), (AgentTaskStatus)reader.GetInt32(4),
+                DateTimeOffset.Parse(reader.GetString(5)), DateTimeOffset.Parse(reader.GetString(6)),
+                reader.IsDBNull(7) ? null : reader.GetString(7)));
+        }
+
+        return results;
+    }
+}

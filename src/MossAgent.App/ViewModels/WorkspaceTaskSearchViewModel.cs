@@ -57,6 +57,18 @@ public sealed class WorkspaceTaskSearchViewModel : ObservableObject
         ApplyFilter();
     }
 
+    public void Remove(Guid taskId)
+    {
+        _allTasks.RemoveAll(task => task.Id == taskId);
+        ApplyFilter();
+    }
+
+    public void Restore(AgentTask task)
+    {
+        Query = string.Empty;
+        Upsert(task);
+    }
+
     private void ApplyFilter()
     {
         var query = Query.Trim();

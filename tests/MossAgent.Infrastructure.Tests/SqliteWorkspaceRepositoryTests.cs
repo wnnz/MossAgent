@@ -39,6 +39,49 @@ public sealed class SqliteWorkspaceRepositoryTests
         }
     }
 
+    [Fact]
+    public async Task RenameArchiveAndRestore_PreserveTaskHistory()
+    {
+        var root = CreateRoot();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        try
+        {
+            var paths = new AppDataPaths(root);
+            var connections = new SqliteConnectionFactory(paths);
+            await new SqliteDatabaseInitializer(paths, connections)
+                .InitializeAsync(cancellationToken);
+            var repository = new SqliteWorkspaceRepository(connections);
+            var project = CreateProject(root);
+            var task = CreateTask(project.Id);
+            await repository.SaveProjectAsync(project, cancellationToken);
+            await repository.SaveTaskAsync(task, cancellationToken);
+            await repository.AppendMessageAsync(
+                new ConversationMessage(
+                    Guid.NewGuid(), task.Id, MessageRole.User,
+                    "preserved", DateTimeOffset.UtcNow),
+                cancellationToken);
+
+            await repository.SaveTaskAsync(task with { Title = "renamed" }, cancellationToken);
+            await repository.SetTaskArchivedAsync(task.Id, true, cancellationToken);
+
+            Assert.Empty(await repository.GetTasksAsync(project.Id, cancellationToken));
+            var archived = Assert.Single(
+                await repository.GetArchivedTasksAsync(project.Id, cancellationToken));
+            Assert.Equal("renamed", archived.Title);
+            Assert.Single(await repository.GetMessagesAsync(task.Id, cancellationToken));
+
+            await repository.SetTaskArchivedAsync(task.Id, false, cancellationToken);
+
+            Assert.Empty(await repository.GetArchivedTasksAsync(project.Id, cancellationToken));
+            Assert.Single(await repository.GetTasksAsync(project.Id, cancellationToken));
+        }
+        finally
+        {
+            SqliteConnection.ClearAllPools();
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static async Task SaveMessagesAsync(
         SqliteWorkspaceRepository repository,
         Guid taskId,

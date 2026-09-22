@@ -16,6 +16,8 @@ public sealed class SqliteDatabaseInitializer(
         await command.ExecuteNonQueryAsync(cancellationToken);
         await using var versionTwo = new SqliteCommand(DatabaseSchema.VersionTwo, connection);
         await versionTwo.ExecuteNonQueryAsync(cancellationToken);
+        await using var versionThree = new SqliteCommand(DatabaseSchema.VersionThree, connection);
+        await versionThree.ExecuteNonQueryAsync(cancellationToken);
 
         await using var recover = connection.CreateCommand();
         recover.CommandText = """

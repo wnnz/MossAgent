@@ -136,4 +136,15 @@ internal static class DatabaseSchema
         INSERT OR IGNORE INTO schema_versions(version, applied_at)
             VALUES(2, CURRENT_TIMESTAMP);
         """;
+
+    public const string VersionThree = """
+        CREATE TABLE IF NOT EXISTS archived_agent_tasks (
+            task_id TEXT PRIMARY KEY REFERENCES agent_tasks(id) ON DELETE CASCADE,
+            archived_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS ix_archived_agent_tasks_archived_at
+            ON archived_agent_tasks(archived_at DESC);
+        INSERT OR IGNORE INTO schema_versions(version, applied_at)
+            VALUES(3, CURRENT_TIMESTAMP);
+        """;
 }

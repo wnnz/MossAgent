@@ -78,11 +78,36 @@
         </ListBox.ItemTemplate>
       </ListBox>
 
-      <TextBlock Grid.Row="5" Text="任务" Classes="subtle" FontSize="11"
-                 FontWeight="SemiBold" Margin="8,12,8,6" />
+      <Grid Grid.Row="5" ColumnDefinitions="*,Auto,Auto" Margin="8,12,4,6">
+        <TextBlock Text="任务" Classes="subtle" FontSize="11"
+                   FontWeight="SemiBold" VerticalAlignment="Center" />
+        <Button Grid.Column="1" Content="✎" Classes="ghost" Width="24" Height="24"
+                Padding="0" Command="{Binding TaskManagement.BeginRenameCommand}"
+                IsVisible="{Binding SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}"
+                ToolTip.Tip="重命名所选任务" />
+        <Button Grid.Column="2" Content="↓" Classes="ghost" Width="24" Height="24"
+                Padding="0" Command="{Binding TaskManagement.ArchiveCommand}"
+                IsVisible="{Binding SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}"
+                ToolTip.Tip="归档所选任务" />
+      </Grid>
 
-      <Grid Grid.Row="6">
-        <ListBox ItemsSource="{Binding Tasks}" SelectedItem="{Binding SelectedTask}">
+      <Grid Grid.Row="6" RowDefinitions="Auto,*,Auto">
+        <Border IsVisible="{Binding TaskManagement.IsEditing}"
+                Background="{DynamicResource CardSubtleBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
+                CornerRadius="7" Padding="7" Margin="0,0,0,6">
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="4">
+            <TextBox Text="{Binding TaskManagement.EditingTitle}" FontSize="11.5"
+                     PlaceholderText="任务名称" />
+            <Button Grid.Column="1" Content="保存" Classes="primary" Padding="7,3"
+                    Command="{Binding TaskManagement.SaveRenameCommand}" />
+            <Button Grid.Column="2" Content="取消" Classes="ghost" Padding="7,3"
+                    Command="{Binding TaskManagement.CancelRenameCommand}" />
+          </Grid>
+        </Border>
+
+        <ListBox Grid.Row="1" ItemsSource="{Binding Tasks}"
+                 SelectedItem="{Binding SelectedTask}">
           <ListBox.ItemTemplate>
             <DataTemplate>
               <Grid ColumnDefinitions="*,Auto" Margin="1">
@@ -94,6 +119,31 @@
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
+
+        <StackPanel Grid.Row="2" Margin="0,5,0,0" Spacing="4"
+                    IsVisible="{Binding TaskManagement.HasArchivedTasks}">
+          <Button Content="{Binding TaskManagement.ArchiveToggleLabel}" Classes="ghost"
+                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                  Padding="7,4" FontSize="10.5"
+                  Command="{Binding TaskManagement.ToggleArchiveCommand}" />
+          <StackPanel IsVisible="{Binding TaskManagement.IsArchiveVisible}" Spacing="4">
+            <ListBox ItemsSource="{Binding TaskManagement.ArchivedTasks}"
+                     SelectedItem="{Binding TaskManagement.SelectedArchivedTask}"
+                     MaxHeight="130">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding Title}" FontSize="11.5"
+                             TextTrimming="CharacterEllipsis" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <Button Content="恢复所选任务" Classes="ghost" Padding="7,4"
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding TaskManagement.RestoreCommand}" />
+          </StackPanel>
+          <TextBlock Text="{Binding TaskManagement.Status}" Classes="subtle"
+                     FontSize="10" TextWrapping="Wrap" />
+        </StackPanel>
       </Grid>
 
       <Border Grid.Row="7" BorderBrush="{DynamicResource BorderSubtleBrush}"

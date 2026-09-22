@@ -25,6 +25,13 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         ProjectEditor = new WorkspaceProjectEditorViewModel(projectService);
         ProjectEditor.ProjectCreated += AddProject;
         TaskSearch = new WorkspaceTaskSearchViewModel();
+        TaskManagement = new WorkspaceTaskManagementViewModel(workspaces)
+        {
+            IsTaskRunning = taskId => IsTaskRunning?.Invoke(taskId) == true
+        };
+        TaskManagement.TaskRenamed += task => UpsertTask(task);
+        TaskManagement.TaskArchived += ArchiveTask;
+        TaskManagement.TaskRestored += RestoreTask;
         NewTaskCommand = new RelayCommand(StartNewTask, () => !IsLocked);
         CleanupWorktreeCommand = new AsyncRelayCommand(CleanupWorktreeAsync, CanCleanupWorktree);
     }
@@ -36,6 +43,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public ObservableCollection<ChatMessageViewModel> Messages { get; } = [];
     public WorkspaceProjectEditorViewModel ProjectEditor { get; }
     public WorkspaceTaskSearchViewModel TaskSearch { get; }
+    public WorkspaceTaskManagementViewModel TaskManagement { get; }
     public IRelayCommand NewTaskCommand { get; }
     public IAsyncRelayCommand CleanupWorktreeCommand { get; }
     public ProjectProfile? SelectedProject
@@ -54,14 +62,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public AgentTask? SelectedTask
     {
         get => _selectedTask;
-        set
-        {
-            if (_isLocked)
-            {
-                return;
-            }
-            SetSelectedTask(value, loadMessages: true);
-        }
+        set { if (!_isLocked) SetSelectedTask(value, loadMessages: true); }
     }
     public string Status { get => _status; private set => SetProperty(ref _status, value); }
     public string CleanupWorktreeText =>
@@ -75,6 +76,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
             {
                 NewTaskCommand.NotifyCanExecuteChanged();
                 CleanupWorktreeCommand.NotifyCanExecuteChanged();
+                TaskManagement.NotifyTaskRunStateChanged();
             }
         }
     }
@@ -121,9 +123,11 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         Messages.Clear();
         if (project is null)
         {
+            await TaskManagement.LoadAsync(null);
             return;
         }
         var tasks = await _workspaces.GetTasksAsync(project.Id, CancellationToken.None);
+        await TaskManagement.LoadAsync(project.Id);
         if (version != _loadVersion || project.Id != SelectedProject?.Id)
         {
             return;
@@ -155,6 +159,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
             return;
         }
         CancelCleanupConfirmation();
+        TaskManagement.SelectedTask = task;
         CleanupWorktreeCommand.NotifyCanExecuteChanged();
         SelectionChanged?.Invoke();
         if (loadMessages && task is not null)
@@ -166,8 +171,11 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         !_isLocked
         && !string.IsNullOrWhiteSpace(SelectedTask?.WorktreePath)
         && (SelectedTask is null || IsTaskRunning?.Invoke(SelectedTask.Id) != true);
-    public void NotifyTaskRunStateChanged() =>
+    public void NotifyTaskRunStateChanged()
+    {
         CleanupWorktreeCommand.NotifyCanExecuteChanged();
+        TaskManagement.NotifyTaskRunStateChanged();
+    }
     public void ShowActiveMessages(Guid taskId)
     {
         if (SelectedTask?.Id == taskId)
@@ -222,5 +230,15 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         }
         _cleanupConfirmationTaskId = null;
         OnPropertyChanged(nameof(CleanupWorktreeText));
+    }
+    private void ArchiveTask(AgentTask task)
+    {
+        TaskSearch.Remove(task.Id);
+        if (SelectedTask?.Id == task.Id) SetSelectedTask(null, loadMessages: false);
+    }
+    private void RestoreTask(AgentTask task)
+    {
+        TaskSearch.Restore(task);
+        SetSelectedTask(task, loadMessages: true);
     }
 }
