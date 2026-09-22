@@ -55,7 +55,7 @@ public sealed class MainWindowViewModel : ObservableObject
         MinimizeWindowCommand = new RelayCommand<Window>(MinimizeWindow);
         ToggleMaximizeWindowCommand = new RelayCommand<Window>(ToggleMaximizeWindow);
         CloseWindowCommand = new RelayCommand<Window>(CloseWindow);
-        SelectInspectorTabCommand = new RelayCommand<string>(tab => ActiveInspectorTab = tab ?? "home");
+        SelectInspectorTabCommand = new RelayCommand<string>(SelectInspectorTab);
         BackToInspectorHomeCommand = new RelayCommand(() => ActiveInspectorTab = "home");
     }
 
@@ -202,6 +202,12 @@ public sealed class MainWindowViewModel : ObservableObject
     /// 返回检查器主页命令。
     /// </summary>
     public IRelayCommand BackToInspectorHomeCommand { get; }
+
+    private void SelectInspectorTab(string? tab)
+    {
+        ActiveInspectorTab = tab ?? "home";
+        IsRightPanelOpen = true;
+    }
 
     private static void MinimizeWindow(Window? window)
     {

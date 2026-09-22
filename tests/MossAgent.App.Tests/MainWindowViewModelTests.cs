@@ -62,6 +62,19 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task SelectInspectorTabCommand_OpensRequestedPanel()
+    {
+        await using var services = AppComposition.CreateServices();
+        var viewModel = services.GetRequiredService<MainWindowViewModel>();
+        viewModel.IsRightPanelOpen = false;
+
+        viewModel.SelectInspectorTabCommand.Execute("terminal");
+
+        Assert.True(viewModel.IsRightPanelOpen);
+        Assert.True(viewModel.IsInspectorTerminal);
+    }
+
+    [Fact]
     public async Task ToggleThemeCommand_SwitchesThemeAndUpdatesIcon()
     {
         await using var services = AppComposition.CreateServices();

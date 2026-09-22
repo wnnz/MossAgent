@@ -9,6 +9,16 @@
         MinWidth="1100" MinHeight="700"
         WindowDecorations="BorderOnly"
         Background="{DynamicResource AppBackgroundBrush}">
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+Shift+G" Command="{Binding SelectInspectorTabCommand}"
+                CommandParameter="diff" />
+    <KeyBinding Gesture="Ctrl+J" Command="{Binding SelectInspectorTabCommand}"
+                CommandParameter="terminal" />
+    <KeyBinding Gesture="Ctrl+T" Command="{Binding SelectInspectorTabCommand}"
+                CommandParameter="browser" />
+    <KeyBinding Gesture="Ctrl+P" Command="{Binding SelectInspectorTabCommand}"
+                CommandParameter="audit" />
+  </Window.KeyBindings>
   <Grid RowDefinitions="42,*">
     <!-- 沉浸式顶栏：隐藏原生标题栏，预留右侧165px系统控制区，杜绝重叠 -->
     <Border Grid.Row="0" Background="{DynamicResource HeaderBackgroundBrush}"

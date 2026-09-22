@@ -24,6 +24,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         _worktreeCleanup = worktreeCleanup;
         ProjectEditor = new WorkspaceProjectEditorViewModel(projectService);
         ProjectEditor.ProjectCreated += AddProject;
+        TaskSearch = new WorkspaceTaskSearchViewModel();
         NewTaskCommand = new RelayCommand(StartNewTask, () => !IsLocked);
         CleanupWorktreeCommand = new AsyncRelayCommand(CleanupWorktreeAsync, CanCleanupWorktree);
     }
@@ -31,9 +32,10 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public Func<Guid, IReadOnlyList<ChatMessageViewModel>?>? ActiveMessagesProvider { get; set; }
     public Func<Guid, bool>? IsTaskRunning { get; set; }
     public ObservableCollection<ProjectProfile> Projects { get; } = [];
-    public ObservableCollection<AgentTask> Tasks { get; } = [];
+    public ObservableCollection<AgentTask> Tasks => TaskSearch.Results;
     public ObservableCollection<ChatMessageViewModel> Messages { get; } = [];
     public WorkspaceProjectEditorViewModel ProjectEditor { get; }
+    public WorkspaceTaskSearchViewModel TaskSearch { get; }
     public IRelayCommand NewTaskCommand { get; }
     public IAsyncRelayCommand CleanupWorktreeCommand { get; }
     public ProjectProfile? SelectedProject
@@ -92,15 +94,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         {
             return;
         }
-        var existing = Tasks.ToList().FindIndex(item => item.Id == task.Id);
-        if (existing >= 0)
-        {
-            Tasks[existing] = task;
-        }
-        else
-        {
-            Tasks.Insert(0, task);
-        }
+        TaskSearch.Upsert(task);
         if (select)
         {
             SetSelectedTask(task, loadMessages: false);
@@ -122,7 +116,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     }
     private async Task LoadTasksAsync(ProjectProfile? project, int version)
     {
-        Tasks.Clear();
+        TaskSearch.SetItems([]);
         SetSelectedTask(null, loadMessages: false);
         Messages.Clear();
         if (project is null)
@@ -134,7 +128,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         {
             return;
         }
-        Tasks.ReplaceWith(tasks);
+        TaskSearch.SetItems(tasks);
         SetSelectedTask(Tasks.FirstOrDefault(), loadMessages: true);
     }
     private async Task LoadMessagesAsync(AgentTask task)

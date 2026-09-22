@@ -27,12 +27,14 @@ public sealed class WorkspaceViewModel : ObservableObject
         WorkspaceRunTracker runs,
         WorkspaceRunController runController,
         WorkspaceTaskPanelCoordinator panels,
+        WorkspaceRepositoryStatusViewModel repositoryStatus,
         WorkspaceCatalogViewModel catalog)
     {
         _taskFactory = taskFactory;
         _runs = runs;
         _runController = runController;
         _panels = panels;
+        RepositoryStatus = repositoryStatus;
         Catalog = catalog;
         Catalog.ActiveMessagesProvider = _runs.GetMessages;
         Catalog.IsTaskRunning = _runs.IsRunning;
@@ -47,6 +49,7 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     public WorkspaceCatalogViewModel Catalog { get; }
     public ModelPickerViewModel ModelPicker { get; }
+    public WorkspaceRepositoryStatusViewModel RepositoryStatus { get; }
     public ObservableCollection<ChatMessageViewModel> Messages => Catalog.Messages;
     public IAsyncRelayCommand RefreshCommand { get; }
     public IRelayCommand PrimaryActionCommand { get; }
@@ -129,7 +132,6 @@ public sealed class WorkspaceViewModel : ObservableObject
     }
 
     private bool CanExecutePrimaryAction() => IsRunning ? CanStop() : CanSend();
-
     private bool CanSend() =>
         !_isStarting && Catalog.SelectedProject is not null && SelectedProvider is not null
         && SelectedModel is not null && !string.IsNullOrWhiteSpace(ComposerText)
@@ -195,6 +197,7 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     private void HandleSelectionChanged()
     {
+        _ = RepositoryStatus.RefreshAsync(Catalog.SelectedProject, Catalog.SelectedTask);
         OnPropertyChanged(nameof(EmptySessionTitle));
         OnPropertyChanged(nameof(ExecutionLocationLabel));
         var task = Catalog.SelectedTask;
@@ -219,7 +222,6 @@ public sealed class WorkspaceViewModel : ObservableObject
         Catalog.UpsertTask(task, Catalog.SelectedTask?.Id == task.Id);
 
     private bool CanStop() => Catalog.SelectedTask is { } task && _runs.IsRunning(task.Id);
-
     private void Stop()
     {
         if (Catalog.SelectedTask is { } task) _runs.Cancel(task.Id);

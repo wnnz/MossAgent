@@ -11,6 +11,7 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject
     private string _directory = string.Empty;
     private string _authorizedDirectories = string.Empty;
     private string _status = string.Empty;
+    private bool _isOpen;
 
     public WorkspaceProjectEditorViewModel(WorkspaceProjectService projectService)
     {
@@ -37,6 +38,8 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject
 
     public string Status { get => _status; private set => SetProperty(ref _status, value); }
 
+    public bool IsOpen { get => _isOpen; set => SetProperty(ref _isOpen, value); }
+
     private async Task AddAsync()
     {
         try
@@ -45,6 +48,7 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject
             ProjectCreated?.Invoke(project);
             Name = string.Empty;
             Status = "项目已添加。";
+            IsOpen = false;
         }
         catch (Exception exception)
         {

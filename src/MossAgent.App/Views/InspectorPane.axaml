@@ -88,7 +88,7 @@
                 <TextBlock Text="💻" FontSize="15" Classes="muted" HorizontalAlignment="Center" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="终端" FontSize="13.5" VerticalAlignment="Center" Margin="6,0,0,0" />
                 <Border Grid.Column="2" Background="{DynamicResource CardSubtleBackgroundBrush}" CornerRadius="4" Padding="6,2">
-                  <TextBlock Text="Ctrl+~" Classes="subtle" FontSize="10" />
+                  <TextBlock Text="Ctrl+J" Classes="subtle" FontSize="10" />
                 </Border>
               </Grid>
             </Button>

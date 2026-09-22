@@ -46,6 +46,7 @@ internal static class AppComposition
         services.AddSingleton<ITaskArtifactPaths, TaskArtifactPaths>();
         services.AddSingleton<IBrowserProfilePaths, BrowserProfilePaths>();
         services.AddSingleton<IGitWorktreeService, GitWorktreeService>();
+        services.AddSingleton<IGitRepositoryInfoService, GitRepositoryInfoService>();
         services.AddSingleton<IProviderHttpClientFactory, ProviderHttpClientFactory>();
         services.AddSingleton<IProxyConnectionTester, ProxyConnectionTester>();
         services.AddSingleton<IToolExecutionAuditSink, SqliteToolExecutionAuditSink>();
@@ -123,6 +124,7 @@ internal static class AppComposition
         services.AddSingleton<WorkspaceRunController>();
         services.AddSingleton<WorkspaceTaskPanelCoordinator>();
         services.AddSingleton<WorkspaceWorktreeCleanupService>();
+        services.AddSingleton<WorkspaceRepositoryStatusViewModel>();
         services.AddSingleton<WorkspaceCatalogViewModel>();
         services.AddSingleton<TerminalPaneViewModel>();
         services.AddSingleton<DiffPaneViewModel>();

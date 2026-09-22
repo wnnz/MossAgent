@@ -96,6 +96,9 @@
             <TextBlock Text="{Binding Catalog.SelectedProject.Name, FallbackValue='未选择项目'}"
                        Classes="muted" FontSize="11" />
             <TextBlock Text="·" Classes="subtle" />
+            <TextBlock Text="{Binding RepositoryStatus.BranchLabel}" Classes="muted"
+                       FontSize="11" FontFamily="Consolas" />
+            <TextBlock Text="·" Classes="subtle" />
             <TextBlock Text="{Binding ExecutionLocationLabel}" Classes="muted" FontSize="11" />
           </StackPanel>
 
