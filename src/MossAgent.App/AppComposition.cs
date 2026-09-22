@@ -116,6 +116,10 @@ internal static class AppComposition
         services.AddSingleton<ProviderSettingsViewModel>();
         services.AddSingleton<ModelSettingsViewModel>();
         services.AddSingleton<WorkspaceTaskFactory>();
+        services.AddSingleton<WorkspaceRunTracker>();
+        services.AddSingleton<WorkspaceRunExecutor>();
+        services.AddSingleton<WorkspaceRunController>();
+        services.AddSingleton<WorkspaceTaskPanelCoordinator>();
         services.AddSingleton<WorkspaceWorktreeCleanupService>();
         services.AddSingleton<WorkspaceCatalogViewModel>();
         services.AddSingleton<TerminalPaneViewModel>();

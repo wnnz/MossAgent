@@ -2,60 +2,46 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.Application.Agent;
-using MossAgent.Application.Artifacts;
-using MossAgent.Application.Models;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
-using MossAgent.Tools.Abstractions;
-using MossAgent.Tools.Abstractions.Browser;
 
 namespace MossAgent.App.ViewModels;
 
 public sealed class WorkspaceViewModel : ObservableObject
 {
-    private readonly IWorkspaceRepository _workspaces;
     private readonly IConfigurationRepository _configurations;
-    private readonly IAgentRunner _agent;
-    private readonly ITaskArtifactPaths _artifacts;
-    private readonly ITaskBrowserSessionManager _browserSessions;
     private readonly WorkspaceTaskFactory _taskFactory;
-    private readonly TerminalPaneViewModel _terminal;
-    private readonly DiffPaneViewModel _diff;
-    private readonly AuditPaneViewModel _audit;
+    private readonly WorkspaceRunTracker _runs;
+    private readonly WorkspaceRunController _runController;
+    private readonly WorkspaceTaskPanelCoordinator _panels;
     private AiProvider? _selectedProvider;
     private ModelProfile? _selectedModel;
     private ApprovalPolicy _approvalPolicy = ApprovalPolicy.AskEveryTime;
     private string _composerText = string.Empty;
     private string _activity = "添加或选择项目后即可创建任务。";
     private bool _useWorktree;
-    private CancellationTokenSource? _runCancellation;
+    private bool _isStarting;
 
     public WorkspaceViewModel(
-        IWorkspaceRepository workspaces,
         IConfigurationRepository configurations,
-        IAgentRunner agent,
-        ITaskArtifactPaths artifacts,
-        ITaskBrowserSessionManager browserSessions,
         WorkspaceTaskFactory taskFactory,
-        WorkspaceCatalogViewModel catalog,
-        TerminalPaneViewModel terminal,
-        DiffPaneViewModel diff,
-        AuditPaneViewModel audit)
+        WorkspaceRunTracker runs,
+        WorkspaceRunController runController,
+        WorkspaceTaskPanelCoordinator panels,
+        WorkspaceCatalogViewModel catalog)
     {
-        _workspaces = workspaces;
         _configurations = configurations;
-        _agent = agent;
-        _artifacts = artifacts;
-        _browserSessions = browserSessions;
         _taskFactory = taskFactory;
-        _terminal = terminal;
-        _diff = diff;
-        _audit = audit;
+        _runs = runs;
+        _runController = runController;
+        _panels = panels;
         Catalog = catalog;
+        Catalog.ActiveMessagesProvider = _runs.GetMessages;
+        Catalog.IsTaskRunning = _runs.IsRunning;
         Catalog.SelectionChanged += HandleSelectionChanged;
         RefreshCommand = new AsyncRelayCommand(LoadAsync);
         SendCommand = new AsyncRelayCommand(SendAsync, CanSend);
-        StopCommand = new RelayCommand(Stop, () => _runCancellation is not null);
+        StopCommand = new RelayCommand(Stop, CanStop);
         _ = LoadAsync();
     }
 
@@ -63,7 +49,8 @@ public sealed class WorkspaceViewModel : ObservableObject
     public ObservableCollection<AiProvider> Providers { get; } = [];
     public ObservableCollection<ModelProfile> Models { get; } = [];
     public ObservableCollection<ChatMessageViewModel> Messages => Catalog.Messages;
-    public IReadOnlyList<ApprovalPolicy> ApprovalPolicies { get; } = Enum.GetValues<ApprovalPolicy>();
+    public IReadOnlyList<ApprovalPolicy> ApprovalPolicies { get; } =
+        Enum.GetValues<ApprovalPolicy>();
     public IAsyncRelayCommand RefreshCommand { get; }
     public IAsyncRelayCommand SendCommand { get; }
     public IRelayCommand StopCommand { get; }
@@ -84,11 +71,29 @@ public sealed class WorkspaceViewModel : ObservableObject
     public ModelProfile? SelectedModel
     {
         get => _selectedModel;
-        set { SetProperty(ref _selectedModel, value); SendCommand.NotifyCanExecuteChanged(); }
+        set
+        {
+            SetProperty(ref _selectedModel, value);
+            SendCommand.NotifyCanExecuteChanged();
+        }
     }
 
-    public ApprovalPolicy ApprovalPolicy { get => _approvalPolicy; set => SetProperty(ref _approvalPolicy, value); }
-    public string ComposerText { get => _composerText; set { SetProperty(ref _composerText, value); SendCommand.NotifyCanExecuteChanged(); } }
+    public ApprovalPolicy ApprovalPolicy
+    {
+        get => _approvalPolicy;
+        set => SetProperty(ref _approvalPolicy, value);
+    }
+
+    public string ComposerText
+    {
+        get => _composerText;
+        set
+        {
+            SetProperty(ref _composerText, value);
+            SendCommand.NotifyCanExecuteChanged();
+        }
+    }
+
     public string Activity { get => _activity; private set => SetProperty(ref _activity, value); }
     public bool UseWorktree { get => _useWorktree; set => SetProperty(ref _useWorktree, value); }
 
@@ -100,6 +105,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         SelectedProvider = Providers.FirstOrDefault(static provider => provider.IsDefault)
             ?? Providers.FirstOrDefault();
     }
+
     private async Task LoadModelsAsync()
     {
         Models.Clear();
@@ -108,141 +114,130 @@ public sealed class WorkspaceViewModel : ObservableObject
             return;
         }
 
-        var models = await _configurations.GetModelsAsync(SelectedProvider.Id, CancellationToken.None);
+        var models = await _configurations.GetModelsAsync(
+            SelectedProvider.Id, CancellationToken.None);
         Models.ReplaceWith(models.Where(static model => model.IsEnabled));
-        SelectedModel = Models.FirstOrDefault(static model => model.IsDefault) ?? Models.FirstOrDefault();
+        SelectedModel = Models.FirstOrDefault(static model => model.IsDefault)
+            ?? Models.FirstOrDefault();
     }
+
     private bool CanSend() =>
-        _runCancellation is null
+        !_isStarting
         && Catalog.SelectedProject is not null
         && SelectedProvider is not null
         && SelectedModel is not null
-        && !string.IsNullOrWhiteSpace(ComposerText);
+        && !string.IsNullOrWhiteSpace(ComposerText)
+        && (Catalog.SelectedTask is null || !_runs.IsRunning(Catalog.SelectedTask.Id));
 
     private async Task SendAsync()
     {
         var prompt = ComposerText.Trim();
+        var project = Catalog.SelectedProject!;
+        var existingTask = Catalog.SelectedTask;
+        var provider = SelectedProvider!;
+        var model = SelectedModel!;
+        var visibleMessages = existingTask is null ? [] : Messages.ToList();
         ComposerText = string.Empty;
-        AgentTask? task = null;
-        _runCancellation = new CancellationTokenSource();
+        _isStarting = true;
         NotifyRunStateChanged();
-
         try
         {
-            task = await PrepareTaskAsync(prompt);
-            AttachTaskPanels(task);
+            var task = await PrepareTaskAsync(project, existingTask, prompt);
             var assistant = new ChatMessageViewModel("MossAgent", string.Empty);
-            Messages.Add(new ChatMessageViewModel("你", prompt));
-            Messages.Add(assistant);
-            await RunAgentAsync(task, assistant, _runCancellation.Token);
-        }
-        catch (OperationCanceledException) when (task is not null)
-        {
-            Activity = "任务已取消。";
-            ApplyTaskUpdate(await _taskFactory.SetStatusAsync(
-                task, AgentTaskStatus.Cancelled, CancellationToken.None));
+            var messages = new ObservableCollection<ChatMessageViewModel>(visibleMessages);
+            messages.Add(new ChatMessageViewModel("你", prompt));
+            messages.Add(assistant);
+            var state = new WorkspaceRunState(
+                task, project, provider, model, messages, assistant);
+            _runs.Add(state);
+            Catalog.UpsertTask(task);
+            Catalog.ShowActiveMessages(task.Id);
+            _panels.Attach(task, project);
+            _ = _runController.RunAsync(
+                state, _panels, PresentEventAsync, SetActivity,
+                ApplyTaskUpdate, NotifyRunStateChanged);
         }
         catch (Exception exception)
         {
-            Activity = $"任务失败：{exception.Message}";
-            if (task is not null)
-            {
-                ApplyTaskUpdate(await _taskFactory.SetStatusAsync(
-                    task, AgentTaskStatus.Failed, CancellationToken.None));
-            }
+            Activity = $"无法启动任务：{exception.Message}";
         }
         finally
         {
-            _runCancellation.Dispose();
-            _runCancellation = null;
+            _isStarting = false;
             NotifyRunStateChanged();
         }
     }
-    private async Task<AgentTask> PrepareTaskAsync(string prompt)
+
+    private Task<AgentTask> PrepareTaskAsync(
+        ProjectProfile project,
+        AgentTask? task,
+        string prompt) =>
+        task is null
+            ? _taskFactory.CreateAsync(
+                project, prompt, ApprovalPolicy, UseWorktree, CancellationToken.None)
+            : _taskFactory.ResumeAsync(
+                task, prompt, ApprovalPolicy, CancellationToken.None);
+
+    private async Task PresentEventAsync(WorkspaceRunState state, AgentEvent agentEvent)
     {
-        var task = Catalog.SelectedTask is null
-            ? await _taskFactory.CreateAsync(
-                Catalog.SelectedProject!, prompt, ApprovalPolicy,
-                UseWorktree, CancellationToken.None)
-            : await _taskFactory.ResumeAsync(
-                Catalog.SelectedTask, prompt, ApprovalPolicy, CancellationToken.None);
-        if (Catalog.SelectedTask is null)
+        if (agentEvent is AgentToolEvent { ToolName: "git.diff", Result.Content: { } diff }
+            && Catalog.SelectedTask?.Id == state.Task.Id)
         {
-            Messages.Clear();
+            _panels.ShowDiff(diff);
         }
 
-        Catalog.UpsertTask(task);
-        return task;
-    }
-
-    private async Task RunAgentAsync(
-        AgentTask task,
-        ChatMessageViewModel assistant,
-        CancellationToken cancellationToken)
-    {
-        var context = CreateToolContext(task);
-        var history = await _workspaces.GetMessagesAsync(task.Id, cancellationToken);
-        var request = new AgentRunRequest(
-            SelectedProvider!, SelectedModel!,
-            history.Select(WorkspaceConversationMapper.ToModelMessage).ToArray(), context);
-        var failed = false;
-
-        await foreach (var agentEvent in _agent.RunAsync(request, cancellationToken))
-        {
-            failed |= agentEvent is AgentFailureEvent;
-            if (agentEvent is AgentToolEvent { ToolName: "git.diff", Result.Content: { } diff })
-            {
-                _diff.Show(diff);
-            }
-
-            await WorkspaceAgentEventPresenter.PresentAsync(
-                agentEvent, assistant, Messages, status => Activity = status);
-        }
-
-        ApplyTaskUpdate(await _taskFactory.CompleteAsync(
-            task, assistant.Content,
-            failed ? AgentTaskStatus.Failed : AgentTaskStatus.Completed,
-            cancellationToken));
+        await WorkspaceAgentEventPresenter.PresentAsync(
+            agentEvent, state.Assistant, state.Messages,
+            status => SetActivity(state, status));
+        Catalog.ShowActiveMessages(state.Task.Id);
     }
 
     private void HandleSelectionChanged()
     {
-        SendCommand.NotifyCanExecuteChanged();
         var task = Catalog.SelectedTask;
         if (task is null)
         {
             Activity = "输入内容即可创建新任务。";
-            return;
+        }
+        else
+        {
+            ApprovalPolicy = task.ApprovalPolicy;
+            _panels.Attach(task, Catalog.SelectedProject!);
+            Activity = _runs.TryGet(task.Id, out var state)
+                ? state!.Activity
+                : $"已打开任务：{task.Title}";
         }
 
-        ApprovalPolicy = task.ApprovalPolicy;
-        AttachTaskPanels(task);
-        Activity = $"已打开任务：{task.Title}";
+        NotifyRunStateChanged();
     }
 
-    private void AttachTaskPanels(AgentTask task)
+    private void SetActivity(WorkspaceRunState state, string status)
     {
-        var directory = task.WorktreePath ?? Catalog.SelectedProject!.PrimaryDirectory;
-        _terminal.AttachTask(task.Id, directory);
-        _diff.Attach(CreateToolContext(task));
-        _audit.Attach(task.Id);
+        state.Activity = status;
+        if (Catalog.SelectedTask?.Id == state.Task.Id)
+        {
+            Activity = status;
+        }
     }
 
-    private ToolExecutionContext CreateToolContext(AgentTask task) =>
-        new(
-            task.Id,
-            task.WorktreePath ?? Catalog.SelectedProject!.PrimaryDirectory,
-            _taskFactory.GetAuthorizedRoots(Catalog.SelectedProject!, task),
-            task.ApprovalPolicy,
-            ArtifactDirectory: _artifacts.GetTaskDirectory(task.Id),
-            BrowserSession: _browserSessions.GetLazySession(task.Id));
+    private void ApplyTaskUpdate(AgentTask task) =>
+        Catalog.UpsertTask(task, Catalog.SelectedTask?.Id == task.Id);
 
-    private void ApplyTaskUpdate(AgentTask task) => Catalog.UpsertTask(task);
-    private void Stop() => _runCancellation?.Cancel();
+    private bool CanStop() =>
+        Catalog.SelectedTask is { } task && _runs.IsRunning(task.Id);
+
+    private void Stop()
+    {
+        if (Catalog.SelectedTask is { } task)
+        {
+            _runs.Cancel(task.Id);
+        }
+    }
 
     private void NotifyRunStateChanged()
     {
-        Catalog.IsLocked = _runCancellation is not null;
+        Catalog.IsLocked = _isStarting;
+        Catalog.NotifyTaskRunStateChanged();
         SendCommand.NotifyCanExecuteChanged();
         StopCommand.NotifyCanExecuteChanged();
     }

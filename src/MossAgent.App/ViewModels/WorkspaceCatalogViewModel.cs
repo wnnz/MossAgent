@@ -3,7 +3,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
-
 namespace MossAgent.App.ViewModels;
 
 public sealed class WorkspaceCatalogViewModel : ObservableObject
@@ -19,7 +18,6 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     private bool _isLocked;
     private Guid? _cleanupConfirmationTaskId;
     private int _loadVersion;
-
     public WorkspaceCatalogViewModel(
         IWorkspaceRepository workspaces,
         WorkspaceWorktreeCleanupService worktreeCleanup)
@@ -30,16 +28,15 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         NewTaskCommand = new RelayCommand(StartNewTask, () => !IsLocked);
         CleanupWorktreeCommand = new AsyncRelayCommand(CleanupWorktreeAsync, CanCleanupWorktree);
     }
-
     public event Action? SelectionChanged;
-
+    public Func<Guid, IReadOnlyList<ChatMessageViewModel>?>? ActiveMessagesProvider { get; set; }
+    public Func<Guid, bool>? IsTaskRunning { get; set; }
     public ObservableCollection<ProjectProfile> Projects { get; } = [];
     public ObservableCollection<AgentTask> Tasks { get; } = [];
     public ObservableCollection<ChatMessageViewModel> Messages { get; } = [];
     public IAsyncRelayCommand AddProjectCommand { get; }
     public IRelayCommand NewTaskCommand { get; }
     public IAsyncRelayCommand CleanupWorktreeCommand { get; }
-
     public ProjectProfile? SelectedProject
     {
         get => _selectedProject;
@@ -49,12 +46,10 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
             {
                 return;
             }
-
             SelectionChanged?.Invoke();
             _ = LoadTasksAsync(value, Interlocked.Increment(ref _loadVersion));
         }
     }
-
     public AgentTask? SelectedTask
     {
         get => _selectedTask;
@@ -64,18 +59,15 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
             {
                 return;
             }
-
             SetSelectedTask(value, loadMessages: true);
         }
     }
-
     public string NewProjectName { get => _newProjectName; set => SetProperty(ref _newProjectName, value); }
     public string NewProjectDirectory { get => _newProjectDirectory; set => SetProperty(ref _newProjectDirectory, value); }
     public string AuthorizedDirectoriesText { get => _authorizedDirectoriesText; set => SetProperty(ref _authorizedDirectoriesText, value); }
     public string Status { get => _status; private set => SetProperty(ref _status, value); }
     public string CleanupWorktreeText =>
         _cleanupConfirmationTaskId == SelectedTask?.Id ? "确认清理 Worktree" : "清理 Worktree";
-
     public bool IsLocked
     {
         get => _isLocked;
@@ -88,7 +80,6 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
             }
         }
     }
-
     public async Task ReloadAsync()
     {
         var selectedProjectId = SelectedProject?.Id;
@@ -99,9 +90,12 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         SelectedProject = Projects.FirstOrDefault(project => project.Id == selectedProjectId)
             ?? Projects.FirstOrDefault();
     }
-
-    public void UpsertTask(AgentTask task)
+    public void UpsertTask(AgentTask task, bool select = true)
     {
+        if (SelectedProject?.Id != task.ProjectId)
+        {
+            return;
+        }
         var existing = Tasks.ToList().FindIndex(item => item.Id == task.Id);
         if (existing >= 0)
         {
@@ -111,21 +105,20 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         {
             Tasks.Insert(0, task);
         }
-
-        SetSelectedTask(task, loadMessages: false);
+        if (select)
+        {
+            SetSelectedTask(task, loadMessages: false);
+        }
     }
-
     public void StartNewTask()
     {
         if (_isLocked)
         {
             return;
         }
-
         SetSelectedTask(null, loadMessages: false);
         Messages.Clear();
     }
-
     public async Task AddProjectAsync()
     {
         try
@@ -143,7 +136,6 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
             Status = exception.Message;
         }
     }
-
     private async Task LoadTasksAsync(ProjectProfile? project, int version)
     {
         Tasks.Clear();
@@ -153,35 +145,37 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         {
             return;
         }
-
         var tasks = await _workspaces.GetTasksAsync(project.Id, CancellationToken.None);
         if (version != _loadVersion || project.Id != SelectedProject?.Id)
         {
             return;
         }
-
         Tasks.ReplaceWith(tasks);
         SetSelectedTask(Tasks.FirstOrDefault(), loadMessages: true);
     }
-
     private async Task LoadMessagesAsync(AgentTask task)
     {
+        if (TryShowActiveMessages(task.Id))
+        {
+            return;
+        }
         var messages = await _workspaces.GetMessagesAsync(task.Id, CancellationToken.None);
         if (task.Id != SelectedTask?.Id)
         {
             return;
         }
-
+        if (TryShowActiveMessages(task.Id))
+        {
+            return;
+        }
         Messages.ReplaceWith(messages.Select(WorkspaceConversationMapper.ToChatMessage));
     }
-
     private void SetSelectedTask(AgentTask? task, bool loadMessages)
     {
         if (!SetProperty(ref _selectedTask, task, nameof(SelectedTask)))
         {
             return;
         }
-
         CancelCleanupConfirmation();
         CleanupWorktreeCommand.NotifyCanExecuteChanged();
         SelectionChanged?.Invoke();
@@ -190,17 +184,35 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
             _ = LoadMessagesAsync(task);
         }
     }
-
     private bool CanCleanupWorktree() =>
-        !_isLocked && !string.IsNullOrWhiteSpace(SelectedTask?.WorktreePath);
-
+        !_isLocked
+        && !string.IsNullOrWhiteSpace(SelectedTask?.WorktreePath)
+        && (SelectedTask is null || IsTaskRunning?.Invoke(SelectedTask.Id) != true);
+    public void NotifyTaskRunStateChanged() =>
+        CleanupWorktreeCommand.NotifyCanExecuteChanged();
+    public void ShowActiveMessages(Guid taskId)
+    {
+        if (SelectedTask?.Id == taskId)
+        {
+            TryShowActiveMessages(taskId);
+        }
+    }
+    private bool TryShowActiveMessages(Guid taskId)
+    {
+        var active = ActiveMessagesProvider?.Invoke(taskId);
+        if (active is null)
+        {
+            return false;
+        }
+        Messages.ReplaceWith(active);
+        return true;
+    }
     private async Task CleanupWorktreeAsync()
     {
         if (SelectedProject is not { } project || SelectedTask is not { WorktreePath: not null } task)
         {
             return;
         }
-
         if (_cleanupConfirmationTaskId != task.Id)
         {
             _cleanupConfirmationTaskId = task.Id;
@@ -208,7 +220,6 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
             Status = "再次点击确认清理；有未提交变更时 Git 会拒绝删除。";
             return;
         }
-
         try
         {
             var updated = await _worktreeCleanup.CleanupAsync(project, task, CancellationToken.None);
@@ -225,14 +236,12 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
             CleanupWorktreeCommand.NotifyCanExecuteChanged();
         }
     }
-
     private void CancelCleanupConfirmation()
     {
         if (_cleanupConfirmationTaskId is null)
         {
             return;
         }
-
         _cleanupConfirmationTaskId = null;
         OnPropertyChanged(nameof(CleanupWorktreeText));
     }

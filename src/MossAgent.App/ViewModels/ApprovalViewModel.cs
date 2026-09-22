@@ -8,15 +8,16 @@ namespace MossAgent.App.ViewModels;
 public sealed class ApprovalViewModel : ObservableObject
 {
     private readonly Lock _lock = new();
-    private TaskCompletionSource<bool>? _pending;
+    private readonly Queue<ToolApprovalRequestViewModel> _queue = [];
+    private ToolApprovalRequestViewModel? _current;
     private bool _isPending;
     private string _toolName = string.Empty;
     private string _description = string.Empty;
 
     public ApprovalViewModel()
     {
-        ApproveCommand = new RelayCommand(() => Resolve(true), () => IsPending);
-        DenyCommand = new RelayCommand(() => Resolve(false), () => IsPending);
+        ApproveCommand = new RelayCommand(() => ResolveCurrent(true), () => IsPending);
+        DenyCommand = new RelayCommand(() => ResolveCurrent(false), () => IsPending);
     }
 
     public IRelayCommand ApproveCommand { get; }
@@ -30,59 +31,118 @@ public sealed class ApprovalViewModel : ObservableObject
         ToolRequest request,
         CancellationToken cancellationToken)
     {
-        var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        cancellationToken.ThrowIfCancellationRequested();
+        _ = request;
+        var pending = new ToolApprovalRequestViewModel(descriptor);
+        var becameCurrent = Enqueue(pending);
+
+        using var registration = cancellationToken.Register(
+            () => Cancel(pending, cancellationToken));
+        if (becameCurrent)
+        {
+            await RefreshPresentationAsync();
+        }
+
+        return await pending.Completion.Task;
+    }
+
+    private bool Enqueue(ToolApprovalRequestViewModel pending)
+    {
         lock (_lock)
         {
-            if (_pending is not null)
+            _queue.Enqueue(pending);
+            if (_current is not null)
             {
-                throw new InvalidOperationException("已有工具调用正在等待审批。");
+                return false;
             }
 
-            _pending = completion;
-        }
-
-        await Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            ToolName = descriptor.Name;
-            Description = descriptor.Description;
-            IsPending = true;
-            NotifyCommands();
-        });
-
-        using var registration = cancellationToken.Register(() => completion.TrySetCanceled(cancellationToken));
-        try
-        {
-            return await completion.Task;
-        }
-        finally
-        {
-            await Dispatcher.UIThread.InvokeAsync(Clear);
+            ActivateNextLocked();
+            return ReferenceEquals(_current, pending);
         }
     }
 
-    private void Resolve(bool approved)
+    private void ResolveCurrent(bool approved)
     {
         lock (_lock)
         {
-            _pending?.TrySetResult(approved);
+            _current?.Completion.TrySetResult(approved);
+            _current = null;
+            ActivateNextLocked();
         }
+
+        _ = RefreshPresentationAsync();
     }
 
-    private void Clear()
+    private void Cancel(
+        ToolApprovalRequestViewModel pending,
+        CancellationToken cancellationToken)
     {
         lock (_lock)
         {
-            _pending = null;
+            pending.Completion.TrySetCanceled(cancellationToken);
+            if (ReferenceEquals(_current, pending))
+            {
+                _current = null;
+                ActivateNextLocked();
+            }
+            else
+            {
+                RemoveQueuedLocked(pending);
+            }
         }
 
-        IsPending = false;
-        ToolName = string.Empty;
-        Description = string.Empty;
-        NotifyCommands();
+        _ = RefreshPresentationAsync();
     }
 
-    private void NotifyCommands()
+    private void ActivateNextLocked()
     {
+        while (_queue.TryDequeue(out var candidate))
+        {
+            if (!candidate.Completion.Task.IsCompleted)
+            {
+                _current = candidate;
+                return;
+            }
+        }
+
+        _current = null;
+    }
+
+    private void RemoveQueuedLocked(ToolApprovalRequestViewModel pending)
+    {
+        var count = _queue.Count;
+        for (var index = 0; index < count; index++)
+        {
+            var candidate = _queue.Dequeue();
+            if (!ReferenceEquals(candidate, pending))
+            {
+                _queue.Enqueue(candidate);
+            }
+        }
+    }
+
+    private async Task RefreshPresentationAsync()
+    {
+        if (Avalonia.Application.Current is null || Dispatcher.UIThread.CheckAccess())
+        {
+            RefreshPresentation();
+            return;
+        }
+
+        await Dispatcher.UIThread.InvokeAsync(RefreshPresentation);
+    }
+
+    private void RefreshPresentation()
+    {
+        ToolApprovalRequestViewModel? current;
+        lock (_lock)
+        {
+            current = _current;
+        }
+
+        IsPending = current is not null;
+        ToolName = current?.ToolName ?? string.Empty;
+        Description = current?.Description ?? string.Empty;
         ApproveCommand.NotifyCanExecuteChanged();
         DenyCommand.NotifyCanExecuteChanged();
     }
