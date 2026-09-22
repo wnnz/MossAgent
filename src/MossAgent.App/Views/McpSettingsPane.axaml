@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MossAgent.App.Views.McpSettingsPane"
+             x:CompileBindings="False">
+  <Grid Margin="16">
+    <!-- 主界面：MCP Server 列表卡片 -->
+    <Border Classes="card">
+      <Grid RowDefinitions="Auto,*">
+        <!-- 顶栏：标题与操作 -->
+        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+          <StackPanel Spacing="2">
+            <TextBlock Text="MCP 扩展服务" FontSize="17" FontWeight="SemiBold" />
+            <TextBlock Text="连接外部 stdio 或 HTTP SSE Model Context Protocol 工具服务器。" Classes="muted" FontSize="12" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+            <Button Content="重新连接" Classes="ghost" Command="{Binding ReloadCommand}" />
+            <Button Content="＋ 新建 Server" Classes="primary" Command="{Binding OpenCreateFormCommand}" />
+          </StackPanel>
+        </Grid>
+
+        <!-- MCP Server 列表 -->
+        <ListBox Grid.Row="1" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <Border BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="8,12">
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                  <StackPanel Spacing="3">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" />
+                      <TextBlock Text="{Binding Transport}" Classes="subtle" FontSize="11" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding Command}" Classes="muted" FontSize="12" FontFamily="Consolas" />
+                  </StackPanel>
+                  <Button Grid.Column="1" Content="启/停" Classes="ghost" Padding="6,2" FontSize="11" Margin="0,0,6,0"
+                          Command="{Binding $parent[UserControl].DataContext.ToggleEnabledCommand}" />
+                  <Button Grid.Column="2" Content="编辑" Classes="ghost" Padding="6,2" FontSize="11" Margin="0,0,6,0"
+                          Command="{Binding $parent[UserControl].DataContext.OpenEditFormCommand}" />
+                  <CheckBox Grid.Column="3" IsChecked="{Binding IsEnabled}" IsEnabled="False" VerticalAlignment="Center" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Grid>
+    </Border>
+
+    <!-- 模态弹窗：MCP 编辑表单 -->
+    <Border Background="{DynamicResource OverlayBackgroundBrush}" IsVisible="{Binding IsFormOpen}" Margin="-16">
+      <Border Classes="card" Width="480" VerticalAlignment="Center" HorizontalAlignment="Center"
+              Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderDefaultBrush}"
+              BoxShadow="0 12 36 0 #55000000">
+        <ScrollViewer MaxHeight="520">
+          <StackPanel Spacing="9" Margin="4">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="{Binding EditorTitle}" FontSize="16" FontWeight="SemiBold" />
+              <Button Grid.Column="1" Content="✕" Classes="ghost" Command="{Binding CloseFormCommand}" />
+            </Grid>
+            <TextBlock Text="Server 名称" Classes="muted" FontSize="12" />
+            <TextBox Text="{Binding Name}" PlaceholderText="例如 filesystem" />
+            <TextBlock Text="传输协议" Classes="muted" FontSize="12" />
+            <ComboBox ItemsSource="{Binding Transports}" SelectedItem="{Binding Transport}" HorizontalAlignment="Stretch" />
+            <TextBlock Text="stdio 命令" Classes="muted" FontSize="12" />
+            <TextBox Text="{Binding Command}" PlaceholderText="例如 npx" />
+            <TextBlock Text="参数 JSON 数组" Classes="muted" FontSize="12" />
+            <TextBox Text="{Binding ArgumentsJson}" FontFamily="Consolas" />
+            <TextBlock Text="工作目录" Classes="muted" FontSize="12" />
+            <TextBox Text="{Binding WorkingDirectory}" />
+            <TextBlock Text="Streamable HTTP URL" Classes="muted" FontSize="12" />
+            <TextBox Text="{Binding Url}" PlaceholderText="http://localhost:8000/sse" />
+            <CheckBox Content="启用此 MCP Server" IsChecked="{Binding IsEnabled}" Margin="0,4" />
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,6,0,0">
+              <Button Classes="primary" Content="保存并连接" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+              <Button Grid.Column="1" Classes="danger" Content="{Binding DeleteButtonText}" Command="{Binding DeleteCommand}" />
+              <Button Grid.Column="2" Content="取消" Command="{Binding CloseFormCommand}" />
+            </Grid>
+            <TextBlock Text="{Binding Status}" Classes="subtle" FontSize="11" TextWrapping="Wrap" />
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+    </Border>
+  </Grid>
+</UserControl>

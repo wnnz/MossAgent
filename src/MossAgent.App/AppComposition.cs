@@ -27,6 +27,7 @@ using MossAgent.Platform.Windows.Capture;
 using MossAgent.Platform.Windows.Terminal;
 using MossAgent.Tools.Abstractions.Terminal;
 using MossAgent.App.Browser;
+using MossAgent.App.Services;
 
 namespace MossAgent.App;
 
@@ -128,6 +129,7 @@ internal static class AppComposition
         services.AddSingleton<BrowserSettingsViewModel>();
         services.AddSingleton<McpSettingsViewModel>();
         services.AddSingleton<WorkspaceViewModel>();
+        services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<MainWindowViewModel>();
         return services.BuildServiceProvider(validateScopes: true);
     }

@@ -21,6 +21,7 @@ public sealed class ProviderSettingsViewModel : ObservableObject
     private string _headersJson = "{}";
     private string _status = string.Empty;
     private Guid? _deleteConfirmationId;
+    private bool _isFormOpen;
 
     public ProviderSettingsViewModel(IConfigurationRepository repository)
     {
@@ -28,6 +29,9 @@ public sealed class ProviderSettingsViewModel : ObservableObject
         SaveCommand = new AsyncRelayCommand(SaveAsync);
         RefreshCommand = new AsyncRelayCommand(LoadAsync);
         NewCommand = new RelayCommand(ResetEditor);
+        OpenCreateFormCommand = new RelayCommand(() => { ResetEditor(); IsFormOpen = true; });
+        OpenEditFormCommand = new RelayCommand(() => { if (SelectedItem is not null) IsFormOpen = true; });
+        CloseFormCommand = new RelayCommand(() => IsFormOpen = false);
         DeleteCommand = new AsyncRelayCommand(DeleteAsync, HasSelection);
         _ = LoadAsync();
     }
@@ -38,7 +42,19 @@ public sealed class ProviderSettingsViewModel : ObservableObject
     public IAsyncRelayCommand SaveCommand { get; }
     public IAsyncRelayCommand RefreshCommand { get; }
     public IRelayCommand NewCommand { get; }
+    public IRelayCommand OpenCreateFormCommand { get; }
+    public IRelayCommand OpenEditFormCommand { get; }
+    public IRelayCommand CloseFormCommand { get; }
     public IAsyncRelayCommand DeleteCommand { get; }
+
+    /// <summary>
+    /// 是否弹出供应商配置表单弹窗。
+    /// </summary>
+    public bool IsFormOpen
+    {
+        get => _isFormOpen;
+        set => SetProperty(ref _isFormOpen, value);
+    }
 
     public AiProvider? SelectedItem
     {
@@ -120,6 +136,7 @@ public sealed class ProviderSettingsViewModel : ObservableObject
             IsDefault, IsEnabled, headers);
         await _repository.SaveProviderAsync(provider, CancellationToken.None);
         Status = SelectedItem is null ? "供应商已添加。" : "供应商设置已更新。";
+        IsFormOpen = false;
         ResetEditor();
         await LoadAsync();
     }

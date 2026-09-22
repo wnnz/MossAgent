@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MossAgent.App.Views.BrowserSettingsPane"
+             x:CompileBindings="False">
+  <Grid ColumnDefinitions="450,*" Margin="16">
+    <Border Classes="card" Margin="0,0,16,0">
+      <ScrollViewer>
+        <StackPanel Spacing="10">
+          <TextBlock Text="浏览器自动化配置" FontSize="17" FontWeight="SemiBold" />
+
+          <TextBlock Text="浏览器类型" Classes="muted" />
+          <ComboBox ItemsSource="{Binding BrowserKinds}" SelectedItem="{Binding DefaultBrowser}" HorizontalAlignment="Stretch" />
+
+          <TextBlock Text="资料模式" Classes="muted" />
+          <ComboBox ItemsSource="{Binding ProfilePreferences}" SelectedItem="{Binding ProfilePreference}" HorizontalAlignment="Stretch" />
+
+          <TextBlock Text="资料目录（日常资料模式）" Classes="muted" />
+          <TextBox Text="{Binding ProfileDirectory}" PlaceholderText="Chrome 或 Edge User Data 目录" />
+
+          <TextBlock Text="已有 CDP 调试地址" Classes="muted" />
+          <TextBox Text="{Binding CdpEndpoint}" PlaceholderText="http://127.0.0.1:9222" />
+
+          <TextBlock Text="浏览器代理" Classes="muted" />
+          <ComboBox ItemsSource="{Binding Proxies}" SelectedItem="{Binding SelectedProxy}"
+                    DisplayMemberBinding="{Binding Name}" HorizontalAlignment="Stretch" />
+
+          <Button Classes="primary" Content="保存浏览器设置" Command="{Binding SaveCommand}" Margin="0,6,0,0" HorizontalAlignment="Stretch" />
+          <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Classes="muted" Margin="0,6,0,0" />
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <Border Grid.Column="1" Classes="card">
+      <StackPanel Spacing="12">
+        <TextBlock Text="浏览器会话运行机制" FontSize="17" FontWeight="SemiBold" />
+        <TextBlock Text="MossAgent 在任务首次调用浏览器工具时按需启动浏览器实例。每个任务拥有完全隔离的会话，避免并发任务互相干扰。" Classes="muted" TextWrapping="Wrap" />
+        <Border Background="#241910" BorderBrush="#5C3615" BorderThickness="1" CornerRadius="6" Padding="12">
+          <TextBlock Text="提示：使用日常资料目录可能暴露现有登录状态与历史记录。若系统已有正在运行的同名浏览器独占该目录，可能导致第二个实例无法启动。"
+                     Foreground="#FDBA74" TextWrapping="Wrap" />
+        </Border>
+        <TextBlock Text="当连接已有 CDP 实例时，MossAgent 不会改变其现有网络代理；请确保仅连接受信任的本地调试端口。" Classes="subtle" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+  </Grid>
+</UserControl>

@@ -27,6 +27,8 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         AddProjectCommand = new AsyncRelayCommand(AddProjectAsync);
         NewTaskCommand = new RelayCommand(StartNewTask, () => !IsLocked);
         CleanupWorktreeCommand = new AsyncRelayCommand(CleanupWorktreeAsync, CanCleanupWorktree);
+        SelectProjectCommand = new RelayCommand<ProjectProfile>(p => { if (p is not null) SelectedProject = p; });
+        SelectTaskCommand = new RelayCommand<AgentTask>(t => { if (t is not null) SelectedTask = t; });
     }
     public event Action? SelectionChanged;
     public Func<Guid, IReadOnlyList<ChatMessageViewModel>?>? ActiveMessagesProvider { get; set; }
@@ -37,6 +39,8 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public IAsyncRelayCommand AddProjectCommand { get; }
     public IRelayCommand NewTaskCommand { get; }
     public IAsyncRelayCommand CleanupWorktreeCommand { get; }
+    public IRelayCommand<ProjectProfile> SelectProjectCommand { get; }
+    public IRelayCommand<AgentTask> SelectTaskCommand { get; }
     public ProjectProfile? SelectedProject
     {
         get => _selectedProject;

@@ -21,6 +21,7 @@ public sealed class ProxySettingsViewModel : ObservableObject
     private string _username = string.Empty;
     private string _password = string.Empty;
     private string _status = string.Empty;
+    private bool _isFormOpen;
 
     public ProxySettingsViewModel(
         IConfigurationRepository repository,
@@ -33,6 +34,9 @@ public sealed class ProxySettingsViewModel : ObservableObject
         TestCommand = new AsyncRelayCommand(TestAsync, HasSelection);
         DeleteCommand = new AsyncRelayCommand(DeleteAsync, HasSelection);
         NewCommand = new RelayCommand(ResetEditor);
+        OpenCreateFormCommand = new RelayCommand(() => { ResetEditor(); IsFormOpen = true; });
+        OpenEditFormCommand = new RelayCommand(() => { if (SelectedItem is not null) IsFormOpen = true; });
+        CloseFormCommand = new RelayCommand(() => IsFormOpen = false);
         _ = LoadAsync();
     }
 
@@ -43,6 +47,18 @@ public sealed class ProxySettingsViewModel : ObservableObject
     public IAsyncRelayCommand TestCommand { get; }
     public IAsyncRelayCommand DeleteCommand { get; }
     public IRelayCommand NewCommand { get; }
+    public IRelayCommand OpenCreateFormCommand { get; }
+    public IRelayCommand OpenEditFormCommand { get; }
+    public IRelayCommand CloseFormCommand { get; }
+
+    /// <summary>
+    /// 是否弹出代理配置表单弹窗。
+    /// </summary>
+    public bool IsFormOpen
+    {
+        get => _isFormOpen;
+        set => SetProperty(ref _isFormOpen, value);
+    }
 
     public ProxyProfile? SelectedItem
     {
@@ -91,6 +107,7 @@ public sealed class ProxySettingsViewModel : ObservableObject
             EmptyToNull(Username), EmptyToNull(Password), IsDefault, IsEnabled);
         await _repository.SaveProxyAsync(proxy, CancellationToken.None);
         Status = SelectedItem is null ? "代理已添加。" : "代理设置已更新。";
+        IsFormOpen = false;
         ResetEditor();
         await LoadAsync();
     }

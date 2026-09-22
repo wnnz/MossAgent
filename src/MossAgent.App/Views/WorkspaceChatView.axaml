@@ -1,0 +1,173 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:MossAgent.App.Views"
+             x:Class="MossAgent.App.Views.WorkspaceChatView"
+             x:CompileBindings="False">
+  <UserControl.Styles>
+    <!-- 彻底清除 Composer 输入框的一切默认边框与聚焦蓝线 -->
+    <Style Selector="TextBox.composer-input">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="4,4" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+    </Style>
+    <Style Selector="TextBox.composer-input:focus /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="TextBox.composer-input:focus-within /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="TextBox.composer-input:pointerover /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+  </UserControl.Styles>
+
+  <Border Background="{DynamicResource CardBackgroundBrush}">
+    <Grid RowDefinitions="Auto,*,Auto">
+      <!-- 顶栏：项目信息与快捷控制条 (对标截图 1 顶部标题) -->
+      <Border Grid.Row="0" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1"
+              Padding="18,10" Background="{DynamicResource CardBackgroundBrush}">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <TextBlock Text="📁" FontSize="13" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding Catalog.SelectedTask.Title, FallbackValue='新会话'}"
+                       FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"
+                       MaxWidth="500" VerticalAlignment="Center" />
+          </StackPanel>
+
+          <!-- 右侧：快捷操作 -->
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <Button Content="↻" Classes="ghost" Padding="6,3" Command="{Binding RefreshCommand}" ToolTip.Tip="刷新配置" />
+            <Button Content="..." Classes="ghost" Padding="6,3" ToolTip.Tip="更多选项" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- 中间 1：空状态引导页面 (对标截图 3 极简居中展示) -->
+      <Grid Grid.Row="1" IsVisible="{Binding IsEmptySession}"
+            HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+          <Border Width="52" Height="52" CornerRadius="26"
+                  Background="{DynamicResource CardSubtleBackgroundBrush}"
+                  BorderBrush="{DynamicResource BorderDefaultBrush}" BorderThickness="1"
+                  HorizontalAlignment="Center">
+            <TextBlock Text="☁_" FontSize="18" Classes="muted"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+          <TextBlock Text="{Binding Catalog.SelectedProject.Name, StringFormat='你想让我们在 {0} 中构建什么？', FallbackValue='你想让我们在 MossAgent 中构建什么？'}"
+                     FontSize="20" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextPrimaryBrush}"
+                     HorizontalAlignment="Center" />
+        </StackPanel>
+      </Grid>
+
+      <!-- 中间 2：原生排版对话流 (对标截图 1，包含选词复制与已编辑文件卡片展示) -->
+      <ScrollViewer Grid.Row="1" Margin="24,12" IsVisible="{Binding HasMessages}"
+                    HorizontalScrollBarVisibility="Disabled">
+        <ItemsControl ItemsSource="{Binding Messages}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Border Background="{DynamicResource CardSubtleBackgroundBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
+                      CornerRadius="8" Padding="16,12" Margin="0,0,0,12">
+                <StackPanel Spacing="8">
+                  <Grid ColumnDefinitions="Auto,*">
+                    <Border CornerRadius="4" Padding="6,2" Background="{DynamicResource CardBackgroundBrush}"
+                            BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
+                      <TextBlock Text="{Binding Role}" FontSize="11" FontWeight="SemiBold"
+                                 Foreground="{DynamicResource TextPrimaryBrush}" />
+                    </Border>
+                  </Grid>
+                  <!-- 原生可选文本，无光标无蓝框 -->
+                  <SelectableTextBlock Text="{Binding Content}" TextWrapping="Wrap"
+                                       FontSize="13" LineHeight="21"
+                                       Foreground="{DynamicResource TextPrimaryBrush}" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+
+      <!-- 底部：Codex 悬浮大输入框卡片 (对标截图 1 & 3) -->
+      <Border Grid.Row="2" Margin="32,0,32,20" MaxWidth="880" HorizontalAlignment="Stretch"
+              Background="{DynamicResource CardSubtleBackgroundBrush}"
+              BorderBrush="{DynamicResource BorderDefaultBrush}" BorderThickness="1"
+              CornerRadius="14" Padding="14,10" BoxShadow="0 4 24 0 #18000000">
+        <Grid RowDefinitions="Auto,Auto,Auto">
+          <!-- 顶部小上下文标签行 (对标截图 3) -->
+          <StackPanel Orientation="Horizontal" Spacing="8" Margin="2,0,0,6">
+            <TextBlock Text="📁" FontSize="11" Classes="muted" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding Catalog.SelectedProject.Name, FallbackValue='MossAgent'}"
+                       Classes="muted" FontSize="11" VerticalAlignment="Center" />
+            <TextBlock Text="·" Classes="subtle" VerticalAlignment="Center" />
+            <TextBlock Text="💻 本地" Classes="muted" FontSize="11" VerticalAlignment="Center" />
+            <TextBlock Text="·" Classes="subtle" VerticalAlignment="Center" />
+            <TextBlock Text="⑂ feature/initial-mossagent" Classes="subtle" FontSize="11" VerticalAlignment="Center" />
+          </StackPanel>
+
+          <!-- 随心输入无框文本框 (对标截图 1/3) -->
+          <TextBox Grid.Row="1" Classes="composer-input"
+                   Text="{Binding ComposerText}"
+                   PlaceholderText="随心输入"
+                   AcceptsReturn="True" MinHeight="48" MaxHeight="160"
+                   FontSize="13" />
+
+          <!-- 底部工具栏 (对标截图 1/3，加大图标按钮尺寸) -->
+          <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,8,0,0">
+            <!-- ＋ 快捷按钮 (放大至 32x32 / 16px) -->
+            <Button Content="＋" Classes="ghost" Width="32" Height="32" Padding="0"
+                    CornerRadius="16" FontSize="16" VerticalContentAlignment="Center"
+                    HorizontalContentAlignment="Center" ToolTip.Tip="添加上下文或文件" />
+
+            <!-- 安全策略胶囊 (⚠️ 完全访问 ▾，点击切换) -->
+            <Button Grid.Column="1" Classes="ghost" Padding="10,5" CornerRadius="6"
+                    Command="{Binding ToggleApprovalPolicyCommand}" Margin="6,0,0,0"
+                    ToolTip.Tip="点击切换审批策略 (完全访问 / 每次询问 / 只读)">
+              <TextBlock Text="{Binding ApprovalPolicyLabel}" FontSize="12" FontWeight="SemiBold"
+                         Foreground="#F97316" VerticalAlignment="Center" />
+            </Button>
+
+            <!-- 独立 worktree 小选项 -->
+            <CheckBox Grid.Column="2" Content="Git worktree" IsChecked="{Binding UseWorktree}"
+                      FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0" />
+
+            <!-- 模型选择触发胶囊 (对标截图 5.6 Sol 中 ▾) -->
+            <Button Grid.Column="3" Classes="ghost" Padding="10,5" CornerRadius="6"
+                    Margin="0,0,8,0" VerticalAlignment="Center">
+              <Button.Flyout>
+                <Flyout Placement="TopEdgeAlignedRight">
+                  <views:ModelPickerFlyoutView DataContext="{Binding ModelPicker}" />
+                </Flyout>
+              </Button.Flyout>
+              <StackPanel Orientation="Horizontal" Spacing="4">
+                <TextBlock Text="{Binding ModelPicker.CurrentDisplayName}" FontSize="12.5"
+                           Classes="muted" VerticalAlignment="Center" />
+                <TextBlock Text="▾" Classes="subtle" FontSize="10" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+
+            <!-- 单一操作按钮：黑白高对比圆形纯图标发送/停止按键 (放大至 34x34，箭头 16px) -->
+            <Button Grid.Column="4" Classes="primary" Command="{Binding PrimaryActionCommand}"
+                    Width="34" Height="34" CornerRadius="17" Padding="0"
+                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                    ToolTip.Tip="发送任务 (Enter) 或停止执行">
+              <Panel>
+                <TextBlock Text="⏹" IsVisible="{Binding IsRunning}" FontSize="12"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <TextBlock Text="↑" IsVisible="{Binding !IsRunning}" FontSize="16" FontWeight="Bold"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Panel>
+            </Button>
+          </Grid>
+        </Grid>
+      </Border>
+    </Grid>
+  </Border>
+</UserControl>

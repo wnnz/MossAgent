@@ -27,6 +27,7 @@ public sealed class McpSettingsViewModel : ObservableObject
     private bool _isEnabled = true;
     private bool _deleteConfirmationPending;
     private string _status = string.Empty;
+    private bool _isFormOpen;
 
     public McpSettingsViewModel(
         IMcpConfigurationRepository configurations,
@@ -41,6 +42,9 @@ public sealed class McpSettingsViewModel : ObservableObject
         SaveCommand = new AsyncRelayCommand(SaveAsync);
         ReloadCommand = new AsyncRelayCommand(ReloadAsync);
         NewCommand = new RelayCommand(ResetEditor);
+        OpenCreateFormCommand = new RelayCommand(() => { ResetEditor(); IsFormOpen = true; });
+        OpenEditFormCommand = new RelayCommand(() => { if (SelectedItem is not null) IsFormOpen = true; });
+        CloseFormCommand = new RelayCommand(() => IsFormOpen = false);
         ToggleEnabledCommand = new AsyncRelayCommand(ToggleEnabledAsync, HasSelection);
         DeleteCommand = new AsyncRelayCommand(DeleteAsync, HasSelection);
         _ = LoadAsync();
@@ -52,8 +56,20 @@ public sealed class McpSettingsViewModel : ObservableObject
     public IAsyncRelayCommand SaveCommand { get; }
     public IAsyncRelayCommand ReloadCommand { get; }
     public IRelayCommand NewCommand { get; }
+    public IRelayCommand OpenCreateFormCommand { get; }
+    public IRelayCommand OpenEditFormCommand { get; }
+    public IRelayCommand CloseFormCommand { get; }
     public IAsyncRelayCommand ToggleEnabledCommand { get; }
     public IAsyncRelayCommand DeleteCommand { get; }
+
+    /// <summary>
+    /// 是否弹出 MCP 服务配置表单弹窗。
+    /// </summary>
+    public bool IsFormOpen
+    {
+        get => _isFormOpen;
+        set => SetProperty(ref _isFormOpen, value);
+    }
     public string Name { get => _name; set => SetProperty(ref _name, value); }
     public McpTransportKind Transport { get => _transport; set => SetProperty(ref _transport, value); }
     public string Command { get => _command; set => SetProperty(ref _command, value); }
@@ -123,6 +139,7 @@ public sealed class McpSettingsViewModel : ObservableObject
         await _configurations.SaveAsync(profile, CancellationToken.None);
         await ReloadAsync();
         await LoadAsync(profile.Id);
+        IsFormOpen = false;
         Status = $"已保存 MCP server：{profile.Name}";
     }
 

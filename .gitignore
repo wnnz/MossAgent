@@ -10,4 +10,7 @@ publish/
 *.db
 *.db-shm
 *.db-wal
+.scratch/
+.codegraph/
+
 

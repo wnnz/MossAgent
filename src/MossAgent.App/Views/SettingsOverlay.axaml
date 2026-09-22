@@ -1,0 +1,49 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:MossAgent.App.Views"
+             x:Class="MossAgent.App.Views.SettingsOverlay"
+             x:CompileBindings="False">
+  <Grid Background="{DynamicResource OverlayBackgroundBrush}">
+    <!-- 设置中心主卡片容器 -->
+    <Border Classes="card" Margin="40,24" Background="{DynamicResource CardBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderDefaultBrush}" BoxShadow="0 16 48 0 #77000000">
+      <Grid RowDefinitions="50,*">
+        <!-- 顶栏：单色标题与关闭按钮 -->
+        <Border BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="20,0">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+              <TextBlock Text="⛭" FontSize="16" Classes="muted" VerticalAlignment="Center" />
+              <TextBlock Text="系统设置 · Settings" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </StackPanel>
+            <Button Grid.Column="1" Content="✕ 关闭" Classes="ghost"
+                    Command="{Binding CloseSettingsCommand}"
+                    VerticalAlignment="Center" />
+          </Grid>
+        </Border>
+
+        <!-- 主体区域：左侧单色图标导航 + 右侧配置内容 -->
+        <TabControl Grid.Row="1" TabStripPlacement="Left" Margin="8">
+          <!-- 1. 合并后的模型与供应商 -->
+          <TabItem Header="◈  模型与供应商">
+            <views:ProviderAndModelSettingsPane DataContext="{Binding}" />
+          </TabItem>
+
+          <!-- 2. 网络代理 -->
+          <TabItem Header="⬡  网络代理">
+            <views:ProxySettingsPane DataContext="{Binding Proxies}" />
+          </TabItem>
+
+          <!-- 3. 浏览器环境 -->
+          <TabItem Header="☵  浏览器设置">
+            <views:BrowserSettingsPane DataContext="{Binding Browser}" />
+          </TabItem>
+
+          <!-- 4. MCP 扩展 -->
+          <TabItem Header="⌘  MCP 扩展">
+            <views:McpSettingsPane DataContext="{Binding Mcp}" />
+          </TabItem>
+        </TabControl>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

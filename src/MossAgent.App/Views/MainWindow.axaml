@@ -4,295 +4,87 @@
         x:Class="MossAgent.App.Views.MainWindow"
         x:CompileBindings="False"
         Title="MossAgent"
-        Width="1440" Height="900"
-        MinWidth="1080" MinHeight="680"
-        Background="#101210">
-  <Grid RowDefinitions="52,*">
-    <Border Grid.Row="0" BorderBrush="#2A2F2A" BorderThickness="0,0,0,1" Padding="18,0">
+        Width="1480" Height="920"
+        MinWidth="1100" MinHeight="700"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="42"
+        Background="{DynamicResource AppBackgroundBrush}">
+  <Grid RowDefinitions="42,*">
+    <!-- 沉浸式顶栏：隐藏原生标题栏，预留右侧165px系统控制区，杜绝重叠 -->
+    <Border Grid.Row="0" Background="{DynamicResource HeaderBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1"
+            Padding="16,0,165,0">
       <Grid ColumnDefinitions="Auto,*,Auto">
-        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-          <Border Width="26" Height="26" CornerRadius="7" Background="#D9E68A">
-            <TextBlock Text="M" Foreground="#172014" FontWeight="Bold"
-                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-          </Border>
-          <TextBlock Text="MossAgent" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+        <!-- 左侧：极简菜单导航 -->
+        <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+          <TextBlock Text="MossAgent" FontSize="13" FontWeight="SemiBold"
+                     Classes="muted" VerticalAlignment="Center" />
+          <TextBlock Text="文件" FontSize="12" Classes="subtle" VerticalAlignment="Center" />
+          <TextBlock Text="编辑" FontSize="12" Classes="subtle" VerticalAlignment="Center" />
+          <TextBlock Text="视图" FontSize="12" Classes="subtle" VerticalAlignment="Center" />
+          <TextBlock Text="帮助" FontSize="12" Classes="subtle" VerticalAlignment="Center" />
         </StackPanel>
-        <TextBlock Grid.Column="2" Text="Avalonia · .NET 10" Foreground="#8E988E" VerticalAlignment="Center" />
+
+        <!-- 右侧：加大舒适点击尺寸的纯图标操作按钮 -->
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Content="{Binding ThemeIcon}" Classes="ghost"
+                  Width="32" Height="32" Padding="0" CornerRadius="6"
+                  FontSize="15" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                  Command="{Binding ToggleThemeCommand}"
+                  ToolTip.Tip="切换明暗主题模式" />
+
+          <Button Content="◫" Classes="ghost"
+                  Width="32" Height="32" Padding="0" CornerRadius="6"
+                  FontSize="15" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                  Command="{Binding ToggleRightPanelCommand}"
+                  ToolTip.Tip="切换右侧边栏显隐" />
+        </StackPanel>
       </Grid>
     </Border>
 
-    <TabControl Grid.Row="1" Margin="10">
-      <TabItem Header="工作台">
-        <Grid ColumnDefinitions="240,*,320" Margin="0,10,0,0">
-          <views:WorkspaceSidebar DataContext="{Binding Workspace.Catalog}" />
+    <!-- 主工作区：三栏布局（侧边栏、主对话工作台、右侧检查器） -->
+    <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto">
+      <!-- 左栏：会话与项目侧边栏（包含左下角唯一的系统设置入口） -->
+      <views:WorkspaceSidebar Grid.Column="0" DataContext="{Binding Workspace.Catalog}"
+                              Width="260" Margin="10,10,4,10" />
 
-          <Border Grid.Column="1" Classes="card" Margin="0,0,10,0">
-            <Grid RowDefinitions="Auto,*,Auto">
-              <StackPanel Spacing="6">
-                <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Text="新任务" FontSize="18" FontWeight="SemiBold" />
-                  <Button Grid.Column="1" Content="刷新配置" Command="{Binding Workspace.RefreshCommand}" />
-                </Grid>
-                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
-                  <ComboBox ItemsSource="{Binding Workspace.Providers}" SelectedItem="{Binding Workspace.SelectedProvider}" DisplayMemberBinding="{Binding Name}" PlaceholderText="供应商" />
-                  <ComboBox Grid.Column="1" ItemsSource="{Binding Workspace.Models}" SelectedItem="{Binding Workspace.SelectedModel}" DisplayMemberBinding="{Binding DisplayName}" PlaceholderText="模型" />
-                  <ComboBox Grid.Column="2" ItemsSource="{Binding Workspace.ApprovalPolicies}" SelectedItem="{Binding Workspace.ApprovalPolicy}" />
-                </Grid>
-                <TextBlock Text="{Binding Workspace.Activity}" Foreground="#899189" />
-                <CheckBox Content="为新任务创建独立 Git worktree" IsChecked="{Binding Workspace.UseWorktree}" />
-              </StackPanel>
-              <ScrollViewer Grid.Row="1" Margin="0,18">
-                <ItemsControl ItemsSource="{Binding Workspace.Messages}">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                      <Border Background="#1E221E" CornerRadius="8" Padding="12" Margin="0,0,0,10">
-                        <StackPanel Spacing="6">
-                          <TextBlock Text="{Binding Role}" Foreground="#D9E68A" FontWeight="SemiBold" />
-                          <TextBlock Text="{Binding Content}" TextWrapping="Wrap" />
-                        </StackPanel>
-                      </Border>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </ScrollViewer>
-              <Border Grid.Row="2" BorderBrush="#3B433B" BorderThickness="1" CornerRadius="8" Padding="10">
-                <Grid RowDefinitions="Auto,Auto">
-                  <TextBox Text="{Binding Workspace.ComposerText}" PlaceholderText="描述你想完成的编码任务…"
-                           AcceptsReturn="True" MinHeight="74" Background="Transparent" BorderThickness="0" />
-                  <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,8,0,0">
-                    <Button Content="停止" Command="{Binding Workspace.StopCommand}" />
-                    <Button Grid.Column="1" Classes="primary" Content="发送" Padding="18,7" Command="{Binding Workspace.SendCommand}" />
-                  </Grid>
-                </Grid>
-              </Border>
-            </Grid>
-          </Border>
+      <!-- 中栏：主任务对话与执行工作台 -->
+      <views:WorkspaceChatView Grid.Column="1" DataContext="{Binding Workspace}"
+                               Margin="4,10,4,10" />
 
-          <Border Grid.Column="2" Classes="card">
-            <TabControl>
-              <TabItem Header="变更">
-                <Grid RowDefinitions="Auto,Auto,150,*" Margin="6">
-                  <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Content="刷新变更" Command="{Binding Diff.RefreshCommand}" />
-                    <CheckBox Content="已暂存" IsChecked="{Binding Diff.IsStaged}" VerticalAlignment="Center" />
-                  </StackPanel>
-                  <TextBlock Grid.Row="1" Text="{Binding Diff.Status}" Foreground="#899189" Margin="0,6" />
-                  <ListBox Grid.Row="2" ItemsSource="{Binding Diff.Files}" SelectedItem="{Binding Diff.SelectedFile}">
-                    <ListBox.ItemTemplate>
-                      <DataTemplate>
-                        <Grid ColumnDefinitions="90,*" Margin="3">
-                          <TextBlock Text="{Binding StatusLabel}" Foreground="#A8B5A8" />
-                          <TextBlock Grid.Column="1" Text="{Binding Path}" FontFamily="Consolas" />
-                        </Grid>
-                      </DataTemplate>
-                    </ListBox.ItemTemplate>
-                  </ListBox>
-                  <TextBox Grid.Row="3" Text="{Binding Diff.Content}" IsReadOnly="True"
-                           AcceptsReturn="True" FontFamily="Consolas" TextWrapping="NoWrap"
-                           Background="#0B0D0B" Margin="0,8,0,0" />
-                </Grid>
-              </TabItem>
-              <TabItem Header="审计">
-                <Grid RowDefinitions="Auto,*,Auto,120" Margin="6">
-                  <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Text="{Binding Audit.Status}" Foreground="#899189" />
-                    <Button Grid.Column="1" Content="刷新" Command="{Binding Audit.RefreshCommand}" />
-                  </Grid>
-                  <ListBox Grid.Row="1" Margin="0,8" ItemsSource="{Binding Audit.Executions}"
-                           SelectedItem="{Binding Audit.SelectedExecution}">
-                    <ListBox.ItemTemplate>
-                      <DataTemplate>
-                        <Grid ColumnDefinitions="*,Auto" Margin="3">
-                          <StackPanel>
-                            <TextBlock Text="{Binding ToolName}" FontFamily="Consolas" />
-                            <TextBlock Text="{Binding ErrorCode}" FontSize="10" Foreground="#D98B8B" />
-                          </StackPanel>
-                          <StackPanel Grid.Column="1">
-                            <TextBlock Text="{Binding IsSuccess}" HorizontalAlignment="Right" />
-                            <TextBlock Text="{Binding StartedAt, StringFormat={}{0:HH:mm:ss}}"
-                                       FontSize="10" Foreground="#899189" />
-                          </StackPanel>
-                        </Grid>
-                      </DataTemplate>
-                    </ListBox.ItemTemplate>
-                  </ListBox>
-                  <TextBlock Grid.Row="2" Text="产物" FontWeight="SemiBold" />
-                  <ListBox Grid.Row="3" ItemsSource="{Binding Audit.Artifacts}">
-                    <ListBox.ItemTemplate>
-                      <DataTemplate>
-                        <StackPanel Margin="3">
-                          <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                          <TextBlock Text="{Binding Path}" FontFamily="Consolas" FontSize="10"
-                                     Foreground="#899189" TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
-                      </DataTemplate>
-                    </ListBox.ItemTemplate>
-                  </ListBox>
-                </Grid>
-              </TabItem>
-              <TabItem Header="终端">
-                <Grid RowDefinitions="Auto,*,Auto" Margin="6">
-                  <StackPanel Orientation="Horizontal" Spacing="6">
-                    <Button Content="启动" Command="{Binding Terminal.StartCommand}" />
-                    <Button Content="停止" Command="{Binding Terminal.StopCommand}" />
-                  </StackPanel>
-                  <TextBox Grid.Row="1" Text="{Binding Terminal.Output}" IsReadOnly="True"
-                           AcceptsReturn="True" FontFamily="Consolas" TextWrapping="NoWrap"
-                           Background="#0B0D0B" Margin="0,8" />
-                  <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="6">
-                    <TextBox Text="{Binding Terminal.Input}" FontFamily="Consolas" PlaceholderText="输入终端命令" />
-                    <Button Grid.Column="1" Classes="primary" Content="发送" Command="{Binding Terminal.SendCommand}" />
-                  </Grid>
-                </Grid>
-              </TabItem>
-              <TabItem Header="浏览器">
-                <views:EmbeddedBrowserPane DataContext="{Binding EmbeddedBrowser}" />
-              </TabItem>
-            </TabControl>
-          </Border>
-        </Grid>
-      </TabItem>
+      <!-- 右栏：上下文检查器面板（可按需隐藏） -->
+      <views:InspectorPane Grid.Column="2" DataContext="{Binding}"
+                           Width="380" Margin="4,10,10,10"
+                           IsVisible="{Binding IsRightPanelOpen}" />
+    </Grid>
 
-      <TabItem Header="AI 供应商">
-        <Grid ColumnDefinitions="380,*" Margin="12">
-          <Border Classes="card" Margin="0,0,12,0">
-            <StackPanel Spacing="10">
-              <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Text="{Binding Providers.EditorTitle}" FontSize="18" FontWeight="SemiBold" />
-                <Button Grid.Column="1" Content="新建" Command="{Binding Providers.NewCommand}" />
-              </Grid>
-              <TextBlock Text="API Key 将按当前设置明文保存在本机 SQLite。" Foreground="#E6B98A" TextWrapping="Wrap" />
-              <TextBlock Text="名称" /><TextBox Text="{Binding Providers.Name}" PlaceholderText="例如 OpenAI" />
-              <TextBlock Text="协议" /><ComboBox ItemsSource="{Binding Providers.Protocols}" SelectedItem="{Binding Providers.Protocol}" />
-              <TextBlock Text="Base URL" /><TextBox Text="{Binding Providers.BaseUrl}" />
-              <TextBlock Text="API Key" /><TextBox Text="{Binding Providers.ApiKey}" PasswordChar="●" />
-              <TextBlock Text="代理" />
-              <ComboBox ItemsSource="{Binding Providers.Proxies}" SelectedItem="{Binding Providers.SelectedProxy}" DisplayMemberBinding="{Binding Name}" />
-              <TextBlock Text="额外请求头 JSON" />
-              <TextBox Text="{Binding Providers.HeadersJson}" AcceptsReturn="True" MinHeight="58" FontFamily="Consolas" />
-              <CheckBox Content="设为默认供应商" IsChecked="{Binding Providers.IsDefault}" />
-              <CheckBox Content="启用此供应商" IsChecked="{Binding Providers.IsEnabled}" />
-              <Button Classes="primary" Content="保存供应商" Command="{Binding Providers.SaveCommand}" />
-              <Button Content="{Binding Providers.DeleteButtonText}" Command="{Binding Providers.DeleteCommand}" />
-              <TextBlock Text="{Binding Providers.Status}" TextWrapping="Wrap" Foreground="#A8B5A8" />
-            </StackPanel>
-          </Border>
-          <Border Grid.Column="1" Classes="card">
-            <Grid RowDefinitions="Auto,*">
-              <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Text="已配置供应商" FontSize="18" FontWeight="SemiBold" />
-                <Button Grid.Column="1" Content="刷新" Command="{Binding Providers.RefreshCommand}" />
-              </Grid>
-              <ListBox Grid.Row="1" Margin="0,12,0,0" ItemsSource="{Binding Providers.Items}"
-                       SelectedItem="{Binding Providers.SelectedItem}">
-                <ListBox.ItemTemplate><DataTemplate><Border BorderBrush="#303630" BorderThickness="0,0,0,1" Padding="8,12"><StackPanel><TextBlock Text="{Binding Name}" FontWeight="SemiBold" /><TextBlock Text="{Binding Protocol}" Foreground="#A8B5A8" /><TextBlock Text="{Binding BaseUri}" Foreground="#899189" /></StackPanel></Border></DataTemplate></ListBox.ItemTemplate>
-              </ListBox>
-            </Grid>
-          </Border>
-        </Grid>
-      </TabItem>
-
-      <TabItem Header="模型">
-        <views:ModelSettingsPane DataContext="{Binding Models}" />
-      </TabItem>
-
-      <TabItem Header="代理">
-        <views:ProxySettingsPane DataContext="{Binding Proxies}" />
-      </TabItem>
-
-      <TabItem Header="浏览器设置">
-        <Grid ColumnDefinitions="460,*" Margin="12">
-          <Border Classes="card" Margin="0,0,12,0">
-            <StackPanel Spacing="10">
-              <TextBlock Text="默认浏览器" FontSize="18" FontWeight="SemiBold" />
-              <TextBlock Text="浏览器类型" />
-              <ComboBox ItemsSource="{Binding Browser.BrowserKinds}" SelectedItem="{Binding Browser.DefaultBrowser}" />
-              <TextBlock Text="资料模式" />
-              <ComboBox ItemsSource="{Binding Browser.ProfilePreferences}" SelectedItem="{Binding Browser.ProfilePreference}" />
-              <TextBlock Text="资料目录（日常资料模式）" />
-              <TextBox Text="{Binding Browser.ProfileDirectory}" PlaceholderText="Chrome 或 Edge User Data 目录" />
-              <TextBlock Text="已有 CDP 地址" />
-              <TextBox Text="{Binding Browser.CdpEndpoint}" />
-              <TextBlock Text="浏览器代理" />
-              <ComboBox ItemsSource="{Binding Browser.Proxies}" SelectedItem="{Binding Browser.SelectedProxy}" DisplayMemberBinding="{Binding Name}" />
-              <Button Classes="primary" Content="保存浏览器设置" Command="{Binding Browser.SaveCommand}" />
-              <TextBlock Text="{Binding Browser.Status}" TextWrapping="Wrap" Foreground="#A8B5A8" />
-            </StackPanel>
-          </Border>
-          <Border Grid.Column="1" Classes="card">
-            <StackPanel Spacing="12">
-              <TextBlock Text="浏览器会话说明" FontSize="18" FontWeight="SemiBold" />
-              <TextBlock Text="浏览器在任务首次调用浏览器工具时才会启动。每个任务拥有独立会话，避免不同任务互相切换页面。" TextWrapping="Wrap" />
-              <TextBlock Text="使用日常资料目录可能暴露现有登录状态和浏览记录，并且浏览器正在占用该目录时无法启动第二个实例。" TextWrapping="Wrap" Foreground="#E6B98A" />
-              <TextBlock Text="连接已有 CDP 实例时，MossAgent 不会修改其代理配置；请只连接你明确授权的调试地址。" TextWrapping="Wrap" Foreground="#899189" />
-            </StackPanel>
-          </Border>
-        </Grid>
-      </TabItem>
-
-      <TabItem Header="MCP">
-        <Grid ColumnDefinitions="470,*" Margin="12">
-          <Border Classes="card" Margin="0,0,12,0">
-            <ScrollViewer>
-              <StackPanel Spacing="9">
-                <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Text="{Binding Mcp.EditorTitle}" FontSize="18" FontWeight="SemiBold" />
-                  <Button Grid.Column="1" Content="新建" Command="{Binding Mcp.NewCommand}" />
-                </Grid>
-                <TextBlock Text="名称" /><TextBox Text="{Binding Mcp.Name}" />
-                <TextBlock Text="传输方式" /><ComboBox ItemsSource="{Binding Mcp.Transports}" SelectedItem="{Binding Mcp.Transport}" />
-                <TextBlock Text="stdio 命令" /><TextBox Text="{Binding Mcp.Command}" PlaceholderText="例如 npx" />
-                <TextBlock Text="参数 JSON 数组" /><TextBox Text="{Binding Mcp.ArgumentsJson}" FontFamily="Consolas" />
-                <TextBlock Text="工作目录" /><TextBox Text="{Binding Mcp.WorkingDirectory}" />
-                <TextBlock Text="环境变量 JSON" /><TextBox Text="{Binding Mcp.EnvironmentJson}" AcceptsReturn="True" MinHeight="55" FontFamily="Consolas" />
-                <TextBlock Text="Streamable HTTP URL" /><TextBox Text="{Binding Mcp.Url}" />
-                <TextBlock Text="HTTP 请求头 JSON" /><TextBox Text="{Binding Mcp.HeadersJson}" AcceptsReturn="True" MinHeight="55" FontFamily="Consolas" />
-                <TextBlock Text="代理" /><ComboBox ItemsSource="{Binding Mcp.ProxyOptions}" SelectedItem="{Binding Mcp.SelectedProxy}" DisplayMemberBinding="{Binding Name}" />
-                <CheckBox Content="启用此 MCP Server" IsChecked="{Binding Mcp.IsEnabled}" />
-                <Button Classes="primary" Content="保存并连接" Command="{Binding Mcp.SaveCommand}" />
-                <TextBlock Text="{Binding Mcp.Status}" TextWrapping="Wrap" Foreground="#A8B5A8" />
-              </StackPanel>
-            </ScrollViewer>
-          </Border>
-          <Border Grid.Column="1" Classes="card">
-            <Grid RowDefinitions="Auto,*">
-              <Grid ColumnDefinitions="*,Auto,Auto,Auto">
-                <TextBlock Text="MCP Servers" FontSize="18" FontWeight="SemiBold" />
-                <Button Grid.Column="1" Content="启用/禁用" Command="{Binding Mcp.ToggleEnabledCommand}" Margin="0,0,6,0" />
-                <Button Grid.Column="2" Content="{Binding Mcp.DeleteButtonText}" Command="{Binding Mcp.DeleteCommand}" Margin="0,0,6,0" />
-                <Button Grid.Column="3" Content="重新连接" Command="{Binding Mcp.ReloadCommand}" />
-              </Grid>
-              <ListBox Grid.Row="1" Margin="0,12,0,0" ItemsSource="{Binding Mcp.Items}" SelectedItem="{Binding Mcp.SelectedItem}">
-                <ListBox.ItemTemplate>
-                  <DataTemplate>
-                    <Border BorderBrush="#303630" BorderThickness="0,0,0,1" Padding="8,12">
-                      <Grid ColumnDefinitions="*,Auto,Auto">
-                        <StackPanel><TextBlock Text="{Binding Name}" FontWeight="SemiBold" /><TextBlock Text="{Binding Command}" Foreground="#899189" /></StackPanel>
-                        <TextBlock Grid.Column="1" Text="{Binding Transport}" Foreground="#A8B5A8" />
-                        <CheckBox Grid.Column="2" IsChecked="{Binding IsEnabled}" IsEnabled="False" Margin="10,0,0,0" />
-                      </Grid>
-                    </Border>
-                  </DataTemplate>
-                </ListBox.ItemTemplate>
-              </ListBox>
-            </Grid>
-          </Border>
-        </Grid>
-      </TabItem>
-    </TabControl>
-
+    <!-- 浮动层：工具调用审批确认卡片 -->
     <Border Grid.Row="1" Classes="card" IsVisible="{Binding Approval.IsPending}"
             HorizontalAlignment="Center" VerticalAlignment="Bottom"
-            Width="520" Margin="20" BoxShadow="0 8 30 0 #99000000">
+            Width="520" Margin="0,0,0,32"
+            Background="{DynamicResource CardBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderDefaultBrush}"
+            BorderThickness="1" BoxShadow="0 12 36 0 #55000000">
       <StackPanel Spacing="10">
-        <TextBlock Text="工具调用需要批准" FontSize="17" FontWeight="SemiBold" />
-        <TextBlock Text="{Binding Approval.ToolName}" Foreground="#D9E68A" FontFamily="Consolas" />
-        <TextBlock Text="{Binding Approval.Description}" TextWrapping="Wrap" Foreground="#A8B5A8" />
-        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-          <Button Content="拒绝" Command="{Binding Approval.DenyCommand}" />
-          <Button Grid.Column="1" Classes="primary" Content="批准本次" Command="{Binding Approval.ApproveCommand}" />
+        <Grid ColumnDefinitions="Auto,*">
+          <Border Background="#452B0C" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+            <TextBlock Text="⚠️ 需审批" FontSize="11" Foreground="#FBBF24" FontWeight="SemiBold" />
+          </Border>
+          <TextBlock Grid.Column="1" Text="工具调用需要您的确认" FontSize="14" FontWeight="SemiBold" Margin="8,0,0,0" VerticalAlignment="Center" />
+        </Grid>
+
+        <TextBlock Text="{Binding Approval.ToolName}" FontFamily="Consolas" FontSize="13" />
+        <TextBlock Text="{Binding Approval.Description}" TextWrapping="Wrap" Classes="muted" FontSize="12" />
+
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,6,0,0">
+          <Button Classes="danger" Content="拒绝" Command="{Binding Approval.DenyCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+          <Button Classes="primary" Content="批准本次调用" Command="{Binding Approval.ApproveCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
         </Grid>
       </StackPanel>
     </Border>
+
+    <!-- 浮动全屏覆盖层：统一系统设置抽屉 -->
+    <views:SettingsOverlay Grid.Row="0" Grid.RowSpan="2" DataContext="{Binding}"
+                           IsVisible="{Binding IsSettingsOpen}" />
   </Grid>
 </Window>

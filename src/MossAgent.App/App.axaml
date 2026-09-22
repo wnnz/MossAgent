@@ -2,20 +2,220 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MossAgent.App.App"
              RequestedThemeVariant="Dark">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <!-- Codex 极简暗夜深色主题 (Dark) -->
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#0A0A0C" />
+          <SolidColorBrush x:Key="HeaderBackgroundBrush" Color="#111114" />
+          <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#121216" />
+          <SolidColorBrush x:Key="CardBackgroundBrush" Color="#16161B" />
+          <SolidColorBrush x:Key="CardSubtleBackgroundBrush" Color="#1C1C23" />
+          <SolidColorBrush x:Key="InputBackgroundBrush" Color="#18181E" />
+          <SolidColorBrush x:Key="BorderDefaultBrush" Color="#272732" />
+          <SolidColorBrush x:Key="BorderSubtleBrush" Color="#1E1E26" />
+          <SolidColorBrush x:Key="BorderFocusBrush" Color="#3F3F4E" />
+
+          <!-- 文字 -->
+          <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F4F4F5" />
+          <SolidColorBrush x:Key="TextMutedBrush" Color="#8E8E98" />
+          <SolidColorBrush x:Key="TextSubtleBrush" Color="#5E5E68" />
+
+          <!-- 按钮 -->
+          <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#1F1F26" />
+          <SolidColorBrush x:Key="ButtonForegroundBrush" Color="#E4E4E7" />
+          <SolidColorBrush x:Key="ButtonBorderBrush" Color="#2E2E3A" />
+          <SolidColorBrush x:Key="ButtonHoverBrush" Color="#2B2B36" />
+          <SolidColorBrush x:Key="PrimaryButtonBackgroundBrush" Color="#F4F4F6" />
+          <SolidColorBrush x:Key="PrimaryButtonForegroundBrush" Color="#0A0A0C" />
+          <SolidColorBrush x:Key="OverlayBackgroundBrush" Color="#D90A0A0C" />
+
+          <!-- 覆盖系统高亮为中性质感，杜绝任何蓝色蓝框 -->
+          <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#3F3F4E" />
+          <SolidColorBrush x:Key="SystemControlHighlightAccentBrush" Color="#F4F4F6" />
+        </ResourceDictionary>
+
+        <!-- Codex 现代质感浅色主题 (Light) -->
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F8F9FA" />
+          <SolidColorBrush x:Key="HeaderBackgroundBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#F2F3F5" />
+          <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="CardSubtleBackgroundBrush" Color="#F5F6F8" />
+          <SolidColorBrush x:Key="InputBackgroundBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="BorderDefaultBrush" Color="#E2E4E8" />
+          <SolidColorBrush x:Key="BorderSubtleBrush" Color="#EBECEF" />
+          <SolidColorBrush x:Key="BorderFocusBrush" Color="#9CA3AF" />
+
+          <!-- 文字 -->
+          <SolidColorBrush x:Key="TextPrimaryBrush" Color="#18181B" />
+          <SolidColorBrush x:Key="TextMutedBrush" Color="#52525B" />
+          <SolidColorBrush x:Key="TextSubtleBrush" Color="#71717A" />
+
+          <!-- 按钮：扁平现代无廉价边框质感 -->
+          <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="ButtonForegroundBrush" Color="#27272A" />
+          <SolidColorBrush x:Key="ButtonBorderBrush" Color="#D4D4D8" />
+          <SolidColorBrush x:Key="ButtonHoverBrush" Color="#F4F4F5" />
+          <SolidColorBrush x:Key="PrimaryButtonBackgroundBrush" Color="#18181B" />
+          <SolidColorBrush x:Key="PrimaryButtonForegroundBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="OverlayBackgroundBrush" Color="#99000000" />
+
+          <!-- 覆盖系统高亮为中性质感，杜绝任何蓝色蓝框 -->
+          <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#9CA3AF" />
+          <SolidColorBrush x:Key="SystemControlHighlightAccentBrush" Color="#18181B" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
   <Application.Styles>
     <FluentTheme />
-    <Style Selector="Button.primary">
-      <Setter Property="Background" Value="#D9E68A" />
-      <Setter Property="Foreground" Value="#172014" />
-      <Setter Property="FontWeight" Value="SemiBold" />
+
+    <!-- 文本样式 -->
+    <Style Selector="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+    </Style>
+    <Style Selector="TextBlock.subtle">
+      <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}" />
+    </Style>
+
+    <!-- 基础按钮：精致极简，无老旧立体浮雕 -->
+    <Style Selector="Button">
+      <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="Padding" Value="12,5" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Opacity" Value="0.8" />
+    </Style>
+
+    <!-- 主按钮：深色纯白高光、浅色纯黑高光，绝无多余阴影或灰色模糊 -->
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="{DynamicResource PrimaryButtonBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryButtonForegroundBrush}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="Padding" Value="14,6" />
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Opacity" Value="0.9" />
+    </Style>
+
+    <!-- 幽灵按钮 -->
+    <Style Selector="Button.ghost">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+      <Setter Property="Padding" Value="8,5" />
+    </Style>
+    <Style Selector="Button.ghost:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+
+    <!-- 危险操作按钮 -->
+    <Style Selector="Button.danger">
+      <Setter Property="Background" Value="#2E1517" />
+      <Setter Property="BorderBrush" Value="#6B2127" />
+      <Setter Property="Foreground" Value="#F87171" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="7" />
+    </Style>
+
+    <!-- 容器卡片 -->
     <Style Selector="Border.card">
-      <Setter Property="Background" Value="#171A17" />
-      <Setter Property="BorderBrush" Value="#303630" />
+      <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="8" />
-      <Setter Property="Padding" Value="16" />
+      <Setter Property="Padding" Value="12" />
+    </Style>
+
+    <!-- 核心：彻底消除任何蓝色蓝框与原生蓝边高光！ -->
+    <Style Selector="TextBox">
+      <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="Padding" Value="9,6" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="SelectionBrush" Value="#4B5563" />
+    </Style>
+    <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+    </Style>
+    <Style Selector="TextBox:focus-within /template/ Border#PART_BorderElement">
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+    </Style>
+    <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
+    </Style>
+
+    <!-- 下拉框无蓝边 -->
+    <Style Selector="ComboBox">
+      <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Padding" Value="9,5" />
+    </Style>
+    <Style Selector="ComboBox:focus /template/ Border#Background">
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
+    </Style>
+    <Style Selector="ComboBox:pointerover /template/ Border#Background">
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
+    </Style>
+
+    <!-- 列表项微交互 -->
+    <Style Selector="ListBox">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="ListBoxItem">
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="8,6" />
+      <Setter Property="Margin" Value="0,1" />
+    </Style>
+    <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource CardSubtleBackgroundBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+    </Style>
+
+    <!-- 标签页样式 -->
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="TabItem:selected">
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
   </Application.Styles>
 </Application>
-

@@ -1,0 +1,269 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:MossAgent.App.Views"
+             x:Class="MossAgent.App.Views.InspectorPane"
+             x:CompileBindings="False">
+  <Border Background="{DynamicResource CardBackgroundBrush}"
+          BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1,0,0,0">
+    <Grid RowDefinitions="38,*">
+      <!-- 1. 顶栏：返回按钮/标题与关闭面板 (对标截图 1 右侧面板顶部) -->
+      <Border BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="12,0">
+        <Grid ColumnDefinitions="*,Auto">
+          <!-- 左侧：主页显示标题，子页面显示返回箭头 -->
+          <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <Button Content="← 返回" Classes="ghost" Padding="4,2" FontSize="11" Margin="0,0,6,0"
+                    IsVisible="{Binding !IsInspectorHome}"
+                    Command="{Binding BackToInspectorHomeCommand}" />
+            <TextBlock Text="检查器" Classes="muted" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center"
+                       IsVisible="{Binding IsInspectorHome}" />
+          </StackPanel>
+
+          <!-- 右侧：收起侧边面板按钮 (对标截图 ◫) -->
+          <Button Grid.Column="1" Content="◫" Classes="ghost" Padding="0" Width="28" Height="28"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                  FontSize="14" Command="{Binding ToggleRightPanelCommand}"
+                  ToolTip.Tip="收起右侧面板" VerticalAlignment="Center" />
+        </Grid>
+      </Border>
+
+      <!-- 2. 主体：主页模式 (1:1 对标截图 1 计划/来源 与 截图 2 快捷功能卡片列表) -->
+      <ScrollViewer Grid.Row="1" IsVisible="{Binding IsInspectorHome}" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="16" Margin="14,14">
+          <!-- 计划卡片 (对标截图 1) -->
+          <StackPanel Spacing="6" IsVisible="{Binding Workspace.Catalog.SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <TextBlock Text="计划" Classes="muted" FontWeight="SemiBold" FontSize="12" />
+            <Border Background="{DynamicResource CardSubtleBackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
+                    CornerRadius="8" Padding="12,10">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="💡" FontSize="13" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Workspace.Catalog.SelectedTask.Title}"
+                           FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+
+          <!-- 来源卡片 (对标截图 1) -->
+          <StackPanel Spacing="6" IsVisible="{Binding Workspace.Catalog.SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="来源" Classes="muted" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
+              <Button Grid.Column="1" Content="＋" Classes="ghost" Padding="4,1" FontSize="11" VerticalAlignment="Center" />
+            </Grid>
+            <Border Background="{DynamicResource CardSubtleBackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
+                    CornerRadius="8" Padding="12,8">
+              <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="🔗" FontSize="12" Classes="muted" />
+                  <TextBlock Text="{Binding Workspace.Catalog.SelectedProject.PrimaryDirectory, FallbackValue='工作区源码仓库'}"
+                             FontSize="11" Classes="muted" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="⚙" FontSize="12" Classes="muted" />
+                  <TextBlock Text="内置文件与进程工具集" FontSize="11" Classes="muted" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="⬡" FontSize="12" Classes="muted" />
+                  <TextBlock Text="Model Context Protocol 动态工具" FontSize="11" Classes="muted" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+
+          <!-- 快捷操作列表 (1:1 像素级复刻截图 2，放大舒适图标与点击热区) -->
+          <StackPanel Spacing="4" Margin="0,4,0,0">
+            <!-- 审查 -->
+            <Button Classes="ghost" HorizontalAlignment="Stretch" Padding="10,9" CornerRadius="8"
+                    Command="{Binding SelectInspectorTabCommand}" CommandParameter="diff">
+              <Grid ColumnDefinitions="28,*,Auto">
+                <TextBlock Text="📄" FontSize="15" Classes="muted" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="审查" FontSize="13.5" VerticalAlignment="Center" Margin="6,0,0,0" />
+                <Border Grid.Column="2" Background="{DynamicResource CardSubtleBackgroundBrush}" CornerRadius="4" Padding="6,2">
+                  <TextBlock Text="Ctrl+Shift+G" Classes="subtle" FontSize="10" />
+                </Border>
+              </Grid>
+            </Button>
+
+            <!-- 终端 -->
+            <Button Classes="ghost" HorizontalAlignment="Stretch" Padding="10,9" CornerRadius="8"
+                    Command="{Binding SelectInspectorTabCommand}" CommandParameter="terminal">
+              <Grid ColumnDefinitions="28,*,Auto">
+                <TextBlock Text="💻" FontSize="15" Classes="muted" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="终端" FontSize="13.5" VerticalAlignment="Center" Margin="6,0,0,0" />
+                <Border Grid.Column="2" Background="{DynamicResource CardSubtleBackgroundBrush}" CornerRadius="4" Padding="6,2">
+                  <TextBlock Text="Ctrl+~" Classes="subtle" FontSize="10" />
+                </Border>
+              </Grid>
+            </Button>
+
+            <!-- 浏览器 -->
+            <Button Classes="ghost" HorizontalAlignment="Stretch" Padding="10,9" CornerRadius="8"
+                    Command="{Binding SelectInspectorTabCommand}" CommandParameter="browser">
+              <Grid ColumnDefinitions="28,*,Auto">
+                <TextBlock Text="🌐" FontSize="15" Classes="muted" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="浏览器" FontSize="13.5" VerticalAlignment="Center" Margin="6,0,0,0" />
+                <Border Grid.Column="2" Background="{DynamicResource CardSubtleBackgroundBrush}" CornerRadius="4" Padding="6,2">
+                  <TextBlock Text="Ctrl+T" Classes="subtle" FontSize="10" />
+                </Border>
+              </Grid>
+            </Button>
+
+            <!-- 审计与产物 -->
+            <Button Classes="ghost" HorizontalAlignment="Stretch" Padding="10,9" CornerRadius="8"
+                    Command="{Binding SelectInspectorTabCommand}" CommandParameter="audit">
+              <Grid ColumnDefinitions="28,*,Auto">
+                <TextBlock Text="📁" FontSize="15" Classes="muted" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="审计与产物" FontSize="13.5" VerticalAlignment="Center" Margin="6,0,0,0" />
+                <Border Grid.Column="2" Background="{DynamicResource CardSubtleBackgroundBrush}" CornerRadius="4" Padding="6,2">
+                  <TextBlock Text="Ctrl+P" Classes="subtle" FontSize="10" />
+                </Border>
+              </Grid>
+            </Button>
+
+            <!-- 侧边聊天占位 -->
+            <Button Classes="ghost" HorizontalAlignment="Stretch" Padding="10,9" CornerRadius="8">
+              <Grid ColumnDefinitions="28,*,Auto">
+                <TextBlock Text="💬" FontSize="15" Classes="muted" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="侧边聊天" FontSize="13.5" Classes="muted" VerticalAlignment="Center" Margin="6,0,0,0" />
+                <Border Grid.Column="2" Background="{DynamicResource CardSubtleBackgroundBrush}" CornerRadius="4" Padding="6,2">
+                  <TextBlock Text="Ctrl+Alt+S" Classes="subtle" FontSize="10" />
+                </Border>
+              </Grid>
+            </Button>
+          </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- 3. 审查 (Diff) 详情全高度视图 -->
+      <Grid Grid.Row="1" RowDefinitions="Auto,150,Auto,*" Margin="12,8,12,12" IsVisible="{Binding IsInspectorDiff}">
+        <Grid ColumnDefinitions="*,Auto,Auto" Margin="2,0,2,8">
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="文件变更审查" FontWeight="SemiBold" FontSize="12" />
+            <TextBlock Text="{Binding Diff.Status}" Classes="subtle" FontSize="10" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+          <ToggleButton Grid.Column="1" Content="已暂存" IsChecked="{Binding Diff.IsStaged}"
+                        Padding="8,3" FontSize="11" CornerRadius="6" VerticalAlignment="Center" Margin="0,0,6,0" />
+          <Button Grid.Column="2" Content="↻" Classes="ghost" Padding="6,3"
+                  Command="{Binding Diff.RefreshCommand}" ToolTip.Tip="刷新变更" VerticalAlignment="Center" />
+        </Grid>
+
+        <Border Grid.Row="1" Background="{DynamicResource CardSubtleBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
+                CornerRadius="7" Padding="2">
+          <ListBox ItemsSource="{Binding Diff.Files}" SelectedItem="{Binding Diff.SelectedFile}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <Grid ColumnDefinitions="Auto,*" Margin="4,2">
+                  <Border Background="{DynamicResource CardBackgroundBrush}"
+                          BorderBrush="{DynamicResource BorderDefaultBrush}" BorderThickness="1"
+                          CornerRadius="4" Padding="4,1" Margin="0,0,8,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding StatusLabel}" FontSize="10" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextMutedBrush}" />
+                  </Border>
+                  <TextBlock Grid.Column="1" Text="{Binding Path}" FontFamily="Consolas"
+                             FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Border>
+
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="2,8,2,4">
+          <TextBlock Text="差异对比" Classes="muted" FontWeight="SemiBold" FontSize="11" />
+          <TextBlock Grid.Column="1" Text="{Binding Diff.SelectedFile.Path}" Classes="subtle"
+                     FontSize="10" FontFamily="Consolas" TextTrimming="CharacterEllipsis" MaxWidth="200" />
+        </Grid>
+
+        <Border Grid.Row="3" Background="{DynamicResource AppBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
+                CornerRadius="7" Padding="6">
+          <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <SelectableTextBlock Text="{Binding Diff.Content}"
+                                 FontFamily="Consolas, Cascadia Code, Courier New"
+                                 FontSize="12" LineHeight="18"
+                                 Foreground="{DynamicResource TextPrimaryBrush}" />
+          </ScrollViewer>
+        </Border>
+      </Grid>
+
+      <!-- 4. 终端详情视图 -->
+      <Grid Grid.Row="1" RowDefinitions="Auto,*,Auto" Margin="12,8,12,12" IsVisible="{Binding IsInspectorTerminal}">
+        <Grid ColumnDefinitions="*,Auto,Auto" Margin="2,0,2,8">
+          <TextBlock Text="终端 (PowerShell)" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
+          <Button Grid.Column="1" Content="启动" Classes="primary" Padding="10,3" FontSize="11"
+                  Command="{Binding Terminal.StartCommand}" Margin="0,0,6,0" />
+          <Button Grid.Column="2" Content="停止" Classes="danger" Padding="10,3" FontSize="11"
+                  Command="{Binding Terminal.StopCommand}" />
+        </Grid>
+
+        <Border Grid.Row="1" Background="{DynamicResource AppBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
+                CornerRadius="7" Padding="6" Margin="0,0,0,8">
+          <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <SelectableTextBlock Text="{Binding Terminal.Output}"
+                                 FontFamily="Consolas, Cascadia Code"
+                                 FontSize="12" LineHeight="18"
+                                 Foreground="{DynamicResource TextPrimaryBrush}" />
+          </ScrollViewer>
+        </Border>
+
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="6">
+          <TextBox Text="{Binding Terminal.Input}" FontFamily="Consolas"
+                   PlaceholderText="输入命令..." FontSize="12" Padding="8,5" />
+          <Button Grid.Column="1" Classes="primary" Content="执行"
+                  Command="{Binding Terminal.SendCommand}" Padding="12,5" FontSize="12" />
+        </Grid>
+      </Grid>
+
+      <!-- 5. 浏览器详情视图 -->
+      <Grid Grid.Row="1" Margin="4" IsVisible="{Binding IsInspectorBrowser}">
+        <views:EmbeddedBrowserPane DataContext="{Binding EmbeddedBrowser}" />
+      </Grid>
+
+      <!-- 6. 审计与产物详情视图 -->
+      <Grid Grid.Row="1" RowDefinitions="Auto,*,Auto,120" Margin="12,8,12,12" IsVisible="{Binding IsInspectorAudit}">
+        <Grid ColumnDefinitions="*,Auto" Margin="2,0,2,8">
+          <TextBlock Text="{Binding Audit.Status}" Classes="muted" VerticalAlignment="Center" FontSize="12" />
+          <Button Grid.Column="1" Content="↻" Classes="ghost" Padding="6,2" Command="{Binding Audit.RefreshCommand}" />
+        </Grid>
+
+        <Border Grid.Row="1" Background="{DynamicResource CardSubtleBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="7" Padding="4">
+          <ListBox ItemsSource="{Binding Audit.Executions}" SelectedItem="{Binding Audit.SelectedExecution}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <Grid ColumnDefinitions="*,Auto" Margin="4,2">
+                  <StackPanel>
+                    <TextBlock Text="{Binding ToolName}" FontFamily="Consolas" FontSize="12" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding ErrorCode}" FontSize="10" Foreground="#F87171" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding IsSuccess}" HorizontalAlignment="Right" FontSize="11" />
+                    <TextBlock Text="{Binding StartedAt, StringFormat={}{0:HH:mm:ss}}"
+                               FontSize="10" Classes="subtle" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Border>
+
+        <TextBlock Grid.Row="2" Text="生成产物" FontWeight="SemiBold" FontSize="12" Margin="2,8,2,4" Classes="muted" />
+        <Border Grid.Row="3" Background="{DynamicResource CardSubtleBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="7" Padding="4">
+          <ListBox ItemsSource="{Binding Audit.Artifacts}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Margin="4,2">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12" />
+                  <TextBlock Text="{Binding Path}" FontFamily="Consolas" FontSize="10"
+                             Classes="subtle" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Border>
+      </Grid>
+    </Grid>
+  </Border>
+</UserControl>

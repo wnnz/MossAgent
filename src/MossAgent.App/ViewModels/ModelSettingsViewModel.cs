@@ -26,6 +26,7 @@ public sealed class ModelSettingsViewModel : ObservableObject
     private bool _isEnabled = true;
     private string _advancedJson = "{}";
     private string _status = string.Empty;
+    private bool _isFormOpen;
 
     public ModelSettingsViewModel(
         IConfigurationRepository repository,
@@ -38,6 +39,9 @@ public sealed class ModelSettingsViewModel : ObservableObject
         SaveModelCommand = new AsyncRelayCommand(SaveModelAsync, HasProvider);
         DeleteModelCommand = new AsyncRelayCommand(DeleteModelAsync, HasModel);
         NewModelCommand = new RelayCommand(ResetEditor);
+        OpenCreateFormCommand = new RelayCommand(() => { ResetEditor(); IsFormOpen = true; });
+        OpenEditFormCommand = new RelayCommand(() => { if (SelectedModel is not null) IsFormOpen = true; });
+        CloseFormCommand = new RelayCommand(() => IsFormOpen = false);
         _ = LoadProvidersAsync();
     }
 
@@ -50,6 +54,18 @@ public sealed class ModelSettingsViewModel : ObservableObject
     public IAsyncRelayCommand SaveModelCommand { get; }
     public IAsyncRelayCommand DeleteModelCommand { get; }
     public IRelayCommand NewModelCommand { get; }
+    public IRelayCommand OpenCreateFormCommand { get; }
+    public IRelayCommand OpenEditFormCommand { get; }
+    public IRelayCommand CloseFormCommand { get; }
+
+    /// <summary>
+    /// 是否弹出模型配置表单弹窗。
+    /// </summary>
+    public bool IsFormOpen
+    {
+        get => _isFormOpen;
+        set => SetProperty(ref _isFormOpen, value);
+    }
 
     public AiProvider? SelectedProvider
     {
@@ -154,6 +170,7 @@ public sealed class ModelSettingsViewModel : ObservableObject
         await _repository.SaveModelAsync(
             CreateModel(id, ModelId.Trim(), DisplayName.Trim(), IsDefault),
             CancellationToken.None);
+        IsFormOpen = false;
         Status = SelectedModel is null ? "模型已添加。" : "模型设置已更新。";
         ResetEditor();
         await LoadModelsAsync();

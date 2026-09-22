@@ -1,0 +1,76 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MossAgent.App.Views.ProviderSettingsPane"
+             x:CompileBindings="False">
+  <Grid ColumnDefinitions="420,*" Margin="16">
+    <!-- 左侧编辑卡片 -->
+    <Border Classes="card" Margin="0,0,16,0">
+      <ScrollViewer>
+        <StackPanel Spacing="10">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding EditorTitle}" FontSize="17" FontWeight="SemiBold" />
+            <Button Grid.Column="1" Content="新建" Command="{Binding NewCommand}" />
+          </Grid>
+          <TextBlock Text="API Key 将按当前设置保存在本机 SQLite。" Classes="subtle" TextWrapping="Wrap" />
+
+          <TextBlock Text="供应商名称" Classes="muted" />
+          <TextBox Text="{Binding Name}" PlaceholderText="例如 OpenAI / DeepSeek" />
+
+          <TextBlock Text="协议类型" Classes="muted" />
+          <ComboBox ItemsSource="{Binding Protocols}" SelectedItem="{Binding Protocol}" HorizontalAlignment="Stretch" />
+
+          <TextBlock Text="Base URL" Classes="muted" />
+          <TextBox Text="{Binding BaseUrl}" PlaceholderText="https://api.openai.com/v1" />
+
+          <TextBlock Text="API Key" Classes="muted" />
+          <TextBox Text="{Binding ApiKey}" PasswordChar="●" />
+
+          <TextBlock Text="网络代理" Classes="muted" />
+          <ComboBox ItemsSource="{Binding Proxies}" SelectedItem="{Binding SelectedProxy}"
+                    DisplayMemberBinding="{Binding Name}" HorizontalAlignment="Stretch" />
+
+          <TextBlock Text="额外请求头 JSON" Classes="muted" />
+          <TextBox Text="{Binding HeadersJson}" AcceptsReturn="True" MinHeight="58" FontFamily="Consolas" />
+
+          <WrapPanel Margin="0,4">
+            <CheckBox Content="设为默认供应商" IsChecked="{Binding IsDefault}" Margin="0,0,16,0" />
+            <CheckBox Content="启用此供应商" IsChecked="{Binding IsEnabled}" />
+          </WrapPanel>
+
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="0,6,0,0">
+            <Button Classes="primary" Content="保存供应商" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
+            <Button Grid.Column="1" Classes="danger" Content="{Binding DeleteButtonText}" Command="{Binding DeleteCommand}" />
+          </Grid>
+
+          <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Classes="muted" Margin="0,6,0,0" />
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <!-- 右侧列表卡片 -->
+    <Border Grid.Column="1" Classes="card">
+      <Grid RowDefinitions="Auto,*">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="已配置供应商" FontSize="17" FontWeight="SemiBold" />
+          <Button Grid.Column="1" Content="刷新" Command="{Binding RefreshCommand}" />
+        </Grid>
+        <ListBox Grid.Row="1" Margin="0,12,0,0" ItemsSource="{Binding Items}"
+                 SelectedItem="{Binding SelectedItem}">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <Border BorderBrush="#26262F" BorderThickness="0,0,0,1" Padding="8,10">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding BaseUri}" Classes="subtle" FontSize="11" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding Protocol}" Classes="muted" VerticalAlignment="Center" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

@@ -1,0 +1,164 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MossAgent.App.Views.ProviderAndModelSettingsPane"
+             x:CompileBindings="False">
+  <Grid Margin="16">
+    <!-- 主界面：供应商与模型双栏列表 -->
+    <Grid RowDefinitions="Auto,*">
+      <!-- 顶栏：标题与全局操作 -->
+      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+        <StackPanel Spacing="2">
+          <TextBlock Text="AI 供应商与模型配置" FontSize="17" FontWeight="SemiBold" />
+          <TextBlock Text="集中管理各供应商连接凭据及挂载的语言模型。" Classes="muted" FontSize="12" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+          <Button Content="↻ 刷新" Classes="ghost" Command="{Binding Providers.RefreshCommand}" />
+          <Button Content="＋ 新建供应商" Classes="primary" Command="{Binding Providers.OpenCreateFormCommand}" />
+        </StackPanel>
+      </Grid>
+
+      <!-- 双栏内容区 -->
+      <Grid Grid.Row="1" ColumnDefinitions="360,*">
+        <!-- 左侧：供应商列表卡片 -->
+        <Border Classes="card" Margin="0,0,12,0">
+          <Grid RowDefinitions="Auto,*">
+            <TextBlock Text="已配置供应商" Classes="muted" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8" />
+            <ListBox Grid.Row="1" ItemsSource="{Binding Providers.Items}" SelectedItem="{Binding Providers.SelectedItem}">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Border BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="6,10">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <StackPanel Spacing="2">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" />
+                          <TextBlock Text="默认" Classes="subtle" FontSize="10" IsVisible="{Binding IsDefault}" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding BaseUri}" Classes="subtle" FontSize="11" TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
+                      <Button Grid.Column="1" Content="编辑" Classes="ghost" Padding="6,2" FontSize="11"
+                              Command="{Binding $parent[UserControl].DataContext.Providers.OpenEditFormCommand}" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Grid>
+        </Border>
+
+        <!-- 右侧：当前选中供应商下的模型列表 -->
+        <Border Grid.Column="1" Classes="card">
+          <Grid RowDefinitions="Auto,*">
+            <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,10">
+              <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <TextBlock Text="模型列表" Classes="muted" FontWeight="SemiBold" FontSize="13" />
+                <TextBlock Text="{Binding Providers.SelectedItem.Name, StringFormat='({0})'}" Classes="subtle" FontSize="12" />
+              </StackPanel>
+              <Button Grid.Column="1" Content="获取模型" Classes="ghost"
+                      Command="{Binding Models.FetchModelsCommand}" Margin="0,0,8,0" />
+              <Button Grid.Column="2" Content="＋ 添加模型" Classes="primary"
+                      Command="{Binding Models.OpenCreateFormCommand}" />
+            </Grid>
+
+            <ListBox Grid.Row="1" ItemsSource="{Binding Models.Models}" SelectedItem="{Binding Models.SelectedModel}">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Border BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="6,8">
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                      <StackPanel Spacing="2">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="13" />
+                          <TextBlock Text="{Binding ModelId, StringFormat='({0})'}" Classes="subtle" FontSize="11" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding ContextLength, StringFormat='上下文：{0} tokens'}" Classes="subtle" FontSize="11" />
+                      </StackPanel>
+                      <Button Grid.Column="1" Content="编辑" Classes="ghost" Padding="6,2" FontSize="11" Margin="0,0,4,0"
+                              Command="{Binding $parent[UserControl].DataContext.Models.OpenEditFormCommand}" />
+                      <Button Grid.Column="2" Content="删除" Classes="danger" Padding="6,2" FontSize="11"
+                              Command="{Binding $parent[UserControl].DataContext.Models.DeleteModelCommand}" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Grid>
+        </Border>
+      </Grid>
+    </Grid>
+
+    <!-- 弹窗 1：供应商编辑模态弹窗 -->
+    <Border Background="{DynamicResource OverlayBackgroundBrush}" IsVisible="{Binding Providers.IsFormOpen}" Margin="-16">
+      <Border Classes="card" Width="480" VerticalAlignment="Center" HorizontalAlignment="Center"
+              Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderDefaultBrush}"
+              BoxShadow="0 12 36 0 #55000000">
+        <ScrollViewer MaxHeight="520">
+          <StackPanel Spacing="9" Margin="4">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="{Binding Providers.EditorTitle}" FontSize="16" FontWeight="SemiBold" />
+              <Button Grid.Column="1" Content="✕" Classes="ghost" Command="{Binding Providers.CloseFormCommand}" />
+            </Grid>
+            <TextBlock Text="供应商名称" Classes="muted" FontSize="12" />
+            <TextBox Text="{Binding Providers.Name}" PlaceholderText="例如 OpenAI / DeepSeek" />
+            <TextBlock Text="协议类型" Classes="muted" FontSize="12" />
+            <ComboBox ItemsSource="{Binding Providers.Protocols}" SelectedItem="{Binding Providers.Protocol}" HorizontalAlignment="Stretch" />
+            <TextBlock Text="Base URL" Classes="muted" FontSize="12" />
+            <TextBox Text="{Binding Providers.BaseUrl}" />
+            <TextBlock Text="API Key" Classes="muted" FontSize="12" />
+            <TextBox Text="{Binding Providers.ApiKey}" PasswordChar="●" PlaceholderText="留空保留原密钥" />
+            <TextBlock Text="网络代理" Classes="muted" FontSize="12" />
+            <ComboBox ItemsSource="{Binding Providers.Proxies}" SelectedItem="{Binding Providers.SelectedProxy}"
+                      DisplayMemberBinding="{Binding Name}" HorizontalAlignment="Stretch" />
+            <WrapPanel Margin="0,4">
+              <CheckBox Content="设为默认" IsChecked="{Binding Providers.IsDefault}" Margin="0,0,16,0" />
+              <CheckBox Content="启用" IsChecked="{Binding Providers.IsEnabled}" />
+            </WrapPanel>
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,6,0,0">
+              <Button Classes="primary" Content="保存供应商" Command="{Binding Providers.SaveCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+              <Button Grid.Column="1" Classes="danger" Content="{Binding Providers.DeleteButtonText}" Command="{Binding Providers.DeleteCommand}" />
+              <Button Grid.Column="2" Content="取消" Command="{Binding Providers.CloseFormCommand}" />
+            </Grid>
+            <TextBlock Text="{Binding Providers.Status}" Classes="subtle" FontSize="11" TextWrapping="Wrap" />
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+    </Border>
+
+    <!-- 弹窗 2：模型编辑模态弹窗 -->
+    <Border Background="{DynamicResource OverlayBackgroundBrush}" IsVisible="{Binding Models.IsFormOpen}" Margin="-16">
+      <Border Classes="card" Width="480" VerticalAlignment="Center" HorizontalAlignment="Center"
+              Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderDefaultBrush}"
+              BoxShadow="0 12 36 0 #55000000">
+        <ScrollViewer MaxHeight="520">
+          <StackPanel Spacing="9" Margin="4">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="配置模型" FontSize="16" FontWeight="SemiBold" />
+              <Button Grid.Column="1" Content="✕" Classes="ghost" Command="{Binding Models.CloseFormCommand}" />
+            </Grid>
+            <TextBlock Text="模型 ID" Classes="muted" FontSize="12" />
+            <TextBox Text="{Binding Models.ModelId}" PlaceholderText="例如 gpt-5" />
+            <TextBlock Text="显示名称" Classes="muted" FontSize="12" />
+            <TextBox Text="{Binding Models.DisplayName}" />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+              <StackPanel>
+                <TextBlock Text="上下文长度" Classes="muted" FontSize="12" />
+                <NumericUpDown Value="{Binding Models.ContextLength}" Minimum="1024" Maximum="4000000" />
+              </StackPanel>
+              <StackPanel Grid.Column="1">
+                <TextBlock Text="思考强度" Classes="muted" FontSize="12" />
+                <ComboBox ItemsSource="{Binding Models.ReasoningEfforts}" SelectedItem="{Binding Models.ReasoningEffort}" HorizontalAlignment="Stretch" />
+              </StackPanel>
+            </Grid>
+            <WrapPanel Margin="0,4">
+              <CheckBox Content="默认模型" IsChecked="{Binding Models.IsDefault}" Margin="0,0,16,0" />
+              <CheckBox Content="启用" IsChecked="{Binding Models.IsEnabled}" />
+            </WrapPanel>
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,6,0,0">
+              <Button Classes="primary" Content="保存模型" Command="{Binding Models.SaveModelCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+              <Button Grid.Column="1" Content="取消" Command="{Binding Models.CloseFormCommand}" />
+            </Grid>
+            <TextBlock Text="{Binding Models.Status}" Classes="subtle" FontSize="11" TextWrapping="Wrap" />
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+    </Border>
+  </Grid>
+</UserControl>

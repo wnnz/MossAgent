@@ -2,59 +2,88 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MossAgent.App.Views.ProxySettingsPane"
              x:CompileBindings="False">
-  <Grid ColumnDefinitions="400,*" Margin="12">
-    <Border Classes="card" Margin="0,0,12,0">
-      <StackPanel Spacing="9">
-        <Grid ColumnDefinitions="*,Auto">
-          <TextBlock Text="代理配置" FontSize="18" FontWeight="SemiBold" />
-          <Button Grid.Column="1" Content="新建" Command="{Binding NewCommand}" />
-        </Grid>
-        <TextBlock Text="名称" /><TextBox Text="{Binding Name}" PlaceholderText="例如 本地 SOCKS5" />
-        <TextBlock Text="协议" /><ComboBox ItemsSource="{Binding Protocols}" SelectedItem="{Binding Protocol}" />
-        <TextBlock Text="主机或 URL 主机名" /><TextBox Text="{Binding Host}" />
-        <TextBlock Text="端口" /><NumericUpDown Value="{Binding Port}" Minimum="1" Maximum="65535" />
-        <TextBlock Text="用户名（可选）" /><TextBox Text="{Binding Username}" />
-        <TextBlock Text="密码（可选）" /><TextBox Text="{Binding Password}" PasswordChar="●" />
-        <WrapPanel>
-          <CheckBox Content="设为默认代理" IsChecked="{Binding IsDefault}" Margin="0,0,16,0" />
-          <CheckBox Content="启用" IsChecked="{Binding IsEnabled}" />
-        </WrapPanel>
-        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-          <Button Content="保存代理" Classes="primary" Command="{Binding SaveCommand}" />
-          <Button Grid.Column="1" Content="测试所选" Command="{Binding TestCommand}" />
-          <Button Grid.Column="2" Content="删除所选" Command="{Binding DeleteCommand}" />
-        </Grid>
-        <TextBlock Text="{Binding Status}" Foreground="#A8B5A8" TextWrapping="Wrap" />
-      </StackPanel>
-    </Border>
-
-    <Border Grid.Column="1" Classes="card">
+  <Grid Margin="16">
+    <!-- 主界面：代理列表卡片 -->
+    <Border Classes="card">
       <Grid RowDefinitions="Auto,*">
-        <Grid ColumnDefinitions="*,Auto">
-          <TextBlock Text="代理列表" FontSize="18" FontWeight="SemiBold" />
-          <Button Grid.Column="1" Content="刷新" Command="{Binding RefreshCommand}" />
+        <!-- 顶栏：标题与新建按钮 -->
+        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+          <StackPanel Spacing="2">
+            <TextBlock Text="网络代理配置" FontSize="17" FontWeight="SemiBold" />
+            <TextBlock Text="配置用于 AI 模型 API 及网页工具访问的 HTTP/SOCKS5 代理节点。" Classes="muted" FontSize="12" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+            <Button Content="↻ 刷新" Classes="ghost" Command="{Binding RefreshCommand}" />
+            <Button Content="＋ 新建代理" Classes="primary" Command="{Binding OpenCreateFormCommand}" />
+          </StackPanel>
         </Grid>
-        <ListBox Grid.Row="1" Margin="0,12,0,0" ItemsSource="{Binding Items}"
-                 SelectedItem="{Binding SelectedItem}">
+
+        <!-- 代理列表 -->
+        <ListBox Grid.Row="1" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
           <ListBox.ItemTemplate>
             <DataTemplate>
-              <Border BorderBrush="#303630" BorderThickness="0,0,0,1" Padding="8,12">
-                <Grid ColumnDefinitions="*,Auto">
-                  <StackPanel>
-                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                    <TextBlock Text="{Binding Protocol}" Foreground="#A8B5A8" />
-                    <TextBlock Text="{Binding Host}" Foreground="#899189" />
+              <Border BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="8,12">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Spacing="3">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" />
+                      <TextBlock Text="{Binding Protocol}" Classes="subtle" FontSize="11" />
+                      <TextBlock Text="默认" Classes="subtle" FontSize="10" IsVisible="{Binding IsDefault}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="2">
+                      <TextBlock Text="{Binding Host}" Classes="muted" FontSize="12" FontFamily="Consolas" />
+                      <TextBlock Text=":" Classes="muted" FontSize="12" FontFamily="Consolas" />
+                      <TextBlock Text="{Binding Port}" Classes="muted" FontSize="12" FontFamily="Consolas" />
+                    </StackPanel>
                   </StackPanel>
-                  <StackPanel Grid.Column="1">
-                    <TextBlock Text="{Binding Port}" HorizontalAlignment="Right" />
-                    <TextBlock Text="{Binding IsDefault}" Foreground="#899189" HorizontalAlignment="Right" />
-                  </StackPanel>
+                  <Button Grid.Column="1" Content="测试" Classes="ghost" Padding="8,3" FontSize="11" Margin="0,0,6,0"
+                          Command="{Binding $parent[UserControl].DataContext.TestCommand}" />
+                  <Button Grid.Column="2" Content="编辑" Classes="ghost" Padding="8,3" FontSize="11"
+                          Command="{Binding $parent[UserControl].DataContext.OpenEditFormCommand}" />
                 </Grid>
               </Border>
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
       </Grid>
+    </Border>
+
+    <!-- 模态弹窗：代理编辑表单 -->
+    <Border Background="{DynamicResource OverlayBackgroundBrush}" IsVisible="{Binding IsFormOpen}" Margin="-16">
+      <Border Classes="card" Width="440" VerticalAlignment="Center" HorizontalAlignment="Center"
+              Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderDefaultBrush}"
+              BoxShadow="0 12 36 0 #55000000">
+        <StackPanel Spacing="9" Margin="4">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="配置代理节点" FontSize="16" FontWeight="SemiBold" />
+            <Button Grid.Column="1" Content="✕" Classes="ghost" Command="{Binding CloseFormCommand}" />
+          </Grid>
+          <TextBlock Text="代理名称" Classes="muted" FontSize="12" />
+          <TextBox Text="{Binding Name}" PlaceholderText="例如 本地代理" />
+          <Grid ColumnDefinitions="*,100" ColumnSpacing="8">
+            <StackPanel>
+              <TextBlock Text="主机地址" Classes="muted" FontSize="12" />
+              <TextBox Text="{Binding Host}" PlaceholderText="127.0.0.1" />
+            </StackPanel>
+            <StackPanel Grid.Column="1">
+              <TextBlock Text="端口" Classes="muted" FontSize="12" />
+              <NumericUpDown Value="{Binding Port}" Minimum="1" Maximum="65535" />
+            </StackPanel>
+          </Grid>
+          <TextBlock Text="协议类型" Classes="muted" FontSize="12" />
+          <ComboBox ItemsSource="{Binding Protocols}" SelectedItem="{Binding Protocol}" HorizontalAlignment="Stretch" />
+          <WrapPanel Margin="0,4">
+            <CheckBox Content="设为默认" IsChecked="{Binding IsDefault}" Margin="0,0,16,0" />
+            <CheckBox Content="启用" IsChecked="{Binding IsEnabled}" />
+          </WrapPanel>
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,6,0,0">
+            <Button Classes="primary" Content="保存代理" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+            <Button Grid.Column="1" Classes="danger" Content="删除" Command="{Binding DeleteCommand}" />
+            <Button Grid.Column="2" Content="取消" Command="{Binding CloseFormCommand}" />
+          </Grid>
+          <TextBlock Text="{Binding Status}" Classes="subtle" FontSize="11" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
     </Border>
   </Grid>
 </UserControl>
