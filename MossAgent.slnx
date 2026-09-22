@@ -1,0 +1,24 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MossAgent.Agent/MossAgent.Agent.csproj" />
+    <Project Path="src/MossAgent.App/MossAgent.App.csproj" />
+    <Project Path="src/MossAgent.Application/MossAgent.Application.csproj" />
+    <Project Path="src/MossAgent.Browser/MossAgent.Browser.csproj" />
+    <Project Path="src/MossAgent.Domain/MossAgent.Domain.csproj" />
+    <Project Path="src/MossAgent.Infrastructure/MossAgent.Infrastructure.csproj" />
+    <Project Path="src/MossAgent.Mcp/MossAgent.Mcp.csproj" />
+    <Project Path="src/MossAgent.Platform.Windows/MossAgent.Platform.Windows.csproj" />
+    <Project Path="src/MossAgent.Providers/MossAgent.Providers.csproj" />
+    <Project Path="src/MossAgent.Tools.Abstractions/MossAgent.Tools.Abstractions.csproj" />
+    <Project Path="src/MossAgent.Tools.BuiltIn/MossAgent.Tools.BuiltIn.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MossAgent.Agent.Tests/MossAgent.Agent.Tests.csproj" />
+    <Project Path="tests/MossAgent.App.Tests/MossAgent.App.Tests.csproj" />
+    <Project Path="tests/MossAgent.Tools.Tests/MossAgent.Tools.Tests.csproj" />
+    <Project Path="tests/MossAgent.Platform.Windows.Tests/MossAgent.Platform.Windows.Tests.csproj" />
+    <Project Path="tests/MossAgent.Browser.Tests/MossAgent.Browser.Tests.csproj" />
+    <Project Path="tests/MossAgent.Infrastructure.Tests/MossAgent.Infrastructure.Tests.csproj" />
+    <Project Path="tests/MossAgent.Providers.Tests/MossAgent.Providers.Tests.csproj" />
+  </Folder>
+</Solution>

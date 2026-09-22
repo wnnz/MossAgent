@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../MossAgent.Application/MossAgent.Application.csproj" />
+    <ProjectReference Include="../MossAgent.Tools.Abstractions/MossAgent.Tools.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>MossAgent.Agent.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

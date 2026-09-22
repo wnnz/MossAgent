@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MossAgent.App.Views.EmbeddedBrowserPane"
+             x:CompileBindings="False">
+  <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="6">
+    <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="5">
+      <Button Content="←" Command="{Binding BackCommand}" ToolTip.Tip="后退" />
+      <Button Grid.Column="1" Content="→" Command="{Binding ForwardCommand}" ToolTip.Tip="前进" />
+      <TextBox Grid.Column="2" Text="{Binding Address}" PlaceholderText="https://example.com" />
+      <Button Grid.Column="3" Content="打开" Classes="primary" Command="{Binding NavigateCommand}" />
+      <Button Grid.Column="4" Content="刷新" Command="{Binding ReloadCommand}" />
+      <Button Grid.Column="5" Content="开发工具" Command="{Binding DevToolsCommand}" />
+    </Grid>
+    <TextBlock Grid.Row="1" Text="{Binding Status}" Foreground="#899189"
+               TextWrapping="Wrap" Margin="2,6" />
+    <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,5">
+      <ComboBox ItemsSource="{Binding Tabs}" SelectedItem="{Binding SelectedTab}"
+                DisplayMemberBinding="{Binding Title}" />
+      <Button Grid.Column="1" Content="+" Command="{Binding NewTabCommand}" Margin="5,0,0,0"
+              ToolTip.Tip="新建标签页" />
+      <Button Grid.Column="2" Content="×" Command="{Binding CloseTabCommand}" Margin="5,0,0,0"
+              ToolTip.Tip="关闭当前标签页" />
+    </Grid>
+    <Border Grid.Row="3" Background="#FFFFFF" BorderBrush="#303630" BorderThickness="1">
+      <Grid>
+        <ContentControl Content="{Binding Content}" />
+        <TextBlock Text="内置浏览器尚未启动"
+                   IsVisible="{Binding !HasBrowser}"
+                   Foreground="#899189"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

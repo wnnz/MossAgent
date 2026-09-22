@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="NativeWebView" />
+    <PackageReference Include="NativeWebView.Platform.Windows" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../MossAgent.Agent/MossAgent.Agent.csproj" />
+    <ProjectReference Include="../MossAgent.Application/MossAgent.Application.csproj" />
+    <ProjectReference Include="../MossAgent.Browser/MossAgent.Browser.csproj" />
+    <ProjectReference Include="../MossAgent.Infrastructure/MossAgent.Infrastructure.csproj" />
+    <ProjectReference Include="../MossAgent.Mcp/MossAgent.Mcp.csproj" />
+    <ProjectReference Include="../MossAgent.Platform.Windows/MossAgent.Platform.Windows.csproj" />
+    <ProjectReference Include="../MossAgent.Providers/MossAgent.Providers.csproj" />
+    <ProjectReference Include="../MossAgent.Tools.BuiltIn/MossAgent.Tools.BuiltIn.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>MossAgent.App.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

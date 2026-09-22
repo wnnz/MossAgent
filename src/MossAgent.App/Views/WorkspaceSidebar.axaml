@@ -1,0 +1,60 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MossAgent.App.Views.WorkspaceSidebar"
+             x:CompileBindings="False">
+  <Border Classes="card" Margin="0,0,10,0">
+    <Grid RowDefinitions="Auto,130,Auto,*,Auto">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="项目与任务" FontSize="16" FontWeight="SemiBold" />
+        <Button Grid.Column="1" Content="新任务" Command="{Binding NewTaskCommand}" />
+      </Grid>
+
+      <ListBox Grid.Row="1" Margin="0,8,0,0"
+               ItemsSource="{Binding Projects}"
+               SelectedItem="{Binding SelectedProject}">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <StackPanel Margin="4,5">
+              <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding PrimaryDirectory}" FontSize="11"
+                         Foreground="#899189" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <TextBlock Grid.Row="2" Text="任务历史" Margin="2,10,2,4"
+                 Foreground="#A8B5A8" FontWeight="SemiBold" />
+      <ListBox Grid.Row="3" ItemsSource="{Binding Tasks}"
+               SelectedItem="{Binding SelectedTask}">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <Border BorderBrush="#303630" BorderThickness="0,0,0,1" Padding="4,7">
+              <StackPanel Spacing="2">
+                <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding Status}" FontSize="11" Foreground="#899189" />
+                  <TextBlock Grid.Column="1" Text="{Binding UpdatedAt, StringFormat={}{0:MM-dd HH:mm}}"
+                             FontSize="11" Foreground="#899189" />
+                </Grid>
+                <TextBlock Text="{Binding WorktreePath}" FontSize="10" Foreground="#6F786F"
+                           TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <StackPanel Grid.Row="4" Spacing="6" Margin="0,10,0,0">
+        <Button Content="{Binding CleanupWorktreeText}" Command="{Binding CleanupWorktreeCommand}" />
+        <TextBox Text="{Binding NewProjectName}" PlaceholderText="项目名称" />
+        <TextBox Text="{Binding NewProjectDirectory}" PlaceholderText="项目目录" />
+        <TextBox Text="{Binding AuthorizedDirectoriesText}"
+                 PlaceholderText="其他授权目录；分号或换行分隔"
+                 AcceptsReturn="True" MinHeight="42" />
+        <Button Content="添加项目" Command="{Binding AddProjectCommand}" />
+        <TextBlock Text="{Binding Status}" Foreground="#899189" TextWrapping="Wrap" />
+      </StackPanel>
+    </Grid>
+  </Border>
+</UserControl>

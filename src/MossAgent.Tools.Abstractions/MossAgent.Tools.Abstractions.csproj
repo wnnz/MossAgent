@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../MossAgent.Domain/MossAgent.Domain.csproj" />
+  </ItemGroup>
+</Project>
+

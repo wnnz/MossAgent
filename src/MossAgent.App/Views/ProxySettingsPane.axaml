@@ -1,0 +1,60 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MossAgent.App.Views.ProxySettingsPane"
+             x:CompileBindings="False">
+  <Grid ColumnDefinitions="400,*" Margin="12">
+    <Border Classes="card" Margin="0,0,12,0">
+      <StackPanel Spacing="9">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="代理配置" FontSize="18" FontWeight="SemiBold" />
+          <Button Grid.Column="1" Content="新建" Command="{Binding NewCommand}" />
+        </Grid>
+        <TextBlock Text="名称" /><TextBox Text="{Binding Name}" PlaceholderText="例如 本地 SOCKS5" />
+        <TextBlock Text="协议" /><ComboBox ItemsSource="{Binding Protocols}" SelectedItem="{Binding Protocol}" />
+        <TextBlock Text="主机或 URL 主机名" /><TextBox Text="{Binding Host}" />
+        <TextBlock Text="端口" /><NumericUpDown Value="{Binding Port}" Minimum="1" Maximum="65535" />
+        <TextBlock Text="用户名（可选）" /><TextBox Text="{Binding Username}" />
+        <TextBlock Text="密码（可选）" /><TextBox Text="{Binding Password}" PasswordChar="●" />
+        <WrapPanel>
+          <CheckBox Content="设为默认代理" IsChecked="{Binding IsDefault}" Margin="0,0,16,0" />
+          <CheckBox Content="启用" IsChecked="{Binding IsEnabled}" />
+        </WrapPanel>
+        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+          <Button Content="保存代理" Classes="primary" Command="{Binding SaveCommand}" />
+          <Button Grid.Column="1" Content="测试所选" Command="{Binding TestCommand}" />
+          <Button Grid.Column="2" Content="删除所选" Command="{Binding DeleteCommand}" />
+        </Grid>
+        <TextBlock Text="{Binding Status}" Foreground="#A8B5A8" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+
+    <Border Grid.Column="1" Classes="card">
+      <Grid RowDefinitions="Auto,*">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="代理列表" FontSize="18" FontWeight="SemiBold" />
+          <Button Grid.Column="1" Content="刷新" Command="{Binding RefreshCommand}" />
+        </Grid>
+        <ListBox Grid.Row="1" Margin="0,12,0,0" ItemsSource="{Binding Items}"
+                 SelectedItem="{Binding SelectedItem}">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <Border BorderBrush="#303630" BorderThickness="0,0,0,1" Padding="8,12">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel>
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Protocol}" Foreground="#A8B5A8" />
+                    <TextBlock Text="{Binding Host}" Foreground="#899189" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding Port}" HorizontalAlignment="Right" />
+                    <TextBlock Text="{Binding IsDefault}" Foreground="#899189" HorizontalAlignment="Right" />
+                  </StackPanel>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

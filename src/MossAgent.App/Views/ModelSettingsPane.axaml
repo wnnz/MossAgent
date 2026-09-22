@@ -1,0 +1,88 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MossAgent.App.Views.ModelSettingsPane"
+             x:CompileBindings="False">
+  <Grid ColumnDefinitions="420,*" Margin="12">
+    <Border Classes="card" Margin="0,0,12,0">
+      <ScrollViewer>
+        <StackPanel Spacing="9">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="模型配置" FontSize="18" FontWeight="SemiBold" />
+            <Button Grid.Column="1" Content="新建" Command="{Binding NewModelCommand}" />
+          </Grid>
+          <TextBlock Text="供应商" />
+          <ComboBox ItemsSource="{Binding Providers}" SelectedItem="{Binding SelectedProvider}"
+                    DisplayMemberBinding="{Binding Name}" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <Button Content="获取模型" Classes="primary" Command="{Binding FetchModelsCommand}" />
+            <Button Grid.Column="1" Content="刷新供应商" Command="{Binding RefreshProvidersCommand}" />
+          </Grid>
+          <TextBlock Text="模型 ID" />
+          <TextBox Text="{Binding ModelId}" IsReadOnly="{Binding IsEditing}" PlaceholderText="例如 gpt-5" />
+          <TextBlock Text="显示名称" /><TextBox Text="{Binding DisplayName}" />
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+            <StackPanel>
+              <TextBlock Text="上下文长度" />
+              <NumericUpDown Value="{Binding ContextLength}" Minimum="1024" Maximum="4000000" />
+            </StackPanel>
+            <StackPanel Grid.Column="1">
+              <TextBlock Text="最大输出" />
+              <NumericUpDown Value="{Binding MaximumOutputTokens}" Minimum="256" Maximum="1000000" />
+            </StackPanel>
+          </Grid>
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+            <StackPanel>
+              <TextBlock Text="Temperature（可空）" />
+              <NumericUpDown Value="{Binding Temperature}" Minimum="0" Maximum="2" Increment="0.1" />
+            </StackPanel>
+            <StackPanel Grid.Column="1">
+              <TextBlock Text="Top-P（可空）" />
+              <NumericUpDown Value="{Binding TopP}" Minimum="0" Maximum="1" Increment="0.1" />
+            </StackPanel>
+          </Grid>
+          <TextBlock Text="思考强度" />
+          <ComboBox ItemsSource="{Binding ReasoningEfforts}" SelectedItem="{Binding ReasoningEffort}" />
+          <WrapPanel>
+            <CheckBox Content="支持图像" IsChecked="{Binding SupportsImages}" Margin="0,0,12,0" />
+            <CheckBox Content="支持文件" IsChecked="{Binding SupportsFiles}" Margin="0,0,12,0" />
+            <CheckBox Content="默认模型" IsChecked="{Binding IsDefault}" Margin="0,0,12,0" />
+            <CheckBox Content="启用" IsChecked="{Binding IsEnabled}" />
+          </WrapPanel>
+          <TextBlock Text="高级 JSON" />
+          <TextBox Text="{Binding AdvancedJson}" AcceptsReturn="True" MinHeight="64" FontFamily="Consolas" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <Button Content="保存模型" Classes="primary" Command="{Binding SaveModelCommand}" />
+            <Button Grid.Column="1" Content="删除所选" Command="{Binding DeleteModelCommand}" />
+          </Grid>
+          <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Foreground="#A8B5A8" />
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <Border Grid.Column="1" Classes="card">
+      <Grid RowDefinitions="Auto,*">
+        <TextBlock Text="模型列表" FontSize="18" FontWeight="SemiBold" />
+        <ListBox Grid.Row="1" Margin="0,12,0,0" ItemsSource="{Binding Models}"
+                 SelectedItem="{Binding SelectedModel}">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <Border BorderBrush="#303630" BorderThickness="0,0,0,1" Padding="8,12">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel>
+                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding ModelId}" Foreground="#899189" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding ReasoningEffort}" HorizontalAlignment="Right" />
+                    <TextBlock Text="{Binding ContextLength}" Foreground="#899189" HorizontalAlignment="Right" />
+                    <TextBlock Text="{Binding IsDefault, StringFormat=默认：{0}}" Foreground="#899189" />
+                  </StackPanel>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>
