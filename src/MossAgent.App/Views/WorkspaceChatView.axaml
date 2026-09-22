@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:views="clr-namespace:MossAgent.App.Views"
              xmlns:vm="clr-namespace:MossAgent.App.ViewModels"
+             xmlns:domain="clr-namespace:MossAgent.Domain;assembly=MossAgent.Domain"
              x:Class="MossAgent.App.Views.WorkspaceChatView"
              x:CompileBindings="False">
   <UserControl.Styles>
@@ -17,6 +18,11 @@
       <Setter Property="BorderBrush" Value="Transparent" />
     </Style>
     <Style Selector="TextBox.composer-input:focus-within /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="TextBox.composer-input:pointerover /template/ Border#PART_BorderElement">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="BorderBrush" Value="Transparent" />
@@ -73,8 +79,7 @@
                       HorizontalAlignment="Stretch">
           <ItemsControl.ItemTemplate>
             <DataTemplate>
-              <Border BorderBrush="{DynamicResource BorderSubtleBrush}"
-                      BorderThickness="0,0,0,1" Padding="4,2,4,18" Margin="0,0,0,18">
+              <Border Padding="4,2,4,12">
                 <Grid ColumnDefinitions="86,*">
                   <TextBlock Text="{Binding Role}" FontSize="11" FontWeight="SemiBold"
                              Classes="muted" Margin="0,3,14,0" />
@@ -180,35 +185,73 @@
               CornerRadius="14" Padding="14,11" BoxShadow="0 6 24 0 #16000000">
         <Grid RowDefinitions="Auto,Auto,Auto">
           <StackPanel Orientation="Horizontal" Spacing="7" Margin="2,0,0,5">
-            <TextBlock Text="{Binding Catalog.SelectedProject.Name, FallbackValue='未选择项目'}"
-                       Classes="muted" FontSize="11" />
+            <TextBlock Text="▱" Classes="subtle" FontSize="11" />
+            <TextBlock Text="{Binding RepositoryStatus.DirectoryLabel}"
+                       Classes="muted" FontSize="11" FontFamily="Consolas" />
             <TextBlock Text="·" Classes="subtle" />
+            <TextBlock Text="⑂" Classes="subtle" FontSize="11" />
             <TextBlock Text="{Binding RepositoryStatus.BranchLabel}" Classes="muted"
                        FontSize="11" FontFamily="Consolas" />
-            <TextBlock Text="·" Classes="subtle" />
-            <TextBlock Text="{Binding ExecutionLocationLabel}" Classes="muted" FontSize="11" />
           </StackPanel>
 
           <TextBox Grid.Row="1" Classes="composer-input" Text="{Binding ComposerText}"
                    PlaceholderText="让 MossAgent 构建、修复或解释代码…"
                    AcceptsReturn="True" MinHeight="58" MaxHeight="180" FontSize="13" />
 
-          <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,8,0,0">
-            <Button Classes="ghost" Padding="9,5" CornerRadius="6"
-                    Command="{Binding ToggleApprovalPolicyCommand}"
-                    ToolTip.Tip="切换工具审批策略">
+          <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,8,0,0">
+            <Button x:Name="ApprovalPolicyButton" Classes="ghost" Padding="9,5"
+                    CornerRadius="6" ToolTip.Tip="选择工具审批策略">
+              <Button.Flyout>
+                <Flyout Placement="TopEdgeAlignedLeft">
+                  <Border Background="{DynamicResource CardBackgroundBrush}"
+                          BorderBrush="{DynamicResource BorderDefaultBrush}"
+                          BorderThickness="1" CornerRadius="10" Padding="6" Width="310">
+                    <StackPanel>
+                      <TextBlock Text="工具权限" FontWeight="SemiBold" FontSize="12"
+                                 Margin="8,6,8,5" />
+                      <Button Classes="ghost" HorizontalAlignment="Stretch"
+                              HorizontalContentAlignment="Left" Padding="9,7"
+                              Command="{Binding SetApprovalPolicyCommand}"
+                              CommandParameter="{x:Static domain:ApprovalPolicy.ReadOnly}"
+                              Click="HandleApprovalPolicySelected">
+                        <StackPanel>
+                          <TextBlock Text="只读模式" FontWeight="SemiBold" FontSize="12" />
+                          <TextBlock Text="只允许读取文件和执行明确的只读操作" Classes="muted" FontSize="10.5" />
+                        </StackPanel>
+                      </Button>
+                      <Button Classes="ghost" HorizontalAlignment="Stretch"
+                              HorizontalContentAlignment="Left" Padding="9,7"
+                              Command="{Binding SetApprovalPolicyCommand}"
+                              CommandParameter="{x:Static domain:ApprovalPolicy.AskEveryTime}"
+                              Click="HandleApprovalPolicySelected">
+                        <StackPanel>
+                          <TextBlock Text="每次询问" FontWeight="SemiBold" FontSize="12" />
+                          <TextBlock Text="修改文件、运行命令或操作浏览器前询问" Classes="muted" FontSize="10.5" />
+                        </StackPanel>
+                      </Button>
+                      <Button Classes="ghost" HorizontalAlignment="Stretch"
+                              HorizontalContentAlignment="Left" Padding="9,7"
+                              Command="{Binding SetApprovalPolicyCommand}"
+                              CommandParameter="{x:Static domain:ApprovalPolicy.FullAccess}"
+                              Click="HandleApprovalPolicySelected">
+                        <StackPanel>
+                          <TextBlock Text="完全访问" FontWeight="SemiBold" FontSize="12" />
+                          <TextBlock Text="授权目录和当前浏览器会话内无需逐次询问" Classes="muted" FontSize="10.5" />
+                        </StackPanel>
+                      </Button>
+                    </StackPanel>
+                  </Border>
+                </Flyout>
+              </Button.Flyout>
               <TextBlock Text="{Binding ApprovalPolicyLabel}" FontSize="11.5"
                          Foreground="#F97316" FontWeight="SemiBold" />
             </Button>
 
-            <CheckBox Grid.Column="1" Content="Worktree" IsChecked="{Binding UseWorktree}"
-                      FontSize="11.5" VerticalAlignment="Center" Margin="10,0,0,0" />
-
-            <TextBlock Grid.Column="2" Text="Ctrl+Enter 发送" Classes="subtle"
+            <TextBlock Grid.Column="1" Text="Ctrl+Enter 发送" Classes="subtle"
                        FontSize="10" VerticalAlignment="Center" HorizontalAlignment="Right"
                        Margin="0,0,10,0" />
 
-            <Button Grid.Column="3" Classes="ghost" Padding="10,5" CornerRadius="6"
+            <Button Grid.Column="2" Classes="ghost" Padding="10,5" CornerRadius="6"
                     Margin="0,0,7,0" VerticalAlignment="Center">
               <Button.Flyout>
                 <Flyout Placement="TopEdgeAlignedRight">
@@ -222,7 +265,7 @@
               </StackPanel>
             </Button>
 
-            <Button Grid.Column="4" Classes="primary" Command="{Binding PrimaryActionCommand}"
+            <Button Grid.Column="3" Classes="primary" Command="{Binding PrimaryActionCommand}"
                     Width="34" Height="34" CornerRadius="17" Padding="0"
                     ToolTip.Tip="发送任务或停止执行">
               <Panel>

@@ -18,7 +18,6 @@ public sealed class WorkspaceViewModel : ObservableObject
     private ApprovalPolicy _approvalPolicy = ApprovalPolicy.AskEveryTime;
     private string _composerText = string.Empty;
     private string _activity = "添加或选择项目后即可创建任务。";
-    private bool _useWorktree;
     private bool _isStarting;
 
     public WorkspaceViewModel(
@@ -43,7 +42,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         ModelPicker.ModelSelected += (p, m) => { SelectedProvider = p; SelectedModel = m; };
         RefreshCommand = new AsyncRelayCommand(LoadAsync);
         PrimaryActionCommand = new RelayCommand(ExecutePrimaryAction, CanExecutePrimaryAction);
-        ToggleApprovalPolicyCommand = new RelayCommand(ToggleApprovalPolicy);
+        SetApprovalPolicyCommand = new RelayCommand<ApprovalPolicy>(SetApprovalPolicy);
         _ = LoadAsync();
     }
 
@@ -53,16 +52,13 @@ public sealed class WorkspaceViewModel : ObservableObject
     public ObservableCollection<ChatMessageViewModel> Messages => Catalog.Messages;
     public IAsyncRelayCommand RefreshCommand { get; }
     public IRelayCommand PrimaryActionCommand { get; }
-    public IRelayCommand ToggleApprovalPolicyCommand { get; }
+    public IRelayCommand<ApprovalPolicy> SetApprovalPolicyCommand { get; }
     public bool IsRunning => _isStarting || (Catalog.SelectedTask is { } task && _runs.IsRunning(task.Id));
     public bool HasMessages => Messages.Count > 0;
     public bool IsEmptySession => Messages.Count == 0;
     public string EmptySessionTitle => Catalog.SelectedProject is { } project
         ? $"你想在 {project.Name} 中构建什么？"
         : "选择一个项目开始构建";
-    public string ExecutionLocationLabel => Catalog.SelectedTask?.WorktreePath is not null || UseWorktree
-        ? "独立 Worktree"
-        : "本地工作区";
     public string ApprovalPolicyLabel => ApprovalPolicy switch
     {
         ApprovalPolicy.FullAccess => "⚠️ 完全访问",
@@ -109,20 +105,11 @@ public sealed class WorkspaceViewModel : ObservableObject
     }
 
     public string Activity { get => _activity; private set => SetProperty(ref _activity, value); }
-    public bool UseWorktree
-    {
-        get => _useWorktree;
-        set
-        {
-            if (SetProperty(ref _useWorktree, value))
-                OnPropertyChanged(nameof(ExecutionLocationLabel));
-        }
-    }
-
     public async Task LoadAsync()
     {
         await Catalog.ReloadAsync();
         await ModelPicker.ReloadAsync();
+        await RepositoryStatus.RefreshAsync(Catalog.SelectedProject, Catalog.SelectedTask);
     }
 
     private void ExecutePrimaryAction()
@@ -176,7 +163,7 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     private Task<AgentTask> PrepareTaskAsync(ProjectProfile project, AgentTask? task, string prompt) =>
         task is null
-            ? _taskFactory.CreateAsync(project, prompt, ApprovalPolicy, UseWorktree, CancellationToken.None)
+            ? _taskFactory.CreateAsync(project, prompt, ApprovalPolicy, false, CancellationToken.None)
             : _taskFactory.ResumeAsync(task, prompt, ApprovalPolicy, CancellationToken.None);
 
     private async Task PresentEventAsync(WorkspaceRunState state, AgentEvent agentEvent) =>
@@ -199,7 +186,6 @@ public sealed class WorkspaceViewModel : ObservableObject
     {
         _ = RepositoryStatus.RefreshAsync(Catalog.SelectedProject, Catalog.SelectedTask);
         OnPropertyChanged(nameof(EmptySessionTitle));
-        OnPropertyChanged(nameof(ExecutionLocationLabel));
         var task = Catalog.SelectedTask;
         if (task is null)
             Activity = "输入内容即可创建新任务。";
@@ -227,16 +213,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         if (Catalog.SelectedTask is { } task) _runs.Cancel(task.Id);
     }
 
-    private void ToggleApprovalPolicy()
-    {
-        ApprovalPolicy = ApprovalPolicy switch
-        {
-            ApprovalPolicy.AskEveryTime => ApprovalPolicy.FullAccess,
-            ApprovalPolicy.FullAccess => ApprovalPolicy.ReadOnly,
-            ApprovalPolicy.ReadOnly => ApprovalPolicy.AskEveryTime,
-            _ => ApprovalPolicy.AskEveryTime
-        };
-    }
+    private void SetApprovalPolicy(ApprovalPolicy policy) => ApprovalPolicy = policy;
 
     private void NotifyRunStateChanged()
     {

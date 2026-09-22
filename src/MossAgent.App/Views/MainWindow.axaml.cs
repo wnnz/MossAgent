@@ -9,7 +9,8 @@ public sealed partial class MainWindow : Window
 
     private void HandleTitleBarPointerPressed(object? sender, PointerPressedEventArgs args)
     {
-        if (!args.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        if (!args.GetCurrentPoint(this).Properties.IsLeftButtonPressed
+            || IsButtonSource(args.Source))
         {
             return;
         }
@@ -23,5 +24,18 @@ public sealed partial class MainWindow : Window
         }
 
         BeginMoveDrag(args);
+    }
+
+    private static bool IsButtonSource(object? source)
+    {
+        for (var control = source as Control; control is not null; control = control.Parent as Control)
+        {
+            if (control is Button)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

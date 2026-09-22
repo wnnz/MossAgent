@@ -94,13 +94,15 @@
       <Setter Property="Padding" Value="12,5" />
       <Setter Property="FontSize" Value="13" />
       <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
-    <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Style Selector="Button:pointerover">
       <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     </Style>
-    <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Style Selector="Button:pressed">
       <Setter Property="Opacity" Value="0.8" />
     </Style>
 
@@ -113,7 +115,7 @@
       <Setter Property="CornerRadius" Value="7" />
       <Setter Property="Padding" Value="14,6" />
     </Style>
-    <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Style Selector="Button.primary:pointerover">
       <Setter Property="Opacity" Value="0.9" />
     </Style>
 
@@ -124,7 +126,7 @@
       <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
       <Setter Property="Padding" Value="8,5" />
     </Style>
-    <Style Selector="Button.ghost:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Style Selector="Button.ghost:pointerover">
       <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     </Style>

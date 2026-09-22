@@ -2,6 +2,16 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MossAgent.App.Views.WorkspaceSidebar"
              x:CompileBindings="False">
+  <UserControl.Styles>
+    <Style Selector="Border.directory-row Button.set-primary">
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+    <Style Selector="Border.directory-row:pointerover Button.set-primary">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="IsHitTestVisible" Value="True" />
+    </Style>
+  </UserControl.Styles>
   <Border Background="{DynamicResource SidebarBackgroundBrush}"
           BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,1,0"
           Padding="10,10">
@@ -16,18 +26,42 @@
                     IsOpen="{Binding ProjectEditor.IsOpen, Mode=TwoWay}">
               <Border Background="{DynamicResource CardBackgroundBrush}"
                       BorderBrush="{DynamicResource BorderDefaultBrush}" BorderThickness="1"
-                      CornerRadius="10" Padding="14" Width="300">
+                      CornerRadius="12" Padding="14" Width="420">
                 <StackPanel Spacing="8">
-                  <TextBlock Text="添加本地项目" FontWeight="SemiBold" FontSize="13" />
+                  <TextBlock Text="创建项目" FontWeight="SemiBold" FontSize="18" Margin="2,0,0,4" />
                   <TextBox Text="{Binding ProjectEditor.Name}" PlaceholderText="项目名称" />
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
-                    <TextBox Text="{Binding ProjectEditor.Directory}" PlaceholderText="项目绝对路径" />
-                    <Button Grid.Column="1" Content="浏览…" Classes="ghost"
-                            Command="{Binding ProjectEditor.BrowseDirectoryCommand}" />
-                  </Grid>
-                  <TextBox Text="{Binding ProjectEditor.AuthorizedDirectories}"
-                           PlaceholderText="其他授权目录，以分号分隔"
-                           AcceptsReturn="True" MinHeight="48" />
+                  <TextBlock Text="源文件夹" Classes="muted" FontSize="11.5" Margin="2,4,0,0" />
+                  <ItemsControl ItemsSource="{Binding ProjectEditor.Directories}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Classes="directory-row"
+                                BorderBrush="{DynamicResource BorderSubtleBrush}"
+                                BorderThickness="1,0,1,1" Padding="10,8">
+                          <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+                            <TextBlock Text="▱" Classes="muted" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}"
+                                       ToolTip.Tip="{Binding Path}" TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center" />
+                            <Border Grid.Column="2" IsVisible="{Binding IsPrimary}"
+                                    BorderBrush="{DynamicResource BorderDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="7" Padding="8,3">
+                              <TextBlock Text="主要" Classes="muted" FontSize="10.5" />
+                            </Border>
+                            <Button Grid.Column="2" Classes="ghost set-primary"
+                                    IsVisible="{Binding IsSecondary}" Content="设为主要"
+                                    Padding="8,3" FontSize="10.5"
+                                    Command="{Binding SetPrimaryCommand}" />
+                            <Button Grid.Column="3" Classes="ghost" Content="×" Width="26"
+                                    Padding="0" Command="{Binding RemoveCommand}"
+                                    ToolTip.Tip="移除目录" />
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <Button Content="＋ 添加文件夹" Classes="ghost"
+                          HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                          Command="{Binding ProjectEditor.AddDirectoryCommand}" />
                   <Button Content="添加项目" Classes="primary"
                           Command="{Binding ProjectEditor.AddCommand}"
                           HorizontalAlignment="Stretch"

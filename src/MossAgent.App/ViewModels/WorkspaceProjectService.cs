@@ -10,10 +10,9 @@ public sealed class WorkspaceProjectService(
 {
     public async Task<ProjectProfile> CreateAsync(
         string name,
-        string directory,
-        string authorizedDirectories)
+        IReadOnlyList<string> directories)
     {
-        var project = WorkspaceProjectFactory.Create(name, directory, authorizedDirectories);
+        var project = WorkspaceProjectFactory.Create(name, directories);
         await workspaces.SaveProjectAsync(project, CancellationToken.None);
         return project;
     }

@@ -5,8 +5,9 @@
         x:Class="MossAgent.App.Views.MainWindow"
         x:CompileBindings="False"
         Title="MossAgent"
-        Width="1480" Height="920"
-        MinWidth="1100" MinHeight="700"
+        Width="1280" Height="800"
+        MinWidth="980" MinHeight="640"
+        WindowStartupLocation="CenterScreen"
         WindowDecorations="BorderOnly"
         Background="{DynamicResource AppBackgroundBrush}">
   <Window.KeyBindings>
@@ -23,7 +24,7 @@
     <!-- 沉浸式顶栏：隐藏原生标题栏，预留右侧165px系统控制区，杜绝重叠 -->
     <Border Grid.Row="0" Background="{DynamicResource HeaderBackgroundBrush}"
             BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1"
-            Padding="12,0,8,0">
+            Padding="12,0,8,0" PointerPressed="HandleTitleBarPointerPressed">
       <Grid ColumnDefinitions="Auto,*,Auto">
         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
           <Border Width="22" Height="22" CornerRadius="6"
@@ -35,12 +36,6 @@
           <TextBlock Text="MossAgent" FontSize="13" FontWeight="SemiBold"
                      VerticalAlignment="Center" />
         </StackPanel>
-
-        <TextBlock Grid.Column="1"
-                   Text="{Binding Workspace.Catalog.SelectedProject.Name, FallbackValue='本地工作区'}"
-                   Classes="muted" FontSize="12" TextTrimming="CharacterEllipsis"
-                   HorizontalAlignment="Stretch" TextAlignment="Center"
-                   VerticalAlignment="Center" PointerPressed="HandleTitleBarPointerPressed" />
 
         <!-- 右侧：加大舒适点击尺寸的纯图标操作按钮 -->
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -58,12 +53,15 @@
           <Border Width="1" Height="18" Background="{DynamicResource BorderSubtleBrush}"
                   Margin="3,0" />
           <Button Content="—" Classes="ghost" Width="32" Height="32" Padding="0"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   Command="{Binding MinimizeWindowCommand}"
                   CommandParameter="{Binding #RootWindow}" ToolTip.Tip="最小化" />
           <Button Content="□" Classes="ghost" Width="32" Height="32" Padding="0"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   Command="{Binding ToggleMaximizeWindowCommand}"
                   CommandParameter="{Binding #RootWindow}" ToolTip.Tip="最大化或还原" />
           <Button Content="×" Classes="ghost" Width="32" Height="32" Padding="0"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   Command="{Binding CloseWindowCommand}"
                   CommandParameter="{Binding #RootWindow}" ToolTip.Tip="关闭" />
         </StackPanel>
@@ -74,15 +72,15 @@
     <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto">
       <!-- 左栏：会话与项目侧边栏（包含左下角唯一的系统设置入口） -->
       <views:WorkspaceSidebar Grid.Column="0" DataContext="{Binding Workspace.Catalog}"
-                              Width="260" Margin="10,10,4,10" />
+                              Width="276" />
 
       <!-- 中栏：主任务对话与执行工作台 -->
       <views:WorkspaceChatView Grid.Column="1" DataContext="{Binding Workspace}"
-                               Margin="4,10,4,10" />
+                               Margin="0" />
 
       <!-- 右栏：上下文检查器面板（可按需隐藏） -->
       <views:InspectorPane Grid.Column="2" DataContext="{Binding}"
-                           Width="380" Margin="4,10,10,10"
+                           Width="380" Margin="0"
                            IsVisible="{Binding IsRightPanelOpen}" />
     </Grid>
 
