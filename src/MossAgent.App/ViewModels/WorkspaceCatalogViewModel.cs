@@ -11,24 +11,21 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     private readonly WorkspaceWorktreeCleanupService _worktreeCleanup;
     private ProjectProfile? _selectedProject;
     private AgentTask? _selectedTask;
-    private string _newProjectName = string.Empty;
-    private string _newProjectDirectory = string.Empty;
-    private string _authorizedDirectoriesText = string.Empty;
     private string _status = string.Empty;
     private bool _isLocked;
     private Guid? _cleanupConfirmationTaskId;
     private int _loadVersion;
     public WorkspaceCatalogViewModel(
         IWorkspaceRepository workspaces,
-        WorkspaceWorktreeCleanupService worktreeCleanup)
+        WorkspaceWorktreeCleanupService worktreeCleanup,
+        WorkspaceProjectService projectService)
     {
         _workspaces = workspaces;
         _worktreeCleanup = worktreeCleanup;
-        AddProjectCommand = new AsyncRelayCommand(AddProjectAsync);
+        ProjectEditor = new WorkspaceProjectEditorViewModel(projectService);
+        ProjectEditor.ProjectCreated += AddProject;
         NewTaskCommand = new RelayCommand(StartNewTask, () => !IsLocked);
         CleanupWorktreeCommand = new AsyncRelayCommand(CleanupWorktreeAsync, CanCleanupWorktree);
-        SelectProjectCommand = new RelayCommand<ProjectProfile>(p => { if (p is not null) SelectedProject = p; });
-        SelectTaskCommand = new RelayCommand<AgentTask>(t => { if (t is not null) SelectedTask = t; });
     }
     public event Action? SelectionChanged;
     public Func<Guid, IReadOnlyList<ChatMessageViewModel>?>? ActiveMessagesProvider { get; set; }
@@ -36,11 +33,9 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public ObservableCollection<ProjectProfile> Projects { get; } = [];
     public ObservableCollection<AgentTask> Tasks { get; } = [];
     public ObservableCollection<ChatMessageViewModel> Messages { get; } = [];
-    public IAsyncRelayCommand AddProjectCommand { get; }
+    public WorkspaceProjectEditorViewModel ProjectEditor { get; }
     public IRelayCommand NewTaskCommand { get; }
     public IAsyncRelayCommand CleanupWorktreeCommand { get; }
-    public IRelayCommand<ProjectProfile> SelectProjectCommand { get; }
-    public IRelayCommand<AgentTask> SelectTaskCommand { get; }
     public ProjectProfile? SelectedProject
     {
         get => _selectedProject;
@@ -66,9 +61,6 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
             SetSelectedTask(value, loadMessages: true);
         }
     }
-    public string NewProjectName { get => _newProjectName; set => SetProperty(ref _newProjectName, value); }
-    public string NewProjectDirectory { get => _newProjectDirectory; set => SetProperty(ref _newProjectDirectory, value); }
-    public string AuthorizedDirectoriesText { get => _authorizedDirectoriesText; set => SetProperty(ref _authorizedDirectoriesText, value); }
     public string Status { get => _status; private set => SetProperty(ref _status, value); }
     public string CleanupWorktreeText =>
         _cleanupConfirmationTaskId == SelectedTask?.Id ? "确认清理 Worktree" : "清理 Worktree";
@@ -123,22 +115,10 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         SetSelectedTask(null, loadMessages: false);
         Messages.Clear();
     }
-    public async Task AddProjectAsync()
+    private void AddProject(ProjectProfile project)
     {
-        try
-        {
-            var project = WorkspaceProjectFactory.Create(
-                NewProjectName, NewProjectDirectory, AuthorizedDirectoriesText);
-            await _workspaces.SaveProjectAsync(project, CancellationToken.None);
-            Projects.Add(project);
-            SelectedProject = project;
-            NewProjectName = string.Empty;
-            Status = "项目已添加。";
-        }
-        catch (Exception exception)
-        {
-            Status = exception.Message;
-        }
+        Projects.Add(project);
+        SelectedProject = project;
     }
     private async Task LoadTasksAsync(ProjectProfile? project, int version)
     {

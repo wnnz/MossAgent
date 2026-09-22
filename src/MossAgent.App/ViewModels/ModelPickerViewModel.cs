@@ -15,16 +15,14 @@ public sealed class ModelPickerViewModel : ObservableObject
     private readonly List<ModelPickerGroupViewModel> _allGroups = [];
     private string _searchQuery = string.Empty;
     private ModelPickerItemViewModel? _selectedItem;
-    private string _selectedReasoning = "关闭";
-    private bool _isNetSearchEnabled = true;
+    private string _selectedReasoning = "默认";
 
     public ModelPickerViewModel(IConfigurationRepository configurations)
     {
         _configurations = configurations;
         FilteredGroups = [];
-        ReasoningOptions = ["关闭", "最低", "低", "中", "高"];
+        ReasoningOptions = ["默认", "最低", "低", "中", "高"];
         SelectItemCommand = new RelayCommand<ModelPickerItemViewModel>(SelectItem);
-        ToggleNetSearchCommand = new RelayCommand(() => IsNetSearchEnabled = !IsNetSearchEnabled);
         RefreshCommand = new AsyncRelayCommand(ReloadAsync);
     }
 
@@ -47,11 +45,6 @@ public sealed class ModelPickerViewModel : ObservableObject
     /// 选中条目命令。
     /// </summary>
     public IRelayCommand<ModelPickerItemViewModel> SelectItemCommand { get; }
-
-    /// <summary>
-    /// 联网搜索状态切换命令。
-    /// </summary>
-    public IRelayCommand ToggleNetSearchCommand { get; }
 
     /// <summary>
     /// 刷新模型与供应商列表命令。
@@ -94,16 +87,13 @@ public sealed class ModelPickerViewModel : ObservableObject
     public string SelectedReasoning
     {
         get => _selectedReasoning;
-        set => SetProperty(ref _selectedReasoning, value);
-    }
-
-    /// <summary>
-    /// 是否开启网络工具调用。
-    /// </summary>
-    public bool IsNetSearchEnabled
-    {
-        get => _isNetSearchEnabled;
-        set => SetProperty(ref _isNetSearchEnabled, value);
+        set
+        {
+            if (SetProperty(ref _selectedReasoning, value))
+            {
+                OnPropertyChanged(nameof(EffectiveReasoningEffort));
+            }
+        }
     }
 
     /// <summary>
@@ -113,11 +103,25 @@ public sealed class ModelPickerViewModel : ObservableObject
         ? $"{SelectedItem.DisplayName} · {SelectedItem.Provider.Name}"
         : "选择模型...";
 
+    public bool HasModels => FilteredGroups.Count > 0;
+    public bool HasNoModels => !HasModels;
+
+    public string EffectiveReasoningEffort => SelectedReasoning switch
+    {
+        "最低" => "minimal",
+        "低" => "low",
+        "中" => "medium",
+        "高" => "high",
+        _ => SelectedItem?.Model.ReasoningEffort ?? "medium"
+    };
+
     /// <summary>
     /// 重新从数据库加载所有供应商与其模型。
     /// </summary>
     public async Task ReloadAsync()
     {
+        var selectedProviderId = SelectedItem?.Provider.Id;
+        var selectedModelId = SelectedItem?.Model.Id;
         _allGroups.Clear();
         var providers = await _configurations.GetProvidersAsync(CancellationToken.None);
         foreach (var provider in providers.Where(p => p.IsEnabled))
@@ -131,6 +135,7 @@ public sealed class ModelPickerViewModel : ObservableObject
         }
 
         ApplyFilter();
+        RestoreOrSelectDefault(selectedProviderId, selectedModelId);
     }
 
     /// <summary>
@@ -148,6 +153,7 @@ public sealed class ModelPickerViewModel : ObservableObject
                 if (item.IsSelected)
                 {
                     SelectedItem = item;
+                    OnPropertyChanged(nameof(EffectiveReasoningEffort));
                 }
             }
         }
@@ -184,6 +190,25 @@ public sealed class ModelPickerViewModel : ObservableObject
             {
                 FilteredGroups.Add(new ModelPickerGroupViewModel(group.Provider, matches));
             }
+        }
+
+        OnPropertyChanged(nameof(HasModels));
+        OnPropertyChanged(nameof(HasNoModels));
+    }
+
+    private void RestoreOrSelectDefault(Guid? providerId, Guid? modelId)
+    {
+        var restored = _allGroups
+            .SelectMany(static group => group.Items)
+            .FirstOrDefault(item => item.Provider.Id == providerId && item.Model.Id == modelId);
+        var group = _allGroups.FirstOrDefault(static item => item.Provider.IsDefault)
+            ?? _allGroups.FirstOrDefault();
+        var fallback = group?.Items.FirstOrDefault(static item => item.Model.IsDefault)
+            ?? group?.Items.FirstOrDefault();
+        var selected = restored ?? fallback;
+        if (selected is not null)
+        {
+            SelectItem(selected);
         }
     }
 }

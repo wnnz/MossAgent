@@ -20,13 +20,7 @@ public sealed class ModelPickerViewModelTests
         Assert.NotNull(picker);
         Assert.NotNull(picker.FilteredGroups);
         Assert.NotEmpty(picker.ReasoningOptions);
-        Assert.Equal("关闭", picker.SelectedReasoning);
-
-        // 验证思考强度与联网切换
-        picker.ToggleNetSearchCommand.Execute(null);
-        Assert.False(picker.IsNetSearchEnabled);
-        picker.ToggleNetSearchCommand.Execute(null);
-        Assert.True(picker.IsNetSearchEnabled);
+        Assert.Equal("默认", picker.SelectedReasoning);
 
         // 模拟选中
         var testProvider = new AiProvider(Guid.NewGuid(), "TestProvider", ProviderProtocol.OpenAiResponses, new Uri("https://api.openai.com/v1"), "key", null, true, true, new Dictionary<string, string>());
@@ -47,5 +41,9 @@ public sealed class ModelPickerViewModelTests
         Assert.Same(testModel, selectedModel);
         Assert.Same(item, picker.SelectedItem);
         Assert.Contains("GPT Test", picker.CurrentDisplayName);
+        Assert.Equal("medium", picker.EffectiveReasoningEffort);
+
+        picker.SelectedReasoning = "高";
+        Assert.Equal("high", picker.EffectiveReasoningEffort);
     }
 }

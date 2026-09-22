@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MossAgent.App.Views.ModelPickerFlyoutView"
              x:CompileBindings="False"
-             Width="320" MaxHeight="450">
+             Width="340" MaxHeight="460">
   <Border Background="{DynamicResource CardBackgroundBrush}"
           BorderBrush="{DynamicResource BorderDefaultBrush}" BorderThickness="1"
           CornerRadius="10" Padding="12" BoxShadow="0 8 30 0 #44000000">
@@ -23,8 +23,17 @@
                FontSize="13" Padding="8,6" />
 
       <!-- 3. 按供应商分组的模型列表 -->
-      <ScrollViewer Grid.Row="2" MaxHeight="280" Margin="0,0,0,10">
-        <ItemsControl ItemsSource="{Binding FilteredGroups}">
+      <Grid Grid.Row="2" MinHeight="90" Margin="0,0,0,10">
+        <StackPanel IsVisible="{Binding HasNoModels}"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="5">
+          <TextBlock Text="没有可用模型" HorizontalAlignment="Center"
+                     FontSize="12" FontWeight="SemiBold" />
+          <TextBlock Text="请先在设置中添加并启用供应商与模型。"
+                     Classes="muted" FontSize="11" TextWrapping="Wrap"
+                     HorizontalAlignment="Center" />
+        </StackPanel>
+        <ScrollViewer MaxHeight="280" IsVisible="{Binding HasModels}">
+          <ItemsControl ItemsSource="{Binding FilteredGroups}">
           <ItemsControl.ItemTemplate>
             <DataTemplate>
               <StackPanel Margin="0,0,0,8">
@@ -58,32 +67,18 @@
               </StackPanel>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </ScrollViewer>
+          </ItemsControl>
+        </ScrollViewer>
+      </Grid>
 
       <!-- 4. 底部工具条：联网开关与思考强度快捷选择 -->
       <Border Grid.Row="3" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,1,0,0" Padding="0,8,0,0">
-        <Grid ColumnDefinitions="Auto,Auto,*">
-          <ToggleButton Content="🌐 联网" IsChecked="{Binding IsNetSearchEnabled}"
-                        Padding="8,4" FontSize="11" CornerRadius="6"
-                        VerticalAlignment="Center" Margin="0,0,8,0" />
-
-          <Border Grid.Column="1" Width="1" Background="{DynamicResource BorderSubtleBrush}" Margin="0,2,8,2" />
-
-          <ListBox Grid.Column="2" ItemsSource="{Binding ReasoningOptions}"
-                   SelectedItem="{Binding SelectedReasoning}"
-                   VerticalAlignment="Center">
-            <ListBox.ItemsPanel>
-              <ItemsPanelTemplate>
-                <StackPanel Orientation="Horizontal" Spacing="2" />
-              </ItemsPanelTemplate>
-            </ListBox.ItemsPanel>
-            <ListBox.ItemTemplate>
-              <DataTemplate>
-                <TextBlock Text="{Binding}" FontSize="11" Padding="4,2" />
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-          </ListBox>
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+          <TextBlock Text="思考强度" Classes="muted" FontSize="11"
+                     VerticalAlignment="Center" />
+          <ComboBox Grid.Column="1" ItemsSource="{Binding ReasoningOptions}"
+                    SelectedItem="{Binding SelectedReasoning}"
+                    HorizontalAlignment="Stretch" FontSize="11" Padding="7,3" />
         </Grid>
       </Border>
     </Grid>

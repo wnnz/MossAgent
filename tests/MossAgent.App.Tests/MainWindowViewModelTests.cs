@@ -17,7 +17,7 @@ public sealed class MainWindowViewModelTests
 
         Assert.False(viewModel.IsSettingsOpen);
         Assert.True(viewModel.IsRightPanelOpen);
-        Assert.Equal(viewModel.IsDarkMode ? "🌙" : "☀️", viewModel.ThemeIcon);
+        Assert.Equal(viewModel.IsDarkMode ? "☾" : "☼", viewModel.ThemeIcon);
         Assert.NotNull(viewModel.Workspace);
         Assert.NotNull(viewModel.Providers);
         Assert.NotNull(viewModel.Models);

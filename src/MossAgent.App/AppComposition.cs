@@ -117,6 +117,7 @@ internal static class AppComposition
         services.AddSingleton<ProviderSettingsViewModel>();
         services.AddSingleton<ModelSettingsViewModel>();
         services.AddSingleton<WorkspaceTaskFactory>();
+        services.AddSingleton<WorkspaceProjectService>();
         services.AddSingleton<WorkspaceRunTracker>();
         services.AddSingleton<WorkspaceRunExecutor>();
         services.AddSingleton<WorkspaceRunController>();
@@ -130,6 +131,7 @@ internal static class AppComposition
         services.AddSingleton<McpSettingsViewModel>();
         services.AddSingleton<WorkspaceViewModel>();
         services.AddSingleton<IThemeService, ThemeService>();
+        services.AddSingleton<IFolderPickerService, AvaloniaFolderPickerService>();
         services.AddSingleton<MainWindowViewModel>();
         return services.BuildServiceProvider(validateScopes: true);
     }

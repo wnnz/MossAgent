@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Avalonia.Controls;
 using MossAgent.App.Services;
 
 namespace MossAgent.App.ViewModels;
@@ -51,6 +52,9 @@ public sealed class MainWindowViewModel : ObservableObject
         CloseSettingsCommand = new RelayCommand(() => IsSettingsOpen = false);
         ToggleRightPanelCommand = new RelayCommand(() => IsRightPanelOpen = !IsRightPanelOpen);
         ToggleThemeCommand = new RelayCommand(_themeService.ToggleTheme);
+        MinimizeWindowCommand = new RelayCommand<Window>(MinimizeWindow);
+        ToggleMaximizeWindowCommand = new RelayCommand<Window>(ToggleMaximizeWindow);
+        CloseWindowCommand = new RelayCommand<Window>(CloseWindow);
         SelectInspectorTabCommand = new RelayCommand<string>(tab => ActiveInspectorTab = tab ?? "home");
         BackToInspectorHomeCommand = new RelayCommand(() => ActiveInspectorTab = "home");
     }
@@ -118,7 +122,7 @@ public sealed class MainWindowViewModel : ObservableObject
     /// <summary>
     /// 主题切换图标（暗黑模式显示月亮，明亮模式显示太阳）。
     /// </summary>
-    public string ThemeIcon => IsDarkMode ? "🌙" : "☀️";
+    public string ThemeIcon => IsDarkMode ? "☾" : "☼";
 
     /// <summary>
     /// 是否打开全屏/模态设置抽屉。
@@ -158,6 +162,12 @@ public sealed class MainWindowViewModel : ObservableObject
     /// </summary>
     public IRelayCommand ToggleThemeCommand { get; }
 
+    public IRelayCommand<Window> MinimizeWindowCommand { get; }
+
+    public IRelayCommand<Window> ToggleMaximizeWindowCommand { get; }
+
+    public IRelayCommand<Window> CloseWindowCommand { get; }
+
     /// <summary>
     /// 当前检查器面板激活的视图类型（home, diff, terminal, browser, audit）。
     /// </summary>
@@ -192,4 +202,24 @@ public sealed class MainWindowViewModel : ObservableObject
     /// 返回检查器主页命令。
     /// </summary>
     public IRelayCommand BackToInspectorHomeCommand { get; }
+
+    private static void MinimizeWindow(Window? window)
+    {
+        if (window is not null)
+        {
+            window.WindowState = WindowState.Minimized;
+        }
+    }
+
+    private static void ToggleMaximizeWindow(Window? window)
+    {
+        if (window is not null)
+        {
+            window.WindowState = window.WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
+        }
+    }
+
+    private static void CloseWindow(Window? window) => window?.Close();
 }
