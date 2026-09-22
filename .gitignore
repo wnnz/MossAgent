@@ -1,0 +1,13 @@
+bin/
+obj/
+node_modules/
+dist/
+data/
+*.db
+*.db-shm
+*.db-wal
+.vs/
+.idea/
+*.user
+*.exe
+*.swp
