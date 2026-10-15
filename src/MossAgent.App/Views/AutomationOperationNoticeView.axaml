@@ -1,0 +1,15 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Views.AutomationOperationNoticeView" x:CompileBindings="False">
+  <StackPanel Spacing="8">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" IsVisible="{Binding Operation.IsRunning}">
+      <ui:AppText Text="{Binding Operation.Message}" Classes="type-12 subtle" TextWrapping="Wrap" VerticalAlignment="Center" />
+      <ui:AppActionButton Grid.Column="1" Label="{x:Static text:AutomationText.CancelOperation}" Classes="ghost button-sm"
+                          Command="{Binding Operation.CancelCommand}" IsVisible="{Binding Operation.CanCancel}"
+                          IconData="{StaticResource UiIconClose}" />
+    </Grid>
+    <ui:AppText Text="{Binding Notice}" IsVisible="{Binding HasNotice}" Classes="type-12 subtle" TextWrapping="Wrap" />
+  </StackPanel>
+</ui:AppUserControl>

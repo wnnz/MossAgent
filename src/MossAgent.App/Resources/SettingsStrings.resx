@@ -1,0 +1,159 @@
+<root>
+  <data name="SettingsSidebarTitle" xml:space="preserve"><value>设置</value></data>
+  <data name="ToggleProjectTasks" xml:space="preserve"><value>展开或折叠项目会话</value></data>
+  <data name="ResizeInspector" xml:space="preserve"><value>调整检查器宽度</value></data>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="CloseDialog" xml:space="preserve"><value>关闭配置</value></data>
+  <data name="RowTest" xml:space="preserve"><value>测试</value></data>
+  <data name="RowEdit" xml:space="preserve"><value>编辑</value></data>
+  <data name="RowEnable" xml:space="preserve"><value>启用</value></data>
+  <data name="RowDisable" xml:space="preserve"><value>停用</value></data>
+  <data name="RowDefault" xml:space="preserve"><value>默认</value></data>
+  <data name="RowActionName" xml:space="preserve"><value>{0} {1}</value></data>
+  <data name="ShowRightPanel" xml:space="preserve"><value>展开右侧面板</value></data>
+  <data name="HideRightPanel" xml:space="preserve"><value>收起右侧面板</value></data>
+  <data name="TaskOptions" xml:space="preserve"><value>会话选项</value></data>
+  <data name="RenameTask" xml:space="preserve"><value>重命名会话</value></data>
+  <data name="ArchiveTask" xml:space="preserve"><value>归档会话</value></data>
+  <data name="PinTask" xml:space="preserve"><value>置顶会话</value></data>
+  <data name="UnpinTask" xml:space="preserve"><value>取消置顶</value></data>
+  <data name="ProxyTestRunning" xml:space="preserve"><value>正在通过所选代理访问连通性探测地址…</value></data>
+  <data name="ProxySaveLabel" xml:space="preserve"><value>保存代理</value></data>
+  <data name="ProxySaving" xml:space="preserve"><value>正在处理…</value></data>
+  <data name="ProxyRequiredFields" xml:space="preserve"><value>请填写有效的名称、地址和端口。</value></data>
+  <data name="ProxyInvalidHost" xml:space="preserve"><value>请填写有效的代理主机名或 IP 地址。</value></data>
+  <data name="ProxyLoadFailed" xml:space="preserve"><value>读取代理配置失败，草稿已保留。请刷新后重试。</value></data>
+  <data name="ProxySaveFailed" xml:space="preserve"><value>保存代理失败，草稿已保留。请检查本地存储后重试。</value></data>
+  <data name="ProxyDeleteFailed" xml:space="preserve"><value>删除代理失败，草稿已保留。请检查本地存储后重试。</value></data>
+  <data name="ProxyTargetUnavailable" xml:space="preserve"><value>该代理已移除或不可用，草稿已保留。请刷新并重新选择代理。</value></data>
+  <data name="ProxyNotificationFailed" xml:space="preserve"><value>代理配置已读取或保存，但关联界面刷新失败。请使用刷新重试，无需重复保存。</value></data>
+  <data name="ProxyOperationCancelled" xml:space="preserve"><value>代理操作已取消，草稿已保留。</value></data>
+  <data name="ProxyOperationTimedOut" xml:space="preserve"><value>代理操作超时，已请求取消，草稿已保留。</value></data>
+  <data name="ProxyPreviousDraftSaved" xml:space="preserve"><value>原先的代理配置已保存，当前的新改动尚未保存。</value></data>
+  <data name="ProxyAdded" xml:space="preserve"><value>代理已添加。</value></data>
+  <data name="ProxyUpdated" xml:space="preserve"><value>代理设置已更新。</value></data>
+  <data name="ProxyDeleted" xml:space="preserve"><value>代理已删除。</value></data>
+  <data name="ProxyTestCancelled" xml:space="preserve"><value>代理测试已取消。</value></data>
+  <data name="ProxyTestFailed" xml:space="preserve"><value>代理测试失败。请检查地址、端口和连接设置后重试。</value></data>
+  <data name="ProxyTestResult" xml:space="preserve"><value>{0} 耗时 {1:F0} ms。</value></data>
+  <data name="SubagentModelUnavailable" xml:space="preserve"><value>该子代理的模型不可用，请重新选择模型后保存。</value></data>
+  <data name="SubagentModelLoadFailed" xml:space="preserve"><value>加载子代理模型失败，请检查本地配置后重试。</value></data>
+  <data name="SubagentCreateTitle" xml:space="preserve"><value>新建子代理</value></data>
+  <data name="SubagentEditTitle" xml:space="preserve"><value>编辑子代理</value></data>
+  <data name="SubagentSaveLabel" xml:space="preserve"><value>保存子代理</value></data>
+  <data name="SubagentSaving" xml:space="preserve"><value>正在保存…</value></data>
+  <data name="SubagentSaved" xml:space="preserve"><value>子代理设置已保存。新任务将使用最新配置。</value></data>
+  <data name="SubagentPreviousDraftSaved" xml:space="preserve"><value>原先的草稿已保存，当前的新改动尚未保存。</value></data>
+  <data name="SubagentDeleted" xml:space="preserve"><value>子代理已删除。</value></data>
+  <data name="SubagentLoadFailed" xml:space="preserve"><value>加载子代理设置失败，请检查本地配置后刷新重试。</value></data>
+  <data name="SubagentSaveFailed" xml:space="preserve"><value>保存子代理失败。草稿已保留，请检查本地配置后重试。</value></data>
+  <data name="SubagentDeleteFailed" xml:space="preserve"><value>删除子代理失败，请刷新配置后重试。</value></data>
+  <data name="SubagentOperationCancelled" xml:space="preserve"><value>操作已取消。草稿已保留，请刷新列表确认配置。</value></data>
+  <data name="SubagentOperationTimedOut" xml:space="preserve"><value>操作超时。草稿已保留，请刷新列表确认配置后重试。</value></data>
+  <data name="SubagentTargetUnavailable" xml:space="preserve"><value>该子代理已被删除。草稿已保留，请选择其他配置或新建子代理。</value></data>
+  <data name="SubagentRequiredFields" xml:space="preserve"><value>请填写名称、适用场景和提示词（名称最多 48 字，场景 500 字，提示词 16000 字）。</value></data>
+  <data name="SubagentDuplicateName" xml:space="preserve"><value>子代理名称不能重复。</value></data>
+  <data name="SubagentMaximumProfiles" xml:space="preserve"><value>最多配置 16 个子代理。</value></data>
+  <data name="SubagentInvalidModel" xml:space="preserve"><value>请选择有效模型和思考强度。</value></data>
+  <data name="ProxyDeleteInUse" xml:space="preserve"><value>该代理仍被提供商、浏览器或 MCP 配置使用，请先修改关联配置，再删除代理。</value></data>
+  <data name="ProjectCreateTitle" xml:space="preserve"><value>创建项目</value></data>
+  <data name="ProjectEditTitle" xml:space="preserve"><value>编辑项目</value></data>
+  <data name="ProjectCreateAction" xml:space="preserve"><value>添加项目</value></data>
+  <data name="ProjectSaveAction" xml:space="preserve"><value>保存项目</value></data>
+  <data name="ProjectSaving" xml:space="preserve"><value>正在保存…</value></data>
+  <data name="AgentCreateTitle" xml:space="preserve"><value>新建代理</value></data>
+  <data name="AgentEditTitle" xml:space="preserve"><value>编辑代理</value></data>
+  <data name="AgentSaveLabel" xml:space="preserve"><value>保存代理</value></data>
+  <data name="AgentSaving" xml:space="preserve"><value>正在保存…</value></data>
+  <data name="AgentSaved" xml:space="preserve"><value>代理配置已保存。新任务将使用最新配置。</value></data>
+  <data name="AgentPreviousDraftSaved" xml:space="preserve"><value>原先的草稿已保存，当前的新改动尚未保存。</value></data>
+  <data name="AgentDeleted" xml:space="preserve"><value>代理已删除。</value></data>
+  <data name="AgentLoadFailed" xml:space="preserve"><value>加载代理设置失败，请检查本地配置后刷新重试。</value></data>
+  <data name="AgentModelLoadFailed" xml:space="preserve"><value>加载代理模型失败，请检查本地配置后刷新重试。</value></data>
+  <data name="AgentModelUnavailable" xml:space="preserve"><value>该代理的模型不可用，请重新选择模型后保存。</value></data>
+  <data name="AgentSaveFailed" xml:space="preserve"><value>保存代理失败。草稿已保留，请检查本地配置后重试。</value></data>
+  <data name="AgentDeleteFailed" xml:space="preserve"><value>删除代理失败，请刷新配置后重试。</value></data>
+  <data name="AgentWorkspaceReloadFailed" xml:space="preserve"><value>配置已写入，但工作区列表刷新失败。请刷新重试，勿重复新建。</value></data>
+  <data name="AgentOperationCancelled" xml:space="preserve"><value>操作已取消。草稿已保留，请刷新列表确认配置。</value></data>
+  <data name="AgentOperationTimedOut" xml:space="preserve"><value>操作超时。草稿已保留，请刷新列表确认配置后重试。</value></data>
+  <data name="AgentTargetUnavailable" xml:space="preserve"><value>该代理已被删除。草稿已保留，请选择其他配置或新建代理。</value></data>
+  <data name="AgentRequiredFields" xml:space="preserve"><value>请填写名称和提示词（名称最多 48 字，提示词最多 16000 字）。</value></data>
+  <data name="AgentDuplicateName" xml:space="preserve"><value>代理名称不能重复。</value></data>
+  <data name="AgentMaximumProfiles" xml:space="preserve"><value>最多配置 16 个代理。</value></data>
+  <data name="AgentInvalidModel" xml:space="preserve"><value>请选择有效模型和思考强度。</value></data>
+  <data name="ComposerDefaultAgent" xml:space="preserve"><value>默认代理</value></data>
+  <data name="ProjectCreated" xml:space="preserve"><value>项目已添加。</value></data>
+  <data name="ProjectSaved" xml:space="preserve"><value>项目已保存。</value></data>
+  <data name="ProjectMutationLocked" xml:space="preserve"><value>任务运行时不能修改项目。</value></data>
+  <data name="ProjectRequiredFields" xml:space="preserve"><value>请填写项目名称并至少添加一个目录。</value></data>
+  <data name="ProjectInvalidDirectories" xml:space="preserve"><value>一个或多个授权目录不存在或路径无效，请检查后重试。</value></data>
+  <data name="ProjectDuplicateDirectory" xml:space="preserve"><value>该目录已经添加。</value></data>
+  <data name="ProjectSaveFailed" xml:space="preserve"><value>保存项目失败。草稿已保留，请检查本地存储后重试。</value></data>
+  <data name="ProjectSaveCancelled" xml:space="preserve"><value>保存已取消。草稿已保留。</value></data>
+  <data name="ProjectSaveTimedOut" xml:space="preserve"><value>保存项目超时。草稿已保留，请稍后重试。</value></data>
+  <data name="ProjectDirectoryPickFailed" xml:space="preserve"><value>无法选择目录，请重试。</value></data>
+  <data name="ProjectPreviousDraftSaved" xml:space="preserve"><value>原先的草稿已保存，当前的新改动尚未保存。</value></data>
+  <data name="TaskRenameFailed" xml:space="preserve"><value>重命名失败。草稿已保留，请检查本地存储后重试。</value></data>
+  <data name="TaskRenameConflict" xml:space="preserve"><value>任务已更改、正在运行、已归档或不可用。草稿已保留，请刷新任务列表后重新打开并重试。</value></data>
+  <data name="TaskArchiveFailed" xml:space="preserve"><value>归档失败。会话已保留，请稍后重试。</value></data>
+  <data name="TaskRestoreFailed" xml:space="preserve"><value>恢复会话失败，请稍后重试。</value></data>
+  <data name="TaskPinFailed" xml:space="preserve"><value>置顶状态保存失败，请重试。</value></data>
+  <data name="TaskRenameSucceeded" xml:space="preserve"><value>任务已重命名。</value></data>
+  <data name="TaskArchiveSucceeded" xml:space="preserve"><value>任务已归档。</value></data>
+  <data name="TaskRestoreSucceeded" xml:space="preserve"><value>任务已恢复。</value></data>
+  <data name="TaskPinSucceeded" xml:space="preserve"><value>会话已置顶。</value></data>
+  <data name="TaskUnpinSucceeded" xml:space="preserve"><value>会话已取消置顶。</value></data>
+  <data name="TaskPinUnavailable" xml:space="preserve"><value>无法更新置顶状态：会话不存在或已归档。</value></data>
+  <data name="TaskMutationTimedOut" xml:space="preserve"><value>操作超时。请重新打开会话列表确认状态后重试。</value></data>
+  <data name="TaskPreviousDraftSaved" xml:space="preserve"><value>原先的标题已保存，当前的新改动尚未保存。</value></data>
+  <data name="TaskArchiveCount" xml:space="preserve"><value>已归档 ({0})</value></data>
+  <data name="TaskArchiveHide" xml:space="preserve"><value>隐藏已归档 ({0})</value></data>
+  <data name="NumericIncrease" xml:space="preserve"><value>增大数值</value></data>
+  <data name="NumericDecrease" xml:space="preserve"><value>减小数值</value></data>
+  <data name="UiFontDefault" xml:space="preserve"><value>系统默认</value></data>
+  <data name="AppearanceMode" xml:space="preserve"><value>模式</value></data>
+  <data name="AppearanceVisualStyle" xml:space="preserve"><value>视觉风格</value></data>
+  <data name="AppearanceAdvanced" xml:space="preserve"><value>高级</value></data>
+  <data name="AppearanceTheme" xml:space="preserve"><value>主题</value></data>
+  <data name="AppearanceFont" xml:space="preserve"><value>字体</value></data>
+  <data name="AppearanceBackgroundColorName" xml:space="preserve"><value>主题背景色</value></data>
+  <data name="AppearanceForegroundColorName" xml:space="preserve"><value>主题前景色</value></data>
+  <data name="AppearanceAccentColorName" xml:space="preserve"><value>主题强调色</value></data>
+  <data name="AppearanceUiFontName" xml:space="preserve"><value>主题界面字体</value></data>
+  <data name="UiFontSystemCompact" xml:space="preserve"><value>系统</value></data>
+  <data name="AppearanceThemePresetName" xml:space="preserve"><value>主题配色</value></data>
+  <data name="AppearanceDefaultTheme" xml:space="preserve"><value>默认</value></data>
+  <data name="AppearanceCustomTheme" xml:space="preserve"><value>自定义</value></data>
+  <data name="AppearanceThemeApplied" xml:space="preserve"><value>主题配色已应用。</value></data>
+  <data name="AppearanceApplyColors" xml:space="preserve"><value>应用颜色</value></data>
+  <data name="AppearanceResetColors" xml:space="preserve"><value>重置颜色</value></data>
+  <data name="AgentSettingsTitle" xml:space="preserve"><value>自定义代理</value></data>
+  <data name="AgentSettingsDescription" xml:space="preserve"><value>为不同工作方式配置独立的提示词、模型和思考强度。</value></data>
+  <data name="AgentSettingsEmpty" xml:space="preserve"><value>还没有自定义代理</value></data>
+  <data name="AgentSettingsEmptyHint" xml:space="preserve"><value>点击“新建代理”配置提示词、模型和思考强度。</value></data>
+  <data name="AgentSettingsClose" xml:space="preserve"><value>关闭代理配置</value></data>
+  <data name="AgentSettingsNameHint" xml:space="preserve"><value>例如：代码审查代理</value></data>
+  <data name="AgentSettingsEnabled" xml:space="preserve"><value>启用此代理</value></data>
+  <data name="SubagentSettingsTitle" xml:space="preserve"><value>子代理</value></data>
+  <data name="SubagentSettingsDescription" xml:space="preserve"><value>配置独立执行的模型、触发条件与上下文共享方式。</value></data>
+  <data name="SubagentSettingsEmpty" xml:space="preserve"><value>还没有子代理</value></data>
+  <data name="SubagentSettingsEmptyHint" xml:space="preserve"><value>点击“新建子代理”配置独立执行的代理。</value></data>
+  <data name="SubagentSettingsClose" xml:space="preserve"><value>关闭子代理配置</value></data>
+  <data name="SubagentSettingsNameHint" xml:space="preserve"><value>例如：代码审查</value></data>
+  <data name="SubagentSettingsEnabled" xml:space="preserve"><value>启用此子代理</value></data>
+  <data name="SubagentSettingsSafetyHint" xml:space="preserve"><value>主模型按适用场景选择是否委派；子代理工具调用沿用主任务的授权、审批、超时和审计策略。</value></data>
+  <data name="SubagentSettingsTrigger" xml:space="preserve"><value>适用场景 / 触发条件</value></data>
+  <data name="SubagentSettingsTriggerHint" xml:space="preserve"><value>例如：需要独立审查改动并查找潜在缺陷时</value></data>
+  <data name="SubagentSettingsShareContext" xml:space="preserve"><value>共享当前对话上下文</value></data>
+  <data name="AgentSettingsName" xml:space="preserve"><value>名称</value></data>
+  <data name="AgentSettingsSystemPrompt" xml:space="preserve"><value>系统提示词</value></data>
+  <data name="AgentSettingsModel" xml:space="preserve"><value>模型</value></data>
+  <data name="AgentSettingsNoModels" xml:space="preserve"><value>请先在“AI 提供商”中添加可用模型。</value></data>
+  <data name="AgentSettingsReasoning" xml:space="preserve"><value>思考强度</value></data>
+  <data name="AgentSettingsRefresh" xml:space="preserve"><value>刷新</value></data>
+  <data name="AgentSettingsDelete" xml:space="preserve"><value>删除</value></data>
+  <data name="AgentSettingsCancel" xml:space="preserve"><value>取消</value></data>
+</root>

@@ -1,4 +1,6 @@
 $ErrorActionPreference = 'Stop'
+[Console]::InputEncoding = [Text.UTF8Encoding]::new($false)
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 
 while (($line = [Console]::In.ReadLine()) -ne $null) {
     if ([string]::IsNullOrWhiteSpace($line)) {
@@ -60,4 +62,3 @@ while (($line = [Console]::In.ReadLine()) -ne $null) {
     [Console]::Out.WriteLine($response)
     [Console]::Out.Flush()
 }
-

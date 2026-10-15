@@ -1,0 +1,100 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:MossAgent.App.Controls">
+  <Style Selector="Grid.automation-page-content">
+    <Setter Property="Margin" Value="28,24" />
+    <Setter Property="MaxWidth" Value="1080" />
+  </Style>
+  <Style Selector="StackPanel.automation-list-state">
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+  <Style Selector="ListBox.app-list-box.automation-list">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+  <Style Selector="ListBox.app-list-box.automation-list /template/ ScrollViewer">
+    <Setter Property="Padding" Value="0,0,12,0" />
+  </Style>
+  <Style Selector="ListBox.app-list-box.automation-list ListBoxItem">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+  </Style>
+  <Style Selector="ListBox.app-list-box.automation-list ListBoxItem /template/ ContentPresenter#PART_ContentPresenter, ListBox.app-list-box.automation-list ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter, ListBox.app-list-box.automation-list ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter, ListBox.app-list-box.automation-list ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="ui|AppCard.automation-card">
+    <Setter Property="Padding" Value="16" />
+    <Setter Property="Margin" Value="4,6" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="BoxShadow" Value="{StaticResource SharedSurfaceShadow}" />
+  </Style>
+  <Style Selector="ListBox.app-list-box.automation-list ListBoxItem:selected ui|AppCard.automation-card, ListBox.app-list-box.automation-list ListBoxItem:pointerover ui|AppCard.automation-card">
+    <Setter Property="Background" Value="{DynamicResource CardSubtleBackgroundBrush}" />
+  </Style>
+  <Style Selector="ui|AppBorder.automation-history">
+    <Setter Property="Padding" Value="16,0,0,0" />
+    <Setter Property="BorderThickness" Value="1,0,0,0" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+  </Style>
+  <Style Selector="ui|AppResponsiveColumns:compact > ui|AppBorder.automation-history">
+    <Setter Property="Padding" Value="0,12,0,0" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+  </Style>
+  <Style Selector="ui|AppBorder.automation-run-row">
+    <Setter Property="Padding" Value="0,12" />
+  </Style>
+  <Style Selector="ScrollViewer.app-scroll-viewer.automation-history-scroll">
+    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+    <Setter Property="Padding" Value="0,0,12,0" />
+  </Style>
+  <Style Selector="ui|AppIconLabel.automation-run-status">
+    <Setter Property="IconData" Value="{StaticResource UiIconClock}" />
+    <Setter Property="Spacing" Value="6" />
+  </Style>
+  <Style Selector="ui|AppIconLabel.automation-run-status ui|AppIcon">
+    <Setter Property="Size" Value="14" />
+    <Setter Property="Stroke" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <Style Selector="ui|AppIconLabel.automation-run-status ui|AppText">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="ui|AppIconLabel.automation-run-status.completed">
+    <Setter Property="IconData" Value="{StaticResource UiIconCheck}" />
+  </Style>
+  <Style Selector="ui|AppIconLabel.automation-run-status.failure, ui|AppIconLabel.automation-run-status.attention">
+    <Setter Property="IconData" Value="{StaticResource UiIconWarning}" />
+  </Style>
+  <Style Selector="ui|AppIconLabel.automation-run-status.failure ui|AppIcon">
+    <Setter Property="Stroke" Value="{DynamicResource StatusErrorBrush}" />
+  </Style>
+  <Style Selector="ui|AppIconLabel.automation-run-status.attention ui|AppIcon">
+    <Setter Property="Stroke" Value="{DynamicResource StatusWarningBrush}" />
+  </Style>
+  <Style Selector="ui|AppSettingsDialog.automation-dialog /template/ ui|AppCard.settings-dialog-surface">
+    <Setter Property="Width" Value="540" />
+  </Style>
+  <Style Selector="TextBox.app-input.automation-prompt">
+    <Setter Property="MinHeight" Value="96" />
+    <Setter Property="MaxHeight" Value="160" />
+    <Setter Property="VerticalContentAlignment" Value="Top" />
+  </Style>
+  <Style Selector="ui|AppBorder.automation-schedule-preview">
+    <Setter Property="Padding" Value="12" /><Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Background" Value="{DynamicResource CardSubtleBackgroundBrush}" />
+  </Style>
+  <Style Selector="ui|AppIconLabel.automation-metadata ui|AppIcon">
+    <Setter Property="Size" Value="14" />
+    <Setter Property="Stroke" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <Style Selector="ui|AppIconLabel.automation-metadata ui|AppText">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <StyleInclude Source="avares://MossAgent.App/Styles/EmptyStateVariants.axaml" />
+</Styles>

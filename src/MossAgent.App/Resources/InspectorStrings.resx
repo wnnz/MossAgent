@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Inspector" xml:space="preserve"><value>检查器</value></data>
+  <data name="Sources" xml:space="preserve"><value>来源</value></data>
+  <data name="Diff" xml:space="preserve"><value>文件变更</value></data>
+  <data name="DiffReviewTitle" xml:space="preserve"><value>文件变更审查</value></data>
+  <data name="DiffStaged" xml:space="preserve"><value>已暂存</value></data>
+  <data name="DiffRefresh" xml:space="preserve"><value>刷新变更</value></data>
+  <data name="DiffCompare" xml:space="preserve"><value>差异对比</value></data>
+  <data name="Terminal" xml:space="preserve"><value>终端</value></data>
+  <data name="Browser" xml:space="preserve"><value>浏览器</value></data>
+  <data name="Audit" xml:space="preserve"><value>执行记录</value></data>
+  <data name="Back" xml:space="preserve"><value>返回来源</value></data>
+  <data name="SelectTask" xml:space="preserve"><value>先选择一个对话</value></data>
+  <data name="SelectTaskHint" xml:space="preserve"><value>右侧栏显示当前对话的来源、文件变更、终端、浏览器和工具执行记录。</value></data>
+  <data name="NoChanges" xml:space="preserve"><value>暂无文件变更</value></data>
+  <data name="SelectFile" xml:space="preserve"><value>选择文件查看差异</value></data>
+  <data name="NoAudit" xml:space="preserve"><value>暂无执行记录</value></data>
+  <data name="NoArtifacts" xml:space="preserve"><value>暂无生成产物</value></data>
+  <data name="TerminalIdle" xml:space="preserve"><value>终端尚未启动</value></data>
+  <data name="NoBrowser" xml:space="preserve"><value>当前对话没有内置浏览器</value></data>
+  <data name="NoBrowserHint" xml:space="preserve"><value>运行浏览器工具后会显示任务专属浏览器。外部浏览器不会嵌入此面板。</value></data>
+  <data name="Loading" xml:space="preserve"><value>正在读取…</value></data>
+  <data name="RefreshDiff" xml:space="preserve"><value>点击刷新读取当前对话工作目录中的 Git 变更。</value></data>
+  <data name="DiffFailed" xml:space="preserve"><value>无法读取 Git 变更。请确认项目是 Git 仓库，并检查工具权限后重试。</value></data>
+  <data name="DiffFileFailed" xml:space="preserve"><value>无法读取此文件的差异，请检查权限并刷新重试。</value></data>
+  <data name="NoUnstaged" xml:space="preserve"><value>没有未暂存变更。</value></data>
+  <data name="NoStaged" xml:space="preserve"><value>没有已暂存变更。</value></data>
+  <data name="DiffCount" xml:space="preserve"><value>共 {0} 个变更文件，当前显示 {1} 个。</value></data>
+  <data name="NoDiffContent" xml:space="preserve"><value>这个文件没有可显示的文本差异。</value></data>
+  <data name="NoAuditHint" xml:space="preserve"><value>当前对话还没有工具调用。运行工具后刷新查看授权、结果和生成产物。</value></data>
+  <data name="AuditCount" xml:space="preserve"><value>最近 {0} 条工具执行记录</value></data>
+  <data name="AuditFailed" xml:space="preserve"><value>执行记录读取失败，请刷新重试。</value></data>
+  <data name="AuditCancelled" xml:space="preserve"><value>已取消</value></data>
+  <data name="AuditDenied" xml:space="preserve"><value>已拒绝</value></data>
+  <data name="AuditCancelledHint" xml:space="preserve"><value>执行已取消；已经产生的操作不会自动撤回。</value></data>
+  <data name="AuditDeniedHint" xml:space="preserve"><value>未获得执行许可，请检查当前对话的工具权限。</value></data>
+  <data name="AuditPathHint" xml:space="preserve"><value>目标不在授权范围内，请检查项目的授权目录。</value></data>
+  <data name="AuditTimeoutHint" xml:space="preserve"><value>执行超时，请检查任务是否仍在运行后再重试。</value></data>
+  <data name="AuditArgumentsHint" xml:space="preserve"><value>工具参数不符合要求，请检查参数后重试。</value></data>
+  <data name="AuditSubagentReasoningHint" xml:space="preserve"><value>子代理所选模型不支持已配置的思考强度。请在子代理设置中重新选择支持的档位后重试。</value></data>
+  <data name="AuditFailureHint" xml:space="preserve"><value>执行未完成，请检查工具权限、配置或任务状态后重试。</value></data>
+  <data name="AuditMetadata" xml:space="preserve"><value>{0:yyyy/MM/dd HH:mm:ss} · {1}</value></data>
+  <data name="AuditDuration" xml:space="preserve"><value>耗时 {0:0} 毫秒</value></data>
+  <data name="AuditNotFinished" xml:space="preserve"><value>耗时未知或尚未结束</value></data>
+  <data name="ArtifactsLimited" xml:space="preserve"><value>产物较多，仅显示前 50 项。</value></data>
+  <data name="ArtifactsCount" xml:space="preserve"><value>共 {0} 项生成产物</value></data>
+  <data name="ArtifactsHint" xml:space="preserve"><value>选择一条工具执行记录，查看它生成的文件。</value></data>
+  <data name="ArtifactsFailed" xml:space="preserve"><value>产物读取失败，请重新选择或刷新重试。</value></data>
+  <data name="Succeeded" xml:space="preserve"><value>成功</value></data>
+  <data name="Failed" xml:space="preserve"><value>失败</value></data>
+  <data name="Pending" xml:space="preserve"><value>进行中</value></data>
+  <data name="TerminalHint" xml:space="preserve"><value>启动后可执行命令。启动、写入和停止均遵循当前对话的工具权限。</value></data>
+  <data name="TerminalStarted" xml:space="preserve"><value>终端已启动</value></data>
+  <data name="TerminalStopped" xml:space="preserve"><value>终端已停止</value></data>
+  <data name="TerminalSessionIdle" xml:space="preserve"><value>尚未启动终端</value></data>
+  <data name="TerminalNoOutput" xml:space="preserve"><value>暂时没有终端输出</value></data>
+  <data name="TerminalSessionStarting" xml:space="preserve"><value>正在创建终端进程…</value></data>
+  <data name="TerminalSessionRunning" xml:space="preserve"><value>终端运行中</value></data>
+  <data name="TerminalSessionStopping" xml:space="preserve"><value>正在清理终端资源，完成后才能重新启动…</value></data>
+  <data name="TerminalSessionExited" xml:space="preserve"><value>终端已退出 · 退出码 {0}</value></data>
+  <data name="TerminalSessionFailed" xml:space="preserve"><value>终端会话失败，资源已清理。可以重新启动。</value></data>
+  <data name="TerminalSessionCleanupFailed" xml:space="preserve"><value>终端资源清理失败，不能重新启动。请先确认进程状态，再重启应用。</value></data>
+  <data name="TerminalStateUnavailable" xml:space="preserve"><value>无法确认终端状态，操作已暂时禁用。请重新选择此对话。</value></data>
+  <data name="TerminalSent" xml:space="preserve"><value>输入已发送</value></data>
+  <data name="TerminalFailed" xml:space="preserve"><value>终端操作未完成，请检查当前对话的工具权限后重试。</value></data>
+  <data name="TerminalTitle" xml:space="preserve"><value>终端 (PowerShell)</value></data>
+  <data name="TerminalStart" xml:space="preserve"><value>启动</value></data>
+  <data name="TerminalStop" xml:space="preserve"><value>停止</value></data>
+  <data name="TerminalCancel" xml:space="preserve"><value>取消请求</value></data>
+  <data name="TerminalCancellingButton" xml:space="preserve"><value>取消中…</value></data>
+  <data name="TerminalSend" xml:space="preserve"><value>执行</value></data>
+  <data name="TerminalInputHint" xml:space="preserve"><value>输入命令…</value></data>
+  <data name="TerminalTruncated" xml:space="preserve"><value>仅显示最新的终端输出，较早的内容已省略。</value></data>
+  <data name="TerminalRenderingFailed" xml:space="preserve"><value>终端显示已暂停。请停止当前终端后重新启动；不会自动执行命令。</value></data>
+  <data name="TerminalResizeDenied" xml:space="preserve"><value>尺寸同步未获许可。可继续滚动查看，或重试同步。</value></data>
+  <data name="TerminalResizeFailed" xml:space="preserve"><value>尺寸同步失败。可继续滚动查看，或重试同步。</value></data>
+  <data name="TerminalResizeCancelled" xml:space="preserve"><value>尺寸同步已取消；已开始的调整可能已生效。</value></data>
+  <data name="TerminalResizeCancelling" xml:space="preserve"><value>正在取消尺寸同步，等待已开始的操作返回…</value></data>
+  <data name="TerminalResizeRetry" xml:space="preserve"><value>重试</value></data>
+  <data name="TerminalResizeCancel" xml:space="preserve"><value>取消尺寸同步</value></data>
+  <data name="TerminalKeysCancel" xml:space="preserve"><value>取消待发送输入</value></data>
+  <data name="TerminalKeysResume" xml:space="preserve"><value>继续输入</value></data>
+  <data name="TerminalKeysDenied" xml:space="preserve"><value>输入未获许可，未发送的输入已丢弃。确认后可重新输入。</value></data>
+  <data name="TerminalKeysFailed" xml:space="preserve"><value>输入发送失败，未发送的输入已丢弃；已发送的输入不会撤销。</value></data>
+  <data name="TerminalKeysCancelled" xml:space="preserve"><value>输入发送已取消，等待已开始的操作返回；未发送的输入已丢弃。</value></data>
+  <data name="TerminalKeysOverflow" xml:space="preserve"><value>输入队列已满，未发送的输入已丢弃；等待操作返回后可重新输入。</value></data>
+  <data name="TerminalKeysContextChanged" xml:space="preserve"><value>终端会话或授权已变化，未发送的输入已丢弃。请确认当前会话后重新输入。</value></data>
+  <data name="TerminalKeysWaitingPrevious" xml:space="preserve"><value>等待先前输入操作返回；未发送的旧输入已丢弃，暂时不能输入。</value></data>
+  <data name="TerminalStarting" xml:space="preserve"><value>正在启动终端，等待权限确认或进程就绪…</value></data>
+  <data name="TerminalStopping" xml:space="preserve"><value>正在停止终端，等待权限确认或资源清理…</value></data>
+  <data name="TerminalSending" xml:space="preserve"><value>正在发送输入，等待权限确认或写入完成…</value></data>
+  <data name="TerminalCancelling" xml:space="preserve"><value>正在取消请求并等待清理；已开始的操作可能已经生效。</value></data>
+  <data name="TerminalCancelled" xml:space="preserve"><value>请求已取消。已开始的操作不会自动撤回。</value></data>
+  <data name="TerminalTimedOut" xml:space="preserve"><value>终端请求超时，清理已返回，请检查终端状态后重试。</value></data>
+  <data name="TerminalPermissionDenied" xml:space="preserve"><value>请求未获许可，请检查当前对话的工具权限；输入已保留。</value></data>
+  <data name="TerminalPathDenied" xml:space="preserve"><value>终端工作目录不在授权范围内，请检查项目授权目录。</value></data>
+  <data name="TerminalCancellationReturned" xml:space="preserve"><value>取消请求已结束；操作可能已生效，请确认终端状态。</value></data>
+  <data name="TerminalContextChanged" xml:space="preserve"><value>先前上下文的终端操作已返回，可以重新确认终端状态。</value></data>
+  <data name="PreviewFailed" xml:space="preserve"><value>无法预览此文件。请检查权限、文件是否仍存在或是否超过预览限制。</value></data>
+  <data name="PreviewCancelled" xml:space="preserve"><value>预览已取消或超时，可以刷新重试。</value></data>
+  <data name="PreviewTabLimit" xml:space="preserve"><value>最多打开 8 个文件，请先关闭一个标签页。</value></data>
+  <data name="PreviewSize" xml:space="preserve"><value>{0:0.#} KiB · 只读预览</value></data>
+  <data name="PreviewTruncated" xml:space="preserve"><value>预览达到显示上限，后续内容已省略。</value></data>
+  <data name="PreviewRefresh" xml:space="preserve"><value>刷新文件预览</value></data>
+  <data name="PreviewMoreActions" xml:space="preserve"><value>更多文件操作</value></data>
+  <data name="PreviewClose" xml:space="preserve"><value>关闭文件标签页</value></data>
+  <data name="PreviewOpen" xml:space="preserve"><value>预览文件</value></data>
+  <data name="CloseInspector" xml:space="preserve"><value>关闭右侧栏</value></data>
+  <data name="PreviewFind" xml:space="preserve"><value>在文件中查找（Ctrl+F）</value></data>
+  <data name="PreviewFindHint" xml:space="preserve"><value>输入要查找的文本</value></data>
+  <data name="PreviewNoMatches" xml:space="preserve"><value>没有匹配行</value></data>
+  <data name="PreviewMatchLines" xml:space="preserve"><value>{0}/{1} 匹配行</value></data>
+  <data name="PreviewFindClose" xml:space="preserve"><value>关闭查找（Esc）</value></data>
+  <data name="PreviewFindPrevious" xml:space="preserve"><value>上一匹配行（Shift+Enter）</value></data>
+  <data name="PreviewFindNext" xml:space="preserve"><value>下一匹配行（Enter）</value></data>
+  <data name="PreviewZoomIn" xml:space="preserve"><value>放大图片</value></data>
+  <data name="PreviewZoomOut" xml:space="preserve"><value>缩小图片</value></data>
+  <data name="PreviewFit" xml:space="preserve"><value>适应窗口</value></data>
+  <data name="PreviewImageOptions" xml:space="preserve"><value>图片缩放选项</value></data>
+  <data name="PreviewActualSize" xml:space="preserve"><value>100%</value></data>
+  <data name="PreviewCopyPath" xml:space="preserve"><value>复制文件路径（Ctrl+Shift+C）</value></data>
+  <data name="PreviewCopyRelative" xml:space="preserve"><value>复制相对路径</value></data>
+  <data name="PreviewCopyContent" xml:space="preserve"><value>复制文件内容</value></data>
+  <data name="PreviewCopyOptions" xml:space="preserve"><value>复制选项</value></data>
+  <data name="PreviewCopied" xml:space="preserve"><value>已复制当前预览的内容或路径。</value></data>
+  <data name="PreviewCopyFailed" xml:space="preserve"><value>复制失败，请检查剪贴板是否可用后重试。</value></data>
+  <data name="PreviewCopyCancelled" xml:space="preserve"><value>复制请求已取消。</value></data>
+  <data name="PreviewOpenExternal" xml:space="preserve"><value>打开</value></data>
+  <data name="PreviewOpenOptions" xml:space="preserve"><value>打开选项</value></data>
+  <data name="PreviewReveal" xml:space="preserve"><value>在文件资源管理器中显示</value></data>
+  <data name="PreviewRevealHint" xml:space="preserve"><value>在文件资源管理器中显示原文件。需允许外部操作；只读模式和审计快照不可用。</value></data>
+  <data name="PreviewRevealed" xml:space="preserve"><value>已请求在文件资源管理器中显示原文件。</value></data>
+  <data name="PreviewRevealFailed" xml:space="preserve"><value>打开未完成，请检查文件是否仍存在和当前对话的工具权限后重试。</value></data>
+  <data name="PreviewRevealCancelled" xml:space="preserve"><value>打开请求已取消；已开始的系统窗口操作可能无法撤回。</value></data>
+  <data name="PreviewNewTab" xml:space="preserve"><value>新增标签页</value></data>
+  <data name="PreviewOpenFiles" xml:space="preserve"><value>打开文件…</value></data>
+  <data name="PreviewFileSelection" xml:space="preserve"><value>选择授权目录中的文件</value></data>
+  <data name="PreviewAttachmentSelection" xml:space="preserve"><value>选择项目内的文本文件</value></data>
+  <data name="PreviewExpand" xml:space="preserve"><value>进入完整视图</value></data>
+  <data name="PreviewRestore" xml:space="preserve"><value>退出完整视图</value></data>
+  <data name="PreviewPickFailed" xml:space="preserve"><value>无法选择文件，请关闭文件选择窗口后重试。</value></data>
+  <data name="PreviewPickCancelled" xml:space="preserve"><value>文件选择已取消或超时，可以重试。</value></data>
+  <data name="TerminalClipboardOptions" xml:space="preserve"><value>终端复制与粘贴</value></data>
+  <data name="TerminalCopySelection" xml:space="preserve"><value>复制选区（Ctrl+Shift+C）</value></data>
+  <data name="TerminalPaste" xml:space="preserve"><value>粘贴（Ctrl+Shift+V）</value></data>
+  <data name="TerminalSelectAll" xml:space="preserve"><value>全选（Ctrl+Shift+A）</value></data>
+  <data name="TerminalPasteConfirm" xml:space="preserve"><value>确认粘贴</value></data>
+  <data name="TerminalClipboardCancel" xml:space="preserve"><value>取消</value></data>
+  <data name="TerminalSelectionCopied" xml:space="preserve"><value>已复制终端选区。</value></data>
+  <data name="TerminalClipboardReading" xml:space="preserve"><value>正在读取剪贴板…</value></data>
+  <data name="TerminalClipboardWaitingPrevious" xml:space="preserve"><value>正在等待先前的剪贴板操作返回；不会向新会话发送旧内容。</value></data>
+  <data name="TerminalClipboardCopying" xml:space="preserve"><value>正在复制终端选区…</value></data>
+  <data name="TerminalClipboardCancelled" xml:space="preserve"><value>剪贴板操作已取消；已开始的复制无法撤回。</value></data>
+  <data name="TerminalClipboardFailed" xml:space="preserve"><value>剪贴板操作失败，请检查剪贴板是否可用后重试。</value></data>
+  <data name="TerminalClipboardTooLarge" xml:space="preserve"><value>内容超过终端的大小限制，请缩小选区或粘贴较短文本。</value></data>
+  <data name="TerminalClipboardInputUnavailable" xml:space="preserve"><value>终端暂不可输入，剪贴板内容未发送；请检查任务、会话或输入状态。</value></data>
+  <data name="TerminalPasteInvalid" xml:space="preserve"><value>粘贴包含控制字符或无效 Unicode，已拒绝发送。</value></data>
+  <data name="TerminalPasteConfirmHint" xml:space="preserve"><value>文本包含换行，可能执行命令。确认后才会粘贴，并按当前策略审批。</value></data>
+  <data name="SnapshotPreviewSize" xml:space="preserve"><value>{0:0.#} KiB · 此任务快照差异 · 只读</value></data>
+  <data name="SnapshotNoTextDiff" xml:space="preserve"><value>此任务快照没有文本行差异，可能仅编码或 BOM 不同。</value></data>
+</root>

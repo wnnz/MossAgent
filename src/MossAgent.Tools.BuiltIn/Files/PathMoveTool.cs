@@ -2,7 +2,7 @@ using MossAgent.Tools.Abstractions;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class PathMoveTool(AuthorizedPathResolver paths) : IAgentTool
+public sealed class PathMoveTool(AuthorizedPathResolver paths) : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "filesystem.move_path",
@@ -10,6 +10,13 @@ public sealed class PathMoveTool(AuthorizedPathResolver paths) : IAgentTool
         """{"type":"object","required":["source","destination"],"properties":{"source":{"type":"string"},"destination":{"type":"string"},"overwrite":{"type":"boolean"}}}""",
         ToolRiskLevel.Mutation,
         ToolCapability.FileRead | ToolCapability.FileWrite);
+
+    public void ValidateRequest(ToolRequest request, ToolExecutionContext context)
+    {
+        var source = paths.Resolve(request.Arguments.GetRequiredString("source"), context);
+        paths.Resolve(request.Arguments.GetRequiredString("destination"), context);
+        paths.RejectAuthorizedRootMutation(source, context);
+    }
 
     public Task<ToolResult> ExecuteAsync(
         ToolRequest request,
@@ -36,6 +43,8 @@ public sealed class PathMoveTool(AuthorizedPathResolver paths) : IAgentTool
             return Task.FromResult(ToolResult.Failure("源路径不存在。", "path_not_found"));
         }
 
+        context.FileSnapshots.Forget(context.TaskId, FileSnapshotReader.CacheKey(source));
+        context.FileSnapshots.Forget(context.TaskId, FileSnapshotReader.CacheKey(destination));
         return Task.FromResult(ToolResult.Success($"已移动：{source} -> {destination}"));
     }
 

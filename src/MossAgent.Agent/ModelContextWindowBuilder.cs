@@ -17,15 +17,16 @@ internal static class ModelContextWindowBuilder
     {
         var available = CalculateAvailableCharacters(tools, model);
         var systemMessages = messages.Where(static message => message.Role == ModelRole.System).ToArray();
-        var groups = GroupConversation(messages);
         var systemBudget = Math.Min(available / 4, Estimate(systemMessages));
         var selected = FitMessages(systemMessages, systemBudget);
         available -= Estimate(selected);
 
         var selectedGroups = new List<IReadOnlyList<ModelMessage>>();
-        for (var index = groups.Count - 1; index >= 0; index--)
+        var end = messages.Count;
+        while (end > 0)
         {
-            var group = groups[index];
+            var group = ReadPreviousTurn(messages, ref end);
+            if (group.Count == 0) break;
             var cost = Estimate(group);
             if (cost <= available)
             {
@@ -34,10 +35,12 @@ internal static class ModelContextWindowBuilder
                 continue;
             }
 
-            if (selectedGroups.Count == 0)
+            if (available >= 256 && group.Sum(EstimateMetadata) <= available)
             {
-                selectedGroups.Add(FitMessages(group, Math.Max(available, 256)));
+                selectedGroups.Add(FitMessages(group, available));
             }
+            else if (selectedGroups.Count == 0)
+                throw new InvalidOperationException("The latest conversation metadata exceeds the model context budget.");
 
             break;
         }
@@ -61,28 +64,30 @@ internal static class ModelContextWindowBuilder
         return Math.Max(256, (inputTokens * CharactersPerToken) - toolCharacters);
     }
 
-    private static List<IReadOnlyList<ModelMessage>> GroupConversation(
-        IReadOnlyList<ModelMessage> messages)
+    private static IReadOnlyList<ModelMessage> ReadPreviousTurn(
+        IReadOnlyList<ModelMessage> messages,
+        ref int end)
     {
-        var groups = new List<IReadOnlyList<ModelMessage>>();
-        var current = new List<ModelMessage>();
-        foreach (var message in messages.Where(static message => message.Role != ModelRole.System))
+        var start = end;
+        var count = 0;
+        while (start > 0)
         {
-            if (message.Role == ModelRole.User && current.Count > 0)
-            {
-                groups.Add(current.ToArray());
-                current.Clear();
-            }
-
-            current.Add(message);
+            var message = messages[--start];
+            if (message.Role == ModelRole.System) continue;
+            count++;
+            if (message.Role == ModelRole.User) break;
         }
 
-        if (current.Count > 0)
+        var group = new ModelMessage[count];
+        var destination = 0;
+        for (var index = start; index < end; index++)
         {
-            groups.Add(current.ToArray());
+            var message = messages[index];
+            if (message.Role != ModelRole.System) group[destination++] = message;
         }
 
-        return groups;
+        end = start;
+        return group;
     }
 
     private static IReadOnlyList<ModelMessage> FitMessages(
@@ -99,17 +104,19 @@ internal static class ModelContextWindowBuilder
         var share = Math.Max(0, contentBudget / messages.Count);
         return messages.Select(message => message with
         {
-            Content = TrimContent(message.Content, share)
+            Content = message.Continuation is null ? TrimContent(message.Content, share) : message.Content
         }).ToArray();
     }
 
     private static int Estimate(ModelMessage message) =>
-        message.Content.Length + EstimateMetadata(message);
+        (message.Continuation is null ? message.Content.Length : 0) + EstimateMetadata(message);
 
     private static int EstimateMetadata(ModelMessage message) =>
         32 + (message.ToolCallId?.Length ?? 0) + (message.ToolName?.Length ?? 0)
+        + (message.Continuation is { } continuation ? continuation.CharacterCount + message.Content.Length : 0)
         + (message.ToolCalls?.Sum(static call =>
-            call.CallId.Length + call.Name.Length + call.Arguments.GetRawText().Length + 32) ?? 0);
+            call.CallId.Length + call.Name.Length + call.Arguments.GetRawText().Length
+            + (call.ProviderCallId?.Length ?? 0) + 32) ?? 0);
 
     private static string TrimContent(string value, int maximumCharacters)
     {
@@ -125,7 +132,11 @@ internal static class ModelContextWindowBuilder
 
         var retained = maximumCharacters - TruncationMarker.Length;
         var prefixLength = retained / 2;
-        var suffixLength = retained - prefixLength;
-        return value[..prefixLength] + TruncationMarker + value[^suffixLength..];
+        var suffixStart = value.Length - (retained - prefixLength);
+        if (prefixLength > 0 && char.IsHighSurrogate(value[prefixLength - 1]) && char.IsLowSurrogate(value[prefixLength]))
+            prefixLength--;
+        if (suffixStart > 0 && char.IsLowSurrogate(value[suffixStart]) && char.IsHighSurrogate(value[suffixStart - 1]))
+            suffixStart++;
+        return value[..prefixLength] + TruncationMarker + value[suffixStart..];
     }
 }

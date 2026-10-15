@@ -1,85 +1,181 @@
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.BuiltIn.Files;
+using MossAgent.Tools.BuiltIn.Resources;
 
 namespace MossAgent.Tools.BuiltIn.Execution;
 
 public sealed class ToolExecutor(
     ToolRegistry registry,
     IToolApprovalService approvalService,
-    IToolExecutionAuditSink? auditSink = null) : IToolExecutor
+    IToolExecutionAuditSink? auditSink = null,
+    TimeProvider? timeProvider = null) : IToolExecutor
 {
+    private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
+
     public async Task<ToolResult> ExecuteAsync(
         ToolRequest request,
         ToolExecutionContext context,
         CancellationToken cancellationToken)
     {
+        ReportProgress(request, context, ToolExecutionPhase.Validating);
         registry.TryGet(request.ToolName, out var tool);
         var executionId = await StartAuditAsync(
             request, context, tool?.Descriptor.RiskLevel, cancellationToken);
         if (auditSink is not null && executionId is null)
         {
-            return ToolResult.Failure(
-                "无法写入工具审计记录，已拒绝执行。", "audit_unavailable");
+            return ToolOutputLimiter.Limit(ToolResult.Failure(
+                "无法写入工具审计记录，已拒绝执行。", "audit_unavailable"),
+                context.MaximumOutputCharacters);
         }
 
         if (tool is null)
         {
             return await CompleteAuditAsync(
                 executionId, null,
-                ToolResult.Failure($"未知工具：{request.ToolName}", "tool_not_found"));
+                ToolResult.Failure($"未知工具：{request.ToolName}", "tool_not_found"), context, request);
         }
 
-        if (!ToolInputSchemaValidator.TryValidate(
-                tool.Descriptor.InputSchemaJson,
-                request.Arguments,
-                out var validationError,
-                out var schemaInvalid))
+        var validationResult = ValidateArguments(tool, request, cancellationToken);
+        if (validationResult is not null)
         {
-            var validationResult = ToolResult.Failure(
-                validationError,
-                schemaInvalid ? "tool_schema_invalid" : "invalid_arguments");
-            return await CompleteAuditAsync(executionId, null, validationResult);
+            return await CompleteAuditAsync(executionId, null, validationResult, context, request);
         }
 
+        if (!context.ToolsEnabled || !ToolCapabilityPolicy.IsAllowed(tool.Descriptor, context.ApprovalPolicy))
+        {
+            var capabilityResult = ToolResult.Failure(
+                context.ToolsEnabled ? "当前审批策略不允许此工具所需的能力。" : ToolExecutionText.Get("ProjectlessToolsDenied"), "capability_denied");
+            return await CompleteAuditAsync(executionId, false, capabilityResult, context, request);
+        }
+
+        var preflightResult = await ValidateBeforeApprovalAsync(
+            executionId, tool, request, context, cancellationToken);
+        if (preflightResult is not null)
+        {
+            return preflightResult;
+        }
+
+        ReportProgress(request, context, ToolExecutionPhase.AwaitingApproval);
         var approved = await RequestApprovalAsync(
             tool, request, context, cancellationToken);
         if (approved != true)
         {
-            var approvalResult = approved == false
+            var approvalResult = cancellationToken.IsCancellationRequested
+                ? ToolResult.Failure(ToolExecutionText.Get("ApprovalCancelled"), "tool_cancelled")
+                : approved == false
                 ? ToolResult.Failure("用户或策略拒绝了工具调用。", "approval_denied")
-                : ToolResult.Failure("工具审批已取消或失败。", "approval_failed");
-            return await CompleteAuditAsync(executionId, approved, approvalResult);
+                : ToolResult.Failure(ToolExecutionText.Get("ApprovalFailed"), "approval_failed");
+            return await CompleteAuditAsync(executionId, approved, approvalResult, context, request);
         }
 
         var result = await ExecuteToolAsync(tool, request, context, cancellationToken);
-        return await CompleteAuditAsync(executionId, true, result);
+        return await CompleteAuditAsync(executionId, true, result, context, request);
     }
 
-    private static async Task<ToolResult> ExecuteToolAsync(
+    private static ToolResult? ValidateArguments(IAgentTool tool, ToolRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return ToolInputSchemaValidator.TryValidate(tool.Descriptor.InputSchemaJson, request.Arguments,
+                out var error, out var schemaInvalid, cancellationToken)
+                ? null : ToolResult.Failure(error, schemaInvalid ? "tool_schema_invalid" : "invalid_arguments");
+        }
+        catch (OperationCanceledException)
+        {
+            return InterruptedResult(true);
+        }
+    }
+
+    private async Task<ToolResult?> ValidateBeforeApprovalAsync(
+        Guid? executionId,
         IAgentTool tool,
         ToolRequest request,
         ToolExecutionContext context,
         CancellationToken cancellationToken)
     {
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(context.Timeout ?? TimeSpan.FromMinutes(2));
+        if (tool is not IToolRequestPrevalidator prevalidator)
+        {
+            return null;
+        }
+
         try
         {
-            var result = await tool.ExecuteAsync(request, context, timeout.Token);
-            return LimitOutput(result, context.MaximumOutputCharacters);
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            return ToolResult.Failure("工具执行超时。", "tool_timeout");
+            cancellationToken.ThrowIfCancellationRequested();
+            prevalidator.ValidateRequest(request, context);
+            return null;
         }
         catch (OperationCanceledException)
         {
-            return ToolResult.Failure("工具执行已取消。", "tool_cancelled");
+            return await CompleteAuditAsync(executionId, null,
+                ToolResult.Failure("工具请求已取消。", "tool_cancelled"), context, request);
         }
-        catch (Exception exception)
+        catch (UnauthorizedAccessException exception)
         {
-            return ToolResult.Failure(exception.Message, "tool_failed");
+            return await CompleteAuditAsync(executionId, false,
+                ToolResult.Failure(exception.Message, "path_denied"), context, request);
+        }
+        catch (Exception)
+        {
+            return await CompleteAuditAsync(executionId, false,
+                ToolResult.Failure("工具请求路径无效。", "invalid_arguments"), context, request);
         }
     }
+
+    private async Task<ToolResult> ExecuteToolAsync(
+        IAgentTool tool,
+        ToolRequest request,
+        ToolExecutionContext context,
+        CancellationToken cancellationToken)
+    {
+        var duration = context.Timeout ?? TimeSpan.FromMinutes(2);
+        var started = _timeProvider.GetTimestamp();
+        using var deadline = new CancellationTokenSource(duration, _timeProvider);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, deadline.Token);
+        try
+        {
+            timeout.Token.ThrowIfCancellationRequested();
+            ReportProgress(request, context, ToolExecutionPhase.Executing);
+            timeout.Token.ThrowIfCancellationRequested();
+            if (HasDeadlineElapsed(started, duration)) return InterruptedResult(false);
+            var result = await tool.ExecuteAsync(request, context, timeout.Token);
+            return timeout.IsCancellationRequested || HasDeadlineElapsed(started, duration)
+                ? InterruptedResult(cancellationToken.IsCancellationRequested, result.Dialogue) with
+                {
+                    Artifacts = result.Artifacts,
+                    FileChanges = result.FileChanges,
+                    FileChangesTruncated = result.FileChangesTruncated
+                }
+                : result;
+        }
+        catch (OperationCanceledException exception)
+        {
+            var interrupted = exception as ToolRunInterruptedException;
+            return InterruptedResult(cancellationToken.IsCancellationRequested, interrupted?.Dialogue) with
+            {
+                FileChanges = interrupted?.FileChanges,
+                FileChangesTruncated = interrupted?.FileChangesTruncated == true
+            };
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return ToolResult.Failure(exception.Message, "path_denied");
+        }
+        catch (FileEditException exception)
+        {
+            return ToolResult.Failure(exception.Message, exception.ErrorCode);
+        }
+        catch (Exception)
+        {
+            return ToolResult.Failure("工具执行失败，请检查工具配置和运行环境。", "tool_failed");
+        }
+    }
+
+    private bool HasDeadlineElapsed(long started, TimeSpan duration) =>
+        duration != Timeout.InfiniteTimeSpan && _timeProvider.GetElapsedTime(started) >= duration;
+
+    private static ToolResult InterruptedResult(bool cancelled, IReadOnlyList<ToolDialogueMessage>? dialogue = null) =>
+        ToolResult.Failure(ToolExecutionText.Get(cancelled ? "ExecutionCancelled" : "ExecutionTimedOut"),
+            cancelled ? "tool_cancelled" : "tool_timeout", dialogue);
 
     private async Task<bool?> RequestApprovalAsync(
         IAgentTool tool,
@@ -91,10 +187,6 @@ public sealed class ToolExecutor(
         {
             return await approvalService.IsApprovedAsync(
                 tool.Descriptor, request, context, cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            return null;
         }
         catch
         {
@@ -130,11 +222,15 @@ public sealed class ToolExecutor(
     private async Task<ToolResult> CompleteAuditAsync(
         Guid? executionId,
         bool? approved,
-        ToolResult result)
+        ToolResult result,
+        ToolExecutionContext context,
+        ToolRequest request)
     {
+        ReportProgress(request, context, ToolExecutionPhase.Finalizing);
+        var limited = ToolOutputLimiter.Limit(result, context.MaximumOutputCharacters);
         if (auditSink is null || executionId is null)
         {
-            return result;
+            return limited;
         }
 
         try
@@ -143,26 +239,22 @@ public sealed class ToolExecutor(
                 executionId.Value,
                 new ToolExecutionAuditCompletion(
                     DateTimeOffset.UtcNow, approved, result.IsSuccess, result.ErrorCode,
-                    result.Content?.Length ?? 0),
-                result.Artifacts ?? [],
+                    limited.OutputCharacterCount),
+                limited.Artifacts ?? [],
                 CancellationToken.None);
-            return result;
+            return limited;
         }
         catch
         {
-            return result with { Summary = result.Summary + "（审计完成状态写入失败。）" };
+            return ToolOutputLimiter.Limit(limited with { Summary = limited.Summary + "（审计完成状态写入失败。）" },
+                context.MaximumOutputCharacters);
         }
     }
 
-    private static ToolResult LimitOutput(ToolResult result, int maximumCharacters)
+    private static void ReportProgress(ToolRequest request, ToolExecutionContext context, ToolExecutionPhase phase)
     {
-        if (result.Content is null || result.Content.Length <= maximumCharacters)
-        {
-            return result;
-        }
-
-        var suffix = $"\n\n[输出已截断，共 {result.Content.Length} 个字符]";
-        var available = Math.Max(0, maximumCharacters - suffix.Length);
-        return result with { Content = result.Content[..available] + suffix };
+        try { context.Progress?.Invoke(new ToolExecutionProgress(context.TaskId, request.CallId, request.ToolName, phase)); }
+        catch (Exception) { }
     }
+
 }

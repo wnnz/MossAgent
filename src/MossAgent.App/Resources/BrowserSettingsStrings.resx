@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="EmbeddedBrowser" xml:space="preserve"><value>内置浏览器</value></data>
+  <data name="ChromeBrowser" xml:space="preserve"><value>Chrome</value></data>
+  <data name="EdgeBrowser" xml:space="preserve"><value>Edge</value></data>
+  <data name="ManagedProfile" xml:space="preserve"><value>隔离资料</value></data>
+  <data name="DailyProfile" xml:space="preserve"><value>日常资料</value></data>
+  <data name="ExistingCdpProfile" xml:space="preserve"><value>已有 CDP 会话</value></data>
+  <data name="DirectConnection" xml:space="preserve"><value>直连</value></data>
+  <data name="UnavailableProxyOption" xml:space="preserve"><value>不可用的代理（请重新选择）</value></data>
+  <data name="ProxyUnavailable" xml:space="preserve"><value>所选浏览器代理不可用，请选择其他代理或明确改用直连。</value></data>
+  <data name="ReadRequired" xml:space="preserve"><value>尚未成功读取浏览器设置，请刷新后再保存。</value></data>
+  <data name="Loading" xml:space="preserve"><value>正在加载浏览器设置…</value></data>
+  <data name="Saving" xml:space="preserve"><value>正在保存…</value></data>
+  <data name="SaveLabel" xml:space="preserve"><value>保存浏览器设置</value></data>
+  <data name="LoadFailed" xml:space="preserve"><value>无法加载浏览器设置，请检查数据目录并重试。</value></data>
+  <data name="SaveFailed" xml:space="preserve"><value>无法保存浏览器设置，请检查数据目录是否可写并重试。</value></data>
+  <data name="Saved" xml:space="preserve"><value>浏览器设置已保存，新任务将使用这些设置。</value></data>
+  <data name="PreviousDraftSaved" xml:space="preserve"><value>上一版浏览器设置已保存；当前修改尚未保存。</value></data>
+  <data name="Cancelled" xml:space="preserve"><value>操作已取消；已提交的写入可能完成，请刷新确认。</value></data>
+  <data name="TimedOut" xml:space="preserve"><value>操作超时，请检查数据目录并刷新确认。</value></data>
+  <data name="InvalidSelection" xml:space="preserve"><value>浏览器类型或资料模式无效，请重新选择。</value></data>
+  <data name="EmbeddedCdpUnsupported" xml:space="preserve"><value>内置浏览器不能连接已有 CDP；请选择隔离或日常资料模式。</value></data>
+  <data name="InvalidCdpEndpoint" xml:space="preserve"><value>CDP 地址必须是本机的有效 HTTP(S) 或 WebSocket(S) 地址，且不能包含凭据。</value></data>
+  <data name="ProfileDirectoryRequired" xml:space="preserve"><value>日常资料模式必须填写浏览器资料目录。</value></data>
+</root>

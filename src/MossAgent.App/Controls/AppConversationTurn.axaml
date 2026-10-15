@@ -1,0 +1,28 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:views="clr-namespace:MossAgent.App.Views"
+                   x:Class="MossAgent.App.Controls.AppConversationTurn"
+                   x:Name="Root" x:CompileBindings="False">
+  <StackPanel DataContext="{Binding Turn, ElementName=Root}">
+    <views:WorkspaceMessageView DataContext="{Binding UserMessage}"
+                                IsVisible="{Binding Turn.UserMessage, ElementName=Root, Converter={x:Static ObjectConverters.IsNotNull}}" />
+    <ui:AppText Classes="type-13 conversation-turn-timestamp" Text="{Binding Timestamp}" IsVisible="{Binding HasTimestamp}" />
+    <ui:AppBorder Classes="conversation-turn-heading" IsVisible="{Binding HasSummary}">
+      <Grid>
+        <ui:AppActionButton Classes="ghost conversation-turn-summary" Classes.is-expanded="{Binding IsExpanded}"
+                            Label="{Binding Summary}" TrailingIconData="{DynamicResource UiIconChevronRight}"
+                            IsVisible="{Binding HasActivities}" Command="{Binding ToggleCommand}" />
+        <ui:AppText Classes="type-14 conversation-turn-summary-text" Text="{Binding Summary}"
+                    IsVisible="{Binding !HasActivities}" />
+      </Grid>
+    </ui:AppBorder>
+    <ui:AppItemsControl ItemsSource="{Binding Activities}" IsVisible="{Binding IsExpanded}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate><views:WorkspaceMessageView /></DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ui:AppItemsControl>
+    <views:WorkspaceMessageView DataContext="{Binding Response}"
+                                IsVisible="{Binding Turn.Response, ElementName=Root, Converter={x:Static ObjectConverters.IsNotNull}}" />
+  </StackPanel>
+</ui:AppUserControl>

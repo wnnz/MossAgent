@@ -12,6 +12,9 @@ public interface IBrowserSession : IAsyncDisposable
     Task GoBackAsync(CancellationToken cancellationToken);
     Task GoForwardAsync(CancellationToken cancellationToken);
     Task ReloadAsync(CancellationToken cancellationToken);
+    bool SupportsDeveloperTools => false;
+    Task OpenDeveloperToolsAsync(CancellationToken cancellationToken) =>
+        Task.FromException(new NotSupportedException("The browser does not support a developer tools window."));
     Task<string> GetPageTextAsync(CancellationToken cancellationToken);
     Task<string> GetSnapshotAsync(CancellationToken cancellationToken);
     Task ClickAsync(string selector, CancellationToken cancellationToken);

@@ -1,0 +1,102 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:views="clr-namespace:MossAgent.App.Views"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Views.AutomationsView" x:CompileBindings="False">
+  <Grid>
+    <Grid Classes="automation-page-content" RowDefinitions="Auto,Auto,*" RowSpacing="20">
+      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+        <StackPanel Spacing="8">
+          <ui:AppText Text="{x:Static text:AutomationText.Title}" Classes="type-20 weight-semibold" />
+          <ui:AppText Text="{Binding RuntimeHint}" Classes="type-12 subtle line-18" TextWrapping="Wrap" />
+        </StackPanel>
+        <ui:AppIconButton Grid.Column="1" Label="{x:Static text:AutomationText.Refresh}" VerticalAlignment="Top"
+                          Command="{Binding RefreshCommand}" IconData="{StaticResource UiIconRefresh}" />
+        <ui:AppActionButton Grid.Column="2" Label="{x:Static text:AutomationText.Create}" VerticalAlignment="Top"
+                            Command="{Binding CreateCommand}" IconData="{StaticResource UiIconPlus}" Classes="primary button-sm" />
+      </Grid>
+      <StackPanel Grid.Row="1">
+        <ui:AppText Text="{Binding Error}" IsVisible="{Binding HasError}" Classes="type-12 status-error" TextWrapping="Wrap" />
+        <views:AutomationOperationNoticeView IsVisible="{Binding HasOperationNotice}" />
+        <ui:AppText Text="{x:Static text:AutomationText.ListLoading}" IsVisible="{Binding List.IsRefreshing}" Classes="type-12 subtle" />
+        <ui:AppText Text="{Binding List.LoadError}" IsVisible="{Binding List.ShowRetainedError}" Classes="type-12 status-error" TextWrapping="Wrap" />
+      </StackPanel>
+      <ui:AppEmptyState Grid.Row="2" IsVisible="{Binding List.ShowLoading}" IconData="{StaticResource UiIconClock}"
+                        Title="{x:Static text:AutomationText.ListLoading}" Description="{x:Static text:AutomationText.ListLoadingHint}" />
+      <StackPanel Grid.Row="2" Classes="automation-list-state" IsVisible="{Binding List.ShowFailure}">
+        <ui:AppEmptyState IconData="{StaticResource UiIconWarning}" Title="{x:Static text:AutomationText.ListLoadFailed}"
+                          Description="{Binding List.LoadError}" />
+        <ui:AppActionButton Label="{x:Static text:AutomationText.Retry}" Classes="ghost button-sm" HorizontalAlignment="Center"
+                            Command="{Binding RefreshCommand}" IconData="{StaticResource UiIconRefresh}" />
+      </StackPanel>
+      <ui:AppEmptyState Grid.Row="2" IsVisible="{Binding IsEmpty}" IconData="{StaticResource UiIconClock}"
+                        Title="{x:Static text:AutomationText.EmptyTitle}" Description="{x:Static text:AutomationText.EmptyHint}" />
+      <ui:AppResponsiveColumns Grid.Row="2" IsVisible="{Binding List.HasItems}">
+        <ui:AppListBox Classes="automation-list thin-scrollbar" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <ui:AppCard Classes="automation-card">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <ui:AppText Text="{Binding Name}" Classes="type-14 weight-semibold" TextTrimming="CharacterEllipsis" />
+                  <ui:AppText Grid.Column="1" Text="{Binding StateLabel}" Classes="type-11 muted" />
+                </Grid>
+                <ui:AppText Text="{Binding Prompt}" Classes="type-12 muted line-18" MaxLines="3" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
+                <ui:AppIconLabel Label="{Binding ProjectLabel}" IconData="{StaticResource UiIconFolder}" Classes="automation-metadata" />
+                <ui:AppText Text="{Binding ModelLabel}" Classes="type-11 subtle" TextTrimming="CharacterEllipsis" />
+                <ui:AppIconLabel Label="{Binding TimingLabel}" IconData="{StaticResource UiIconClock}" Classes="automation-metadata" />
+                <ui:AppText Text="{Binding NextLabel}" Classes="type-11 subtle" TextWrapping="Wrap" />
+                <WrapPanel>
+                  <ui:AppButton Content="{x:Static text:AutomationText.RunNow}" Classes="ghost button-xs"
+                                Command="{Binding $parent[ui:AppListBox].DataContext.RunNowCommand}" CommandParameter="{Binding}" IsVisible="{Binding !IsRunning}" />
+                  <ui:AppButton Content="{x:Static text:AutomationText.Stop}" Classes="ghost button-xs"
+                                Command="{Binding $parent[ui:AppListBox].DataContext.StopCommand}" CommandParameter="{Binding}" IsVisible="{Binding IsRunning}" />
+                  <ui:AppButton Content="{Binding ToggleLabel}" Classes="ghost button-xs"
+                                Command="{Binding $parent[ui:AppListBox].DataContext.ToggleCommand}" CommandParameter="{Binding}" />
+                  <ui:AppButton Content="{x:Static text:AutomationText.Edit}" Classes="ghost button-xs"
+                                Command="{Binding $parent[ui:AppListBox].DataContext.EditCommand}" CommandParameter="{Binding}" />
+                  <ui:AppButton Content="{x:Static text:AutomationText.Remove}" Classes="ghost button-xs"
+                                Command="{Binding $parent[ui:AppListBox].DataContext.RemoveCommand}" CommandParameter="{Binding}" />
+                </WrapPanel>
+              </StackPanel>
+              </ui:AppCard>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ui:AppListBox>
+        <ui:AppBorder Grid.Column="1" Classes="automation-history">
+          <views:AutomationHistoryView DataContext="{Binding History}" />
+        </ui:AppBorder>
+      </ui:AppResponsiveColumns>
+    </Grid>
+    <ui:AppSettingsDialog Classes="automation-dialog" IsOpen="{Binding Editor.IsOpen}"
+                          Title="{x:Static text:AutomationText.Title}" CloseCommand="{Binding CloseEditorCommand}">
+      <ui:AppSettingsDialog.Footer>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+          <ui:AppButton Content="{x:Static text:AutomationText.Cancel}" Classes="ghost" Command="{Binding CloseEditorCommand}" />
+          <ui:AppButton Content="{x:Static text:AutomationText.Save}" Classes="primary" Command="{Binding SaveCommand}" />
+        </StackPanel>
+      </ui:AppSettingsDialog.Footer>
+      <StackPanel Spacing="12">
+        <ui:AppText Text="{Binding Error}" IsVisible="{Binding HasError}" Classes="type-12 status-error" TextWrapping="Wrap" />
+        <views:AutomationOperationNoticeView IsVisible="{Binding HasOperationNotice}" />
+        <views:AutomationListNoticeView IsVisible="{Binding List.HasNotice}" />
+        <views:AutomationEditorView DataContext="{Binding Editor}" IsEnabled="{Binding !$parent[ui:AppSettingsDialog].DataContext.IsBusy}" />
+      </StackPanel>
+    </ui:AppSettingsDialog>
+    <ui:AppSettingsDialog IsOpen="{Binding IsDeleteOpen}" Title="{x:Static text:AutomationText.DeleteTitle}" CloseCommand="{Binding CancelDeleteCommand}">
+      <ui:AppSettingsDialog.Footer>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+          <ui:AppButton Content="{x:Static text:AutomationText.Cancel}" Classes="ghost" Command="{Binding CancelDeleteCommand}" />
+          <ui:AppButton Content="{x:Static text:AutomationText.Remove}" Classes="danger" Command="{Binding ConfirmDeleteCommand}" />
+        </StackPanel>
+      </ui:AppSettingsDialog.Footer>
+      <StackPanel Spacing="12">
+        <ui:AppText Text="{x:Static text:AutomationText.DeleteHint}" Classes="type-13 muted line-18" TextWrapping="Wrap" />
+        <ui:AppText Text="{Binding Error}" IsVisible="{Binding HasError}" Classes="type-12 status-error" TextWrapping="Wrap" />
+        <views:AutomationListNoticeView IsVisible="{Binding List.HasNotice}" />
+        <views:AutomationOperationNoticeView IsVisible="{Binding HasOperationNotice}" />
+      </StackPanel>
+    </ui:AppSettingsDialog>
+  </Grid>
+</ui:AppUserControl>

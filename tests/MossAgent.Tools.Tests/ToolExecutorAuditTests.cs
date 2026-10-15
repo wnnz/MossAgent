@@ -62,14 +62,64 @@ public sealed class ToolExecutorAuditTests
             var request = new ToolRequest(
                 "call-no-task", tool.Descriptor.Name,
                 System.Text.Json.JsonSerializer.SerializeToElement(new { path = target }));
+            var phases = new List<ToolExecutionPhase>();
             var context = new ToolExecutionContext(
-                Guid.NewGuid(), root, [root], ApprovalPolicy.FullAccess);
+                Guid.NewGuid(), root, [root], ApprovalPolicy.FullAccess)
+            {
+                Progress = report => phases.Add(report.Phase)
+            };
 
             var result = await executor.ExecuteAsync(request, context, cancellationToken);
 
             Assert.False(result.IsSuccess);
             Assert.Equal("audit_unavailable", result.ErrorCode);
+            Assert.Equal([ToolExecutionPhase.Validating], phases);
             Assert.False(Directory.Exists(target));
+        }
+        finally
+        {
+            SqliteConnection.ClearAllPools();
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_AuditsRejectedPathWithoutRequestingApproval()
+    {
+        var root = CreateRoot();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        try
+        {
+            var setup = await CreateSetupAsync(root, cancellationToken);
+            var tool = new DirectoryCreateTool(new AuthorizedPathResolver());
+            var approvalRequests = 0;
+            var executor = new ToolExecutor(
+                new ToolRegistry([tool]),
+                new PolicyApprovalService((_, _, _) =>
+                {
+                    approvalRequests++;
+                    return ValueTask.FromResult(true);
+                }),
+                new SqliteToolExecutionAuditSink(setup.Connections));
+            var outside = Path.Combine(Path.GetTempPath(), "MossAgent.Tests", Guid.NewGuid().ToString("N"));
+            var request = new ToolRequest("call-path-denied", tool.Descriptor.Name,
+                System.Text.Json.JsonSerializer.SerializeToElement(new { path = outside }));
+            var context = new ToolExecutionContext(
+                setup.Task.Id, root, [root], ApprovalPolicy.AskEveryTime);
+
+            var result = await executor.ExecuteAsync(request, context, cancellationToken);
+
+            Assert.Equal("path_denied", result.ErrorCode);
+            Assert.Equal(0, approvalRequests);
+            Assert.False(Directory.Exists(outside));
+            await using var connection = setup.Connections.Create();
+            await connection.OpenAsync(cancellationToken);
+            await using var command = connection.CreateCommand();
+            command.CommandText = "SELECT approval_granted,error_code FROM tool_executions WHERE call_id='call-path-denied';";
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            Assert.True(await reader.ReadAsync(cancellationToken));
+            Assert.False(reader.GetBoolean(0));
+            Assert.Equal("path_denied", reader.GetString(1));
         }
         finally
         {
@@ -97,14 +147,19 @@ public sealed class ToolExecutorAuditTests
         var root = CreateRoot();
         try
         {
+            var phases = new List<ToolExecutionPhase>();
             var context = new ToolExecutionContext(
-                Guid.NewGuid(), root, [root], ApprovalPolicy.FullAccess);
+                Guid.NewGuid(), root, [root], ApprovalPolicy.FullAccess)
+            {
+                Progress = report => phases.Add(report.Phase)
+            };
 
             var result = await executor.ExecuteAsync(
                 request, context, TestContext.Current.CancellationToken);
 
             Assert.False(result.IsSuccess);
             Assert.Equal("invalid_arguments", result.ErrorCode);
+            Assert.Equal([ToolExecutionPhase.Validating, ToolExecutionPhase.Finalizing], phases);
             Assert.Contains("path", result.Summary, StringComparison.Ordinal);
             Assert.Equal(0, approvalRequests);
         }

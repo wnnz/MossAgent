@@ -18,17 +18,24 @@ internal static class OpenAiRequestBuilder
             ["tools"] = BuildTools(request, toolNames)
         };
 
-        if (!request.Model.ReasoningEffort.Equals("off", StringComparison.OrdinalIgnoreCase))
+        if (!request.Model.ReasoningEffort.Equals("off", StringComparison.OrdinalIgnoreCase)
+            && (ModelReasoningPolicy.Normalize(request.Model.ReasoningEffort) != "none"
+                || ModelCapabilityCatalog.Find(request.Provider.Protocol, request.Model.ModelId) is not { ReasoningEfforts.IsEmpty: true }))
         {
             root["reasoning"] = new JsonObject { ["effort"] = request.Model.ReasoningEffort };
         }
+
+        if (request.Model.Temperature is { } temperature)
+            root["temperature"] = temperature;
+        if (request.Model.TopP is { } topP)
+            root["top_p"] = topP;
 
         if (!string.IsNullOrWhiteSpace(request.PreviousResponseId))
         {
             root["previous_response_id"] = request.PreviousResponseId;
         }
 
-        MergeAdvancedParameters(root, request.Model.AdvancedParametersJson);
+        AdvancedParameterMerger.Merge(root, request.Model.AdvancedParametersJson, request.Provider.Protocol);
         return root.ToJsonString();
     }
 
@@ -39,7 +46,7 @@ internal static class OpenAiRequestBuilder
         var messages = new JsonArray();
         foreach (var message in request.Messages)
         {
-            if (message.ToolCalls is { Count: > 0 })
+            if (message.Role == ModelRole.Assistant && message.ToolCalls is { Count: > 0 })
             {
                 foreach (var call in message.ToolCalls)
                 {
@@ -66,7 +73,7 @@ internal static class OpenAiRequestBuilder
             {
                 messages.Add(new JsonObject
                 {
-                    ["role"] = message.Role.ToString().ToLowerInvariant(),
+                    ["role"] = message.Role == ModelRole.ToolObservation ? "user" : message.Role.ToString().ToLowerInvariant(),
                     ["content"] = message.Content
                 });
             }
@@ -95,20 +102,4 @@ internal static class OpenAiRequestBuilder
         return tools;
     }
 
-    private static void MergeAdvancedParameters(JsonObject root, string json)
-    {
-        if (string.IsNullOrWhiteSpace(json) || JsonNode.Parse(json) is not JsonObject advanced)
-        {
-            return;
-        }
-
-        string[] protectedNames = ["model", "stream", "input", "tools"];
-        foreach (var pair in advanced)
-        {
-            if (!protectedNames.Contains(pair.Key, StringComparer.OrdinalIgnoreCase))
-            {
-                root[pair.Key] = pair.Value?.DeepClone();
-            }
-        }
-    }
 }

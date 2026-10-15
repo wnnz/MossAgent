@@ -1,0 +1,30 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppSidebarSearch"
+                   x:Name="Root" x:CompileBindings="False">
+  <ui:AppIconButton x:Name="SearchTrigger" DataContext="{Binding #Root}"
+                    Classes="sidebar-header-icon sidebar-search-trigger"
+                    Classes.filter-active="{Binding HasQuery}"
+                    Label="{Binding Hint}" ToolTip.Tip="{Binding Hint}">
+    <Button.Flyout>
+      <ui:AppFlyout Placement="BottomEdgeAlignedRight">
+        <ui:AppCard x:Name="SearchSurface" DataContext="{Binding #Root}"
+                    Classes="flyout-surface card-inset-popover sidebar-search-surface">
+          <StackPanel Spacing="4">
+            <Grid ColumnDefinitions="*,Auto">
+              <ui:AppInput x:Name="SearchInput" Classes="sidebar-search-input"
+                            Text="{Binding Query, Mode=TwoWay}" PlaceholderText="{Binding SearchLabel}" />
+              <ui:AppIconButton x:Name="ClearSearchButton" Grid.Column="1"
+                                Classes="icon-compact sidebar-search-clear" Label="{Binding ClearLabel}"
+                                Command="{Binding ClearCommand}" IsVisible="{Binding HasQuery}"
+                                IsEnabled="{Binding IsClearAvailable}" IconData="{DynamicResource UiIconClose}" />
+            </Grid>
+            <ui:AppText Classes="subtle type-11 sidebar-search-empty"
+                         Text="{Binding EmptyLabel}" TextWrapping="Wrap" IsVisible="{Binding ShowEmptyState}" />
+          </StackPanel>
+        </ui:AppCard>
+      </ui:AppFlyout>
+    </Button.Flyout>
+  </ui:AppIconButton>
+</ui:AppUserControl>

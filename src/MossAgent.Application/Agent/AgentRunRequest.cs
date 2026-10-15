@@ -9,5 +9,5 @@ public sealed record AgentRunRequest(
     ModelProfile Model,
     IReadOnlyList<ModelMessage> Messages,
     ToolExecutionContext ToolContext,
-    int MaximumTurns = 20);
-
+    int MaximumTurns = 20,
+    string? AgentInstructions = null);

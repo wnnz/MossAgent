@@ -1,5 +1,6 @@
 using System.Text.Json;
 using MossAgent.Domain;
+using MossAgent.Testing;
 using MossAgent.Tools.Abstractions;
 using MossAgent.Tools.BuiltIn.Files;
 using MossAgent.Tools.BuiltIn.Git;
@@ -19,7 +20,7 @@ public sealed class GitStatusToolTests
         {
             var context = new ToolExecutionContext(
                 Guid.NewGuid(), root, [root], ApprovalPolicy.FullAccess);
-            var runner = new GitCommandRunner();
+            var runner = new GitCommandRunner(new FixtureTaskProcessLauncher());
             var initialized = await runner.RunAsync(root, ["init"], context, cancellationToken);
             Assert.True(initialized.IsSuccess, initialized.Summary);
             await File.WriteAllTextAsync(

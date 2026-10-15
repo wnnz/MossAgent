@@ -7,9 +7,12 @@ public sealed class LazyBrowserSession(Func<CancellationToken, Task<IBrowserSess
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
     private IBrowserSession? _inner;
+    private bool _disposed;
+    private Task? _disposeTask;
 
     public string Id { get; } = Guid.NewGuid().ToString("N");
     public Uri? CurrentUri => _inner?.CurrentUri;
+    public bool SupportsDeveloperTools => _inner?.SupportsDeveloperTools == true;
 
     public async Task<IReadOnlyList<BrowserTabInfo>> ListTabsAsync(
         CancellationToken cancellationToken) =>
@@ -35,6 +38,9 @@ public sealed class LazyBrowserSession(Func<CancellationToken, Task<IBrowserSess
 
     public async Task ReloadAsync(CancellationToken cancellationToken) =>
         await (await GetAsync(cancellationToken)).ReloadAsync(cancellationToken);
+
+    public async Task OpenDeveloperToolsAsync(CancellationToken cancellationToken) =>
+        await (await GetAsync(cancellationToken)).OpenDeveloperToolsAsync(cancellationToken);
 
     public async Task<string> GetPageTextAsync(CancellationToken cancellationToken) =>
         await (await GetAsync(cancellationToken)).GetPageTextAsync(cancellationToken);
@@ -86,24 +92,42 @@ public sealed class LazyBrowserSession(Func<CancellationToken, Task<IBrowserSess
 
     public async ValueTask DisposeAsync()
     {
-        if (_inner is not null)
+        await _gate.WaitAsync();
+        Task disposeTask;
+        try
         {
-            await _inner.DisposeAsync();
+            Volatile.Write(ref _disposed, true);
+            _disposeTask ??= _inner is null
+                ? Task.CompletedTask
+                : DisposeInnerAsync(_inner);
+            _inner = null;
+            disposeTask = _disposeTask;
+        }
+        finally
+        {
+            _gate.Release();
         }
 
-        _gate.Dispose();
+        await disposeTask;
     }
+
+    private static async Task DisposeInnerAsync(IBrowserSession session) =>
+        await session.DisposeAsync();
 
     private async Task<IBrowserSession> GetAsync(CancellationToken cancellationToken)
     {
-        if (_inner is not null)
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed), this);
+        var session = Volatile.Read(ref _inner);
+        if (session is not null)
         {
-            return _inner;
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed), this);
+            return session;
         }
 
         await _gate.WaitAsync(cancellationToken);
         try
         {
+            ObjectDisposedException.ThrowIf(_disposed, this);
             _inner ??= await factory(cancellationToken);
             return _inner;
         }

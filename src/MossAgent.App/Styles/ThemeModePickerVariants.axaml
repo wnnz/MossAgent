@@ -1,0 +1,37 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Style Selector=".app-theme-mode-picker controls|AppCard.theme-mode-surface">
+    <Setter Property="Padding" Value="16,8" />
+  </Style>
+  <Style Selector=".app-theme-mode-picker controls|AppButton.theme-mode-button">
+    <Setter Property="Width" Value="80" />
+    <Setter Property="Height" Value="60" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+  </Style>
+  <Style Selector=".app-theme-mode-picker controls|AppButton.theme-mode-button:focus-visible controls|AppBorder.preview-selection-outline">
+    <Setter Property="BorderBrush" Value="#399CFF" />
+  </Style>
+  <Style Selector=".app-theme-mode-picker controls|AppButton.theme-mode-button:focus-visible .app-theme-preview.preview-light controls|AppBorder.preview-selection-outline">
+    <Setter Property="BorderBrush" Value="#202020" />
+  </Style>
+  <Style Selector=".app-theme-mode-picker controls|AppButton.theme-mode-button:focus-visible .app-theme-preview.preview-dark controls|AppBorder.preview-selection-outline">
+    <Setter Property="BorderBrush" Value="#EEEEEE" />
+  </Style>
+  <Style Selector=".app-theme-mode-picker controls|AppButton.theme-mode-button.selected controls|AppBorder.preview-selection-outline">
+    <Setter Property="BorderBrush" Value="#399CFF" />
+  </Style>
+  <Style Selector=".app-theme-mode-picker controls|AppButton.ghost.theme-mode-button:pointerover">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector=".app-theme-mode-picker controls|AppViewbox.theme-mode-thumbnail">
+    <Setter Property="Stretch" Value="None" />
+  </Style>
+</Styles>

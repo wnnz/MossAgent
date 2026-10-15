@@ -1,159 +1,98 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
              xmlns:views="clr-namespace:MossAgent.App.Views"
              xmlns:vm="clr-namespace:MossAgent.App.ViewModels"
              x:Class="MossAgent.App.Views.WorkspaceChatView"
              x:CompileBindings="False">
-  <UserControl.KeyBindings>
-    <KeyBinding Gesture="Ctrl+Enter" Command="{Binding PrimaryActionCommand}" />
-  </UserControl.KeyBindings>
-
-  <Border Background="{DynamicResource CardBackgroundBrush}">
-    <Grid RowDefinitions="44,*,Auto">
-      <Border BorderBrush="{DynamicResource BorderSubtleBrush}"
-              BorderThickness="0,0,0,1" Padding="16,0">
-        <Grid ColumnDefinitions="*,Auto">
-          <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
-            <TextBlock Text="›_" FontFamily="Consolas" Classes="muted"
-                       FontSize="12" VerticalAlignment="Center" />
-            <TextBlock Text="{Binding Catalog.SelectedTask.Title, FallbackValue='新任务'}"
-                       FontWeight="SemiBold" FontSize="13"
-                       TextTrimming="CharacterEllipsis" MaxWidth="520"
-                       VerticalAlignment="Center" />
+  <ui:AppUserControl.Resources>
+    <ui:EmptySessionViewportMarginConverter x:Key="EmptySessionViewportMarginConverter" />
+  </ui:AppUserControl.Resources>
+  <ui:AppBorder Classes="chat-surface">
+    <Grid RowDefinitions="52,*,Auto">
+      <ui:AppConversationHeader ConversationTarget="{Binding Catalog.SelectedTask}"
+                                 IsContextVisible="{Binding $parent[Window].DataContext.IsContextCardVisible}"
+                                 IsInspectorOpen="{Binding $parent[Window].DataContext.IsRightPanelOpen}"
+                                 InspectorLabel="{Binding $parent[Window].DataContext.RightPanelToggleLabel}"
+                                 ToggleContextCommand="{Binding $parent[Window].DataContext.ToggleContextCardCommand}"
+                                 ToggleInspectorCommand="{Binding $parent[Window].DataContext.ToggleRightPanelCommand}"
+                                 ExpandInspectorCommand="{Binding $parent[ui:AppWorkspacePanes].ShowInspectorExpandedCommand}"
+                                 StartupStatus="{Binding Startup.Status}" HasStartupStatus="{Binding Startup.HasStatus}"
+                                 HasStartupWarning="{Binding Startup.HasWarning}"
+                                 StartupActionLabel="{Binding Startup.OpenSettingsLabel}"
+                                 StartupActionCommand="{Binding $parent[Window].DataContext.OpenMcpSettingsCommand}"
+                                 Activity="{Binding Activity}" IsRunning="{Binding IsRunning}">
+        <ui:AppConversationHeader.HeadingContent>
+          <views:WorkspaceConversationTabsView />
+        </ui:AppConversationHeader.HeadingContent>
+        <ui:AppConversationHeader.MenuContent>
+          <StackPanel>
+            <ui:AppButton Content="新对话" Classes="ghost align-leading" HorizontalAlignment="Stretch"
+                          Command="{Binding Catalog.NewTaskCommand}" />
+            <ui:AppButton Content="重命名任务" Classes="ghost align-leading" HorizontalAlignment="Stretch"
+                          IsVisible="{Binding Catalog.SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}"
+                          Command="{Binding Catalog.TaskManagement.BeginRenameCommand}" />
+            <ui:AppButton Content="归档任务" Classes="ghost align-leading" HorizontalAlignment="Stretch"
+                          IsVisible="{Binding Catalog.SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}"
+                          Command="{Binding Catalog.TaskManagement.ArchiveCommand}" />
+            <ui:AppButton Content="{Binding Catalog.TaskManagement.PinToggleLabel}" Classes="ghost align-leading"
+                          HorizontalAlignment="Stretch" Command="{Binding Catalog.TaskManagement.TogglePinCommand}" />
+            <ui:AppButton Content="{Binding Tabs.CloseTabLabel}" Classes="ghost align-leading" HorizontalAlignment="Stretch"
+                          Command="{Binding Tabs.CloseTabCommand}" CommandParameter="{Binding Tabs.SelectedTab}" />
           </StackPanel>
-          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4"
-                      VerticalAlignment="Center">
-            <TextBlock Text="{Binding Activity}" Classes="subtle" FontSize="10"
-                       MaxWidth="300" TextTrimming="CharacterEllipsis"
-                       VerticalAlignment="Center" Margin="0,0,8,0" />
-            <Button Content="↻" Classes="ghost icon"
-                    Command="{Binding RefreshCommand}" ToolTip.Tip="刷新工作区配置" />
-          </StackPanel>
-        </Grid>
-      </Border>
+        </ui:AppConversationHeader.MenuContent>
+      </ui:AppConversationHeader>
 
       <Grid Grid.Row="1" IsVisible="{Binding IsEmptySession}">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
-          <Border Width="44" Height="44" CornerRadius="12"
-                  Background="{DynamicResource CardSubtleBackgroundBrush}"
-                  BorderBrush="{DynamicResource BorderDefaultBrush}" BorderThickness="1">
-            <TextBlock Text="M" FontSize="15" FontWeight="SemiBold" Classes="muted"
-                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-          </Border>
-          <TextBlock Text="{Binding EmptySessionTitle}"
-                     FontSize="19" FontWeight="SemiBold"
-                     HorizontalAlignment="Center" />
-          <TextBlock Text="描述目标，MossAgent 会读取代码、运行工具并展示每一步结果。"
-                     Classes="muted" FontSize="12" HorizontalAlignment="Center" />
-        </StackPanel>
+        <Grid.Margin>
+          <MultiBinding Converter="{StaticResource EmptySessionViewportMarginConverter}">
+            <Binding Path="Catalog.SelectedTask" />
+            <Binding Path="$parent[Window].DataContext.ChatMessageViewportMargin" />
+          </MultiBinding>
+        </Grid.Margin>
+        <ui:AppEmptySessionLayout>
+          <ui:AppIcon Classes="ui-icon icon-brand empty-agent-offset" Data="{StaticResource UiIconEmptyAgent}"
+                Opacity="0.48"
+                HorizontalAlignment="Center" />
+          <ui:AppText Classes="type-27-5 weight-normal" Text="{Binding EmptySessionTitle}"
+                     HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"
+                     IsVisible="{Binding IsProjectlessChat}" />
+          <ui:AppProjectPrompt Prefix="{Binding EmptySessionPrefix}" Suffix="{Binding EmptySessionSuffix}"
+                               ProjectName="{Binding Catalog.SelectedProject.Name}"
+                               SelectProjectCommand="{Binding OpenProjectPickerCommand}"
+                               SwitchLabel="{Binding ProjectPickerSwitchLabel}"
+                               IsVisible="{Binding !IsProjectlessChat}">
+              <ui:AppProjectPrompt.ProjectFlyout>
+                <ui:AppFlyout Placement="TopEdgeAlignedLeft" HorizontalOffset="-60"
+                              DismissOnButtonClick="True">
+                  <views:ProjectPickerFlyoutView />
+                </ui:AppFlyout>
+              </ui:AppProjectPrompt.ProjectFlyout>
+          </ui:AppProjectPrompt>
+          <ui:AppActionButton Classes="ghost empty-project-action" HorizontalAlignment="Center"
+                  IsVisible="{Binding IsProjectlessChat}"
+                  Command="{Binding Catalog.ProjectEditor.OpenCommand}"
+                  ToolTip.Tip="添加一个工作项目" Label="添加项目"
+                  IconData="{StaticResource UiIconPlus}" />
+        </ui:AppEmptySessionLayout>
       </Grid>
 
-      <ScrollViewer Grid.Row="1" IsVisible="{Binding HasMessages}"
-                    HorizontalScrollBarVisibility="Disabled" Padding="28,18">
-        <ItemsControl ItemsSource="{Binding Messages}" MaxWidth="860"
-                      HorizontalAlignment="Stretch">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate>
-              <Border Padding="4,2,4,12">
-                <Grid ColumnDefinitions="86,*">
-                  <TextBlock Text="{Binding Role}" FontSize="11" FontWeight="SemiBold"
-                             Classes="muted" Margin="0,3,14,0" />
-                  <ItemsControl Grid.Column="1" ItemsSource="{Binding Blocks}"
-                                IsVisible="{Binding IsRegularMessage}">
-                    <ItemsControl.Styles>
-                      <Style Selector="ContentPresenter">
-                        <Setter Property="Margin" Value="0,0,0,8" />
-                      </Style>
-                    </ItemsControl.Styles>
-                    <ItemsControl.DataTemplates>
-                      <DataTemplate DataType="vm:ChatTextBlockViewModel">
-                        <Grid>
-                          <SelectableTextBlock Text="{Binding Text}" TextWrapping="Wrap"
-                                               FontSize="13" LineHeight="21"
-                                               IsVisible="{Binding IsBody}" />
-                          <SelectableTextBlock Text="{Binding Text}" TextWrapping="Wrap"
-                                               FontSize="16" FontWeight="SemiBold"
-                                               Margin="0,3,0,2"
-                                               IsVisible="{Binding IsHeading}" />
-                          <Grid ColumnDefinitions="22,*" IsVisible="{Binding IsListItem}">
-                            <TextBlock Text="{Binding Prefix}" Classes="muted"
-                                       FontSize="12" Margin="2,2,0,0" />
-                            <SelectableTextBlock Grid.Column="1" Text="{Binding Text}"
-                                                 TextWrapping="Wrap" FontSize="13"
-                                                 LineHeight="21" />
-                          </Grid>
-                          <Border BorderBrush="{DynamicResource BorderDefaultBrush}"
-                                  BorderThickness="2,0,0,0" Padding="10,1"
-                                  IsVisible="{Binding IsQuote}">
-                            <SelectableTextBlock Text="{Binding Text}" TextWrapping="Wrap"
-                                                 Classes="muted" FontSize="13" />
-                          </Border>
-                        </Grid>
-                      </DataTemplate>
-                      <DataTemplate DataType="vm:ChatCodeBlockViewModel">
-                        <Border Background="{DynamicResource AppBackgroundBrush}"
-                                BorderBrush="{DynamicResource BorderDefaultBrush}"
-                                BorderThickness="1" CornerRadius="8">
-                          <Grid RowDefinitions="Auto,*">
-                            <Border Background="{DynamicResource CardSubtleBackgroundBrush}"
-                                    BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                    BorderThickness="0,0,0,1" Padding="10,5">
-                              <TextBlock Text="{Binding Language}" Classes="subtle"
-                                         FontSize="10" FontFamily="Consolas" />
-                            </Border>
-                            <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto"
-                                          MaxHeight="360" Padding="10,8">
-                              <SelectableTextBlock Text="{Binding Code}" FontFamily="Consolas"
-                                                   FontSize="12" LineHeight="18" />
-                            </ScrollViewer>
-                          </Grid>
-                        </Border>
-                      </DataTemplate>
-                    </ItemsControl.DataTemplates>
-                  </ItemsControl>
+      <ui:AppScrollViewer x:Name="MessageScrollViewer" Grid.Row="1" IsVisible="{Binding HasMessages}"
+                    HorizontalScrollBarVisibility="Disabled"
+                    Margin="{Binding $parent[Window].DataContext.ChatMessageViewportMargin}"
+                    Padding="28,24">
+        <StackPanel MaxWidth="740" HorizontalAlignment="Stretch">
+        <ui:AppConversationTimeline Messages="{Binding Messages}" IsRunning="{Binding IsRunning}" />
+        <ui:AppFileChangeSummary Summary="{Binding FileChanges}" IsVisible="{Binding FileChanges.HasChanges}" />
+        <ui:AppTaskFailureNotice Hint="{Binding TaskFailureHint}"
+                                 IsVisible="{Binding IsSelectedTaskFailed}" />
+        </StackPanel>
+      </ui:AppScrollViewer>
 
-                  <Border Grid.Column="1" IsVisible="{Binding IsTool}"
-                          Background="{DynamicResource CardSubtleBackgroundBrush}"
-                          BorderBrush="{DynamicResource BorderSubtleBrush}"
-                          BorderThickness="1" CornerRadius="8">
-                    <Grid RowDefinitions="Auto,Auto">
-                      <Button Classes="ghost" Padding="10,7"
-                              HorizontalAlignment="Stretch"
-                              HorizontalContentAlignment="Stretch"
-                              Command="{Binding ToggleToolCommand}">
-                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                          <TextBlock Text="{Binding ExpandGlyph}" Classes="subtle"
-                                     VerticalAlignment="Center" />
-                          <StackPanel Grid.Column="1">
-                            <TextBlock Text="{Binding Tool.ToolName}" FontFamily="Consolas"
-                                       FontSize="11.5" FontWeight="SemiBold" />
-                            <TextBlock Text="{Binding Tool.Summary}" Classes="muted"
-                                       FontSize="11" TextTrimming="CharacterEllipsis" />
-                          </StackPanel>
-                          <TextBlock Grid.Column="2" Text="{Binding ToolStatus}"
-                                     Classes="subtle" FontSize="10"
-                                     VerticalAlignment="Center" />
-                        </Grid>
-                      </Button>
-                      <Border Grid.Row="1" IsVisible="{Binding IsToolExpanded}"
-                              BorderBrush="{DynamicResource BorderSubtleBrush}"
-                              BorderThickness="0,1,0,0" Padding="10,8">
-                        <ScrollViewer MaxHeight="260" HorizontalScrollBarVisibility="Auto">
-                          <SelectableTextBlock Text="{Binding Tool.Details}"
-                                               FontFamily="Consolas" FontSize="11.5"
-                                               TextWrapping="Wrap" />
-                        </ScrollViewer>
-                      </Border>
-                    </Grid>
-                  </Border>
-                </Grid>
-              </Border>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </ScrollViewer>
-
+      <views:WorkspaceBottomPanel Grid.Row="1" VerticalAlignment="Bottom"
+                                  DataContext="{Binding $parent[Window].DataContext}"
+                                  IsVisible="{Binding $parent[Window].DataContext.IsBottomPanelOpen}" />
       <views:WorkspaceComposerView Grid.Row="2" />
     </Grid>
-  </Border>
-</UserControl>
+  </ui:AppBorder>
+</ui:AppUserControl>

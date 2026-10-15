@@ -1,0 +1,15 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="DangerButtonBackgroundBrush" Color="#FEF2F2" />
+      <SolidColorBrush x:Key="DangerButtonBorderBrush" Color="#FECACA" />
+      <SolidColorBrush x:Key="DangerButtonForegroundBrush" Color="#B91C1C" />
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="DangerButtonBackgroundBrush" Color="#2E1517" />
+      <SolidColorBrush x:Key="DangerButtonBorderBrush" Color="#6B2127" />
+      <SolidColorBrush x:Key="DangerButtonForegroundBrush" Color="#F87171" />
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>

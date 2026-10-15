@@ -1,0 +1,20 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:MossAgent.App.Controls">
+  <Style Selector="Grid.editable-choice">
+    <Setter Property="ColumnSpacing" Value="4" />
+  </Style>
+  <Style Selector=".app-input.editable-choice-input" x:SetterTargetType="ui:AppInput">
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="CornerRadius" Value="8" />
+  </Style>
+  <Style Selector=".editable-choice-button" x:SetterTargetType="ui:AppIconButton">
+    <Setter Property="Width" Value="32" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector=".app-list-box.editable-choice-list" x:SetterTargetType="ui:AppListBox">
+    <Setter Property="MinWidth" Value="160" />
+    <Setter Property="MaxHeight" Value="240" />
+  </Style>
+</Styles>

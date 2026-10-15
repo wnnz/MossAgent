@@ -1,0 +1,14 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppThemeColorInput"
+                   x:Name="Root" Classes="app-theme-color-input" x:CompileBindings="False">
+  <ui:AppBorder Classes="theme-color-field">
+    <Grid ColumnDefinitions="14,*" ColumnSpacing="8">
+      <ui:AppColorSwatch Classes="theme-value-swatch" ColorHex="{Binding Text, ElementName=Root}" />
+      <ui:AppInput Grid.Column="1" Classes="theme-color-value"
+                   Text="{Binding Text, ElementName=Root, Mode=TwoWay}"
+                   AutomationProperties.Name="{Binding Label, ElementName=Root}" />
+    </Grid>
+  </ui:AppBorder>
+</ui:AppUserControl>

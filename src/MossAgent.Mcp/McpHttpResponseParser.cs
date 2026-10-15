@@ -4,69 +4,31 @@ namespace MossAgent.Mcp;
 
 internal static class McpHttpResponseParser
 {
-    public static JsonElement Parse(string content, string? mediaType, long? expectedId)
+    public static JsonElement? ReadMessage(string content, long expectedId)
     {
-        if (!string.Equals(mediaType, "text/event-stream", StringComparison.OrdinalIgnoreCase))
+        try
         {
-            return ParseJson(content);
+            using var document = JsonDocument.Parse(content);
+            var value = document.RootElement;
+            if (value.ValueKind != JsonValueKind.Object
+                || !value.TryGetProperty("jsonrpc", out var version)
+                || version.ValueKind != JsonValueKind.String || version.GetString() != "2.0")
+                throw new IOException("MCP HTTP 响应不是有效的 JSON-RPC 消息。");
+            if (value.TryGetProperty("method", out _)) return null;
+            if (!value.TryGetProperty("id", out var id) || id.ValueKind != JsonValueKind.Number
+                || !id.TryGetInt64(out var actualId))
+                throw new IOException("MCP HTTP 响应缺少有效请求标识。");
+            if (actualId != expectedId) return null;
+            var hasResult = value.TryGetProperty("result", out var result);
+            var hasError = value.TryGetProperty("error", out _);
+            if (hasResult == hasError) throw new IOException("MCP HTTP 响应缺少有效结果。");
+            if (hasError) throw new IOException("MCP server 返回协议错误。");
+            if (result.ValueKind != JsonValueKind.Object) throw new IOException("MCP HTTP 响应结果格式无效。");
+            return value.Clone();
         }
-
-        foreach (var payload in ReadEventData(content))
+        catch (JsonException)
         {
-            var value = ParseJson(payload);
-            if (expectedId is null || HasId(value, expectedId.Value))
-            {
-                return value;
-            }
-        }
-
-        throw new InvalidDataException("MCP SSE 响应中没有匹配的 JSON-RPC 结果。");
-    }
-
-    private static IEnumerable<string> ReadEventData(string content)
-    {
-        var data = new List<string>();
-        using var reader = new StringReader(content);
-        while (reader.ReadLine() is { } line)
-        {
-            if (line.Length == 0)
-            {
-                if (data.Count > 0)
-                {
-                    yield return string.Join('\n', data);
-                    data.Clear();
-                }
-
-                continue;
-            }
-
-            if (line.StartsWith("data:", StringComparison.Ordinal))
-            {
-                data.Add(line[5..].TrimStart());
-            }
-        }
-
-        if (data.Count > 0)
-        {
-            yield return string.Join('\n', data);
+            throw new IOException("MCP HTTP 响应不是有效的 JSON-RPC 消息。");
         }
     }
-
-    private static JsonElement ParseJson(string content)
-    {
-        if (string.IsNullOrWhiteSpace(content))
-        {
-            return default;
-        }
-
-        using var document = JsonDocument.Parse(content);
-        return document.RootElement.Clone();
-    }
-
-    private static bool HasId(JsonElement value, long expectedId) =>
-        value.ValueKind == JsonValueKind.Object
-        && value.TryGetProperty("id", out var id)
-        && id.ValueKind == JsonValueKind.Number
-        && id.TryGetInt64(out var actualId)
-        && actualId == expectedId;
 }

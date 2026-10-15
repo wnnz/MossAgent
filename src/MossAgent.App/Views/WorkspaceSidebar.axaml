@@ -1,220 +1,284 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
+             xmlns:views="clr-namespace:MossAgent.App.Views"
              x:Class="MossAgent.App.Views.WorkspaceSidebar"
              x:CompileBindings="False">
-  <UserControl.Styles>
-    <Style Selector="Border.directory-row Button.set-primary">
-      <Setter Property="Opacity" Value="0" />
-      <Setter Property="IsHitTestVisible" Value="False" />
-    </Style>
-    <Style Selector="Border.directory-row:pointerover Button.set-primary">
-      <Setter Property="Opacity" Value="1" />
-      <Setter Property="IsHitTestVisible" Value="True" />
-    </Style>
-  </UserControl.Styles>
-  <Border Background="{DynamicResource SidebarBackgroundBrush}"
-          BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,1,0"
-          Padding="10,10">
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto">
-      <StackPanel Grid.Row="0" Spacing="2" Margin="0,0,0,14">
-        <Button Classes="ghost" HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Left" Padding="9,9" MinHeight="40"
-                Command="{Binding NewTaskCommand}">
-          <StackPanel Orientation="Horizontal" Spacing="10">
-            <TextBlock Text="✎" FontSize="18" Width="24" TextAlignment="Center" />
-            <TextBlock Text="新建任务" FontSize="13" FontWeight="SemiBold" />
-          </StackPanel>
-        </Button>
-        <Button Classes="ghost" HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Left" Padding="9,9" MinHeight="40"
-                Command="{Binding $parent[Window].DataContext.SelectInspectorTabCommand}"
-                CommandParameter="diff">
-          <StackPanel Orientation="Horizontal" Spacing="10">
-            <TextBlock Text="⌘" FontSize="18" Width="24" TextAlignment="Center" />
-            <TextBlock Text="代码审查" FontSize="13" />
-          </StackPanel>
-        </Button>
-        <Button Classes="ghost" HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Left" Padding="9,9" MinHeight="40"
-                Command="{Binding $parent[Window].DataContext.SelectInspectorTabCommand}"
-                CommandParameter="terminal">
-          <StackPanel Orientation="Horizontal" Spacing="10">
-            <TextBlock Text="›_" FontFamily="Consolas" FontSize="16" Width="24" TextAlignment="Center" />
-            <TextBlock Text="终端" FontSize="13" />
-          </StackPanel>
-        </Button>
-        <Button Classes="ghost" HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Left" Padding="9,9" MinHeight="40"
-                Command="{Binding $parent[Window].DataContext.SelectInspectorTabCommand}"
-                CommandParameter="browser">
-          <StackPanel Orientation="Horizontal" Spacing="10">
-            <TextBlock Text="◎" FontSize="18" Width="24" TextAlignment="Center" />
-            <TextBlock Text="浏览器" FontSize="13" />
-          </StackPanel>
-        </Button>
+  <ui:AppBorder Classes="workspace-sidebar-surface"
+          Padding="8,8,8,12">
+    <Grid RowDefinitions="Auto,*">
+      <StackPanel Grid.Row="0" Spacing="0" Classes="sidebar-actions-header"
+                  Classes.has-pinned-tasks="{Binding TaskManagement.PinnedTasks.HasItems}">
+        <Grid ColumnDefinitions="*,Auto,Auto" Margin="6,0,2,11">
+          <ui:AppActionButton Classes="ghost sidebar-brand-trigger" HorizontalAlignment="Left"
+                              Label="MossAgent" TrailingIconData="{StaticResource UiIconChevronDown}">
+            <Button.Flyout>
+              <ui:AppFlyout Placement="BottomEdgeAlignedLeft" DismissOnButtonClick="True">
+                <ui:AppCard Classes="flyout-surface card-inset-compact" Width="248">
+                  <StackPanel Spacing="3">
+                    <ui:AppText Text="切换项目" Classes="muted type-11 weight-semibold" Margin="8,4" />
+                    <ui:AppActionButton Classes="ghost menu-option align-leading" HorizontalAlignment="Stretch"
+                            Command="{Binding NewChatCommand}" Label="{Binding ProjectlessChatLabel}"
+                            IconData="{StaticResource UiIconAssistant}" />
+                    <ui:AppItemsControl ItemsSource="{Binding Projects}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <ui:AppActionButton Classes="ghost menu-option align-leading"
+                                  HorizontalAlignment="Stretch"
+                                  IconData="{StaticResource UiIconFolder}" Label="{Binding Name}"
+                                  Command="{Binding $parent[Window].DataContext.Workspace.Catalog.SelectProjectCommand}"
+                                  CommandParameter="{Binding}" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ui:AppItemsControl>
+                  </StackPanel>
+                </ui:AppCard>
+              </ui:AppFlyout>
+            </Button.Flyout>
+          </ui:AppActionButton>
+          <ui:AppSidebarSearch Grid.Column="2"
+              Query="{Binding $parent[Window].DataContext.Workspace.SidebarSearch.Query, Mode=TwoWay}"
+              HasMatches="{Binding $parent[Window].DataContext.Workspace.SidebarSearch.HasMatches}"
+              ClearCommand="{Binding $parent[Window].DataContext.Workspace.SidebarSearch.ClearCommand}" />
+          <ui:AppIconButton Grid.Column="1" Classes="sidebar-header-icon sidebar-audit-trigger" Label="审计与执行记录"
+                  Command="{Binding $parent[Window].DataContext.SelectInspectorTabCommand}"
+                  CommandParameter="audit" />
+        </Grid>
+        <ui:AppActionButton Classes="ghost sidebar-action-button align-leading" HorizontalAlignment="Stretch"
+                Command="{Binding NewTaskCommand}" Label="新对话"
+                IconData="{StaticResource UiIconCompose}" />
       </StackPanel>
 
-      <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="8,0,4,6">
-        <TextBlock Text="项目" Classes="subtle" FontSize="11"
-                   FontWeight="SemiBold" VerticalAlignment="Center" />
-        <Button Grid.Column="1" Content="＋" Classes="ghost icon" ToolTip.Tip="添加项目">
+      <ui:AppScrollViewer Grid.Row="1" Classes="sidebar-navigation-scroll"
+                          NavigationDragScope="{Binding $parent[Window].DataContext.Workspace.SidebarProjects.ReorderScope}">
+      <StackPanel Classes="sidebar-navigation-flow">
+      <StackPanel Classes="sidebar-pinned-section"
+                  IsVisible="{Binding TaskManagement.PinnedTasks.HasItems}">
+        <ui:AppText Text="置顶" Classes="sidebar-section-heading sidebar-pinned-heading" />
+          <ui:AppItemsControl Classes="sidebar-task-list" ItemsSource="{Binding TaskManagement.PinnedTasks.Items}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <ui:AppTaskNavigationRow Title="{Binding Task.Title}" IsSelected="{Binding IsSelected}"
+                    IsRunning="{Binding IsRunning}"
+                    CommandParameter="{Binding Task}" PinLabel="{Binding PinToggleLabel}"
+                    SelectCommand="{Binding $parent[Window].DataContext.Workspace.Catalog.SelectTaskCommand}"
+                    RenameCommand="{Binding $parent[Window].DataContext.Workspace.Catalog.TaskManagement.BeginRenameCommand}"
+                    ArchiveCommand="{Binding $parent[Window].DataContext.Workspace.Catalog.TaskManagement.ArchiveCommand}"
+                    TogglePinCommand="{Binding $parent[Window].DataContext.Workspace.Catalog.TaskManagement.TogglePinCommand}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ui:AppItemsControl>
+      </StackPanel>
+
+      <ui:AppBorder Classes="projects-section-header transparent-hit-target">
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+        <ui:AppText Text="项目" Classes="sidebar-section-heading" VerticalAlignment="Center" />
+        <ui:AppIconButton Grid.Column="1" Classes="icon-micro project-header-action expand-icon"
+                Command="{Binding Sections.ToggleProjectsCommand}"
+                Label="展开或折叠项目"
+                IconData="{StaticResource UiIconChevronRight}"
+                AlternateIconData="{StaticResource UiIconChevronDown}"
+                IsAlternateIcon="{Binding Sections.IsProjectsExpanded}" />
+        <ui:AppIconButton Grid.Column="3" Classes="icon-compact project-header-action"
+                          Label="项目选项" IconData="{StaticResource UiIconMore}">
           <Button.Flyout>
-            <Flyout Placement="BottomEdgeAlignedLeft"
+            <ui:AppFlyout Placement="BottomEdgeAlignedRight" DismissOnButtonClick="True">
+              <ui:AppCard Classes="flyout-surface card-inset-tight sidebar-sort-menu"
+                          DataContext="{Binding $parent[Window].DataContext.Workspace.SidebarProjects}">
+                <StackPanel>
+                  <ui:AppText Text="{Binding SortHeading}" Classes="muted type-11 sidebar-sort-heading" />
+                  <ui:AppActionButton Label="{Binding SortByActivityLabel}" Classes="ghost menu-option sidebar-sort-option"
+                                      HorizontalAlignment="Stretch" Command="{Binding SortByActivityCommand}"
+                                      TrailingIconData="{StaticResource UiIconCheck}" IsTrailingIconVisible="{Binding IsActivitySort}" />
+                  <ui:AppActionButton Label="{Binding SortManuallyLabel}" Classes="ghost menu-option sidebar-sort-option"
+                                      HorizontalAlignment="Stretch" Command="{Binding SortManuallyCommand}"
+                                      TrailingIconData="{StaticResource UiIconCheck}" IsTrailingIconVisible="{Binding IsManualSort}" />
+                </StackPanel>
+              </ui:AppCard>
+            </ui:AppFlyout>
+          </Button.Flyout>
+        </ui:AppIconButton>
+        <ui:AppIconButton Grid.Column="4" Classes="icon-compact project-header-action"
+                          Label="添加项目" IconData="{StaticResource UiIconPlus}">
+          <Button.Flyout>
+            <ui:AppFlyout Placement="BottomEdgeAlignedLeft"
                     IsOpen="{Binding ProjectEditor.IsOpen, Mode=TwoWay}">
-              <Border Background="{DynamicResource CardBackgroundBrush}"
-                      BorderBrush="{DynamicResource BorderDefaultBrush}" BorderThickness="1"
-                      CornerRadius="12" Padding="14" Width="420">
+              <ui:AppCard Classes="flyout-surface card-inset-editor" Width="420">
                 <StackPanel Spacing="8">
-                  <TextBlock Text="创建项目" FontWeight="SemiBold" FontSize="18" Margin="2,0,0,4" />
-                  <TextBox Text="{Binding ProjectEditor.Name}" PlaceholderText="项目名称" />
-                  <TextBlock Text="源文件夹" Classes="muted" FontSize="11.5" Margin="2,4,0,0" />
-                  <ItemsControl ItemsSource="{Binding ProjectEditor.Directories}">
+                  <ui:AppText Classes="type-18 weight-semibold" Text="{Binding ProjectEditor.EditorTitle}" Margin="2,0,0,4" />
+                  <ui:AppInput Text="{Binding ProjectEditor.Name}" PlaceholderText="项目名称" />
+                  <ui:AppText Text="源文件夹" Classes="muted type-11-5" Margin="2,4,0,0" />
+                  <ui:AppItemsControl ItemsSource="{Binding ProjectEditor.Directories}"
+                                      IsEnabled="{Binding !ProjectEditor.IsBusy}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate>
-                        <Border Classes="directory-row"
-                                BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                BorderThickness="1,0,1,1" Padding="10,8">
+                        <ui:AppBorder Classes="directory-row" Padding="10,8">
                           <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
-                            <TextBlock Text="▱" Classes="muted" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}"
+                            <ui:AppIcon Classes="ui-icon" Data="{StaticResource UiIconFolder}" VerticalAlignment="Center" />
+                            <ui:AppText Grid.Column="1" Text="{Binding DisplayName}"
                                        ToolTip.Tip="{Binding Path}" TextTrimming="CharacterEllipsis"
                                        VerticalAlignment="Center" />
-                            <Border Grid.Column="2" IsVisible="{Binding IsPrimary}"
-                                    BorderBrush="{DynamicResource BorderDefaultBrush}"
-                                    BorderThickness="1" CornerRadius="7" Padding="8,3">
-                              <TextBlock Text="主要" Classes="muted" FontSize="10.5" />
-                            </Border>
-                            <Button Grid.Column="2" Classes="ghost set-primary"
+                            <ui:AppBorder Grid.Column="2" IsVisible="{Binding IsPrimary}"
+                                    Classes="directory-primary-badge" Padding="8,3">
+                              <ui:AppText Text="主要" Classes="muted type-10-5" />
+                            </ui:AppBorder>
+                            <ui:AppButton Grid.Column="2" Classes="ghost set-primary button-xxs"
                                     IsVisible="{Binding IsSecondary}" Content="设为主要"
-                                    Padding="8,3" FontSize="10.5"
                                     Command="{Binding SetPrimaryCommand}" />
-                            <Button Grid.Column="3" Classes="ghost icon" Content="×"
-                                    Command="{Binding RemoveCommand}"
-                                    ToolTip.Tip="移除目录" />
+                            <ui:AppIconButton Grid.Column="3" Command="{Binding RemoveCommand}"
+                                              Label="移除目录" IconData="{StaticResource UiIconClose}" />
                           </Grid>
-                        </Border>
+                        </ui:AppBorder>
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                  <Button Content="＋ 添加文件夹" Classes="ghost"
-                          HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                  </ui:AppItemsControl>
+<ui:AppActionButton Label="添加文件夹" IconData="{StaticResource UiIconPlus}" Classes="ghost align-leading"
+                          HorizontalAlignment="Stretch"
                           Command="{Binding ProjectEditor.AddDirectoryCommand}" />
-                  <Button Content="添加项目" Classes="primary"
+<ui:AppButton Content="{Binding ProjectEditor.SubmitLabel}" Classes="primary"
                           Command="{Binding ProjectEditor.AddCommand}"
                           HorizontalAlignment="Stretch"
-                          HorizontalContentAlignment="Center" />
-                  <TextBlock Text="{Binding ProjectEditor.Status}" Classes="muted" FontSize="11"
+                          />
+                  <ui:AppText Text="{Binding ProjectEditor.Status}" Classes="muted type-11"
+                             Classes.status-error="{Binding ProjectEditor.HasStatusError}"
                              TextWrapping="Wrap" />
                 </StackPanel>
-              </Border>
-            </Flyout>
+              </ui:AppCard>
+            </ui:AppFlyout>
           </Button.Flyout>
-        </Button>
+        </ui:AppIconButton>
       </Grid>
+      </ui:AppBorder>
 
-      <ListBox Grid.Row="2" ItemsSource="{Binding Projects}"
-               SelectedItem="{Binding SelectedProject}"
-               MaxHeight="150" Margin="0,0,0,2">
-        <ListBox.ItemTemplate>
-          <DataTemplate>
-            <Grid ColumnDefinitions="26,*" Margin="1">
-              <TextBlock Text="▱" Classes="muted" FontSize="17"
-                         HorizontalAlignment="Center" VerticalAlignment="Center" />
-              <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="12.5"
-                         Margin="6,0,0,0" TextTrimming="CharacterEllipsis"
-                         VerticalAlignment="Center" />
+          <StackPanel IsVisible="{Binding $parent[Window].DataContext.Workspace.SidebarProjects.HasError}">
+            <ui:AppText Text="{Binding $parent[Window].DataContext.Workspace.SidebarProjects.Status}"
+                        Classes="status-error type-11 sidebar-sort-error" TextWrapping="Wrap" />
+            <ui:AppActionButton Label="{Binding $parent[Window].DataContext.Workspace.SidebarProjects.RetryLabel}"
+                                IconData="{StaticResource UiIconRefresh}"
+                                Classes="ghost menu-option align-leading" HorizontalAlignment="Stretch"
+                                Command="{Binding $parent[Window].DataContext.Workspace.SidebarProjects.RetryLoadCommand}" />
+          </StackPanel>
+
+          <ui:AppBorder IsVisible="{Binding TaskManagement.IsEditing}"
+                  Classes="sidebar-rename-surface" Padding="7">
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="4">
+              <ui:AppInput Classes="compact-input" Text="{Binding TaskManagement.EditingTitle}"
+                       PlaceholderText="任务名称" />
+              <ui:AppButton Grid.Column="1" Content="保存" Classes="primary sidebar-rename-action"
+                      Command="{Binding TaskManagement.SaveRenameCommand}" />
+              <ui:AppButton Grid.Column="2" Content="取消" Classes="ghost sidebar-rename-action"
+                      Command="{Binding TaskManagement.CancelRenameCommand}" />
             </Grid>
-          </DataTemplate>
-        </ListBox.ItemTemplate>
-      </ListBox>
-
-      <Grid Grid.Row="3" ColumnDefinitions="*,Auto" Margin="0,4,0,2">
-        <TextBox Text="{Binding TaskSearch.Query}" PlaceholderText="搜索当前项目的任务"
-                 FontSize="11.5" Padding="8,5" />
-        <Button Grid.Column="1" Content="×" Classes="ghost icon"
-                IsVisible="{Binding TaskSearch.HasQuery}"
-                Command="{Binding TaskSearch.ClearCommand}" ToolTip.Tip="清除搜索" />
-      </Grid>
-
-      <Grid Grid.Row="4" ColumnDefinitions="*,Auto,Auto" Margin="8,8,4,4">
-        <TextBlock Text="最近任务" Classes="subtle" FontSize="11"
-                   FontWeight="SemiBold" VerticalAlignment="Center" />
-        <Button Grid.Column="1" Content="✎" Classes="ghost icon"
-                Command="{Binding TaskManagement.BeginRenameCommand}"
-                IsVisible="{Binding SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}"
-                ToolTip.Tip="重命名所选任务" />
-        <Button Grid.Column="2" Content="↓" Classes="ghost icon"
-                Command="{Binding TaskManagement.ArchiveCommand}"
-                IsVisible="{Binding SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}"
-                ToolTip.Tip="归档所选任务" />
-      </Grid>
-
-      <Grid Grid.Row="5" RowDefinitions="Auto,*,Auto">
-        <Border IsVisible="{Binding TaskManagement.IsEditing}"
-                Background="{DynamicResource CardSubtleBackgroundBrush}"
-                BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
-                CornerRadius="7" Padding="7" Margin="0,0,0,6">
-          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="4">
-            <TextBox Text="{Binding TaskManagement.EditingTitle}" FontSize="11.5"
-                     PlaceholderText="任务名称" />
-            <Button Grid.Column="1" Content="保存" Classes="primary" Padding="7,3"
-                    Command="{Binding TaskManagement.SaveRenameCommand}" />
-            <Button Grid.Column="2" Content="取消" Classes="ghost" Padding="7,3"
-                    Command="{Binding TaskManagement.CancelRenameCommand}" />
-          </Grid>
-        </Border>
-
-        <ListBox Grid.Row="1" ItemsSource="{Binding Tasks}"
-                 SelectedItem="{Binding SelectedTask}">
-          <ListBox.ItemTemplate>
-            <DataTemplate>
-              <Grid ColumnDefinitions="*,Auto" Margin="1">
-                <TextBlock Text="{Binding Title}" FontSize="12.5" Margin="24,0,0,0"
-                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1" Text="{Binding Status}" Classes="subtle"
-                           FontSize="9" Margin="6,0,0,0" VerticalAlignment="Center" />
-              </Grid>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
-
-        <StackPanel Grid.Row="2" Margin="0,5,0,0" Spacing="4"
-                    IsVisible="{Binding TaskManagement.HasArchivedTasks}">
-          <Button Content="{Binding TaskManagement.ArchiveToggleLabel}" Classes="ghost"
-                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
-                  Padding="7,4" FontSize="10.5"
-                  Command="{Binding TaskManagement.ToggleArchiveCommand}" />
-          <StackPanel IsVisible="{Binding TaskManagement.IsArchiveVisible}" Spacing="4">
-            <ListBox ItemsSource="{Binding TaskManagement.ArchivedTasks}"
-                     SelectedItem="{Binding TaskManagement.SelectedArchivedTask}"
-                     MaxHeight="130">
-              <ListBox.ItemTemplate>
-                <DataTemplate>
-                  <TextBlock Text="{Binding Title}" FontSize="11.5"
-                             TextTrimming="CharacterEllipsis" />
-                </DataTemplate>
-              </ListBox.ItemTemplate>
-            </ListBox>
-            <Button Content="恢复所选任务" Classes="ghost" Padding="7,4"
+          </ui:AppBorder>
+          <ui:AppItemsControl Classes="sidebar-project-list"
+                              ItemsSource="{Binding $parent[Window].DataContext.Workspace.SidebarProjects.Items}"
+                              IsVisible="{Binding Sections.IsProjectsExpanded}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Classes="sidebar-project-group" Classes.expanded="{Binding IsExpanded}"
+                            IsVisible="{Binding IsVisible}">
+                  <ui:AppProjectNavigationRow Title="{Binding Project.Name}" IsSelected="{Binding IsSelected}"
+                                              IsExpanded="{Binding IsExpanded}" ActionTarget="{Binding Project}"
+                                              DragScope="{Binding $parent[Window].DataContext.Workspace.SidebarProjects.ReorderScope}"
+                                              ReorderCommand="{Binding $parent[Window].DataContext.Workspace.SidebarProjects.ReorderCommand}"
+                                              IsReorderEnabled="{Binding $parent[Window].DataContext.Workspace.SidebarProjects.IsReorderAvailable}"
+                                              SelectCommand="{Binding $parent[Window].DataContext.Workspace.Catalog.SelectProjectCommand}"
+                                              ToggleExpandedCommand="{Binding ToggleExpandedCommand}"
+                                              IsSummaryOpen="{Binding IsSummaryOpen, Mode=TwoWay}">
+                    <ui:AppProjectNavigationRow.SummaryContent>
+                          <ui:AppCard Classes="flyout-surface card-inset-popover" Width="320">
+                            <StackPanel Spacing="5">
+                              <ui:AppIconLabel Classes="project-summary-title" IconData="{StaticResource UiIconFolder}"
+                                               Label="{Binding Project.Name}" />
+                              <ui:AppText Text="{Binding ProjectTaskSummary}" Classes="muted type-12"
+                                          Margin="2,0,0,0" />
+                              <ui:AppBorder Classes="divider-top" Height="1" Margin="0,2,0,0" />
+                              <ui:AppIconLabel Classes="project-summary-path" IconData="{StaticResource UiIconFolder}"
+                                               Label="{Binding Project.PrimaryDirectory}" />
+                              <ui:AppBorder Classes="divider-top" Height="1" Margin="0,2,0,0" />
+                                            <ui:AppActionButton Label="编辑项目" IconData="{StaticResource UiIconSettings}"
+                                                  Classes="ghost menu-option align-leading" HorizontalAlignment="Stretch"
+                                                  Command="{Binding $parent[Window].DataContext.Workspace.Catalog.EditProjectCommand}"
+                                                  CommandParameter="{Binding}" />
+                              <ui:AppActionButton Label="{Binding $parent[Window].DataContext.Workspace.SidebarProjects.MoveUpLabel}"
+                                                  IconData="{StaticResource UiIconArrowUp}"
+                                                  Classes="ghost menu-option align-leading" HorizontalAlignment="Stretch"
+                                                  Command="{Binding $parent[Window].DataContext.Workspace.SidebarProjects.MoveUpCommand}"
+                                                  CommandParameter="{Binding}" />
+                              <ui:AppActionButton Label="{Binding $parent[Window].DataContext.Workspace.SidebarProjects.MoveDownLabel}"
+                                                  IconData="{StaticResource UiIconArrowDown}"
+                                                  Classes="ghost menu-option align-leading" HorizontalAlignment="Stretch"
+                                                  Command="{Binding $parent[Window].DataContext.Workspace.SidebarProjects.MoveDownCommand}"
+                                                  CommandParameter="{Binding}" />
+                            </StackPanel>
+                          </ui:AppCard>
+                    </ui:AppProjectNavigationRow.SummaryContent>
+                  </ui:AppProjectNavigationRow>
+                  <ui:AppItemsControl Classes="sidebar-task-list" ItemsSource="{Binding TaskPreview.Items}"
+                                      IsVisible="{Binding IsExpanded}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <ui:AppTaskNavigationRow Title="{Binding Task.Title}" IsSelected="{Binding IsSelected}"
+                            IsRunning="{Binding IsRunning}"
+                            IsProjectTask="True" CommandParameter="{Binding Task}" PinLabel="{Binding PinToggleLabel}"
+                            SelectCommand="{Binding $parent[Window].DataContext.Workspace.Catalog.SelectTaskCommand}"
+                            RenameCommand="{Binding $parent[Window].DataContext.Workspace.Catalog.TaskManagement.BeginRenameCommand}"
+                            ArchiveCommand="{Binding $parent[Window].DataContext.Workspace.Catalog.TaskManagement.ArchiveCommand}"
+                            TogglePinCommand="{Binding $parent[Window].DataContext.Workspace.Catalog.TaskManagement.TogglePinCommand}" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ui:AppItemsControl>
+                  <StackPanel IsVisible="{Binding IsExpanded}">
+                    <ui:AppButton Content="{Binding TaskPreview.ToggleLabel}"
+                                  Classes="ghost sidebar-project-more align-leading"
+                                  HorizontalAlignment="Stretch" IsVisible="{Binding TaskPreview.CanToggle}"
+                                  Command="{Binding TaskPreview.ToggleCommand}" />
+                  </StackPanel>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ui:AppItemsControl>
+          <ui:AppText Text="最近" Classes="sidebar-section-heading sidebar-recent-heading"
+                     IsVisible="{Binding RecentTasks.HasItems}" />
+          <ui:AppItemsControl Classes="sidebar-task-list" ItemsSource="{Binding RecentTasks.Items}"
+                        IsVisible="{Binding RecentTasks.HasItems}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <ui:AppTaskNavigationRow Title="{Binding Task.Title}" IsSelected="{Binding IsSelected}"
+                    IsRunning="{Binding IsRunning}"
+                    CommandParameter="{Binding Task}" PinLabel="{Binding PinToggleLabel}"
+                    SelectCommand="{Binding $parent[Window].DataContext.Workspace.Catalog.SelectTaskCommand}"
+                    RenameCommand="{Binding $parent[Window].DataContext.Workspace.Catalog.TaskManagement.BeginRenameCommand}"
+                    ArchiveCommand="{Binding $parent[Window].DataContext.Workspace.Catalog.TaskManagement.ArchiveCommand}"
+                    TogglePinCommand="{Binding $parent[Window].DataContext.Workspace.Catalog.TaskManagement.TogglePinCommand}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ui:AppItemsControl>
+          <StackPanel Spacing="4" IsVisible="{Binding TaskManagement.HasArchivedTasks}">
+<ui:AppButton Content="{Binding TaskManagement.ArchiveToggleLabel}" Classes="ghost button-xs align-leading"
                     HorizontalAlignment="Stretch"
-                    Command="{Binding TaskManagement.RestoreCommand}" />
+                    Command="{Binding TaskManagement.ToggleArchiveCommand}" />
+            <StackPanel IsVisible="{Binding TaskManagement.IsArchiveVisible}" Spacing="4">
+              <ui:AppListBox ItemsSource="{Binding TaskManagement.ArchivedTasks}"
+                       SelectedItem="{Binding TaskManagement.SelectedArchivedTask}"
+                       MaxHeight="130">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <ui:AppText Classes="type-11-5" Text="{Binding Title}"
+                               TextTrimming="CharacterEllipsis" />
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ui:AppListBox>
+              <ui:AppButton Content="恢复所选任务" Classes="ghost sidebar-restore-task"
+                      HorizontalAlignment="Stretch"
+                      Command="{Binding TaskManagement.RestoreCommand}" />
+            </StackPanel>
           </StackPanel>
-          <TextBlock Text="{Binding TaskManagement.Status}" Classes="subtle"
-                     FontSize="10" TextWrapping="Wrap" />
+          <ui:AppText Text="{Binding TaskManagement.Status}" Classes="subtle type-10" TextWrapping="Wrap"
+                      Classes.status-error="{Binding TaskManagement.HasStatusError}" />
         </StackPanel>
-      </Grid>
+      </ui:AppScrollViewer>
 
-      <Border Grid.Row="6" BorderBrush="{DynamicResource BorderSubtleBrush}"
-              BorderThickness="0,1,0,0" Padding="0,8,0,0" Margin="0,8,0,0">
-        <Button Classes="ghost" Padding="8,7" HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Left"
-                Command="{Binding $parent[Window].DataContext.OpenSettingsCommand}">
-          <StackPanel Orientation="Horizontal" Spacing="9">
-            <TextBlock Text="⚙" FontSize="17" Width="24" TextAlignment="Center" Classes="muted" />
-            <TextBlock Text="设置" FontSize="12.5" />
-          </StackPanel>
-        </Button>
-      </Border>
     </Grid>
-  </Border>
-</UserControl>
+  </ui:AppBorder>
+</ui:AppUserControl>

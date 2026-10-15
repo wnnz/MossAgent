@@ -6,4 +6,15 @@
     <PackageReference Include="xunit.runner.visualstudio" />
     <ProjectReference Include="../../src/MossAgent.Infrastructure/MossAgent.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../Shared/SqliteTestPool.cs" Link="Testing/SqliteTestPool.cs" />
+    <Compile Include="../Shared/Socks5TestHandshake.cs" Link="Testing/Socks5TestHandshake.cs" />
+    <Compile Include="../Shared/FixtureTaskProcessLauncher.cs" Link="Testing/FixtureTaskProcessLauncher.cs" />
+    <Compile Include="../Shared/FixtureTaskProcess.cs" Link="Testing/FixtureTaskProcess.cs" />
+    <Compile Include="../Shared/StubTaskProcess.cs" Link="Testing/StubTaskProcess.cs" />
+    <Compile Include="../Shared/RecordingTaskProcessLauncher.cs" Link="Testing/RecordingTaskProcessLauncher.cs" />
+    <Compile Include="../Shared/ManualToolTimeProvider.cs" Link="Testing/ManualToolTimeProvider.cs" />
+    <Compile Include="../Shared/OneShotToolTestTimer.cs" Link="Testing/OneShotToolTestTimer.cs" />
+    <Using Include="MossAgent.Testing" />
+  </ItemGroup>
 </Project>

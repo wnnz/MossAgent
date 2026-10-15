@@ -1,0 +1,78 @@
+using System.Globalization;
+using System.Resources;
+
+namespace MossAgent.App.Resources;
+
+public static class InspectorText
+{
+    private static readonly ResourceManager Labels = new("MossAgent.App.Resources.InspectorStrings", typeof(InspectorText).Assembly);
+    public static string Get(string key) => Labels.GetString(key, CultureInfo.CurrentUICulture)
+        ?? throw new InvalidOperationException($"Missing inspector resource: {key}");
+    public static string Format(string key, params object[] values) => string.Format(CultureInfo.CurrentCulture, Get(key), values);
+    public static bool IsValidTab(string? tab) => tab is "home" or "sources" or "diff" or "terminal" or "browser" or "audit";
+    public static string TabTitle(string tab) => Get(tab is "home" or "sources" ? "Sources" : tab switch
+    { "diff" => "Diff", "terminal" => "Terminal", "browser" => "Browser", "audit" => "Audit", _ => "Inspector" });
+    public static string Sources => Get("Sources");
+    public static string Diff => Get("Diff");
+    public static string DiffReviewTitle => Get("DiffReviewTitle");
+    public static string DiffStaged => Get("DiffStaged");
+    public static string DiffRefresh => Get("DiffRefresh");
+    public static string DiffCompare => Get("DiffCompare");
+    public static string Terminal => Get("Terminal");
+    public static string Browser => Get("Browser");
+    public static string Audit => Get("Audit");
+    public static string Back => Get("Back");
+    public static string SelectTask => Get("SelectTask");
+    public static string SelectTaskHint => Get("SelectTaskHint");
+    public static string NoChanges => Get("NoChanges");
+    public static string SelectFile => Get("SelectFile");
+    public static string NoAudit => Get("NoAudit");
+    public static string NoArtifacts => Get("NoArtifacts");
+    public static string TerminalIdle => Get("TerminalIdle");
+    public static string TerminalTitle => Get("TerminalTitle");
+    public static string TerminalStart => Get("TerminalStart");
+    public static string TerminalStop => Get("TerminalStop");
+    public static string TerminalCancel => Get("TerminalCancel");
+    public static string TerminalSend => Get("TerminalSend");
+    public static string TerminalInputHint => Get("TerminalInputHint");
+    public static string TerminalTruncated => Get("TerminalTruncated");
+    public static string TerminalRenderingFailed => Get("TerminalRenderingFailed");
+    public static string TerminalResizeRetry => Get("TerminalResizeRetry");
+    public static string TerminalResizeCancel => Get("TerminalResizeCancel");
+    public static string TerminalKeysCancel => Get("TerminalKeysCancel");
+    public static string TerminalKeysResume => Get("TerminalKeysResume");
+    public static string TerminalClipboardOptions => Get("TerminalClipboardOptions");
+    public static string TerminalCopySelection => Get("TerminalCopySelection");
+    public static string TerminalPaste => Get("TerminalPaste");
+    public static string TerminalSelectAll => Get("TerminalSelectAll");
+    public static string TerminalPasteConfirm => Get("TerminalPasteConfirm");
+    public static string TerminalClipboardCancel => Get("TerminalClipboardCancel");
+    public static string NoBrowser => Get("NoBrowser");
+    public static string NoBrowserHint => Get("NoBrowserHint");
+    public static string PreviewRefresh => Get("PreviewRefresh");
+    public static string PreviewMoreActions => Get("PreviewMoreActions");
+    public static string PreviewClose => Get("PreviewClose");
+    public static string PreviewOpen => Get("PreviewOpen");
+    public static string PreviewNewTab => Get("PreviewNewTab");
+    public static string PreviewOpenFiles => Get("PreviewOpenFiles");
+    public static string PreviewExpand => Get("PreviewExpand");
+    public static string PreviewRestore => Get("PreviewRestore");
+    public static string CloseInspector => Get("CloseInspector");
+    public static string PreviewFind => Get("PreviewFind");
+    public static string PreviewFindClose => Get("PreviewFindClose");
+    public static string PreviewFindPrevious => Get("PreviewFindPrevious");
+    public static string PreviewFindNext => Get("PreviewFindNext");
+    public static string PreviewZoomIn => Get("PreviewZoomIn");
+    public static string PreviewZoomOut => Get("PreviewZoomOut");
+    public static string PreviewFit => Get("PreviewFit");
+    public static string PreviewImageOptions => Get("PreviewImageOptions");
+    public static string PreviewActualSize => Get("PreviewActualSize");
+    public static string PreviewCopyPath => Get("PreviewCopyPath");
+    public static string PreviewCopyRelative => Get("PreviewCopyRelative");
+    public static string PreviewCopyContent => Get("PreviewCopyContent");
+    public static string PreviewCopyOptions => Get("PreviewCopyOptions");
+    public static string PreviewOpenExternal => Get("PreviewOpenExternal");
+    public static string PreviewOpenOptions => Get("PreviewOpenOptions");
+    public static string PreviewReveal => Get("PreviewReveal");
+    public static string PreviewRevealHint => Get("PreviewRevealHint");
+}

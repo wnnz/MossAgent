@@ -1,0 +1,32 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Controls.AppInspectorHeader" x:Name="Root" x:CompileBindings="False">
+  <ui:AppBorder Classes="inspector-header divider-bottom">
+    <Grid RowDefinitions="Auto,Auto" RowSpacing="4">
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+        <ui:AppIconButton x:Name="BackButton" Classes="inspector-header-action" Label="{x:Static text:InspectorText.Back}"
+                          Command="{Binding #Root.BackCommand}" IconData="{StaticResource UiIconArrowLeft}" />
+        <ui:AppText Grid.Column="1" Classes="type-13 weight-semibold" Text="{Binding #Root.Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+        <ui:AppIconButton Grid.Column="2" x:Name="ExpansionButton" Classes="inspector-header-action"
+                          Command="{Binding #Root.ExpansionCommand}" IconData="{StaticResource FilePreviewExpandIcon}"
+                          AlternateIconData="{StaticResource FilePreviewRestoreIcon}" IsAlternateIcon="{Binding #Root.IsExpanded}" />
+        <ui:AppIconButton Grid.Column="3" x:Name="CloseButton" Classes="inspector-header-action" Label="{Binding #Root.CloseLabel}"
+                          Command="{Binding #Root.CloseCommand}" IconData="{StaticResource UiIconPanelRight}" />
+      </Grid>
+      <StackPanel Grid.Row="1" Orientation="Horizontal" Classes="inspector-toolbar">
+        <ui:AppIconButton x:Name="SourcesButton" Classes="inspector-tab" Label="{x:Static text:InspectorText.Sources}"
+                          Command="{Binding #Root.SelectCommand}" CommandParameter="sources" IconData="{StaticResource UiIconSources}" />
+        <ui:AppIconButton x:Name="DiffButton" Classes="inspector-tab" Label="{x:Static text:InspectorText.Diff}"
+                          Command="{Binding #Root.SelectCommand}" CommandParameter="diff" IconData="{StaticResource UiIconDocument}" />
+        <ui:AppIconButton x:Name="TerminalButton" Classes="inspector-tab" Label="{x:Static text:InspectorText.Terminal}"
+                          Command="{Binding #Root.SelectCommand}" CommandParameter="terminal" IconData="{StaticResource UiIconTerminal}" />
+        <ui:AppIconButton x:Name="BrowserButton" Classes="inspector-tab" Label="{x:Static text:InspectorText.Browser}"
+                          Command="{Binding #Root.SelectCommand}" CommandParameter="browser" IconData="{StaticResource UiIconBrowser}" />
+        <ui:AppIconButton x:Name="AuditButton" Classes="inspector-tab" Label="{x:Static text:InspectorText.Audit}"
+                          Command="{Binding #Root.SelectCommand}" CommandParameter="audit" IconData="{StaticResource UiIconBell}" />
+      </StackPanel>
+    </Grid>
+  </ui:AppBorder>
+</ui:AppUserControl>

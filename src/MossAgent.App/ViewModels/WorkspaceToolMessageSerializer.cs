@@ -6,11 +6,7 @@ namespace MossAgent.App.ViewModels;
 public static class WorkspaceToolMessageSerializer
 {
     public static string Serialize(AgentToolEvent tool) =>
-        JsonSerializer.Serialize(new ToolConversationPayload(
-            tool.ToolName,
-            tool.Result.IsSuccess,
-            tool.Result.Summary,
-            tool.Result.Content));
+        JsonSerializer.Serialize(ToolConversationPayload.FromEvent(tool));
 
     public static bool TryDeserialize(string content, out ToolConversationPayload? payload)
     {

@@ -2,7 +2,7 @@ using MossAgent.Tools.Abstractions;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class AuthorizedPathResolver
+public sealed class AuthorizedPathResolver : IAuthorizedPathResolver
 {
     public string Resolve(string path, ToolExecutionContext context)
     {
@@ -10,10 +10,7 @@ public sealed class AuthorizedPathResolver
             ? Path.GetFullPath(path)
             : Path.GetFullPath(path, context.WorkingDirectory);
 
-        var roots = context.AuthorizedRoots
-            .Append(context.WorkingDirectory)
-            .Select(Path.GetFullPath)
-            .Distinct(StringComparer.OrdinalIgnoreCase);
+        var roots = GetRoots(context).ToArray();
 
         if (!roots.Any(root => IsWithin(candidate, root)))
         {
@@ -42,7 +39,6 @@ public sealed class AuthorizedPathResolver
 
     private static IEnumerable<string> GetRoots(ToolExecutionContext context) =>
         context.AuthorizedRoots
-            .Append(context.WorkingDirectory)
             .Select(Path.GetFullPath)
             .Distinct(StringComparer.OrdinalIgnoreCase);
 

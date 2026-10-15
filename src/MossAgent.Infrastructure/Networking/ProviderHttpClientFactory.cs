@@ -15,7 +15,8 @@ public sealed class ProviderHttpClientFactory(IConfigurationRepository configura
         var handler = new SocketsHttpHandler
         {
             ConnectTimeout = TimeSpan.FromSeconds(20),
-            PooledConnectionLifetime = TimeSpan.FromMinutes(10)
+            PooledConnectionLifetime = TimeSpan.FromMinutes(10),
+            UseProxy = false
         };
 
         if (provider.ProxyId is not null)
@@ -24,7 +25,7 @@ public sealed class ProviderHttpClientFactory(IConfigurationRepository configura
             var profile = proxies.SingleOrDefault(proxy => proxy.Id == provider.ProxyId);
             if (profile is null || !profile.IsEnabled)
             {
-                throw new InvalidOperationException("供应商选择的代理不存在或已禁用。");
+                throw new ProviderProxyUnavailableException();
             }
 
             handler.Proxy = CreateProxy(profile);

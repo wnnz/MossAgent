@@ -34,7 +34,7 @@ public sealed class SqliteWorkspaceRepositoryTests
         }
         finally
         {
-            SqliteConnection.ClearAllPools();
+            SqliteTestPool.Clear(root);
             Directory.Delete(root, recursive: true);
         }
     }
@@ -77,7 +77,111 @@ public sealed class SqliteWorkspaceRepositoryTests
         }
         finally
         {
-            SqliteConnection.ClearAllPools();
+            SqliteTestPool.Clear(root);
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task PinningPersistsAndArchivedTasksStayOutOfPinnedNavigation()
+    {
+        var root = CreateRoot();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        try
+        {
+            var paths = new AppDataPaths(root);
+            var connections = new SqliteConnectionFactory(paths);
+            var initializer = new SqliteDatabaseInitializer(paths, connections);
+            await initializer.InitializeAsync(cancellationToken);
+            var repository = new SqliteWorkspaceRepository(connections);
+            var project = CreateProject(root);
+            var task = CreateTask(project.Id);
+            await repository.SaveProjectAsync(project, cancellationToken);
+            await repository.SaveTaskAsync(task, cancellationToken);
+
+            Assert.True(await repository.SetTaskPinnedAsync(task.Id, true, cancellationToken));
+            await repository.SaveTaskAsync(task with { Title = "updated" }, cancellationToken);
+            await initializer.InitializeAsync(cancellationToken);
+            Assert.Equal("updated", Assert.Single(await repository.GetPinnedTasksAsync(cancellationToken)).Title);
+            Assert.True(Assert.Single(await repository.GetTasksAsync(project.Id, cancellationToken)).IsPinned);
+
+            await repository.SetTaskArchivedAsync(task.Id, true, cancellationToken);
+            Assert.Empty(await repository.GetPinnedTasksAsync(cancellationToken));
+            Assert.True(Assert.Single(await repository.GetArchivedTasksAsync(project.Id, cancellationToken)).IsPinned);
+            await repository.SetTaskArchivedAsync(task.Id, false, cancellationToken);
+            Assert.Single(await repository.GetPinnedTasksAsync(cancellationToken));
+
+            Assert.True(await repository.SetTaskPinnedAsync(task.Id, false, cancellationToken));
+            Assert.Empty(await repository.GetPinnedTasksAsync(cancellationToken));
+            Assert.False(Assert.Single(await repository.GetTasksAsync(project.Id, cancellationToken)).IsPinned);
+        }
+        finally
+        {
+            SqliteTestPool.Clear(root);
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task PinningRejectsMissingAndArchivedTasksWithoutChangingStoredPins()
+    {
+        var root = CreateRoot();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        try
+        {
+            var paths = new AppDataPaths(root);
+            var connections = new SqliteConnectionFactory(paths);
+            await new SqliteDatabaseInitializer(paths, connections).InitializeAsync(cancellationToken);
+            var repository = new SqliteWorkspaceRepository(connections);
+            var project = CreateProject(root);
+            var task = CreateTask(project.Id);
+            await repository.SaveProjectAsync(project, cancellationToken);
+            await repository.SaveTaskAsync(task, cancellationToken);
+
+            Assert.False(await repository.SetTaskPinnedAsync(Guid.NewGuid(), true, cancellationToken));
+            await repository.SetTaskArchivedAsync(task.Id, true, cancellationToken);
+            Assert.False(await repository.SetTaskPinnedAsync(task.Id, true, cancellationToken));
+            Assert.Empty(await repository.GetPinnedTasksAsync(cancellationToken));
+        }
+        finally
+        {
+            SqliteTestPool.Clear(root);
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ExistingDatabaseGainsPinnedTableWithoutLosingTasks()
+    {
+        var root = CreateRoot();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        try
+        {
+            var paths = new AppDataPaths(root);
+            var connections = new SqliteConnectionFactory(paths);
+            var initializer = new SqliteDatabaseInitializer(paths, connections);
+            await initializer.InitializeAsync(cancellationToken);
+            var repository = new SqliteWorkspaceRepository(connections);
+            var project = CreateProject(root);
+            var task = CreateTask(project.Id);
+            await repository.SaveProjectAsync(project, cancellationToken);
+            await repository.SaveTaskAsync(task, cancellationToken);
+            await using (var connection = connections.Create())
+            {
+                await connection.OpenAsync(cancellationToken);
+                await using var legacy = connection.CreateCommand();
+                legacy.CommandText = "DROP TABLE pinned_agent_tasks; DELETE FROM schema_versions WHERE version=6;";
+                await legacy.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await initializer.InitializeAsync(cancellationToken);
+            Assert.Single(await repository.GetTasksAsync(project.Id, cancellationToken));
+            Assert.True(await repository.SetTaskPinnedAsync(task.Id, true, cancellationToken));
+            Assert.Single(await repository.GetPinnedTasksAsync(cancellationToken));
+        }
+        finally
+        {
+            SqliteTestPool.Clear(root);
             Directory.Delete(root, recursive: true);
         }
     }

@@ -72,10 +72,14 @@ public sealed class WorkspaceTaskSearchViewModel : ObservableObject
     private void ApplyFilter()
     {
         var query = Query.Trim();
-        var filtered = query.Length == 0
-            ? _allTasks
-            : _allTasks.Where(task =>
-                task.Title.Contains(query, StringComparison.CurrentCultureIgnoreCase));
-        Results.ReplaceWith(filtered);
+        var index = 0;
+        foreach (var task in _allTasks)
+        {
+            if (query.Length != 0 && !task.Title.Contains(query, StringComparison.CurrentCultureIgnoreCase)) continue;
+            if (index == Results.Count) Results.Add(task);
+            else if (Results[index] != task) Results[index] = task;
+            index++;
+        }
+        while (Results.Count > index) Results.RemoveAt(Results.Count - 1);
     }
 }

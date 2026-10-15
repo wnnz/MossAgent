@@ -11,5 +11,7 @@ public sealed record McpServerProfile(
     Uri? Url,
     string HeadersJson,
     Guid? ProxyId,
-    bool IsEnabled);
-
+    bool IsEnabled)
+{
+    public override string ToString() => Name;
+}

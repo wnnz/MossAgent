@@ -1,0 +1,43 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppResponseTable" x:CompileBindings="False">
+  <ui:AppBorder Classes="table-surface" ClipToBounds="True">
+    <ui:AppScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+      <StackPanel Spacing="0">
+        <ui:AppItemsControl ItemsSource="{Binding Headers}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <ui:AppBorder Classes="table-heading response-table-heading">
+                <ui:MarkdownSelectableTextBlock Classes="type-13 weight-semibold" Markdown="{Binding}"
+                                               TextWrapping="Wrap" />
+              </ui:AppBorder>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ui:AppItemsControl>
+        <ui:AppItemsControl ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <ui:AppItemsControl ItemsSource="{Binding}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <ui:AppBorder Classes="divider-right-bottom response-table-cell">
+                      <ui:MarkdownSelectableTextBlock Classes="type-12-5 line-19" Markdown="{Binding}"
+                                                     TextWrapping="Wrap" />
+                    </ui:AppBorder>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ui:AppItemsControl>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ui:AppItemsControl>
+      </StackPanel>
+    </ui:AppScrollViewer>
+  </ui:AppBorder>
+</ui:AppUserControl>

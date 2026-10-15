@@ -1,6 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><IsTestProject>true</IsTestProject></PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Shared/ManualToolTimeProvider.cs" Link="Fixtures/ManualToolTimeProvider.cs" />
+    <Compile Include="../Shared/OneShotToolTestTimer.cs" Link="Fixtures/OneShotToolTestTimer.cs" />
+    <Compile Include="../Shared/FixtureTaskProcessLauncher.cs" Link="Fixtures/FixtureTaskProcessLauncher.cs" />
+    <Compile Include="../Shared/FixtureTaskProcess.cs" Link="Fixtures/FixtureTaskProcess.cs" />
+    <Compile Include="../Shared/StubTaskProcess.cs" Link="Fixtures/StubTaskProcess.cs" />
+    <Compile Include="../Shared/RecordingTaskProcessLauncher.cs" Link="Fixtures/RecordingTaskProcessLauncher.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />

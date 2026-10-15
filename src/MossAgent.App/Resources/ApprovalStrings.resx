@@ -1,0 +1,42 @@
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Title" xml:space="preserve"><value>工具调用需要确认</value></data>
+  <data name="Deny" xml:space="preserve"><value>拒绝</value></data>
+  <data name="Approve" xml:space="preserve"><value>批准本次调用</value></data>
+  <data name="Directory" xml:space="preserve"><value>工作目录</value></data>
+  <data name="Details" xml:space="preserve"><value>操作摘要</value></data>
+  <data name="PrivacyHint" xml:space="preserve"><value>正文默认隐藏。展开可能显示敏感内容，仅用于本次确认，不写入审批诊断或导出。</value></data>
+  <data name="ShowContent" xml:space="preserve"><value>查看操作正文（可能含敏感内容）</value></data>
+  <data name="HideContent" xml:space="preserve"><value>隐藏操作正文</value></data>
+  <data name="ContentRange" xml:space="preserve"><value>字符 {0}–{1} / {2}</value></data>
+  <data name="PreviousContent" xml:space="preserve"><value>上一页正文</value></data>
+  <data name="NextContent" xml:space="preserve"><value>下一页正文</value></data>
+  <data name="ContentBody" xml:space="preserve"><value>将写入的完整文本：</value></data>
+  <data name="OldTextBody" xml:space="preserve"><value>将替换的原文本：</value></data>
+  <data name="NewTextBody" xml:space="preserve"><value>替换后的文本：</value></data>
+  <data name="CommandBody" xml:space="preserve"><value>将执行的命令：</value></data>
+  <data name="InputBody" xml:space="preserve"><value>将输入的文本：</value></data>
+  <data name="EmptyContent" xml:space="preserve"><value>（空文本）</value></data>
+  <data name="Task" xml:space="preserve"><value>任务 {0}</value></data>
+  <data name="ContextUnavailable" xml:space="preserve"><value>未提供任务上下文</value></data>
+  <data name="ReadOnly" xml:space="preserve"><value>只读操作</value></data>
+  <data name="Mutation" xml:space="preserve"><value>修改数据</value></data>
+  <data name="ExternalSideEffect" xml:space="preserve"><value>外部操作</value></data>
+  <data name="HighRisk" xml:space="preserve"><value>高风险操作</value></data>
+  <data name="UnknownRisk" xml:space="preserve"><value>未知风险</value></data>
+  <data name="Queue" xml:space="preserve"><value>还有 {0} 个调用等待确认</value></data>
+  <data name="Target" xml:space="preserve"><value>目标：{0}</value></data>
+  <data name="Source" xml:space="preserve"><value>来源：{0}</value></data>
+  <data name="Destination" xml:space="preserve"><value>目的地：{0}</value></data>
+  <data name="CommandDirectory" xml:space="preserve"><value>命令目录：{0}</value></data>
+  <data name="Url" xml:space="preserve"><value>网址（不含凭据、查询或片段）：{0}</value></data>
+  <data name="ContentLength" xml:space="preserve"><value>写入文本：{0} 个字符</value></data>
+  <data name="OldTextLength" xml:space="preserve"><value>被替换文本：{0} 个字符</value></data>
+  <data name="NewTextLength" xml:space="preserve"><value>替换文本：{0} 个字符</value></data>
+  <data name="CommandLength" xml:space="preserve"><value>命令正文：{0} 个字符（已隐藏）</value></data>
+  <data name="InputLength" xml:space="preserve"><value>输入文本：{0} 个字符（已隐藏）</value></data>
+  <data name="ArgumentsHidden" xml:space="preserve"><value>其他参数已隐藏，以免显示凭据或私密内容。</value></data>
+</root>

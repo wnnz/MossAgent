@@ -31,6 +31,8 @@ public sealed class ModelPickerItemViewModel : ObservableObject
     /// </summary>
     public string DisplayName => string.IsNullOrWhiteSpace(Model.DisplayName) ? Model.ModelId : Model.DisplayName;
 
+    public string AccessibleName => $"{DisplayName} · {Provider.Name}";
+
     /// <summary>
     /// 模型标识。
     /// </summary>

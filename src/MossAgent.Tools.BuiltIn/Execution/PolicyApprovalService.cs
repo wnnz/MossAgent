@@ -3,10 +3,21 @@ using MossAgent.Tools.Abstractions;
 
 namespace MossAgent.Tools.BuiltIn.Execution;
 
-public sealed class PolicyApprovalService(
-    Func<ToolDescriptor, ToolRequest, CancellationToken, ValueTask<bool>> prompt)
-    : IToolApprovalService
+public sealed class PolicyApprovalService : IToolApprovalService
 {
+    private readonly Func<ToolDescriptor, ToolRequest, ToolExecutionContext, CancellationToken, ValueTask<bool>> _prompt;
+
+    public PolicyApprovalService(Func<ToolDescriptor, ToolRequest, CancellationToken, ValueTask<bool>> prompt)
+        : this((descriptor, request, _, cancellationToken) => prompt(descriptor, request, cancellationToken))
+    {
+    }
+
+    public PolicyApprovalService(
+        Func<ToolDescriptor, ToolRequest, ToolExecutionContext, CancellationToken, ValueTask<bool>> prompt)
+    {
+        _prompt = prompt;
+    }
+
     public ValueTask<bool> IsApprovedAsync(
         ToolDescriptor descriptor,
         ToolRequest request,
@@ -16,12 +27,13 @@ public sealed class PolicyApprovalService(
         return context.ApprovalPolicy switch
         {
             ApprovalPolicy.ReadOnly => ValueTask.FromResult(
-                descriptor.RiskLevel == ToolRiskLevel.ReadOnly),
+                ToolCapabilityPolicy.IsAllowed(descriptor, ApprovalPolicy.ReadOnly)),
             ApprovalPolicy.FullAccess => ValueTask.FromResult(
                 descriptor.RiskLevel != ToolRiskLevel.HighRisk),
-            _ when descriptor.RiskLevel == ToolRiskLevel.ReadOnly => ValueTask.FromResult(true),
-            _ => prompt(descriptor, request, cancellationToken)
+            _ when descriptor.RiskLevel == ToolRiskLevel.ReadOnly
+                && !ToolCapabilityPolicy.RequiresInteractiveApproval(descriptor) =>
+                    ValueTask.FromResult(true),
+            _ => _prompt(descriptor, request, context, cancellationToken)
         };
     }
 }
-

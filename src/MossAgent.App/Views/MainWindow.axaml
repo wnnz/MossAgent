@@ -1,16 +1,22 @@
-<Window xmlns="https://github.com/avaloniaui"
+<ui:AppWindow xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
         xmlns:views="clr-namespace:MossAgent.App.Views"
         x:Name="RootWindow"
         x:Class="MossAgent.App.Views.MainWindow"
         x:CompileBindings="False"
         Title="MossAgent"
-        Width="1280" Height="800"
-        MinWidth="980" MinHeight="640"
+        Width="1280" Height="820"
+        CanResize="True"
+        MinWidth="526" MinHeight="601"
         WindowStartupLocation="CenterScreen"
-        WindowDecorations="BorderOnly"
-        Background="{DynamicResource AppBackgroundBrush}">
-  <Window.KeyBindings>
+        WindowDecorations="None"
+        HorizontalContentAlignment="Stretch"
+        VerticalContentAlignment="Stretch"
+        >
+  <ui:AppWindow.KeyBindings>
+    <KeyBinding Gesture="Ctrl+OemComma" Command="{Binding OpenSettingsCommand}" />
+    <KeyBinding Gesture="Ctrl+N" Command="{Binding Pages.NewConversationCommand}" />
     <KeyBinding Gesture="Ctrl+Shift+G" Command="{Binding SelectInspectorTabCommand}"
                 CommandParameter="diff" />
     <KeyBinding Gesture="Ctrl+J" Command="{Binding SelectInspectorTabCommand}"
@@ -19,91 +25,223 @@
                 CommandParameter="browser" />
     <KeyBinding Gesture="Ctrl+P" Command="{Binding SelectInspectorTabCommand}"
                 CommandParameter="audit" />
-  </Window.KeyBindings>
-  <Grid RowDefinitions="48,*">
-    <!-- 沉浸式顶栏：隐藏原生标题栏，预留右侧165px系统控制区，杜绝重叠 -->
-    <Border Grid.Row="0" Background="{DynamicResource HeaderBackgroundBrush}"
-            BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1"
-            Padding="12,0,8,0" PointerPressed="HandleTitleBarPointerPressed">
-      <Grid ColumnDefinitions="Auto,*,Auto">
-        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <Border Width="26" Height="26" CornerRadius="7"
-                  Background="{DynamicResource PrimaryButtonBackgroundBrush}">
-            <TextBlock Text="M" FontSize="12" FontWeight="Bold"
-                       Foreground="{DynamicResource PrimaryButtonForegroundBrush}"
-                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-          </Border>
-          <TextBlock Text="MossAgent" FontSize="14" FontWeight="SemiBold"
-                     VerticalAlignment="Center" />
+  </ui:AppWindow.KeyBindings>
+  <Grid RowDefinitions="Auto,*">
+    <!-- 紧凑顶栏复用真实窗口、主题和检查器命令，中央区域保留为拖拽热区。 -->
+    <ui:AppBorder Grid.Row="0" Classes="titlebar-surface"
+            PointerPressed="HandleTitleBarPointerPressed">
+      <Grid ColumnDefinitions="*,Auto">
+        <Grid IsHitTestVisible="False">
+          <ui:AppBorder Width="316" HorizontalAlignment="Left" Classes="sidebar-surface">
+            <ui:AppBorder.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                  <Binding Path="IsSettingsOpen" />
+                  <Binding Path="#SettingsView.Navigation.IsNavigationVisible" />
+                </MultiBinding>
+                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                  <Binding Path="!IsSettingsOpen" />
+                  <Binding Path="!Pages.IsAutomationsOpen" />
+                  <Binding Path="#WorkspaceNavigation.IsNavigationVisible" />
+                </MultiBinding>
+              </MultiBinding>
+            </ui:AppBorder.IsVisible>
+          </ui:AppBorder>
+          <ui:AppBorder Width="52" HorizontalAlignment="Left" Classes="navigation-rail-surface" />
+        </Grid>
+        <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+          <ui:AppIconButton Classes="navigation-history"
+                  Command="{Binding Workspace.Catalog.NavigateBackCommand}"
+                  Label="返回上一个会话" IconData="{StaticResource UiIconArrowLeft}" />
+          <ui:AppIconButton Classes="navigation-history"
+                  Command="{Binding Workspace.Catalog.NavigateForwardCommand}"
+                  Label="前进到下一个会话" IconData="{StaticResource UiIconArrowRight}" />
+          <ui:AppIconButton Classes="navigation-history titlebar-panel"
+                  Click="HandleNavigationToggle" Label="切换侧边栏"
+                  IconData="{StaticResource UiIconPanel}">
+            <ui:AppIconButton.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                  <Binding Path="!Pages.IsAutomationsOpen" />
+                  <Binding Path="IsSettingsOpen" />
+                </MultiBinding>
+                <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                  <Binding Path="!IsSettingsOpen" />
+                  <Binding Path="#SettingsView.Navigation.IsCompact" />
+                  <Binding ElementName="SettingsView" Path="!Navigation.IsNavigationVisible" />
+                </MultiBinding>
+              </MultiBinding>
+            </ui:AppIconButton.IsVisible>
+          </ui:AppIconButton>
+          <StackPanel Orientation="Horizontal" Spacing="13" Classes="titlebar-menu-group"
+                      Classes.settings-mode="{Binding IsSettingsOpen}"
+                      Classes.settings-navigation-wide="{Binding !Navigation.IsCompact, ElementName=SettingsView}"
+                      Classes.settings-navigation-visible="{Binding #SettingsView.Navigation.IsNavigationVisible}">
+          <ui:AppButton Content="文件" Classes="ghost menu-trigger">
+            <Button.Flyout>
+              <ui:AppFlyout Placement="BottomEdgeAlignedLeft" DismissOnButtonClick="True">
+                <ui:AppCard Classes="flyout-surface">
+                  <StackPanel Width="180">
+<ui:AppButton Content="新建任务" Classes="ghost align-leading"
+                            HorizontalAlignment="Stretch"
+                            Command="{Binding Workspace.Catalog.NewTaskCommand}" />
+<ui:AppButton Content="设置" Classes="ghost align-leading"
+                            HorizontalAlignment="Stretch"
+                            Command="{Binding OpenSettingsCommand}" />
+                  </StackPanel>
+                </ui:AppCard>
+              </ui:AppFlyout>
+            </Button.Flyout>
+          </ui:AppButton>
+          <ui:AppEditMenu />
+          <ui:AppButton Content="视图" Classes="ghost menu-trigger">
+            <Button.Flyout>
+              <ui:AppFlyout Placement="BottomEdgeAlignedLeft" DismissOnButtonClick="True">
+                <ui:AppCard Classes="flyout-surface">
+                  <StackPanel Width="190">
+<ui:AppButton Content="切换明暗主题" Classes="ghost align-leading"
+                            HorizontalAlignment="Stretch"
+                            Command="{Binding ToggleThemeCommand}" />
+<ui:AppButton Content="切换检查器" Classes="ghost align-leading"
+                            HorizontalAlignment="Stretch"
+                            Command="{Binding ToggleRightPanelCommand}" />
+<ui:AppButton Content="切换底部终端面板" Classes="ghost align-leading"
+                            HorizontalAlignment="Stretch"
+                            Command="{Binding ToggleBottomPanelCommand}" />
+<ui:AppButton Content="文件变更审查" Classes="ghost align-leading"
+                            HorizontalAlignment="Stretch"
+                            Command="{Binding SelectInspectorTabCommand}" CommandParameter="diff" />
+<ui:AppButton Content="终端" Classes="ghost align-leading"
+                            HorizontalAlignment="Stretch"
+                            Command="{Binding SelectInspectorTabCommand}" CommandParameter="terminal" />
+                  </StackPanel>
+                </ui:AppCard>
+              </ui:AppFlyout>
+            </Button.Flyout>
+          </ui:AppButton>
+          <ui:AppButton Content="帮助" Classes="ghost menu-trigger">
+            <Button.Flyout>
+              <ui:AppFlyout Placement="BottomEdgeAlignedLeft">
+                <views:KeyboardShortcutsFlyoutView />
+              </ui:AppFlyout>
+            </Button.Flyout>
+          </ui:AppButton>
+          </StackPanel>
         </StackPanel>
-
-        <!-- 右侧：加大舒适点击尺寸的纯图标操作按钮 -->
-        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <Button Content="{Binding ThemeIcon}" Classes="ghost icon"
-                  Command="{Binding ToggleThemeCommand}"
-                  ToolTip.Tip="切换明暗主题模式" />
-
-          <Button Content="▣" Classes="ghost icon"
-                  Command="{Binding ToggleRightPanelCommand}"
-                  ToolTip.Tip="切换右侧边栏显隐" />
-          <Border Width="1" Height="18" Background="{DynamicResource BorderSubtleBrush}"
-                  Margin="3,0" />
-          <Button Content="—" Classes="ghost icon"
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="0" VerticalAlignment="Center">
+          <ui:AppIconButton Classes="window-control window-minimize"
                   Command="{Binding MinimizeWindowCommand}"
-                  CommandParameter="{Binding #RootWindow}" ToolTip.Tip="最小化" />
-          <Button Content="□" Classes="ghost icon"
+                  CommandParameter="{Binding #RootWindow}" Label="最小化"
+                  IconData="{StaticResource UiIconMinimize}" />
+          <ui:AppIconButton x:Name="MaximizeButton" Classes="window-control window-maximize"
                   Command="{Binding ToggleMaximizeWindowCommand}"
-                  CommandParameter="{Binding #RootWindow}" ToolTip.Tip="最大化或还原" />
-          <Button Content="×" Classes="ghost icon"
+                  CommandParameter="{Binding #RootWindow}" Label="最大化或还原"
+                  IconData="{StaticResource UiIconMaximize}"
+                  AlternateIconData="{StaticResource UiIconRestore}" />
+          <ui:AppIconButton Classes="closeButton window-control"
                   Command="{Binding CloseWindowCommand}"
-                  CommandParameter="{Binding #RootWindow}" ToolTip.Tip="关闭" />
+                  CommandParameter="{Binding #RootWindow}" Label="关闭"
+                  IconData="{StaticResource UiIconClose}" />
         </StackPanel>
       </Grid>
-    </Border>
+    </ui:AppBorder>
+
+    <ui:AppBorder Grid.Row="1" Child="{Binding EmbeddedBrowsers.Host}" />
 
     <!-- 主工作区：三栏布局（侧边栏、主对话工作台、右侧检查器） -->
-    <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto">
-      <!-- 左栏：会话与项目侧边栏（包含左下角唯一的系统设置入口） -->
-      <views:WorkspaceSidebar Grid.Column="0" DataContext="{Binding Workspace.Catalog}"
-                              Width="286" />
-
-      <!-- 中栏：主任务对话与执行工作台 -->
-      <views:WorkspaceChatView Grid.Column="1" DataContext="{Binding Workspace}"
-                               Margin="0" />
-
-      <!-- 右栏：上下文检查器面板（可按需隐藏） -->
-      <views:InspectorPane Grid.Column="2" DataContext="{Binding}"
-                           Width="380" Margin="0"
-                           IsVisible="{Binding IsRightPanelOpen}" />
+    <ui:AppPageSwitcher Grid.Row="1" Classes="window-page-switcher" IsSecondaryActive="{Binding IsSettingsOpen}"
+                        SecondaryTabNavigation="Continue">
+    <ui:AppPageSwitcher.PrimaryPage>
+    <Grid>
+    <ui:AppBorder Classes="sidebar-surface">
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="52" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <ui:AppNavigationRail Grid.Column="0"
+                            NewConversationCommand="{Binding Pages.NewConversationCommand}"
+                            AutomationsCommand="{Binding Pages.OpenAutomationsCommand}"
+                            IsAutomationsSelected="{Binding Pages.IsAutomationsOpen}"
+                            InspectorCommand="{Binding SelectInspectorTabCommand}"
+                            ToggleInspectorCommand="{Binding ToggleRightPanelCommand}"
+                            SettingsCommand="{Binding ToggleSettingsCommand}">
+        <ui:AppNavigationRail.HelpContent>
+          <views:KeyboardShortcutsFlyoutView />
+        </ui:AppNavigationRail.HelpContent>
+      </ui:AppNavigationRail>
+      <!-- 收起时上下文卡片浮动，展开时检查器独占右侧列。 -->
+      <ui:AppBorder Grid.Column="1" Grid.ColumnSpan="2" x:Name="WorkspaceFrame"
+                    Classes="window-content-frame">
+      <ui:AppBorder Classes="window-content-clip">
+      <ui:AppBorder Margin="0" Classes="workspace-main-surface" ClipToBounds="True">
+      <ui:AppPageSwitcher IsSecondaryActive="{Binding Pages.IsAutomationsOpen}">
+      <ui:AppPageSwitcher.PrimaryPage>
+      <ui:AppNavigationPanes x:Name="WorkspaceNavigation" IsNavigationOpen="{Binding IsLeftPanelOpen, Mode=TwoWay}">
+      <ui:AppNavigationPanes.NavigationPane>
+      <views:WorkspaceSidebar DataContext="{Binding Workspace.Catalog}" />
+      </ui:AppNavigationPanes.NavigationPane>
+      <ui:AppNavigationPanes.PrimaryPane>
+        <ui:AppWorkspacePanes x:Name="WorkspaceColumns" IsInspectorOpen="{Binding IsRightPanelOpen, Mode=TwoWay}">
+          <ui:AppWorkspacePanes.PrimaryPane>
+            <views:WorkspaceChatView DataContext="{Binding Workspace}" />
+          </ui:AppWorkspacePanes.PrimaryPane>
+          <ui:AppWorkspacePanes.InspectorPane>
+            <views:InspectorPane DataContext="{Binding}" />
+          </ui:AppWorkspacePanes.InspectorPane>
+        </ui:AppWorkspacePanes>
+      </ui:AppNavigationPanes.PrimaryPane>
+      </ui:AppNavigationPanes>
+      </ui:AppPageSwitcher.PrimaryPage>
+      <ui:AppPageSwitcher.SecondaryPage>
+        <views:AutomationsView DataContext="{Binding Pages.Automations}" />
+      </ui:AppPageSwitcher.SecondaryPage>
+      </ui:AppPageSwitcher>
+      </ui:AppBorder>
+      </ui:AppBorder>
+      </ui:AppBorder>
     </Grid>
+    </ui:AppBorder>
 
-    <!-- 浮动层：工具调用审批确认卡片 -->
-    <Border Grid.Row="1" Classes="card" IsVisible="{Binding Approval.IsPending}"
-            HorizontalAlignment="Center" VerticalAlignment="Bottom"
-            Width="520" Margin="0,0,0,32"
-            Background="{DynamicResource CardBackgroundBrush}"
-            BorderBrush="{DynamicResource BorderDefaultBrush}"
-            BorderThickness="1" BoxShadow="0 12 36 0 #55000000">
-      <StackPanel Spacing="10">
-        <Grid ColumnDefinitions="Auto,*">
-          <Border Background="#452B0C" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
-            <TextBlock Text="⚠️ 需审批" FontSize="11" Foreground="#FBBF24" FontWeight="SemiBold" />
-          </Border>
-          <TextBlock Grid.Column="1" Text="工具调用需要您的确认" FontSize="14" FontWeight="SemiBold" Margin="8,0,0,0" VerticalAlignment="Center" />
-        </Grid>
+    </Grid>
+    </ui:AppPageSwitcher.PrimaryPage>
+    <ui:AppPageSwitcher.SecondaryPage>
+    <views:SettingsOverlay x:Name="SettingsView" DataContext="{Binding}" />
+    </ui:AppPageSwitcher.SecondaryPage>
+    </ui:AppPageSwitcher>
 
-        <TextBlock Text="{Binding Approval.ToolName}" FontFamily="Consolas" FontSize="13" />
-        <TextBlock Text="{Binding Approval.Description}" TextWrapping="Wrap" Classes="muted" FontSize="12" />
+    <ui:AppBorder Grid.Row="1" IsVisible="{Binding Approval.IsPending}">
+      <views:ToolApprovalView DataContext="{Binding Approval}" />
+    </ui:AppBorder>
 
-        <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,6,0,0">
-          <Button Classes="danger" Content="拒绝" Command="{Binding Approval.DenyCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
-          <Button Classes="primary" Content="批准本次调用" Command="{Binding Approval.ApproveCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
-        </Grid>
-      </StackPanel>
-    </Border>
-
-    <!-- 浮动全屏覆盖层：统一系统设置抽屉 -->
-    <views:SettingsOverlay Grid.Row="0" Grid.RowSpan="2" DataContext="{Binding}"
-                           IsVisible="{Binding IsSettingsOpen}" />
+    <Grid x:Name="ResizeGrips" Grid.Row="0" Grid.RowSpan="2" IsVisible="False">
+      <ui:AppBorder VerticalAlignment="Top" Classes="transparent-hit-target resize-north-south"
+              Tag="North"
+              PointerPressed="HandleResizeGripPointerPressed" />
+      <ui:AppBorder VerticalAlignment="Bottom" Classes="transparent-hit-target resize-north-south"
+              Tag="South"
+              PointerPressed="HandleResizeGripPointerPressed" />
+      <ui:AppBorder HorizontalAlignment="Left" Classes="transparent-hit-target resize-west-east"
+              Tag="West"
+              PointerPressed="HandleResizeGripPointerPressed" />
+      <ui:AppBorder HorizontalAlignment="Right" Classes="transparent-hit-target resize-west-east"
+              Tag="East"
+              PointerPressed="HandleResizeGripPointerPressed" />
+      <ui:AppBorder HorizontalAlignment="Left" VerticalAlignment="Top"
+              Classes="transparent-hit-target resize-corner resize-north-west" Tag="NorthWest"
+              PointerPressed="HandleResizeGripPointerPressed" />
+      <ui:AppBorder HorizontalAlignment="Right" VerticalAlignment="Top"
+              Classes="transparent-hit-target resize-corner resize-north-east" Tag="NorthEast"
+              PointerPressed="HandleResizeGripPointerPressed" />
+      <ui:AppBorder HorizontalAlignment="Left" VerticalAlignment="Bottom"
+              Classes="transparent-hit-target resize-corner resize-south-west" Tag="SouthWest"
+              PointerPressed="HandleResizeGripPointerPressed" />
+      <ui:AppBorder HorizontalAlignment="Right" VerticalAlignment="Bottom"
+              Classes="transparent-hit-target resize-corner resize-south-east" Tag="SouthEast"
+              PointerPressed="HandleResizeGripPointerPressed" />
+    </Grid>
+    <views:AppShutdownOverlay Grid.Row="0" Grid.RowSpan="2" DataContext="{Binding Workspace.Shutdown}"
+                              IsVisible="{Binding Workspace.Shutdown.IsVisible}" />
   </Grid>
-</Window>
+</ui:AppWindow>

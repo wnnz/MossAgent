@@ -1,71 +1,59 @@
-using System.Diagnostics;
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Processes;
 using MossAgent.Tools.BuiltIn.Processes;
 
 namespace MossAgent.Tools.BuiltIn.Git;
 
-public sealed class GitCommandRunner
+public sealed class GitCommandRunner(ITaskProcessLauncher processes)
 {
     public async Task<ToolResult> RunAsync(
         string repository,
         IReadOnlyList<string> arguments,
         ToolExecutionContext context,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool acceptDiffExitCode = false)
     {
-        var startInfo = new ProcessStartInfo("git")
-        {
-            WorkingDirectory = repository,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-        foreach (var argument in arguments)
-        {
-            startInfo.ArgumentList.Add(argument);
-        }
-
+        cancellationToken.ThrowIfCancellationRequested();
         var output = new BoundedTextBuffer(context.MaximumOutputCharacters);
-        using var process = new Process { StartInfo = startInfo };
-        process.Start();
+        await using var process = processes.Start(new TaskProcessStartRequest("git", repository, arguments), cancellationToken);
         var stdout = PumpAsync(process.StandardOutput, output, cancellationToken);
         var stderr = PumpAsync(process.StandardError, output, cancellationToken);
+        var readers = Task.WhenAll((Task)stdout, stderr);
         try
         {
             await process.WaitForExitAsync(cancellationToken);
-            await Task.WhenAll(stdout, stderr);
         }
-        catch (OperationCanceledException)
+        finally
         {
-            if (!process.HasExited)
-            {
-                process.Kill(entireProcessTree: true);
-            }
-
-            throw;
+            try { await process.TerminateAsync(); }
+            finally { await readers.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing); }
         }
+        await readers;
+        cancellationToken.ThrowIfCancellationRequested();
 
         var content = output.ToString();
-        return process.ExitCode == 0
+        return process.ExitCode == 0 || acceptDiffExitCode && process.ExitCode == 1 && !stderr.Result
             ? ToolResult.Success("Git 命令执行完成。", content)
             : ToolResult.Failure($"Git 命令失败，退出码 {process.ExitCode}。\n{content}", "git_failed");
     }
 
-    private static async Task PumpAsync(
+    private static async Task<bool> PumpAsync(
         TextReader reader,
         BoundedTextBuffer output,
         CancellationToken cancellationToken)
     {
         var buffer = new char[4096];
+        var hasOutput = false;
         while (true)
         {
             var read = await reader.ReadAsync(buffer, cancellationToken);
             if (read == 0)
             {
-                return;
+                return hasOutput;
             }
 
             output.Append(buffer.AsSpan(0, read));
+            hasOutput = true;
         }
     }
 }

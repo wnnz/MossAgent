@@ -1,0 +1,12 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Views.AutomationListNoticeView" x:CompileBindings="False">
+  <StackPanel>
+    <ui:AppText Text="{x:Static text:AutomationText.ListLoading}" IsVisible="{Binding List.IsLoading}" Classes="type-12 subtle" />
+    <ui:AppText Text="{Binding List.LoadError}" IsVisible="{Binding List.HasLoadError}" Classes="type-12 status-error" TextWrapping="Wrap" />
+    <ui:AppActionButton Label="{x:Static text:AutomationText.Retry}" IsVisible="{Binding List.HasLoadError}" Classes="ghost button-sm"
+                        HorizontalAlignment="Left" Command="{Binding RefreshCommand}" IconData="{StaticResource UiIconRefresh}" />
+  </StackPanel>
+</ui:AppUserControl>

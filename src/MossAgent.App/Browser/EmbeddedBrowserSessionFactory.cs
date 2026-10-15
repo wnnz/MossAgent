@@ -1,3 +1,4 @@
+using MossAgent.App.Controls;
 using MossAgent.App.ViewModels;
 using MossAgent.Tools.Abstractions.Browser;
 using NativeWebView.Core;
@@ -6,7 +7,7 @@ using WebViewControl = NativeWebView.Controls.NativeWebView;
 namespace MossAgent.App.Browser;
 
 public sealed class EmbeddedBrowserSessionFactory(
-    EmbeddedBrowserPaneViewModel pane) : IEmbeddedBrowserSessionFactory
+    EmbeddedBrowserWorkspaceViewModel workspace) : IEmbeddedBrowserSessionFactory
 {
     public Task<IBrowserSession> CreateAsync(
         BrowserLaunchOptions options,
@@ -22,6 +23,9 @@ public sealed class EmbeddedBrowserSessionFactory(
             throw new InvalidOperationException("内置浏览器不支持连接已有 CDP 会话。");
         }
 
+        if (options.TaskId is null || options.TaskId == Guid.Empty)
+            throw new ArgumentException("内置浏览器需要明确的所属任务。", nameof(options));
+
         return AvaloniaUiThread.RunAsync<IBrowserSession>(
             () => CreateOnUiThreadAsync(options, cancellationToken), cancellationToken);
     }
@@ -30,12 +34,23 @@ public sealed class EmbeddedBrowserSessionFactory(
         BrowserLaunchOptions options,
         CancellationToken cancellationToken)
     {
-        var view = await CreateViewOnUiThreadAsync(options, cancellationToken);
-        return new EmbeddedBrowserSession(
-            view,
-            pane,
-            token => AvaloniaUiThread.RunAsync(
-                () => CreateViewOnUiThreadAsync(options, token), token));
+        var taskId = options.TaskId!.Value;
+        var pane = workspace.Open(taskId);
+        WebViewControl? view = null;
+        try
+        {
+            view = await CreateViewOnUiThreadAsync(options, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            return new EmbeddedBrowserSession(view, pane,
+                token => AvaloniaUiThread.RunAsync(() => CreateViewOnUiThreadAsync(options, token), token),
+                () => workspace.Close(taskId, pane));
+        }
+        catch
+        {
+            view?.Dispose();
+            workspace.Close(taskId, pane);
+            throw;
+        }
     }
 
     private static async Task<WebViewControl> CreateViewOnUiThreadAsync(
@@ -49,7 +64,7 @@ public sealed class EmbeddedBrowserSessionFactory(
             throw new PlatformNotSupportedException("当前平台没有可用的内置浏览器后端。");
         }
 
-        var view = new WebViewControl(backend);
+        var view = new AppEmbeddedBrowserView(backend);
         Configure(view, options);
 
         try

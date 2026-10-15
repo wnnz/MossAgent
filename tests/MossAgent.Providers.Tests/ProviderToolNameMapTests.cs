@@ -35,10 +35,13 @@ public sealed class ProviderToolNameMapTests
         var expected = names.Encode(tool.Name);
 
         using var openAi = JsonDocument.Parse(OpenAiRequestBuilder.Build(request, names));
+        using var compatible = JsonDocument.Parse(OpenAiCompatibleRequestBuilder.Build(request, names));
         using var anthropic = JsonDocument.Parse(AnthropicRequestBuilder.Build(request, names));
         using var gemini = JsonDocument.Parse(GeminiRequestBuilder.Build(request, names));
 
         Assert.Equal(expected, openAi.RootElement.GetProperty("tools")[0].GetProperty("name").GetString());
+        Assert.Equal(expected, compatible.RootElement.GetProperty("tools")[0]
+            .GetProperty("function").GetProperty("name").GetString());
         Assert.Equal(expected, anthropic.RootElement.GetProperty("tools")[0].GetProperty("name").GetString());
         Assert.Equal(expected, gemini.RootElement.GetProperty("tools")[0]
             .GetProperty("functionDeclarations")[0].GetProperty("name").GetString());

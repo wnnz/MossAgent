@@ -1,0 +1,16 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Style Selector=".app-input.browser-address" x:SetterTargetType="controls:AppInput">
+    <Setter Property="Height" Value="28" />
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="FontSize" Value="11.5" />
+    <Setter Property="Padding" Value="8,4" />
+  </Style>
+  <Style Selector=".app-combo-box.browser-tabs" x:SetterTargetType="controls:AppComboBox">
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="Height" Value="28" />
+  </Style>
+</Styles>

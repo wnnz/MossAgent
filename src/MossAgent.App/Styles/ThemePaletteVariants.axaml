@@ -1,0 +1,96 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Style Selector="controls|AppButton.icon.theme-color-action">
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <Style Selector=".app-theme-color-input" x:SetterTargetType="controls:AppUserControl">
+    <Setter Property="Width" Value="96" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector=".app-theme-color-input controls|AppBorder.theme-color-field">
+    <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="8,0" />
+  </Style>
+  <Style Selector=".app-theme-color-input:focus-within controls|AppBorder.theme-color-field">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
+  </Style>
+  <Style Selector=".app-theme-color-input controls|AppColorSwatch.theme-value-swatch">
+    <Setter Property="Width" Value="14" />
+    <Setter Property="Height" Value="14" />
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector=".app-input.theme-color-value" x:SetterTargetType="controls:AppInput">
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Height" Value="26" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+  <Style Selector=".app-input.theme-color-value /template/ Border#PART_BorderElement, .app-input.theme-color-value:focus /template/ Border#PART_BorderElement, .app-input.theme-color-value:focus-within /template/ Border#PART_BorderElement, .app-input.theme-color-value:pointerover /template/ Border#PART_BorderElement">
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="controls|AppColorSwatch.theme-color-swatch">
+    <Setter Property="Width" Value="14" />
+    <Setter Property="Height" Value="14" />
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector=".app-combo-box.theme-accent-select" x:SetterTargetType="controls:AppComboBox">
+    <Setter Property="MinWidth" Value="78" />
+  </Style>
+  <Style Selector=".app-combo-box.theme-font-select" x:SetterTargetType="controls:AppComboBox">
+    <Setter Property="MinWidth" Value="60" />
+  </Style>
+  <Style Selector=".app-combo-box.theme-preset-select" x:SetterTargetType="controls:AppComboBox">
+    <Setter Property="Width" Value="176" />
+    <Setter Property="Padding" Value="4,0,0,0" />
+  </Style>
+  <Style Selector=".app-theme-palette-card:compact .app-combo-box.theme-preset-select" x:SetterTargetType="controls:AppComboBox">
+    <Setter Property="Width" Value="144" />
+  </Style>
+  <Style Selector="StackPanel.theme-preset-choice">
+    <Setter Property="Orientation" Value="Horizontal" />
+    <Setter Property="Spacing" Value="6" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="controls|AppBorder.theme-preset-mark">
+    <Setter Property="Width" Value="20" />
+    <Setter Property="Height" Value="20" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="controls|AppText.theme-preset-mark-text">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Foreground" Value="#399CFF" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="StackPanel.theme-accent-choice">
+    <Setter Property="Orientation" Value="Horizontal" />
+    <Setter Property="Spacing" Value="4" />
+  </Style>
+  <Style Selector=".app-theme-palette-card controls|AppBorder.theme-palette-header">
+    <Setter Property="Height" Value="48" />
+  </Style>
+  <Style Selector=".app-theme-palette-card controls|AppBorder.divider-bottom">
+    <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+  </Style>
+  <Style Selector=".app-theme-palette-card controls|AppBorder.theme-palette-row">
+    <Setter Property="Height" Value="44" />
+  </Style>
+  <StyleInclude Source="avares://MossAgent.App/Styles/PillSelectorVariants.axaml" />
+</Styles>

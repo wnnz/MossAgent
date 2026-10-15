@@ -21,6 +21,7 @@ internal sealed class EmbeddedBrowserTabSet(
     public void Initialize()
     {
         _activeId = _views.Keys.Single();
+        pane.RegisterView(ActiveView);
         pane.Attach(ActiveView);
     }
 
@@ -46,50 +47,56 @@ internal sealed class EmbeddedBrowserTabSet(
     public async Task<string> NewAsync(CancellationToken cancellationToken)
     {
         var view = await createView(cancellationToken);
-        var id = Guid.NewGuid().ToString("N");
-        _views[id] = view;
-        await SwitchAsync(id, cancellationToken);
-        return id;
+        try
+        {
+            return await AvaloniaUiThread.RunAsync(() =>
+            {
+                var id = Guid.NewGuid().ToString("N");
+                _views[id] = view;
+                pane.RegisterView(view);
+                Activate(id, view);
+                return id;
+            }, cancellationToken);
+        }
+        catch
+        {
+            await AvaloniaUiThread.RunAsync(view.Dispose, CancellationToken.None);
+            throw;
+        }
     }
 
-    public async Task SwitchAsync(string tabId, CancellationToken cancellationToken)
+    public Task SwitchAsync(string tabId, CancellationToken cancellationToken) =>
+        AvaloniaUiThread.RunAsync(() =>
+        {
+            if (!_views.TryGetValue(tabId, out var next))
+                throw new InvalidOperationException($"浏览器标签不存在：{tabId}");
+            if (tabId != _activeId) Activate(tabId, next);
+        }, cancellationToken);
+
+    private void Activate(string tabId, WebViewControl next)
     {
-        if (!_views.TryGetValue(tabId, out var next))
-        {
-            throw new InvalidOperationException($"浏览器标签不存在：{tabId}");
-        }
-
-        if (tabId == _activeId)
-        {
-            return;
-        }
-
         var previous = ActiveView;
         _activeId = tabId;
-        await AvaloniaUiThread.RunAsync(() => pane.Attach(next), cancellationToken);
+        pane.Attach(next);
         ActiveViewChanged?.Invoke(previous, next);
     }
 
-    public async Task CloseAsync(string tabId, CancellationToken cancellationToken)
-    {
-        if (_views.Count <= 1)
+    public Task CloseAsync(string tabId, CancellationToken cancellationToken) =>
+        AvaloniaUiThread.RunAsync(() =>
         {
-            throw new InvalidOperationException("不能关闭浏览器会话的最后一个标签页。");
-        }
-
-        if (!_views.TryGetValue(tabId, out var closing))
-        {
-            throw new InvalidOperationException($"浏览器标签不存在：{tabId}");
-        }
-
-        if (tabId == _activeId)
-        {
-            await SwitchAsync(_views.Keys.First(id => id != tabId), cancellationToken);
-        }
-
-        _views.Remove(tabId);
-        await AvaloniaUiThread.RunAsync(closing.Dispose, CancellationToken.None);
-    }
+            if (_views.Count <= 1)
+                throw new InvalidOperationException("不能关闭浏览器会话的最后一个标签页。");
+            if (!_views.TryGetValue(tabId, out var closing))
+                throw new InvalidOperationException($"浏览器标签不存在：{tabId}");
+            if (tabId == _activeId)
+            {
+                var nextId = _views.Keys.First(id => id != tabId);
+                Activate(nextId, _views[nextId]);
+            }
+            _views.Remove(tabId);
+            pane.UnregisterView(closing);
+            closing.Dispose();
+        }, cancellationToken);
 
     public async ValueTask DisposeAsync()
     {
@@ -101,6 +108,7 @@ internal sealed class EmbeddedBrowserTabSet(
             pane.Detach(activeView);
             foreach (var view in views)
             {
+                pane.UnregisterView(view);
                 view.Dispose();
             }
         }, CancellationToken.None);

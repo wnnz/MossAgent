@@ -11,6 +11,6 @@ publish/
 *.db-shm
 *.db-wal
 .scratch/
+.tmp-*/
 .codegraph/
-
 

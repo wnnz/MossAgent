@@ -1,88 +1,89 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
              x:Class="MossAgent.App.Views.ModelSettingsPane"
              x:CompileBindings="False">
   <Grid ColumnDefinitions="420,*" Margin="12">
-    <Border Classes="card" Margin="0,0,12,0">
-      <ScrollViewer>
+    <ui:AppCard Classes="card" Margin="0,0,12,0">
+      <ui:AppScrollViewer>
         <StackPanel Spacing="9">
           <Grid ColumnDefinitions="*,Auto">
-            <TextBlock Text="模型配置" FontSize="18" FontWeight="SemiBold" />
-            <Button Grid.Column="1" Content="新建" Command="{Binding NewModelCommand}" />
+            <ui:AppText Classes="type-18 weight-semibold" Text="模型配置" />
+            <ui:AppButton Grid.Column="1" Content="新建" Command="{Binding NewModelCommand}" />
           </Grid>
-          <TextBlock Text="供应商" />
-          <ComboBox ItemsSource="{Binding Providers}" SelectedItem="{Binding SelectedProvider}"
+          <ui:AppText Text="供应商" />
+          <ui:AppComboBox ItemsSource="{Binding Providers}" SelectedItem="{Binding SelectedProvider}"
                     DisplayMemberBinding="{Binding Name}" />
           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-            <Button Content="获取模型" Classes="primary" Command="{Binding FetchModelsCommand}" />
-            <Button Grid.Column="1" Content="刷新供应商" Command="{Binding RefreshProvidersCommand}" />
+            <ui:AppButton Content="获取模型" Classes="primary" Command="{Binding FetchModelsCommand}" />
+            <ui:AppButton Grid.Column="1" Content="刷新供应商" Command="{Binding RefreshProvidersCommand}" />
           </Grid>
-          <TextBlock Text="模型 ID" />
-          <TextBox Text="{Binding ModelId}" IsReadOnly="{Binding IsEditing}" PlaceholderText="例如 gpt-5" />
-          <TextBlock Text="显示名称" /><TextBox Text="{Binding DisplayName}" />
+          <ui:AppText Text="模型 ID" />
+          <ui:AppInput Text="{Binding ModelId}" IsReadOnly="{Binding IsEditing}" PlaceholderText="例如 gpt-5" />
+          <ui:AppText Text="显示名称" /><ui:AppInput Text="{Binding DisplayName}" />
           <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
             <StackPanel>
-              <TextBlock Text="上下文长度" />
-              <NumericUpDown Value="{Binding ContextLength}" Minimum="1024" Maximum="4000000" />
+              <ui:AppText Text="上下文长度" />
+              <ui:AppNumericUpDown Value="{Binding ContextLength}" Minimum="1024" Maximum="4000000" />
             </StackPanel>
             <StackPanel Grid.Column="1">
-              <TextBlock Text="最大输出" />
-              <NumericUpDown Value="{Binding MaximumOutputTokens}" Minimum="256" Maximum="1000000" />
+              <ui:AppText Text="最大输出" />
+              <ui:AppNumericUpDown Value="{Binding MaximumOutputTokens}" Minimum="256" Maximum="1000000" />
             </StackPanel>
           </Grid>
           <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
             <StackPanel>
-              <TextBlock Text="Temperature（可空）" />
-              <NumericUpDown Value="{Binding Temperature}" Minimum="0" Maximum="2" Increment="0.1" />
+              <ui:AppText Text="Temperature（可空）" />
+              <ui:AppNumericUpDown Value="{Binding Temperature}" Minimum="0" Maximum="2" Increment="0.1" />
             </StackPanel>
             <StackPanel Grid.Column="1">
-              <TextBlock Text="Top-P（可空）" />
-              <NumericUpDown Value="{Binding TopP}" Minimum="0" Maximum="1" Increment="0.1" />
+              <ui:AppText Text="Top-P（可空）" />
+              <ui:AppNumericUpDown Value="{Binding TopP}" Minimum="0" Maximum="1" Increment="0.1" />
             </StackPanel>
           </Grid>
-          <TextBlock Text="思考强度" />
-          <ComboBox ItemsSource="{Binding ReasoningEfforts}" SelectedItem="{Binding ReasoningEffort}" />
+          <ui:AppText Text="思考强度" />
+          <ui:AppEditableChoice Choices="{Binding ReasoningEfforts}" SelectedChoice="{Binding ReasoningEffort}" />
           <WrapPanel>
-            <CheckBox Content="支持图像" IsChecked="{Binding SupportsImages}" Margin="0,0,12,0" />
-            <CheckBox Content="支持文件" IsChecked="{Binding SupportsFiles}" Margin="0,0,12,0" />
-            <CheckBox Content="默认模型" IsChecked="{Binding IsDefault}" Margin="0,0,12,0" />
-            <CheckBox Content="启用" IsChecked="{Binding IsEnabled}" />
+            <ui:AppCheckBox Content="支持图像" IsChecked="{Binding SupportsImages}" Margin="0,0,12,0" />
+            <ui:AppCheckBox Content="支持文件" IsChecked="{Binding SupportsFiles}" Margin="0,0,12,0" />
+            <ui:AppCheckBox Content="默认模型" IsChecked="{Binding IsDefault}" Margin="0,0,12,0" />
+            <ui:AppCheckBox Content="启用" IsChecked="{Binding IsEnabled}" />
           </WrapPanel>
-          <TextBlock Text="高级 JSON" />
-          <TextBox Text="{Binding AdvancedJson}" AcceptsReturn="True" MinHeight="64" FontFamily="Consolas" />
+          <ui:AppText Text="高级 JSON" />
+          <ui:AppInput Text="{Binding AdvancedJson}" AcceptsReturn="True" Classes="code-font field-multiline" />
           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-            <Button Content="保存模型" Classes="primary" Command="{Binding SaveModelCommand}" />
-            <Button Grid.Column="1" Content="删除所选" Command="{Binding DeleteModelCommand}" />
+            <ui:AppButton Content="保存模型" Classes="primary" Command="{Binding SaveModelCommand}" />
+            <ui:AppButton Grid.Column="1" Content="删除所选" Command="{Binding DeleteModelCommand}" />
           </Grid>
-          <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Foreground="#A8B5A8" />
+          <ui:AppText Text="{Binding Status}" TextWrapping="Wrap" Classes="muted" />
         </StackPanel>
-      </ScrollViewer>
-    </Border>
+      </ui:AppScrollViewer>
+    </ui:AppCard>
 
-    <Border Grid.Column="1" Classes="card">
+    <ui:AppCard Grid.Column="1" Classes="card">
       <Grid RowDefinitions="Auto,*">
-        <TextBlock Text="模型列表" FontSize="18" FontWeight="SemiBold" />
-        <ListBox Grid.Row="1" Margin="0,12,0,0" ItemsSource="{Binding Models}"
+        <ui:AppText Classes="type-18 weight-semibold" Text="模型列表" />
+        <ui:AppListBox Grid.Row="1" Margin="0,12,0,0" ItemsSource="{Binding Models}"
                  SelectedItem="{Binding SelectedModel}">
           <ListBox.ItemTemplate>
             <DataTemplate>
-              <Border BorderBrush="#303630" BorderThickness="0,0,0,1" Padding="8,12">
+              <ui:AppBorder Classes="divider-bottom" Padding="8,12">
                 <Grid ColumnDefinitions="*,Auto">
                   <StackPanel>
-                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
-                    <TextBlock Text="{Binding ModelId}" Foreground="#899189" />
+                    <ui:AppText Classes="weight-semibold" Text="{Binding DisplayName}" />
+                    <ui:AppText Text="{Binding ModelId}" Classes="muted" />
                   </StackPanel>
                   <StackPanel Grid.Column="1">
-                    <TextBlock Text="{Binding ReasoningEffort}" HorizontalAlignment="Right" />
-                    <TextBlock Text="{Binding ContextLength}" Foreground="#899189" HorizontalAlignment="Right" />
-                    <TextBlock Text="{Binding IsDefault, StringFormat=默认：{0}}" Foreground="#899189" />
+                    <ui:AppText Text="{Binding ReasoningEffort}" HorizontalAlignment="Right" />
+                    <ui:AppText Text="{Binding ContextLength}" Classes="muted" HorizontalAlignment="Right" />
+                    <ui:AppText Text="{Binding IsDefault, StringFormat=默认：{0}}" Classes="muted" />
                   </StackPanel>
                 </Grid>
-              </Border>
+              </ui:AppBorder>
             </DataTemplate>
           </ListBox.ItemTemplate>
-        </ListBox>
+        </ui:AppListBox>
       </Grid>
-    </Border>
+    </ui:AppCard>
   </Grid>
-</UserControl>
+</ui:AppUserControl>

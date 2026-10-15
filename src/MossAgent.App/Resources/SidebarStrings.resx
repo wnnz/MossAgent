@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="SortHeading" xml:space="preserve"><value>项目排序</value></data>
+  <data name="SearchLabel" xml:space="preserve"><value>搜索项目和对话</value></data>
+  <data name="SearchHint" xml:space="preserve"><value>搜索项目和对话 (Ctrl+K)</value></data>
+  <data name="ActiveSearchHint" xml:space="preserve"><value>正在筛选：{0} (Ctrl+K)</value></data>
+  <data name="ClearLabel" xml:space="preserve"><value>清除搜索</value></data>
+  <data name="EmptyLabel" xml:space="preserve"><value>没有匹配的项目或对话。请更换关键词或清除搜索。</value></data>
+  <data name="SortByActivityLabel" xml:space="preserve"><value>最近更新</value></data>
+  <data name="SortManuallyLabel" xml:space="preserve"><value>手动排序</value></data>
+  <data name="MoveUpLabel" xml:space="preserve"><value>向上移动</value></data>
+  <data name="MoveDownLabel" xml:space="preserve"><value>向下移动</value></data>
+  <data name="ExpandTasksLabel" xml:space="preserve"><value>展开显示</value></data>
+  <data name="CollapseTasksLabel" xml:space="preserve"><value>收起显示</value></data>
+  <data name="RetryLabel" xml:space="preserve"><value>重新加载排序设置</value></data>
+  <data name="DragFailed" xml:space="preserve"><value>拖动未完成，请重试，或使用项目菜单中的向上移动和向下移动。</value></data>
+  <data name="LoadFailed" xml:space="preserve"><value>无法读取侧边栏排序设置。请检查数据目录权限或修复 sidebar-settings.json 后重新加载；原文件不会被覆盖。</value></data>
+  <data name="SaveFailed" xml:space="preserve"><value>排序设置未能完成，已保留当前顺序。请检查数据目录权限和 sidebar-settings.json，重新加载后再试。</value></data>
+</root>

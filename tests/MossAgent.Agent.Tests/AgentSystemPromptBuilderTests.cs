@@ -24,6 +24,22 @@ public sealed class AgentSystemPromptBuilderTests
         Assert.Equal(1, Count(prompt, $"- {root}"));
     }
 
+    [Fact]
+    public void Build_DoesNotAdvertiseUnlistedWorkingDirectoryAsAuthorized()
+    {
+        var basePath = Path.Combine(Path.GetTempPath(), "MossAgent.Tests", Guid.NewGuid().ToString("N"));
+        var authorized = Path.Combine(basePath, "authorized");
+        var outside = Path.Combine(basePath, "outside");
+        var context = new ToolExecutionContext(
+            Guid.NewGuid(), outside, [authorized], ApprovalPolicy.FullAccess);
+
+        var prompt = AgentSystemPromptBuilder.Build(context);
+
+        Assert.Contains($"当前工作目录：{outside}", prompt, StringComparison.Ordinal);
+        Assert.Contains($"- {authorized}", prompt, StringComparison.Ordinal);
+        Assert.DoesNotContain($"- {outside}", prompt, StringComparison.Ordinal);
+    }
+
     private static int Count(string value, string fragment) =>
         value.Split(fragment, StringSplitOptions.None).Length - 1;
 }

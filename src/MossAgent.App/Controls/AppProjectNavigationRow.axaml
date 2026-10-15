@@ -1,0 +1,29 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppProjectNavigationRow"
+                   x:Name="Root" x:CompileBindings="False">
+  <Grid Classes="project-navigation-row" Classes.selected="{Binding #Root.IsSelected}"
+        Classes.expanded="{Binding #Root.IsExpanded}" ColumnDefinitions="*,Auto"
+        DataContext="{Binding #Root}">
+    <ui:AppActionButton x:Name="SelectProjectButton" Classes="ghost sidebar-project-row align-leading"
+                        HorizontalAlignment="Stretch" Label="{Binding Title}" ToolTip.Tip="{Binding DragHint}"
+                        Command="{Binding SelectCommand}" CommandParameter="{Binding ActionTarget}"
+                        IsEnabled="{Binding IsSelectAvailable}">
+      <Button.Flyout>
+        <ui:AppFlyout Placement="RightEdgeAlignedTop" HorizontalOffset="30" DismissOnButtonClick="True"
+                      IsOpen="{Binding #Root.IsSummaryOpen, Mode=TwoWay}">
+          <ui:AppContentControl DataContext="{Binding #Root.DataContext}" Content="{Binding #Root.SummaryContent}" />
+        </ui:AppFlyout>
+      </Button.Flyout>
+    </ui:AppActionButton>
+    <ui:AppIconButton x:Name="ToggleProjectButton" Grid.Column="1"
+                      Classes="icon-compact project-toggle expand-icon" VerticalAlignment="Center"
+                      Command="{Binding ToggleExpandedCommand}" CommandParameter="{Binding ActionTarget}"
+                      IsEnabled="{Binding IsExpandAvailable}" Label="{Binding ToggleLabel}"
+                      IconData="{DynamicResource UiIconChevronRight}"
+                      AlternateIconData="{DynamicResource UiIconChevronDown}"
+                      IsAlternateIcon="{Binding IsExpanded}" />
+    <ui:AppBorder Classes="project-drop-indicator" Grid.ColumnSpan="2" IsHitTestVisible="False" />
+  </Grid>
+</ui:AppUserControl>

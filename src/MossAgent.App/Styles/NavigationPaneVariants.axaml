@@ -1,0 +1,13 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Style Selector="controls|AppBorder.navigation-dismiss-surface">
+    <Setter Property="Background" Value="#08000000" />
+  </Style>
+  <Style Selector=".app-toggle-button.settings-nav" x:SetterTargetType="controls:AppToggleButton">
+    <Setter Property="controls:AppNavigationPanes.DismissOnClick" Value="True" />
+  </Style>
+  <Style Selector="controls|AppButton.sidebar-task-row, controls|AppButton.sidebar-recent-task-row, controls|AppButton.sidebar-project-row, controls|AppButton.sidebar-action-button">
+    <Setter Property="controls:AppNavigationPanes.DismissOnClick" Value="True" />
+  </Style>
+</Styles>

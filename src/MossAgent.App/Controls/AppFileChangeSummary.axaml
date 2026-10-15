@@ -1,0 +1,56 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppFileChangeSummary"
+                   x:Name="SummaryRoot" x:CompileBindings="False">
+  <ui:AppBorder Classes="file-change-surface" DataContext="{Binding Summary, ElementName=SummaryRoot}">
+    <StackPanel>
+      <Grid Classes="file-change-header" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+        <ui:AppBorder Classes="file-change-icon-surface">
+          <ui:AppIcon Classes="ui-icon file-change-summary-icon" IsHitTestVisible="False" />
+        </ui:AppBorder>
+        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2" ToolTip.Tip="{Binding ScopeHint}">
+          <ui:AppText Classes="file-change-title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+          <ui:AppDiffStatistics AddedLabel="{Binding Statistics.AddedLabel}" RemovedLabel="{Binding Statistics.RemovedLabel}"
+                                IsVisible="{Binding Statistics.HasTotals}" />
+          <ui:AppText Classes="file-change-scope" Text="{Binding ScopeLabel}" TextTrimming="CharacterEllipsis"
+                      IsVisible="{Binding !Statistics.HasTotals}" />
+        </StackPanel>
+        <StackPanel Grid.Column="2" Classes="file-change-actions" Orientation="Horizontal" Spacing="4">
+          <ui:AppActionButton Classes="ghost file-change-action" Label="{Binding UndoLabel}"
+                              Command="{Binding Undo.RequestCommand}" ToolTip.Tip="{Binding Undo.Hint}" />
+          <ui:AppButton Classes="file-change-review" Content="{Binding ReviewLabel}"
+                        Command="{Binding ReviewCommand}" ToolTip.Tip="{Binding ScopeHint}" />
+        </StackPanel>
+      </Grid>
+      <ui:AppBorder Classes="file-change-divider" />
+      <ui:AppItemsControl ItemsSource="{Binding VisibleFiles}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <ui:AppButton Classes="ghost file-change-file" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Path}"
+                          AutomationProperties.Name="{Binding DisplayPath}"
+                          Command="{Binding $parent[ui:AppFileChangeSummary].Summary.OpenFileCommand}" CommandParameter="{Binding Path}">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <ui:AppText Classes="file-change-path" Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
+                <ui:AppDiffStatistics Grid.Column="1" AddedLabel="{Binding AddedLabel}" RemovedLabel="{Binding RemovedLabel}"
+                                      IsVisible="{Binding HasStatistics}" />
+                <ui:AppText Grid.Column="1" Classes="file-change-scope" Text="{Binding UnavailableLabel}"
+                            IsVisible="{Binding IsStatisticsUnavailable}" />
+              </Grid>
+            </ui:AppButton>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ui:AppItemsControl>
+      <ui:AppActionButton Classes="ghost file-change-more" Label="{Binding ExpandLabel}"
+                          TrailingIconData="{StaticResource UiIconChevronDown}" Command="{Binding ExpandCommand}"
+                          IsVisible="{Binding HasMoreFiles}" HorizontalAlignment="Left" />
+      <ui:AppText Classes="file-change-warning" Text="{Binding IncompleteHint}" TextWrapping="Wrap" IsVisible="{Binding IsIncomplete}" />
+      <StackPanel Classes="file-change-statistics-notice" IsVisible="{Binding Statistics.HasError}">
+        <ui:AppText Classes="file-change-scope" Text="{Binding Statistics.UnavailableHint}" TextWrapping="Wrap" />
+        <ui:AppButton Classes="ghost file-change-statistics-retry" Content="{Binding Statistics.RetryLabel}"
+                      Command="{Binding Statistics.RetryCommand}" HorizontalAlignment="Left" />
+      </StackPanel>
+      <ui:AppFileChangeUndoNotice DataContext="{Binding Undo}" />
+    </StackPanel>
+  </ui:AppBorder>
+</ui:AppUserControl>

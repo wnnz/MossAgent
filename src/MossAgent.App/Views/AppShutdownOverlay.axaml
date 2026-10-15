@@ -1,0 +1,15 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Views.AppShutdownOverlay" x:CompileBindings="False">
+  <ui:AppSettingsDialog IsOpen="{Binding IsVisible}" Title="{Binding Title}" IsCloseButtonVisible="False">
+    <ui:AppSettingsDialog.Footer>
+      <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" IsVisible="{Binding HasError}">
+        <ui:AppButton Classes="primary" Content="{Binding RetryExitLabel}" Command="{Binding RetryExitCommand}"
+                      IsDefault="{Binding HasError}" />
+        <ui:AppButton Content="{Binding ForceExitLabel}" Command="{Binding ForceExitCommand}" />
+      </StackPanel>
+    </ui:AppSettingsDialog.Footer>
+    <ui:AppText Classes="settings-description" Text="{Binding Message}" TextWrapping="Wrap" />
+  </ui:AppSettingsDialog>
+</ui:AppUserControl>

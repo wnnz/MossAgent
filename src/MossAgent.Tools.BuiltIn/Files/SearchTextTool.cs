@@ -4,12 +4,17 @@ using MossAgent.Tools.BuiltIn.Processes;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class SearchTextTool(AuthorizedPathResolver paths) : IAgentTool
+public sealed class SearchTextTool(AuthorizedPathResolver paths) : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "filesystem.search_text", "使用 ripgrep 搜索授权目录中的文本。",
         """{"type":"object","required":["query"],"properties":{"query":{"type":"string"},"path":{"type":"string"},"glob":{"type":["string","null"]},"maximumMatches":{"type":"integer","minimum":1,"maximum":2000}}}""",
         ToolRiskLevel.ReadOnly, ToolCapability.FileRead | ToolCapability.Process);
+
+    public void ValidateRequest(ToolRequest request, ToolExecutionContext context)
+    {
+        paths.Resolve(request.Arguments.GetOptionalString("path") ?? context.WorkingDirectory, context);
+    }
 
     public async Task<ToolResult> ExecuteAsync(
         ToolRequest request,

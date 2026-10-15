@@ -1,3 +1,4 @@
+using MossAgent.Application.Models;
 using MossAgent.Domain;
 
 namespace MossAgent.Providers;
@@ -20,6 +21,12 @@ internal static class ProviderErrorSanitizer
             ? sanitized
             : sanitized[..MaximumLength] + "…";
     }
+
+    public static ModelFailed Sanitize(ModelFailed failure, AiProvider provider) =>
+        new(Sanitize(failure.Code, provider), Sanitize(failure.Message, provider));
+
+    public static ModelEvent Sanitize(ModelEvent modelEvent, AiProvider provider) =>
+        modelEvent is ModelFailed failure ? Sanitize(failure, provider) : modelEvent;
 
     private static string Redact(string value, string secret) =>
         string.IsNullOrWhiteSpace(secret)

@@ -30,7 +30,7 @@ public sealed class SqliteConfigurationRepositoryTests
         }
         finally
         {
-            SqliteConnection.ClearAllPools();
+            SqliteTestPool.Clear(root);
             Directory.Delete(root, recursive: true);
         }
     }

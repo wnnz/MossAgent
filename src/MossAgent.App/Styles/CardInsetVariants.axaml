@@ -1,0 +1,42 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Style Selector="controls|AppCard.card-inset-tight">
+    <Setter Property="Padding" Value="4" />
+  </Style>
+  <Style Selector="controls|AppCard.card-inset-menu">
+    <Setter Property="Padding" Value="6" />
+  </Style>
+  <Style Selector="controls|AppCard.card-inset-compact">
+    <Setter Property="Padding" Value="8" />
+  </Style>
+  <Style Selector="controls|AppCard.card-inset-popover">
+    <Setter Property="Padding" Value="10" />
+  </Style>
+  <Style Selector="controls|AppCard.card-inset-editor">
+    <Setter Property="Padding" Value="14" />
+  </Style>
+  <Style Selector="controls|AppCard.card-inset-roomy">
+    <Setter Property="Padding" Value="16" />
+  </Style>
+  <Style Selector="controls|AppCard.card-inset-emphasis">
+    <Setter Property="Padding" Value="18" />
+  </Style>
+  <Style Selector="controls|AppCard.card-inset-list">
+    <Setter Property="Padding" Value="8,0" />
+  </Style>
+  <Style Selector="controls|AppCard.card-inset-rows">
+    <Setter Property="Padding" Value="16,0" />
+  </Style>
+  <Style Selector="controls|AppCard.card-inset-browser-intro">
+    <Setter Property="Padding" Value="16,14" />
+  </Style>
+  <Style Selector="controls|AppCard.card-inset-browser-footer">
+    <Setter Property="Padding" Value="16,13" />
+  </Style>
+  <Style Selector="controls|AppCard.card-inset-composer">
+    <Setter Property="Padding" Value="14,6" />
+  </Style>
+  <Style Selector="controls|AppCard.card-inset-inspector">
+    <Setter Property="Padding" Value="20,10,10,13" />
+  </Style>
+</Styles>

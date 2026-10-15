@@ -1,0 +1,86 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Styles.Resources>
+    <ControlTheme x:Key="PillSelectorItemTheme" TargetType="ComboBoxItem" BasedOn="{StaticResource {x:Type ComboBoxItem}}">
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Style Selector="^:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+      </Style>
+    </ControlTheme>
+  </Styles.Resources>
+  <Style Selector=".app-combo-box.pill-selector" x:SetterTargetType="controls:AppPillComboBox">
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Padding" Value="8,0,0,0" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="ItemContainerTheme" Value="{StaticResource PillSelectorItemTheme}" />
+    <Setter Property="Template">
+      <ControlTemplate TargetType="controls:AppPillComboBox">
+        <controls:AppDataValidationErrors>
+          <Grid ColumnDefinitions="*,28">
+            <controls:AppBorder x:Name="Background" Grid.ColumnSpan="2"
+                                Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" />
+            <controls:AppBorder x:Name="HighlightBackground" Grid.ColumnSpan="2"
+                                Background="{TemplateBinding Background}" BorderBrush="{DynamicResource BorderFocusBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}"
+                                IsVisible="False" />
+            <ContentPresenter x:Name="ContentPresenter" Content="{TemplateBinding SelectionBoxItem}"
+                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" Margin="{TemplateBinding Padding}"
+                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            <controls:AppIcon Grid.Column="1" Classes="pill-selector-chevron" Data="{StaticResource UiIconChevronDown}"
+                              IsHitTestVisible="False" />
+            <controls:AppPopup x:Name="PART_Popup" IsOpen="{TemplateBinding IsDropDownOpen, Mode=TwoWay}"
+                               WindowManagerAddShadowHint="False" IsLightDismissEnabled="True" InheritsTransform="True"
+                               MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
+                               MaxHeight="{TemplateBinding MaxDropDownHeight}" PlacementTarget="Background">
+              <controls:AppBorder Classes="pill-selector-popup">
+                <controls:AppScrollViewer IsScrollChainingEnabled="False"
+                                          HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                  <controls:AppItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+                </controls:AppScrollViewer>
+              </controls:AppBorder>
+            </controls:AppPopup>
+          </Grid>
+        </controls:AppDataValidationErrors>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector=".app-combo-box.pill-selector:focus /template/ controls|AppBorder#Background, .app-combo-box.pill-selector:pointerover /template/ controls|AppBorder#Background" x:SetterTargetType="controls:AppBorder">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
+  </Style>
+  <Style Selector=".app-combo-box.pill-selector:focus-visible /template/ controls|AppBorder#HighlightBackground" x:SetterTargetType="controls:AppBorder">
+    <Setter Property="IsVisible" Value="True" />
+  </Style>
+  <Style Selector=".app-combo-box.pill-selector:disabled" x:SetterTargetType="controls:AppPillComboBox">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+  <Style Selector="controls|AppIcon.pill-selector-chevron">
+    <Setter Property="Size" Value="10" />
+    <Setter Property="Margin" Value="0,0,10,0" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Stroke" Value="{DynamicResource TextMutedBrush}" />
+    <Setter Property="StrokeThickness" Value="1.2" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StrokeJoin" Value="Round" />
+  </Style>
+  <Style Selector="controls|AppBorder.pill-selector-popup">
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="4" />
+    <Setter Property="BoxShadow" Value="{StaticResource SharedSurfaceShadow}" />
+  </Style>
+</Styles>

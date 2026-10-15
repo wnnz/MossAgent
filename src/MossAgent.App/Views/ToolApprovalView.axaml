@@ -1,0 +1,53 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:resources="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Views.ToolApprovalView" x:CompileBindings="False">
+  <ui:AppCard Classes="card card-inset-roomy tool-approval-card">
+    <Grid RowDefinitions="*,Auto">
+      <ui:AppScrollViewer Classes="approval-body-scroll">
+        <StackPanel Spacing="10">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <ui:AppIconLabel IconData="{StaticResource UiIconShield}"
+                             Label="{x:Static resources:ApprovalText.Title}" Classes="approval-title" />
+            <ui:AppBorder Grid.Column="1" Classes="approval-badge" VerticalAlignment="Center">
+              <ui:AppText Text="{Binding RiskLabel}" Classes="type-11 weight-semibold approval-label" />
+            </ui:AppBorder>
+          </Grid>
+          <ui:AppText Text="{Binding ToolName}" Classes="type-13 code-font" TextWrapping="Wrap" />
+          <ui:AppText Text="{Binding Description}" Classes="muted type-12" TextWrapping="Wrap" />
+          <ui:AppText Text="{Binding TaskLabel}" Classes="subtle type-11 code-font" TextWrapping="Wrap" />
+          <ui:AppScrollViewer Classes="approval-details-scroll">
+            <StackPanel Spacing="6">
+              <ui:AppText Text="{x:Static resources:ApprovalText.Directory}" Classes="muted type-11" />
+              <ui:AppSelectableText Text="{Binding WorkingDirectory}" Classes="type-12 code-font" TextWrapping="Wrap" />
+              <ui:AppText Text="{x:Static resources:ApprovalText.Details}" Classes="muted type-11" />
+              <ui:AppSelectableText Text="{Binding Summary}" Classes="type-12 code-font" TextWrapping="Wrap" />
+            </StackPanel>
+          </ui:AppScrollViewer>
+          <ui:AppText Text="{x:Static resources:ApprovalText.PrivacyHint}" Classes="subtle type-11" TextWrapping="Wrap" />
+          <StackPanel DataContext="{Binding ContentPreview}" IsVisible="{Binding IsAvailable}" Spacing="8">
+            <ui:AppButton Content="{Binding ToggleLabel}" Classes="ghost" Command="{Binding ToggleCommand}" />
+            <ui:AppScrollViewer Classes="approval-content-scroll" IsVisible="{Binding IsOpen}">
+              <ui:AppSelectableText Text="{Binding PageText}" Classes="type-12 code-font" TextWrapping="Wrap" />
+            </ui:AppScrollViewer>
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" IsVisible="{Binding HasMultiplePages}">
+              <ui:AppIconButton IconData="{StaticResource UiIconArrowLeft}" Label="{x:Static resources:ApprovalText.PreviousContent}"
+                                Command="{Binding PreviousCommand}" />
+              <ui:AppText Grid.Column="1" Text="{Binding RangeLabel}" Classes="muted type-11" HorizontalAlignment="Center" />
+              <ui:AppIconButton Grid.Column="2" IconData="{StaticResource UiIconArrowRight}" Label="{x:Static resources:ApprovalText.NextContent}"
+                                Command="{Binding NextCommand}" />
+            </Grid>
+          </StackPanel>
+          <ui:AppText Text="{Binding QueueLabel}" Classes="muted type-11" IsVisible="{Binding HasQueuedRequests}" />
+        </StackPanel>
+      </ui:AppScrollViewer>
+      <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,10,0,0">
+        <ui:AppApprovalButton Content="{x:Static resources:ApprovalText.Deny}" Classes="ghost"
+                      Command="{Binding DenyCommand}" CommandParameter="{Binding CurrentRequestId}" HorizontalAlignment="Stretch" />
+        <ui:AppApprovalButton Grid.Column="1" Content="{x:Static resources:ApprovalText.Approve}" Classes="primary"
+                      Command="{Binding ApproveCommand}" CommandParameter="{Binding CurrentRequestId}" HorizontalAlignment="Stretch" />
+      </Grid>
+    </Grid>
+  </ui:AppCard>
+</ui:AppUserControl>

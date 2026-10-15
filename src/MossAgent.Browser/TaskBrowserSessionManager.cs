@@ -45,7 +45,7 @@ public sealed class TaskBrowserSessionManager(
             ToProfileMode(configuration.ProfilePreference),
             GetProfileDirectory(configuration, taskId),
             configuration.CdpEndpoint,
-            proxy?.ToUri(), proxy?.Username, proxy?.Password);
+            proxy?.ToUri(), proxy?.Username, proxy?.Password, taskId);
         return options.Engine == BrowserEngine.Embedded
             ? await embeddedSessions.CreateAsync(options, cancellationToken)
             : await sessions.CreateAsync(options, cancellationToken);

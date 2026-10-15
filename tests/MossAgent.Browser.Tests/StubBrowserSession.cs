@@ -17,6 +17,7 @@ internal sealed class StubBrowserSession : IBrowserSession
     public int ReloadCount { get; private set; }
     public string ActiveTabId { get; private set; } = "tab-1";
     public int TabCount { get; private set; } = 1;
+    public bool IsDisposed { get; private set; }
 
     public Task NavigateAsync(Uri uri, CancellationToken cancellationToken)
     {
@@ -146,7 +147,11 @@ internal sealed class StubBrowserSession : IBrowserSession
         return new BrowserDownloadInfo("report.txt");
     }
 
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    public ValueTask DisposeAsync()
+    {
+        IsDisposed = true;
+        return ValueTask.CompletedTask;
+    }
 
     private Task RecordSelectorAsync(string selector)
     {

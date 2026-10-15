@@ -1,0 +1,448 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <StyleInclude Source="avares://MossAgent.App/Styles/FieldVariants.axaml" />
+  <StyleInclude Source="avares://MossAgent.App/Styles/WorkspacePromptVariants.axaml" />
+  <StyleInclude Source="avares://MossAgent.App/Styles/WorkspacePaneVariants.axaml" />
+  <StyleInclude Source="avares://MossAgent.App/Styles/BrowserToolbarVariants.axaml" />
+  <StyleInclude Source="avares://MossAgent.App/Styles/NavigationActionVariants.axaml" />
+  <StyleInclude Source="avares://MossAgent.App/Styles/SidebarSearchVariants.axaml" />
+  <StyleInclude Source="avares://MossAgent.App/Styles/NavigationRailVariants.axaml" />
+  <StyleInclude Source="avares://MossAgent.App/Styles/InspectorVariants.axaml" />
+  <Style Selector="controls|AppButton.navigation-history">
+    <Setter Property="Theme" Value="{StaticResource HistoryNavigationButtonTheme}" />
+  </Style>
+  <Style Selector="controls|AppButton.window-control">
+    <Setter Property="Theme" Value="{StaticResource WindowControlButtonTheme}" />
+  </Style>
+  <Style Selector=".app-input.composer-input" x:SetterTargetType="controls:AppInput">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="2,4" />
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+  </Style>
+  <Style Selector=".app-input.composer-input /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="controls|AppButton.button-xs">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Padding" Value="8,3" />
+  </Style>
+  <Style Selector="controls|AppButton.align-leading">
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+  </Style>
+  <Style Selector="controls|AppButton.align-stretch">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+  </Style>
+  <Style Selector="controls|AppButton.button-xxs">
+    <Setter Property="FontSize" Value="10.5" />
+    <Setter Property="Padding" Value="8,3" />
+  </Style>
+  <Style Selector="controls|AppButton.button-sm">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Padding" Value="12,5" />
+  </Style>
+  <Style Selector="controls|AppButton.inspector-link">
+    <Setter Property="Padding" Value="0,3" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+  <Style Selector="controls|AppButton.panel-action">
+    <Setter Property="Padding" Value="8,3" />
+  </Style>
+  <Style Selector="controls|AppButton.model-option">
+    <Setter Property="Padding" Value="16,6,8,6" />
+  </Style>
+  <Style Selector="controls|AppButton.model-picker-nav">
+    <Setter Property="Padding" Value="4,4" />
+  </Style>
+  <Style Selector=".app-slider.reasoning-slider" x:SetterTargetType="controls:AppSlider">
+    <Setter Property="Height" Value="24" />
+    <Setter Property="Margin" Value="4,2" />
+    <Setter Property="Foreground" Value="{DynamicResource ReasoningSliderActiveBrush}" />
+    <Setter Property="Background" Value="{DynamicResource ReasoningSliderTrackBrush}" />
+  </Style>
+  <Style Selector=".reasoning-ticks" x:SetterTargetType="controls:AppItemsControl">
+    <Setter Property="Margin" Value="12,0" />
+  </Style>
+  <Style Selector="controls|AppBorder.reasoning-tick">
+    <Setter Property="Width" Value="4" />
+    <Setter Property="Height" Value="4" />
+    <Setter Property="CornerRadius" Value="2" />
+    <Setter Property="Background" Value="White" />
+    <Setter Property="BorderBrush" Value="#A5ADB5" />
+    <Setter Property="BorderThickness" Value="0.5" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="controls|AppButton.tool-row">
+    <Setter Property="Padding" Value="0,4" />
+    <Setter Property="MinHeight" Value="32" />
+  </Style>
+  <Style Selector="controls|AppBorder.tool-activity-static">
+    <Setter Property="Padding" Value="0,4" />
+    <Setter Property="MinHeight" Value="32" />
+  </Style>
+  <Style Selector="controls|AppButton.menu-option">
+    <Setter Property="Padding" Value="8,6" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+  </Style>
+  <Style Selector="controls|AppButton.menu-option.sidebar-sort-option">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+  </Style>
+  <Style Selector="controls|AppButton.sidebar-brand-trigger">
+    <Setter Property="Padding" Value="2,0" />
+  </Style>
+  <Style Selector="controls|AppButton.sidebar-action-button">
+    <Setter Property="Padding" Value="10,2" />
+    <Setter Property="Margin" Value="0,2,0,1" />
+    <Setter Property="Foreground" Value="{DynamicResource SidebarTextBrush}" />
+    <Setter Property="MinHeight" Value="30" />
+  </Style>
+  <Style Selector="controls|AppButton.sidebar-action-button controls|AppIconLabel">
+    <Setter Property="Spacing" Value="11" />
+  </Style>
+  <Style Selector="controls|AppButton.sidebar-rename-action">
+    <Setter Property="Padding" Value="7,3" />
+  </Style>
+  <Style Selector="controls|AppButton.sidebar-project-row">
+    <Setter Property="Padding" Value="8,6" />
+    <Setter Property="MinHeight" Value="31" />
+  </Style>
+  <Style Selector="controls|AppButton.sidebar-restore-task">
+    <Setter Property="Padding" Value="7,4" />
+  </Style>
+  <Style Selector="controls|AppButton.sidebar-settings-button">
+    <Setter Property="Padding" Value="8,7" />
+  </Style>
+  <Style Selector="controls|AppButton.menu-trigger">
+    <Setter Property="Height" Value="30" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="Padding" Value="6,3" />
+  </Style>
+  <Style Selector="controls|AppButton.ghost.menu-trigger">
+    <Setter Property="Foreground" Value="{DynamicResource TitlebarMenuForegroundBrush}" />
+  </Style>
+  <Style Selector="controls|AppButton.ghost.menu-trigger:pointerover">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+  <Style Selector="controls|AppButton.composer-send">
+    <Setter Property="Width" Value="28" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+  <Style Selector="controls|AppButton.primary.ghost.composer-send">
+    <Setter Property="Background" Value="{DynamicResource PrimaryButtonBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryButtonForegroundBrush}" />
+  </Style>
+  <Style Selector="controls|AppButton.primary.ghost.composer-send:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PrimaryButtonBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryButtonForegroundBrush}" />
+  </Style>
+  <Style Selector="controls|AppButton.primary.ghost.composer-send:disabled">
+    <Setter Property="Background" Value="#D9D9D9" />
+    <Setter Property="Foreground" Value="#7A7A7A" />
+  </Style>
+  <Style Selector="controls|AppButton.composer-send controls|AppIcon.ui-icon">
+    <Setter Property="Size" Value="12" />
+  </Style>
+  <Style Selector="controls|AppButton.composer-attach controls|AppIcon.ui-icon">
+    <Setter Property="Size" Value="12" />
+  </Style>
+  <Style Selector="controls|AppCard.flyout-surface">
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+  <Style Selector="controls|AppCard.composer-surface">
+    <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+    <Setter Property="CornerRadius" Value="22" />
+  </Style>
+  <Style Selector="controls|AppBorder.composer-context-surface">
+    <Setter Property="Background" Value="{DynamicResource CardSubtleBackgroundBrush}" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="Height" Value="38" />
+    <Setter Property="Margin" Value="12,0,12,0" />
+    <Setter Property="Padding" Value="7,3" />
+  </Style>
+  <Style Selector="controls|AppIconLabel.composer-context-label">
+    <Setter Property="LabelMaxWidth" Value="200" />
+  </Style>
+  <Style Selector="controls|AppIconLabel.composer-context-label controls|AppIcon">
+    <Setter Property="Size" Value="12" />
+  </Style>
+  <Style Selector="controls|AppIconLabel.composer-context-label controls|AppText">
+    <Setter Property="FontSize" Value="11" />
+  </Style>
+  <Style Selector="controls|AppIconLabel.composer-context-label.muted controls|AppText">
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <Style Selector="controls|AppIconLabel.model-provider-label">
+    <Setter Property="Spacing" Value="6" />
+  </Style>
+  <Style Selector="controls|AppIconLabel.model-provider-label controls|AppIcon">
+    <Setter Property="Size" Value="12" />
+  </Style>
+  <Style Selector="controls|AppIconLabel.model-provider-label controls|AppText">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <Style Selector="controls|AppIconLabel.project-summary-title, controls|AppIconLabel.project-summary-path">
+    <Setter Property="Spacing" Value="7" />
+    <Setter Property="LabelMaxWidth" Value="260" />
+  </Style>
+  <Style Selector="controls|AppIconLabel.project-summary-title controls|AppText">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="controls|AppIconLabel.project-summary-path controls|AppText">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <Style Selector="controls|AppEmptySessionLayout">
+    <Setter Property="BrandOffset" Value="32" />
+  </Style>
+  <Style Selector="controls|AppCard.inspector-surface">
+    <Setter Property="CornerRadius" Value="18" />
+  </Style>
+  <Style Selector="controls|AppBorder.divider-bottom">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+  </Style>
+  <Style Selector="controls|AppBorder.divider-top">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+  </Style>
+  <Style Selector="controls|AppBorder.divider-right-bottom">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,1,1" />
+  </Style>
+  <Style Selector="controls|AppBorder.table-heading">
+    <Setter Property="Background" Value="{DynamicResource CardSubtleBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,1,1" />
+  </Style>
+  <Style Selector="controls|AppBorder.embedded-browser-surface">
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="controls|AppBorder.inspector-side-surface">
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1,0,0,0" />
+  </Style>
+  <Style Selector="controls|AppBorder.titlebar-surface">
+    <Setter Property="Height" Value="44" />
+    <Setter Property="Padding" Value="4,0,0,8" />
+    <Setter Property="Background" Value="{DynamicResource HeaderBackgroundBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="controls|AppBorder.sidebar-surface">
+    <Setter Property="Background" Value="{DynamicResource SidebarBackgroundBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="controls|AppBorder.workspace-sidebar-surface">
+    <Setter Property="Background" Value="{DynamicResource WorkspaceSidebarBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SidebarBorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,1,0" />
+    <Setter Property="CornerRadius" Value="12,0,0,0" />
+  </Style>
+  <Style Selector="controls|AppBorder.navigation-rail-surface">
+    <Setter Property="Background" Value="{DynamicResource HeaderBackgroundBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="controls|AppBorder.page-surface">
+    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+  </Style>
+  <Style Selector="controls|AppBorder.settings-shell-surface">
+    <Setter Property="Background" Value="{DynamicResource HeaderBackgroundBrush}" />
+  </Style>
+  <Style Selector="controls|AppBorder.settings-sidebar-surface">
+    <Setter Property="Background" Value="{DynamicResource WorkspaceSidebarBackgroundBrush}" />
+    <Setter Property="Width" Value="264" />
+    <Setter Property="Padding" Value="8,0,8,12" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SidebarBorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,1,0" />
+  </Style>
+  <Style Selector="controls|AppBorder.settings-page-surface">
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+  <Style Selector="controls|AppBorder.overlay-scrim">
+    <Setter Property="Background" Value="{DynamicResource OverlayBackgroundBrush}" />
+  </Style>
+  <Style Selector="controls|AppBorder.divider-fill">
+    <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}" />
+  </Style>
+  <Style Selector="controls|AppBorder.transparent-hit-target">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="controls|AppBorder.chat-surface">
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+  </Style>
+  <Style Selector="controls|AppBorder.chat-header">
+    <Setter Property="Padding" Value="20,0,6,0" />
+  </Style>
+  <Style Selector="controls|AppBorder.chat-header.active">
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="controls|AppBorder.chat-quote-rule">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
+    <Setter Property="BorderThickness" Value="2,0,0,0" />
+  </Style>
+  <Style Selector="controls|AppBorder.chat-code-heading">
+    <Setter Property="Background" Value="{DynamicResource CardSubtleBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+  </Style>
+  <Style Selector="controls|AppBorder.bottom-panel-surface">
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+  </Style>
+  <Style Selector="controls|AppBorder.directory-row">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1,0,1,1" />
+  </Style>
+  <Style Selector="controls|AppBorder.directory-row controls|AppButton.set-primary">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+  </Style>
+  <Style Selector="controls|AppBorder.directory-row:pointerover controls|AppButton.set-primary">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="IsHitTestVisible" Value="True" />
+  </Style>
+  <Style Selector="controls|AppBorder.table-surface">
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+  </Style>
+  <Style Selector="controls|AppBorder.inspector-list-surface">
+    <Setter Property="Background" Value="{DynamicResource CardSubtleBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+  </Style>
+  <Style Selector="controls|AppBorder.inspector-chip">
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+  </Style>
+  <Style Selector="controls|AppBorder.inspector-output-surface">
+    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+  </Style>
+  <Style Selector="controls|AppBorder.workspace-main-surface">
+    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="controls|AppBorder.context-indicator">
+    <Setter Property="Background" Value="{DynamicResource CardSubtleBackgroundBrush}" />
+  </Style>
+  <Style Selector="controls|AppBorder.user-bubble">
+    <Setter Property="Background" Value="{DynamicResource CardSubtleBackgroundBrush}" />
+    <Setter Property="CornerRadius" Value="16" />
+  </Style>
+  <StyleInclude Source="avares://MossAgent.App/Styles/AttachmentChipVariants.axaml" />
+  <Style Selector="controls|AppBorder.code-surface">
+    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="16" />
+  </Style>
+  <Style Selector="controls|AppBorder.tool-detail-surface">
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Margin" Value="23,2,0,0" />
+    <Setter Property="Padding" Value="10,8" />
+  </Style>
+  <Style Selector="controls|AppBorder.subagent-event-row">
+    <Setter Property="Padding" Value="7,5" />
+    <Setter Property="CornerRadius" Value="8" />
+  </Style>
+  <Style Selector="controls|AppBorder.subagent-event-row.tool">
+    <Setter Property="Background" Value="{DynamicResource CardSubtleBackgroundBrush}" />
+  </Style>
+  <Style Selector="controls|AppBorder.subagent-event-row.answer">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="controls|AppBorder.directory-primary-badge">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="9" />
+  </Style>
+  <Style Selector="controls|AppBorder.sidebar-rename-surface">
+    <Setter Property="Background" Value="{DynamicResource CardSubtleBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="14" />
+  </Style>
+  <Style Selector="controls|AppBorder.sidebar-selected-surface">
+    <Setter Property="Background" Value="{DynamicResource SettingsSelectionBrush}" />
+    <Setter Property="CornerRadius" Value="10" />
+  </Style>
+  <Style Selector="controls|AppBorder.approval-badge">
+    <Setter Property="Background" Value="{DynamicResource ApprovalBadgeBrush}" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="6,2" />
+  </Style>
+  <Style Selector="controls|AppButton.composer-model-picker">
+    <Setter Property="MaxWidth" Value="180" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Padding" Value="10,5" />
+  </Style>
+  <Style Selector=".app-input.compact-input" x:SetterTargetType="controls:AppInput">
+    <Setter Property="FontSize" Value="11.5" />
+  </Style>
+  <Style Selector=".app-input.terminal-input" x:SetterTargetType="controls:AppInput">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Padding" Value="8,5" />
+  </Style>
+  <Style Selector=".app-input.code-font" x:SetterTargetType="controls:AppInput">
+    <Setter Property="FontFamily" Value="{DynamicResource CodeFontFamily}" />
+  </Style>
+  <Style Selector=".app-combo-box.compact-selector" x:SetterTargetType="controls:AppComboBox">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Padding" Value="7,3" />
+  </Style>
+  <Style Selector=".app-scroll-viewer.modal-scroll" x:SetterTargetType="controls:AppScrollViewer">
+    <Setter Property="Padding" Value="0,0,18,0" />
+  </Style>
+  <Style Selector=".app-scroll-viewer.settings-page-scroll" x:SetterTargetType="controls:AppScrollViewer">
+    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="VerticalScrollBarVisibility" Value="Hidden" />
+  </Style>
+  <Style Selector=".app-scroll-viewer.tool-details-scroll" x:SetterTargetType="controls:AppScrollViewer">
+    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+    <Setter Property="MaxHeight" Value="260" />
+  </Style>
+  <Style Selector=".app-toggle-button.diff-staged" x:SetterTargetType="controls:AppToggleButton">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Padding" Value="8,3" />
+    <Setter Property="CornerRadius" Value="8" />
+  </Style>
+  <Style Selector="controls|AppBrowserHost">
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+  <Style Selector="controls|AppTaskFailureNotice">
+    <Setter Property="Margin" Value="4,0,4,16" />
+  </Style>
+  <Style Selector="controls|AppTaskFailureNotice controls|AppIcon.failure-notice-icon">
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="Margin" Value="0,2,0,0" />
+  </Style>
+</Styles>

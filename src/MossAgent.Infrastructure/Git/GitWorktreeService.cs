@@ -1,21 +1,21 @@
-using System.Diagnostics;
 using MossAgent.Application.Git;
 using MossAgent.Domain;
 using MossAgent.Infrastructure.Persistence;
 
 namespace MossAgent.Infrastructure.Git;
 
-public sealed class GitWorktreeService(AppDataPaths paths) : IGitWorktreeService
+public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git) : IGitWorktreeService
 {
     public async Task<string> CreateAsync(
         ProjectProfile project,
         Guid taskId,
         CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         paths.EnsureCreated();
         var target = Path.Combine(paths.WorktreesPath, taskId.ToString("N"));
         var branch = $"mossagent/{taskId:N}";
-        var result = await RunGitAsync(
+        var result = await git.RunAsync(
             project.PrimaryDirectory,
             ["worktree", "add", "-b", branch, target, "HEAD"],
             cancellationToken);
@@ -41,7 +41,7 @@ public sealed class GitWorktreeService(AppDataPaths paths) : IGitWorktreeService
             throw new UnauthorizedAccessException("只能移除 MossAgent 管理的 worktree。");
         }
 
-        var result = await RunGitAsync(
+        var result = await git.RunAsync(
             project.PrimaryDirectory,
             ["worktree", "remove", target],
             cancellationToken);
@@ -50,32 +50,4 @@ public sealed class GitWorktreeService(AppDataPaths paths) : IGitWorktreeService
             throw new InvalidOperationException($"移除 worktree 失败：{result.Output}");
         }
     }
-
-    private static async Task<(int ExitCode, string Output)> RunGitAsync(
-        string workingDirectory,
-        IReadOnlyList<string> arguments,
-        CancellationToken cancellationToken)
-    {
-        var startInfo = new ProcessStartInfo("git")
-        {
-            WorkingDirectory = workingDirectory,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-        foreach (var argument in arguments)
-        {
-            startInfo.ArgumentList.Add(argument);
-        }
-
-        using var process = Process.Start(startInfo)
-            ?? throw new InvalidOperationException("无法启动 Git。");
-        var stdout = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var stderr = process.StandardError.ReadToEndAsync(cancellationToken);
-        await process.WaitForExitAsync(cancellationToken);
-        var output = string.Join(Environment.NewLine, await stdout, await stderr).Trim();
-        return (process.ExitCode, output);
-    }
 }
-

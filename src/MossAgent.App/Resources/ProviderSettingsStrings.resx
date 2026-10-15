@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="NewApiKeyPlaceholder" xml:space="preserve"><value>输入 API Key；允许匿名访问时可留空</value></data>
+  <data name="EditApiKeyPlaceholder" xml:space="preserve"><value>留空保留原密钥</value></data>
+  <data name="DirectConnection" xml:space="preserve"><value>直连</value></data>
+  <data name="ProxyUnavailable" xml:space="preserve"><value>所选代理已删除或停用，请明确选择直连或其他已启用代理。</value></data>
+  <data name="ProxySelectionRequired" xml:space="preserve"><value>请选择直连或已启用的代理。</value></data>
+  <data name="ProxyReadFailed" xml:space="preserve"><value>无法读取代理配置，请重试刷新；编辑内容已保留。</value></data>
+  <data name="ProxySelectionChanged" xml:space="preserve"><value>代理选择已变化，请确认后重新保存。</value></data>
+  <data name="Edit" xml:space="preserve"><value>编辑</value></data>
+  <data name="CatalogLoading" xml:space="preserve"><value>正在读取提供商与模型配置…</value></data>
+  <data name="CatalogReadFailed" xml:space="preserve"><value>无法读取提供商与模型配置，请重试刷新；已有列表和编辑内容已保留。</value></data>
+  <data name="ProviderTargetUnavailable" xml:space="preserve"><value>正在编辑的提供商已不可用，草稿已保留。请关闭编辑器并重新选择提供商。</value></data>
+  <data name="ModelTargetUnavailable" xml:space="preserve"><value>正在编辑的提供商或模型已不可用，草稿已保留。请关闭编辑器并重新选择目标。</value></data>
+  <data name="DiscoveryTargetUnavailable" xml:space="preserve"><value>提供商配置暂不可用，已停止保存模型结果。请刷新后重新获取模型。</value></data>
+  <data name="ProviderDraftChanged" xml:space="preserve"><value>编辑内容已变化，请确认后重新保存提供商。</value></data>
+  <data name="ProviderSaveFailed" xml:space="preserve"><value>无法保存提供商配置，草稿已保留。请检查存储是否可用后重试。</value></data>
+  <data name="ProviderDeleteFailed" xml:space="preserve"><value>无法删除提供商配置。请检查存储是否可用后重试。</value></data>
+  <data name="ModelSaveFailed" xml:space="preserve"><value>无法保存模型配置，草稿已保留。请检查存储是否可用后重试。</value></data>
+  <data name="ModelDeleteFailed" xml:space="preserve"><value>无法删除模型配置。请检查存储是否可用后重试。</value></data>
+  <data name="ModelImportFailed" xml:space="preserve"><value>无法保存获取的模型配置。请刷新列表、检查存储是否可用后重试。</value></data>
+  <data name="ModelImportUnavailable" xml:space="preserve"><value>配置正在修改，尚未导入本次模型结果。请稍后重新获取模型。</value></data>
+  <data name="ModelDiscoveryLoading" xml:space="preserve"><value>正在从 {0} 获取模型…</value></data>
+  <data name="ModelDiscoveryCompleted" xml:space="preserve"><value>{0} 已同步 {1} 个模型。</value></data>
+  <data name="ModelDiscoveryTimedOut" xml:space="preserve"><value>{0} 获取模型超时，请检查供应商连接。</value></data>
+  <data name="ModelDiscoveryProxyUnavailable" xml:space="preserve"><value>{0} 获取模型失败：供应商选择的代理不存在或已禁用。</value></data>
+  <data name="ModelDiscoveryHttpFailed" xml:space="preserve"><value>{0} 获取模型失败（HTTP {1}），请检查提供商地址、API Key 和代理。</value></data>
+  <data name="ModelDiscoveryFailed" xml:space="preserve"><value>{0} 获取模型失败，请检查提供商地址、API Key、代理和网络连接。</value></data>
+  <data name="ModelUpdated" xml:space="preserve"><value>模型设置已更新。</value></data>
+  <data name="ModelAdded" xml:space="preserve"><value>模型已添加。</value></data>
+  <data name="ModelDeleted" xml:space="preserve"><value>已删除模型：{0}</value></data>
+  <data name="ModelDiscoveryProxyAuthenticationFailed" xml:space="preserve"><value>{0} 获取模型失败（HTTP 407）：代理认证失败。请在网络代理设置中检查用户名、密码和代理是否启用后重试。</value></data>
+  <data name="Delete" xml:space="preserve"><value>删除</value></data>
+  <data name="Default" xml:space="preserve"><value>默认</value></data>
+  <data name="Disabled" xml:space="preserve"><value>已停用</value></data>
+  <data name="ExpandModels" xml:space="preserve"><value>展开 {0} 的模型</value></data>
+  <data name="CollapseModels" xml:space="preserve"><value>收起 {0} 的模型</value></data>
+  <data name="EditProvider" xml:space="preserve"><value>编辑提供商 {0}</value></data>
+  <data name="EditModel" xml:space="preserve"><value>编辑模型 {0}</value></data>
+  <data name="DeleteModel" xml:space="preserve"><value>删除模型 {0}</value></data>
+  <data name="ModelCount" xml:space="preserve"><value>模型 {0}</value></data>
+  <data name="ContextLength" xml:space="preserve"><value>上下文 {0}</value></data>
+  <data name="ReasoningEffort" xml:space="preserve"><value>思考 {0}</value></data>
+  <data name="UnsupportedReasoningEffort" xml:space="preserve"><value>思考强度无效或当前协议不支持。可选择或输入支持的档位；兼容协议支持 1–64 位字母、数字、下划线和连字符（字母开头）。</value></data>
+  <data name="ChooseReasoningEffort" xml:space="preserve"><value>选择思考强度</value></data>
+  <data name="EditableReasoningHint" xml:space="preserve"><value>可从列表选择，也可直接输入。已知模型显示离线目录中的推荐值；兼容协议的自定义值由提供商校验，原生协议保留档位限制。</value></data>
+</root>

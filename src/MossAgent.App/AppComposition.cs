@@ -14,6 +14,7 @@ using MossAgent.Infrastructure.Networking;
 using MossAgent.Infrastructure.Git;
 using MossAgent.Infrastructure.Attachments;
 using MossAgent.Application.Git;
+using MossAgent.Application.Settings;
 using MossAgent.Providers;
 using MossAgent.Providers.OpenAi;
 using MossAgent.Providers.Anthropic;
@@ -26,28 +27,56 @@ using MossAgent.Tools.BuiltIn.Files;
 using MossAgent.Tools.BuiltIn.Processes;
 using MossAgent.Tools.BuiltIn.Git;
 using MossAgent.Platform.Windows.Capture;
+using MossAgent.Platform.Windows.Windowing;
 using MossAgent.Platform.Windows.Terminal;
+using MossAgent.Platform.Windows.Processes;
+using MossAgent.Tools.Abstractions.Processes;
 using MossAgent.Tools.Abstractions.Terminal;
 using MossAgent.App.Browser;
 using MossAgent.App.Services;
+using MossAgent.Application.Automations;
+using MossAgent.Tools.Abstractions.Files;
+using MossAgent.Platform.Windows.Files;
 
 namespace MossAgent.App;
 
 internal static class AppComposition
 {
-    public static ServiceProvider CreateServices()
+    public static ServiceProvider CreateServices(string? dataRoot = null)
     {
         var services = new ServiceCollection();
-        services.AddSingleton<AppDataPaths>();
+        var resolvedDataRoot = string.IsNullOrWhiteSpace(dataRoot)
+            ? null
+            : Path.GetFullPath(dataRoot);
+        RegisterInfrastructure(services, resolvedDataRoot);
+        RegisterFileAndAgentTools(services);
+        RegisterBrowserAndDesktopTools(services);
+        RegisterAgentRuntime(services);
+        RegisterWorkspace(services);
+        return services.BuildServiceProvider(validateScopes: true);
+    }
+
+    private static void RegisterInfrastructure(IServiceCollection services, string? dataRoot)
+    {
+        services.AddSingleton(new AppDataPaths(dataRoot));
         services.AddSingleton<SqliteConnectionFactory>();
         services.AddSingleton<IDatabaseInitializer, SqliteDatabaseInitializer>();
         services.AddSingleton<IConfigurationRepository, SqliteConfigurationRepository>();
+        services.AddSingleton<ISubagentConfigurationRepository, SqliteSubagentConfigurationRepository>();
+        services.AddSingleton<IAgentConfigurationRepository, SqliteAgentConfigurationRepository>();
         services.AddSingleton<IBrowserConfigurationRepository, SqliteBrowserConfigurationRepository>();
         services.AddSingleton<IMcpConfigurationRepository, SqliteMcpConfigurationRepository>();
         services.AddSingleton<IWorkspaceRepository, SqliteWorkspaceRepository>();
+        services.AddSingleton<IConversationPreferenceRepository, SqliteConversationPreferenceRepository>();
+        services.AddSingleton<IAutomationRepository, SqliteAutomationRepository>();
+        services.AddSingleton<IAutomationLease, AutomationSchedulerLease>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<ISidebarPreferenceStore, JsonSidebarPreferenceStore>();
         services.AddSingleton<IWorkspaceAttachmentReader, WorkspaceAttachmentReader>();
         services.AddSingleton<ITaskArtifactPaths, TaskArtifactPaths>();
+        services.AddSingleton<ITaskArtifactContentReader, TaskArtifactContentReader>();
         services.AddSingleton<IBrowserProfilePaths, BrowserProfilePaths>();
+        services.AddSingleton<GitProcessRunner>();
         services.AddSingleton<IGitWorktreeService, GitWorktreeService>();
         services.AddSingleton<IGitRepositoryInfoService, GitRepositoryInfoService>();
         services.AddSingleton<IProviderHttpClientFactory, ProviderHttpClientFactory>();
@@ -61,14 +90,29 @@ internal static class AppComposition
         services.AddSingleton<IModelProvider, AnthropicMessagesProvider>();
         services.AddSingleton<IModelProvider, GeminiGenerateContentProvider>();
         services.AddSingleton<IModelProviderRegistry, ModelProviderRegistry>();
+    }
+
+    private static void RegisterFileAndAgentTools(IServiceCollection services)
+    {
         services.AddSingleton<AuthorizedPathResolver>();
+        services.AddSingleton<IAuthorizedPathResolver>(
+            static provider => provider.GetRequiredService<AuthorizedPathResolver>());
         services.AddSingleton<GitCommandRunner>();
         services.AddSingleton<IBrowserSessionFactory, PlaywrightBrowserSessionFactory>();
-        services.AddSingleton<EmbeddedBrowserPaneViewModel>();
+        services.AddSingleton<EmbeddedBrowserWorkspaceViewModel>();
         services.AddSingleton<IEmbeddedBrowserSessionFactory, EmbeddedBrowserSessionFactory>();
         services.AddSingleton<ITaskBrowserSessionManager, TaskBrowserSessionManager>();
         services.AddSingleton<ITerminalSessionManager, PtyTerminalSessionManager>();
+        services.AddSingleton<ITaskProcessLauncher, WindowsTaskProcessLauncher>();
         services.AddSingleton<IAgentTool, FileReadTool>();
+        services.AddSingleton<IAgentTool, FilePreviewTool>();
+        services.AddSingleton<IAgentTool, FileChangeReviewTool>();
+        services.AddSingleton<IAgentTool, FileChangeStatisticsTool>();
+        services.AddSingleton<IAgentTool, FileChangeRestoreTool>();
+        services.AddSingleton<IAgentTool, FileChangeRemoveCreatedTool>();
+        services.AddSingleton<IFileRevealService, WindowsFileRevealService>();
+        services.AddSingleton<IAgentTool, FileRevealTool>();
+        services.AddSingleton<AtomicTextFileWriter>();
         services.AddSingleton<IAgentTool, DirectoryListTool>();
         services.AddSingleton<IAgentTool, FileWriteTool>();
         services.AddSingleton<IAgentTool, TextReplaceTool>();
@@ -83,6 +127,11 @@ internal static class AppComposition
         services.AddSingleton<IAgentTool, GitDiffTool>();
         services.AddSingleton<IAgentTool, GitLogTool>();
         services.AddSingleton<IAgentTool, GitCreateWorktreeTool>();
+        services.AddSingleton<IAgentTool, SubagentTool>();
+    }
+
+    private static void RegisterBrowserAndDesktopTools(IServiceCollection services)
+    {
         services.AddSingleton<IAgentTool, BrowserNavigateTool>();
         services.AddSingleton<IAgentTool, BrowserTabsTool>();
         services.AddSingleton<IAgentTool, BrowserNewTabTool>();
@@ -91,6 +140,7 @@ internal static class AppComposition
         services.AddSingleton<IAgentTool, BrowserBackTool>();
         services.AddSingleton<IAgentTool, BrowserForwardTool>();
         services.AddSingleton<IAgentTool, BrowserReloadTool>();
+        services.AddSingleton<IAgentTool, BrowserDevToolsTool>();
         services.AddSingleton<IAgentTool, BrowserSnapshotTool>();
         services.AddSingleton<IAgentTool, BrowserClickTool>();
         services.AddSingleton<IAgentTool, BrowserTypeTool>();
@@ -100,26 +150,40 @@ internal static class AppComposition
         services.AddSingleton<IAgentTool, BrowserScreenshotTool>();
         services.AddSingleton<IAgentTool, BrowserDownloadTool>();
         services.AddSingleton<IAgentTool, ScreenCaptureTool>();
+        services.AddSingleton<WindowCornerService>();
         services.AddSingleton<IAgentTool, TerminalStartTool>();
         services.AddSingleton<IAgentTool, TerminalWriteTool>();
         services.AddSingleton<IAgentTool, TerminalResizeTool>();
         services.AddSingleton<IAgentTool, TerminalStopTool>();
+    }
+
+    private static void RegisterAgentRuntime(IServiceCollection services)
+    {
         services.AddSingleton<ToolRegistry>();
         services.AddSingleton<IToolCatalog>(static provider => provider.GetRequiredService<ToolRegistry>());
         services.AddSingleton<IMutableToolCatalog>(static provider => provider.GetRequiredService<ToolRegistry>());
         services.AddSingleton<McpHttpClientFactory>();
         services.AddSingleton<IMcpManager, McpManager>();
+        services.AddSingleton<AppStartupViewModel>();
+        services.AddSingleton<AppStartupService>();
         services.AddSingleton<ApprovalViewModel>();
         services.AddSingleton<IToolApprovalService>(provider =>
         {
             var approval = provider.GetRequiredService<ApprovalViewModel>();
-            return new PolicyApprovalService(approval.RequestAsync);
+            return new PolicyApprovalService((descriptor, request, context, cancellationToken) =>
+                approval.RequestAsync(descriptor, request, context, cancellationToken));
         });
         services.AddSingleton<IToolExecutor, ToolExecutor>();
         services.AddSingleton<IAgentRunner, AgentRunner>();
+    }
+
+    private static void RegisterWorkspace(IServiceCollection services)
+    {
         services.AddSingleton<ProxySettingsViewModel>();
         services.AddSingleton<ProviderSettingsViewModel>();
         services.AddSingleton<ModelSettingsViewModel>();
+        services.AddSingleton<SubagentSettingsViewModel>();
+        services.AddSingleton<AgentSettingsViewModel>();
         services.AddSingleton<WorkspaceTaskFactory>();
         services.AddSingleton<WorkspaceProjectService>();
         services.AddSingleton<WorkspaceAttachmentManagerViewModel>();
@@ -130,16 +194,26 @@ internal static class AppComposition
         services.AddSingleton<WorkspaceWorktreeCleanupService>();
         services.AddSingleton<WorkspaceRepositoryStatusViewModel>();
         services.AddSingleton<WorkspaceCatalogViewModel>();
+        services.AddSingleton<WorkspaceFileChangeUndoService>();
+        services.AddSingleton<WorkspaceFileChangeStatisticsService>();
         services.AddSingleton<TerminalPaneViewModel>();
         services.AddSingleton<DiffPaneViewModel>();
+        services.AddSingleton<FilePreviewPaneViewModel>();
         services.AddSingleton<AuditPaneViewModel>();
         services.AddSingleton<BrowserSettingsViewModel>();
         services.AddSingleton<McpSettingsViewModel>();
         services.AddSingleton<WorkspaceViewModel>();
+        services.AddSingleton<IAutomationTaskRunner, WorkspaceAutomationRunner>();
+        services.AddSingleton<AutomationScheduler>();
+        services.AddSingleton<AutomationViewModel>();
+        services.AddSingleton<IAppearancePreferenceStore, JsonAppearancePreferenceStore>();
         services.AddSingleton<IThemeService, ThemeService>();
+        services.AddSingleton<ICodeFontService, CodeFontService>();
+        services.AddSingleton<IUiFontService, UiFontService>();
+        services.AddSingleton<IContentFontService, ContentFontService>();
+        services.AddSingleton<ThemePaletteSettingsViewModel>();
         services.AddSingleton<IFolderPickerService, AvaloniaFolderPickerService>();
         services.AddSingleton<IFilePickerService, AvaloniaFilePickerService>();
         services.AddSingleton<MainWindowViewModel>();
-        return services.BuildServiceProvider(validateScopes: true);
     }
 }

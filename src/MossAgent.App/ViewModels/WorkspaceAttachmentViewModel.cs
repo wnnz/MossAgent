@@ -16,6 +16,7 @@ public sealed class WorkspaceAttachmentViewModel
     internal WorkspaceAttachmentContent Content { get; }
 
     public string DisplayPath => Content.DisplayPath;
+    public string FullPath => Content.FullPath;
 
     public string SizeLabel => Content.ByteCount < 1024
         ? $"{Content.ByteCount} B"

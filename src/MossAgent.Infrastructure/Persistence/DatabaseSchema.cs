@@ -147,4 +147,66 @@ internal static class DatabaseSchema
         INSERT OR IGNORE INTO schema_versions(version, applied_at)
             VALUES(3, CURRENT_TIMESTAMP);
         """;
+
+    public const string VersionFour = """
+        CREATE TABLE IF NOT EXISTS subagents (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL COLLATE NOCASE UNIQUE,
+            trigger_condition TEXT NOT NULL,
+            system_prompt TEXT NOT NULL,
+            provider_id TEXT NOT NULL,
+            model_profile_id TEXT NOT NULL,
+            reasoning_effort TEXT NOT NULL,
+            share_context INTEGER NOT NULL,
+            is_enabled INTEGER NOT NULL
+        );
+        INSERT OR IGNORE INTO schema_versions(version, applied_at)
+            VALUES(4, CURRENT_TIMESTAMP);
+        """;
+
+    public const string VersionFive = """
+        CREATE TABLE IF NOT EXISTS agent_profiles (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL COLLATE NOCASE UNIQUE,
+            system_prompt TEXT NOT NULL,
+            provider_id TEXT NOT NULL,
+            model_profile_id TEXT NOT NULL,
+            reasoning_effort TEXT NOT NULL,
+            is_enabled INTEGER NOT NULL
+        );
+        INSERT OR IGNORE INTO schema_versions(version, applied_at)
+        VALUES(5, CURRENT_TIMESTAMP);
+        """;
+
+    public const string VersionSix = """
+        CREATE TABLE IF NOT EXISTS pinned_agent_tasks (
+            task_id TEXT PRIMARY KEY REFERENCES agent_tasks(id) ON DELETE CASCADE,
+            pinned_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS ix_pinned_agent_tasks_pinned_at
+            ON pinned_agent_tasks(pinned_at DESC);
+        INSERT OR IGNORE INTO schema_versions(version, applied_at)
+        VALUES(6, CURRENT_TIMESTAMP);
+        """;
+
+    public const string VersionSeven = """
+        CREATE TABLE IF NOT EXISTS agent_task_failures (
+            task_id TEXT PRIMARY KEY REFERENCES agent_tasks(id) ON DELETE CASCADE,
+            reason INTEGER NOT NULL CHECK(reason IN (0,1,2,3,4,5,6,7,8,9,10))
+        );
+        INSERT OR IGNORE INTO schema_versions(version, applied_at)
+            VALUES(7, CURRENT_TIMESTAMP);
+        """;
+
+    public const string VersionEight = """
+        CREATE TABLE agent_task_failures_v8 (
+            task_id TEXT PRIMARY KEY REFERENCES agent_tasks(id) ON DELETE CASCADE,
+            reason INTEGER NOT NULL CHECK(reason IN (0,1,2,3,4,5,6,7,8,9,10,11,12))
+        );
+        INSERT INTO agent_task_failures_v8(task_id,reason)
+            SELECT task_id,reason FROM agent_task_failures;
+        DROP TABLE agent_task_failures;
+        ALTER TABLE agent_task_failures_v8 RENAME TO agent_task_failures;
+        INSERT INTO schema_versions(version, applied_at) VALUES(8, CURRENT_TIMESTAMP);
+        """;
 }

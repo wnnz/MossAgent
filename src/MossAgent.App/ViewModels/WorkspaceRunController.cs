@@ -24,32 +24,53 @@ public sealed class WorkspaceRunController(
                 context,
                 agentEvent => present(state, agentEvent),
                 state.CancellationToken);
+            await WorkspaceMessageTimestampPresenter.StampAsync(state.Assistant, state.Task.UpdatedAt);
             applyTaskUpdate(state.Task);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (state.IsCancellationRequested)
         {
-            setActivity(state, "任务已取消。");
+            await present(state, new AgentCancelledEvent());
+            setActivity(state, WorkspaceText.Get("RunCancelled"));
             await SetTerminalStatusAsync(state, AgentTaskStatus.Cancelled, applyTaskUpdate);
         }
         catch (Exception exception)
         {
-            setActivity(state, $"任务失败：{exception.Message}");
-            await SetTerminalStatusAsync(state, AgentTaskStatus.Failed, applyTaskUpdate);
+            var code = TaskFailureClassifier.CodeFromException(exception);
+            var reason = TaskFailureClassifier.FromCode(code);
+            var message = WorkspaceFailureText.Get(reason);
+            await present(state, new AgentFailureEvent(code, message));
+            setActivity(state, message);
+            await SetTerminalStatusAsync(state, AgentTaskStatus.Failed, applyTaskUpdate, reason);
         }
         finally
         {
-            runs.Remove(state.Task.Id);
-            runStateChanged();
+            try
+            {
+                await panels.ReleaseBrowserAsync(state.Task.Id);
+            }
+            catch (Exception)
+            {
+                setActivity(state, "浏览器会话关闭失败，请重启应用释放资源。");
+                throw new InvalidOperationException("Browser release failed.");
+            }
+            finally
+            {
+                runs.Remove(state.Task.Id);
+                runStateChanged();
+            }
         }
     }
 
     private async Task SetTerminalStatusAsync(
         WorkspaceRunState state,
         AgentTaskStatus status,
-        Action<AgentTask> applyTaskUpdate)
+        Action<AgentTask> applyTaskUpdate,
+        TaskFailureReason? failureReason = null)
     {
-        state.Task = await taskFactory.SetStatusAsync(
-            state.Task, status, CancellationToken.None);
+        state.Task = await taskFactory.CompleteAsync(
+            state.Task, state.PendingAssistantContent, status, CancellationToken.None, failureReason);
+        state.MarkAssistantPersisted();
+        await WorkspaceMessageTimestampPresenter.StampAsync(state.Assistant, state.Task.UpdatedAt);
         applyTaskUpdate(state.Task);
     }
 }

@@ -3,7 +3,7 @@ using MossAgent.Tools.Abstractions;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class FileFindTool(AuthorizedPathResolver paths) : IAgentTool
+public sealed class FileFindTool(AuthorizedPathResolver paths) : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "filesystem.find_files",
@@ -11,6 +11,11 @@ public sealed class FileFindTool(AuthorizedPathResolver paths) : IAgentTool
         """{"type":"object","properties":{"path":{"type":"string"},"pattern":{"type":"string"},"recursive":{"type":"boolean"},"maximumResults":{"type":"integer","minimum":1,"maximum":5000}}}""",
         ToolRiskLevel.ReadOnly,
         ToolCapability.FileRead);
+
+    public void ValidateRequest(ToolRequest request, ToolExecutionContext context)
+    {
+        paths.Resolve(request.Arguments.GetOptionalString("path") ?? context.WorkingDirectory, context);
+    }
 
     public Task<ToolResult> ExecuteAsync(
         ToolRequest request,

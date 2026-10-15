@@ -1,3 +1,5 @@
+using MossAgent.Application.Settings;
+
 namespace MossAgent.App.Services;
 
 /// <summary>
@@ -10,6 +12,10 @@ public interface IThemeService
     /// </summary>
     bool IsDarkMode { get; }
 
+    ThemePreference Preference { get; }
+
+    string? PersistenceError { get; }
+
     /// <summary>
     /// 当主题发生变化时触发的事件。
     /// </summary>
@@ -19,4 +25,10 @@ public interface IThemeService
     /// 在明暗主题之间进行切换。
     /// </summary>
     void ToggleTheme();
+
+    void SetPreference(ThemePreference preference);
+
+    ThemePalette PaletteFor(ThemePreference theme);
+
+    void SetPalette(ThemePreference theme, ThemePalette? palette);
 }

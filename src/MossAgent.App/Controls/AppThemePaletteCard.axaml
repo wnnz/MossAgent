@@ -1,0 +1,94 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
+             xmlns:resources="clr-namespace:MossAgent.App.Resources"
+             x:Class="MossAgent.App.Controls.AppThemePaletteCard"
+             Classes="app-theme-palette-card" x:CompileBindings="False">
+  <StackPanel Spacing="8">
+    <ui:AppCard Classes="card card-inset-rows" AutomationProperties.Name="{Binding ThemeTitle}">
+      <StackPanel>
+        <ui:AppBorder Classes="divider-bottom theme-palette-header">
+          <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+            <ui:AppText Text="{x:Static resources:AppearanceText.Theme}" Classes="type-13" />
+            <ui:AppIconButton Grid.Column="1" Classes="theme-color-action"
+                              Label="{x:Static resources:AppearanceText.ResetColors}" IconData="{StaticResource UiIconRefresh}"
+                              Command="{Binding ResetCommand}" />
+            <ui:AppIconButton Grid.Column="2" Classes="theme-color-action"
+                              Label="{x:Static resources:AppearanceText.ApplyColors}" IconData="{StaticResource UiIconCheck}"
+                              Command="{Binding SaveCommand}" />
+            <ui:AppPillComboBox Grid.Column="3" Classes="theme-preset-select"
+                                ItemsSource="{Binding ThemeOptions}" SelectedItem="{Binding SelectedThemeOption}"
+                                DisplayMemberBinding="{Binding Label}"
+                                AutomationProperties.Name="{x:Static resources:AppearanceText.ThemePresetName}">
+              <ui:AppPillComboBox.SelectionBoxItemTemplate>
+                <DataTemplate>
+                  <StackPanel Classes="theme-preset-choice">
+                    <ui:AppBorder Classes="theme-preset-mark">
+                      <ui:AppText Text="Aa" Classes="theme-preset-mark-text" />
+                    </ui:AppBorder>
+                    <ui:AppText Text="{Binding Label}" Classes="type-12" />
+                  </StackPanel>
+                </DataTemplate>
+              </ui:AppPillComboBox.SelectionBoxItemTemplate>
+            </ui:AppPillComboBox>
+          </Grid>
+        </ui:AppBorder>
+        <ui:AppBorder Classes="divider-bottom theme-palette-row">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+            <ui:AppText Text="强调色" Classes="type-13" />
+            <ui:AppPillComboBox Grid.Column="1" Classes="theme-accent-select"
+                                ItemsSource="{Binding AccentOptions}" SelectedItem="{Binding SelectedAccentOption}"
+                                DisplayMemberBinding="{Binding Label}"
+                                AutomationProperties.Name="{x:Static resources:AppearanceText.AccentColorName}">
+              <ui:AppPillComboBox.SelectionBoxItemTemplate>
+                <DataTemplate>
+                  <StackPanel Classes="theme-accent-choice">
+                    <ui:AppColorSwatch Classes="theme-color-swatch"
+                                       ColorHex="{Binding $parent[ui:AppThemePaletteCard].DataContext.AccentHex}" />
+                    <ui:AppText Text="{Binding Label}" Classes="type-12" />
+                  </StackPanel>
+                </DataTemplate>
+              </ui:AppPillComboBox.SelectionBoxItemTemplate>
+            </ui:AppPillComboBox>
+          </Grid>
+        </ui:AppBorder>
+        <ui:AppBorder Classes="divider-bottom theme-palette-row">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+            <ui:AppText Text="背景" Classes="type-13" />
+            <ui:AppThemeColorInput Grid.Column="1" Text="{Binding BackgroundHex, Mode=TwoWay}"
+                                   Label="{x:Static resources:AppearanceText.BackgroundColorName}" />
+          </Grid>
+        </ui:AppBorder>
+        <ui:AppBorder Classes="divider-bottom theme-palette-row">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+            <ui:AppText Text="前景" Classes="type-13" />
+            <ui:AppThemeColorInput Grid.Column="1" Text="{Binding ForegroundHex, Mode=TwoWay}"
+                                   Label="{x:Static resources:AppearanceText.ForegroundColorName}" />
+          </Grid>
+        </ui:AppBorder>
+        <ui:AppBorder Classes="theme-palette-row">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+            <ui:AppText Text="{x:Static resources:AppearanceText.Font}" Classes="type-13" />
+            <ui:AppPillComboBox Grid.Column="1" Classes="theme-font-select" ItemsSource="{Binding Fonts.UiFontOptions}"
+                                SelectedItem="{Binding Fonts.SelectedUiFontOption}" DisplayMemberBinding="{Binding Label}"
+                                AutomationProperties.Name="{x:Static resources:AppearanceText.UiFontName}">
+              <ui:AppPillComboBox.SelectionBoxItemTemplate>
+                <DataTemplate>
+                  <ui:AppText Text="{Binding CompactLabel}" Classes="type-12" />
+                </DataTemplate>
+              </ui:AppPillComboBox.SelectionBoxItemTemplate>
+            </ui:AppPillComboBox>
+          </Grid>
+        </ui:AppBorder>
+      </StackPanel>
+    </ui:AppCard>
+    <ui:AppText Text="{Binding Error}" Classes="type-12 status-error"
+                IsVisible="{Binding HasError}" />
+    <ui:AppText Text="{Binding Status}" Classes="muted type-12"
+                IsVisible="{Binding HasStatus}" />
+    <ui:AppText Text="{Binding Fonts.Error}" Classes="type-12 status-error"
+                IsVisible="{Binding Fonts.HasError}" />
+    <ui:AppText Text="{Binding Fonts.Status}" Classes="muted type-12"
+                IsVisible="{Binding Fonts.HasStatus}" />
+  </StackPanel>
+</ui:AppUserControl>

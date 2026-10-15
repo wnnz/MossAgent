@@ -1,82 +1,92 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
+             xmlns:labels="clr-namespace:MossAgent.App.Resources"
              x:Class="MossAgent.App.Views.McpSettingsPane"
              x:CompileBindings="False">
-  <Grid Margin="16">
-    <!-- 主界面：MCP Server 列表卡片 -->
-    <Border Classes="card">
-      <Grid RowDefinitions="Auto,*">
-        <!-- 顶栏：标题与操作 -->
-        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+  <ui:AppUserControl.Resources>
+    <ui:McpServerSummaryConverter x:Key="McpServerSummaryConverter" />
+  </ui:AppUserControl.Resources>
+  <Grid>
+    <Grid Classes="settings-content-column" RowDefinitions="Auto,Auto,Auto,*">
+        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,24">
           <StackPanel Spacing="2">
-            <TextBlock Text="MCP 扩展服务" FontSize="17" FontWeight="SemiBold" />
-            <TextBlock Text="连接外部 stdio 或 HTTP SSE Model Context Protocol 工具服务器。" Classes="muted" FontSize="12" />
+            <ui:AppText Text="插件" Classes="settings-title" />
+            <ui:AppText Text="通过 MCP 连接外部工具和服务。" Classes="settings-description" />
           </StackPanel>
-          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-            <Button Content="重新连接" Classes="ghost" Command="{Binding ReloadCommand}" />
-            <Button Content="＋ 新建 Server" Classes="primary" Command="{Binding OpenCreateFormCommand}" />
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <ui:AppButton Content="重新连接" Classes="ghost" Command="{Binding ReloadCommand}" />
+            <ui:AppActionButton Label="添加 MCP 服务" IconData="{StaticResource UiIconPlus}" Classes="primary" Command="{Binding OpenCreateFormCommand}" />
           </StackPanel>
         </Grid>
-
-        <!-- MCP Server 列表 -->
-        <ListBox Grid.Row="1" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
+    <ui:AppCard Grid.Row="1" Classes="card card-inset-list">
+      <StackPanel>
+        <StackPanel Margin="12,16" Spacing="6" IsVisible="{Binding HasNoItems}">
+          <ui:AppText Classes="type-14 weight-semibold" Text="还没有 MCP 服务" />
+          <ui:AppText Text="添加服务后，它提供的工具会在允许的任务中可用。"
+                     Classes="muted type-12" />
+        </StackPanel>
+        <ui:AppListBox MaxHeight="560" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
           <ListBox.ItemTemplate>
             <DataTemplate>
-              <Border BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="8,12">
-                <Grid ColumnDefinitions="*,Auto,Auto,Auto">
-                  <StackPanel Spacing="3">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" />
-                      <TextBlock Text="{Binding Transport}" Classes="subtle" FontSize="11" />
-                    </StackPanel>
-                    <TextBlock Text="{Binding Command}" Classes="muted" FontSize="12" FontFamily="Consolas" />
-                  </StackPanel>
-                  <Button Grid.Column="1" Content="启/停" Classes="ghost" Padding="6,2" FontSize="11" Margin="0,0,6,0"
-                          Command="{Binding $parent[UserControl].DataContext.ToggleEnabledCommand}" />
-                  <Button Grid.Column="2" Content="编辑" Classes="ghost" Padding="6,2" FontSize="11" Margin="0,0,6,0"
-                          Command="{Binding $parent[UserControl].DataContext.OpenEditFormCommand}" />
-                  <CheckBox Grid.Column="3" IsChecked="{Binding IsEnabled}" IsEnabled="False" VerticalAlignment="Center" />
-                </Grid>
-              </Border>
+              <ui:AppSettingsItemRow Title="{Binding Name}"
+                    Subtitle="{Binding ., Converter={StaticResource McpServerSummaryConverter}}"
+                    ActionTarget="{Binding}" IsPrimaryAlternate="{Binding IsEnabled}"
+                    PrimaryLabel="{x:Static labels:SettingsItemLabels.Enable}"
+                    AlternatePrimaryLabel="{x:Static labels:SettingsItemLabels.Disable}"
+                    PrimaryCommand="{Binding $parent[UserControl].DataContext.ToggleEnabledCommand}"
+                    SecondaryLabel="{x:Static labels:SettingsItemLabels.Edit}"
+                    SecondaryCommand="{Binding $parent[UserControl].DataContext.OpenEditFormCommand}" />
             </DataTemplate>
           </ListBox.ItemTemplate>
-        </ListBox>
-      </Grid>
-    </Border>
+        </ui:AppListBox>
+      </StackPanel>
+    </ui:AppCard>
 
-    <!-- 模态弹窗：MCP 编辑表单 -->
-    <Border Background="{DynamicResource OverlayBackgroundBrush}" IsVisible="{Binding IsFormOpen}" Margin="-16">
-      <Border Classes="card" Width="480" VerticalAlignment="Center" HorizontalAlignment="Center"
-              Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderDefaultBrush}"
-              BoxShadow="0 12 36 0 #55000000">
-        <ScrollViewer MaxHeight="520">
-          <StackPanel Spacing="9" Margin="4">
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Text="{Binding EditorTitle}" FontSize="16" FontWeight="SemiBold" />
-              <Button Grid.Column="1" Content="✕" Classes="ghost icon" Command="{Binding CloseFormCommand}" />
+    <ui:AppText Grid.Row="2" Text="{Binding Status}" Classes="muted type-12"
+                TextWrapping="Wrap" Margin="0,12,0,0" IsVisible="{Binding HasStatus}" />
+    </Grid>
+
+    <ui:AppSettingsDialog Classes="wide" IsOpen="{Binding IsFormOpen}"
+                          Title="{Binding EditorTitle}" CloseCommand="{Binding CloseFormCommand}">
+            <StackPanel Spacing="9">
+            <ui:AppText Text="Server 名称" Classes="muted type-12" />
+            <ui:AppInput Text="{Binding Name}" PlaceholderText="例如 filesystem" />
+            <ui:AppText Text="传输协议" Classes="muted type-12" />
+            <ui:AppComboBox ItemsSource="{Binding TransportOptions}" SelectedItem="{Binding SelectedTransportOption}"
+                            DisplayMemberBinding="{Binding DisplayName}" HorizontalAlignment="Stretch" />
+            <StackPanel Spacing="9" IsVisible="{Binding IsStdioTransport}">
+              <ui:AppText Text="stdio 命令" Classes="muted type-12" />
+              <ui:AppInput Text="{Binding Command}" PlaceholderText="例如 npx" />
+              <ui:AppText Text="参数 JSON 数组" Classes="muted type-12" />
+              <ui:AppInput Text="{Binding ArgumentsJson}" AcceptsReturn="True" Classes="code-font json-editor" />
+              <ui:AppText Text="工作目录" Classes="muted type-12" />
+              <ui:AppInput Text="{Binding WorkingDirectory}" />
+              <ui:AppText Text="环境变量 JSON 对象" Classes="muted type-12" />
+              <ui:AppInput Text="{Binding EnvironmentJson}" AcceptsReturn="True" Classes="code-font json-editor" />
+            </StackPanel>
+            <StackPanel Spacing="9" IsVisible="{Binding IsHttpTransport}">
+              <ui:AppText Text="Streamable HTTP URL" Classes="muted type-12" />
+              <ui:AppInput Text="{Binding Url}" PlaceholderText="http://localhost:8000/sse" />
+              <ui:AppText Text="HTTP 请求头 JSON 对象" Classes="muted type-12" />
+              <ui:AppInput Text="{Binding HeadersJson}" AcceptsReturn="True" Classes="code-font json-editor" />
+              <ui:AppText Text="HTTP 网络代理" Classes="muted type-12" />
+              <ui:AppComboBox ItemsSource="{Binding ProxyOptions}" SelectedItem="{Binding SelectedProxy}"
+                              DisplayMemberBinding="{Binding Name}" HorizontalAlignment="Stretch" />
+            </StackPanel>
+            <ui:AppCheckBox Content="启用此 MCP Server" IsChecked="{Binding IsEnabled}" Margin="0,4" />
+            </StackPanel>
+          <ui:AppSettingsDialog.Footer>
+          <StackPanel Spacing="4">
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+              <ui:AppButton Classes="primary" Content="保存并连接" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
+              <ui:AppButton Grid.Column="1" Classes="danger" Content="{Binding DeleteButtonText}"
+                            Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}" />
+              <ui:AppButton Grid.Column="2" Content="取消" Command="{Binding CloseFormCommand}" />
             </Grid>
-            <TextBlock Text="Server 名称" Classes="muted" FontSize="12" />
-            <TextBox Text="{Binding Name}" PlaceholderText="例如 filesystem" />
-            <TextBlock Text="传输协议" Classes="muted" FontSize="12" />
-            <ComboBox ItemsSource="{Binding Transports}" SelectedItem="{Binding Transport}" HorizontalAlignment="Stretch" />
-            <TextBlock Text="stdio 命令" Classes="muted" FontSize="12" />
-            <TextBox Text="{Binding Command}" PlaceholderText="例如 npx" />
-            <TextBlock Text="参数 JSON 数组" Classes="muted" FontSize="12" />
-            <TextBox Text="{Binding ArgumentsJson}" FontFamily="Consolas" />
-            <TextBlock Text="工作目录" Classes="muted" FontSize="12" />
-            <TextBox Text="{Binding WorkingDirectory}" />
-            <TextBlock Text="Streamable HTTP URL" Classes="muted" FontSize="12" />
-            <TextBox Text="{Binding Url}" PlaceholderText="http://localhost:8000/sse" />
-            <CheckBox Content="启用此 MCP Server" IsChecked="{Binding IsEnabled}" Margin="0,4" />
-            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,6,0,0">
-              <Button Classes="primary" Content="保存并连接" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
-              <Button Grid.Column="1" Classes="danger" Content="{Binding DeleteButtonText}" Command="{Binding DeleteCommand}" />
-              <Button Grid.Column="2" Content="取消" Command="{Binding CloseFormCommand}" />
-            </Grid>
-            <TextBlock Text="{Binding Status}" Classes="subtle" FontSize="11" TextWrapping="Wrap" />
+            <ui:AppText Text="{Binding Status}" Classes="subtle type-11" TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />
           </StackPanel>
-        </ScrollViewer>
-      </Border>
-    </Border>
+          </ui:AppSettingsDialog.Footer>
+    </ui:AppSettingsDialog>
   </Grid>
-</UserControl>
+</ui:AppUserControl>

@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.Json;
 using MossAgent.Application.Models;
 using MossAgent.Application.Networking;
 using MossAgent.Domain;
@@ -9,9 +8,7 @@ using MossAgent.Providers.ToolNames;
 
 namespace MossAgent.Providers.Gemini;
 
-public sealed class GeminiGenerateContentProvider(
-    IProviderHttpClientFactory clients,
-    IModelDiscoveryService discovery) : IModelProvider
+public sealed class GeminiGenerateContentProvider(IProviderHttpClientFactory clients) : IModelProvider
 {
     public ProviderProtocol Protocol => ProviderProtocol.GeminiGenerateContent;
 
@@ -19,6 +16,13 @@ public sealed class GeminiGenerateContentProvider(
         ModelRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!ModelReasoningPolicy.Supports(Protocol, request.Model.ModelId, request.Model.ReasoningEffort))
+        {
+            yield return new ModelFailed("unsupported_reasoning_effort",
+                "This Gemini model does not support the selected reasoning effort. Choose a supported effort in model settings.");
+            yield break;
+        }
         var toolNames = new ProviderToolNameMap(request.Tools);
         using var client = await clients.CreateAsync(request.Provider, cancellationToken);
         var model = Uri.EscapeDataString(request.Model.ModelId);
@@ -29,32 +33,26 @@ public sealed class GeminiGenerateContentProvider(
             GeminiRequestBuilder.Build(request, toolNames), Encoding.UTF8, "application/json");
         using var response = await client.SendAsync(
             message, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        if (!response.IsSuccessStatusCode)
+        var parser = new GeminiStreamParser(toolNames, request);
+        await foreach (var frame in ProviderSseReader.ReadAsync(response, request.Provider, cancellationToken))
         {
-            var error = await response.Content.ReadAsStringAsync(cancellationToken);
-            yield return new ModelFailed(
-                "http_error",
-                $"HTTP {(int)response.StatusCode}: {ProviderErrorSanitizer.Sanitize(error, request.Provider)}");
-            yield break;
-        }
-
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        await foreach (var data in SseDataReader.ReadAsync(stream, cancellationToken))
-        {
-            using var document = JsonDocument.Parse(data);
-            foreach (var modelEvent in GeminiEventMapper.Map(document.RootElement, toolNames))
+            if (frame.Failure is { } streamFailure)
             {
-                yield return modelEvent;
+                yield return streamFailure;
+                yield break;
             }
+            var data = frame.Data!;
+            foreach (var modelEvent in parser.Parse(data))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                yield return ProviderErrorSanitizer.Sanitize(modelEvent, request.Provider);
+            }
+            if (parser.IsTerminal) yield break;
+        }
+        foreach (var modelEvent in parser.Complete())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            yield return ProviderErrorSanitizer.Sanitize(modelEvent, request.Provider);
         }
     }
-
-    public async Task<IReadOnlyList<string>> ListModelsAsync(
-        AiProvider provider,
-        CancellationToken cancellationToken)
-    {
-        var models = await discovery.DiscoverAsync(provider, cancellationToken);
-        return models.Select(static model => model.Id).ToArray();
-    }
-
 }

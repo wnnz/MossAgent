@@ -5,4 +5,5 @@ public sealed record ModelMessage(
     string Content,
     string? ToolCallId = null,
     string? ToolName = null,
-    IReadOnlyList<ModelToolCall>? ToolCalls = null);
+    IReadOnlyList<ModelToolCall>? ToolCalls = null,
+    [property: System.Text.Json.Serialization.JsonIgnore] ModelContinuation? Continuation = null);

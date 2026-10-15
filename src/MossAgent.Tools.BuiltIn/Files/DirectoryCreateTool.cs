@@ -2,7 +2,7 @@ using MossAgent.Tools.Abstractions;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class DirectoryCreateTool(AuthorizedPathResolver paths) : IAgentTool
+public sealed class DirectoryCreateTool(AuthorizedPathResolver paths) : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "filesystem.create_directory",
@@ -10,6 +10,11 @@ public sealed class DirectoryCreateTool(AuthorizedPathResolver paths) : IAgentTo
         """{"type":"object","required":["path"],"properties":{"path":{"type":"string"}}}""",
         ToolRiskLevel.Mutation,
         ToolCapability.FileWrite);
+
+    public void ValidateRequest(ToolRequest request, ToolExecutionContext context)
+    {
+        paths.Resolve(request.Arguments.GetRequiredString("path"), context);
+    }
 
     public Task<ToolResult> ExecuteAsync(
         ToolRequest request,

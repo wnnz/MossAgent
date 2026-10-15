@@ -13,7 +13,7 @@ public sealed class ToolRegistry(IEnumerable<IAgentTool> tools) : IMutableToolCa
         StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyCollection<ToolDescriptor> Descriptors =>
-        _tools.Values.Select(static tool => tool.Descriptor).ToArray();
+        _tools.Values.Select(static tool => tool.Descriptor).Where(static descriptor => descriptor.IsModelVisible).ToArray();
 
     public bool TryGet(string name, out IAgentTool? tool) => _tools.TryGetValue(name, out tool);
 

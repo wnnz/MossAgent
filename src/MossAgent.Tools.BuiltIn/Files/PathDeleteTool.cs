@@ -2,7 +2,7 @@ using MossAgent.Tools.Abstractions;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class PathDeleteTool(AuthorizedPathResolver paths) : IAgentTool
+public sealed class PathDeleteTool(AuthorizedPathResolver paths) : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "filesystem.delete_path",
@@ -10,6 +10,12 @@ public sealed class PathDeleteTool(AuthorizedPathResolver paths) : IAgentTool
         """{"type":"object","required":["path"],"properties":{"path":{"type":"string"},"recursive":{"type":"boolean"}}}""",
         ToolRiskLevel.HighRisk,
         ToolCapability.FileWrite);
+
+    public void ValidateRequest(ToolRequest request, ToolExecutionContext context)
+    {
+        var path = paths.Resolve(request.Arguments.GetRequiredString("path"), context);
+        paths.RejectAuthorizedRootMutation(path, context);
+    }
 
     public Task<ToolResult> ExecuteAsync(
         ToolRequest request,
@@ -23,6 +29,7 @@ public sealed class PathDeleteTool(AuthorizedPathResolver paths) : IAgentTool
         if (File.Exists(path))
         {
             File.Delete(path);
+            context.FileSnapshots.Forget(context.TaskId, FileSnapshotReader.CacheKey(path));
             return Task.FromResult(ToolResult.Success($"已删除文件：{path}"));
         }
 
@@ -33,6 +40,7 @@ public sealed class PathDeleteTool(AuthorizedPathResolver paths) : IAgentTool
 
         var recursive = request.Arguments.GetOptionalBoolean("recursive") ?? false;
         Directory.Delete(path, recursive);
+        context.FileSnapshots.Forget(context.TaskId, FileSnapshotReader.CacheKey(path));
         return Task.FromResult(ToolResult.Success($"已删除目录：{path}"));
     }
 }

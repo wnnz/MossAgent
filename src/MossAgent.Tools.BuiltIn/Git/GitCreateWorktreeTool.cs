@@ -5,12 +5,18 @@ namespace MossAgent.Tools.BuiltIn.Git;
 
 public sealed class GitCreateWorktreeTool(
     AuthorizedPathResolver paths,
-    GitCommandRunner git) : IAgentTool
+    GitCommandRunner git) : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "git.create_worktree", "在授权目录内创建 Git worktree。",
         """{"type":"object","required":["path","branch"],"properties":{"repository":{"type":"string"},"path":{"type":"string"},"branch":{"type":"string"},"createBranch":{"type":"boolean"}}}""",
         ToolRiskLevel.Mutation, ToolCapability.FileWrite | ToolCapability.Process);
+
+    public void ValidateRequest(ToolRequest request, ToolExecutionContext context)
+    {
+        paths.Resolve(request.Arguments.GetOptionalString("repository") ?? context.WorkingDirectory, context);
+        paths.Resolve(request.Arguments.GetRequiredString("path"), context);
+    }
 
     public Task<ToolResult> ExecuteAsync(
         ToolRequest request,
@@ -38,4 +44,3 @@ public sealed class GitCreateWorktreeTool(
         return git.RunAsync(repository, arguments, context, cancellationToken);
     }
 }
-

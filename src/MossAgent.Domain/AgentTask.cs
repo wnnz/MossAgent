@@ -2,10 +2,12 @@ namespace MossAgent.Domain;
 
 public sealed record AgentTask(
     Guid Id,
-    Guid ProjectId,
+    Guid? ProjectId,
     string Title,
     ApprovalPolicy ApprovalPolicy,
     AgentTaskStatus Status,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    string? WorktreePath);
+    string? WorktreePath,
+    bool IsPinned = false,
+    TaskFailureReason? FailureReason = null);

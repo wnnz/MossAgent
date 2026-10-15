@@ -1,0 +1,192 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:MossAgent.App.Controls">
+  <Styles.Resources>
+    <ResourceDictionary>
+      <StreamGeometry x:Key="FilePreviewMinusIcon">M 5 12 L 19 12</StreamGeometry>
+      <StreamGeometry x:Key="FilePreviewExpandIcon">M 9 4 L 4 4 L 4 9 M 15 20 L 20 20 L 20 15</StreamGeometry>
+      <StreamGeometry x:Key="FilePreviewRestoreIcon">M 4 9 L 9 9 L 9 4 M 20 15 L 15 15 L 15 20</StreamGeometry>
+      <StreamGeometry x:Key="FilePreviewImageIcon">M 6 3 L 15 3 L 20 8 L 20 20 Q 20 21 19 21 L 6 21 Q 5 21 5 20 L 5 4 Q 5 3 6 3 Z M 15 3 L 15 8 L 20 8 M 7 18 L 11 13 L 14 16 L 16 14 L 18 18 M 9 9 A 1 1 0 1 0 9 11 A 1 1 0 1 0 9 9</StreamGeometry>
+      <StreamGeometry x:Key="FilePreviewChevronRightIcon">M 9 5 L 16 12 L 9 19</StreamGeometry>
+      <StreamGeometry x:Key="FilePreviewImageOptionsIcon">M 6 3 L 14 3 L 18 7 L 18 10 M 6 3 Q 4 3 4 5 L 4 19 Q 4 21 6 21 L 10 21 M 14 3 L 14 7 L 18 7 M 16 12 A 4 4 0 1 0 16 20 A 4 4 0 1 0 16 12 M 19 19 L 22 22</StreamGeometry>
+      <StreamGeometry x:Key="FilePreviewCopyIcon">M 8 6 L 8 4 Q 8 2 10 2 L 20 2 Q 22 2 22 4 L 22 16 Q 22 18 20 18 L 18 18 M 4 7 L 16 7 Q 18 7 18 9 L 18 20 Q 18 22 16 22 L 4 22 Q 2 22 2 20 L 2 9 Q 2 7 4 7 Z</StreamGeometry>
+      <DrawingGroup x:Key="FilePreviewExplorerDrawing">
+        <GeometryDrawing Brush="#F6F7F7" Geometry="M 5 0 L 19 0 Q 24 0 24 5 L 24 19 Q 24 24 19 24 L 5 24 Q 0 24 0 19 L 0 5 Q 0 0 5 0 Z" />
+        <GeometryDrawing Brush="#E5A000" Geometry="M 4 6 L 10 6 L 12 8 L 20 8 L 20 18 L 4 18 Z" />
+        <GeometryDrawing Brush="#FFD348" Geometry="M 4 10 L 20 10 L 20 20 L 4 20 Z" />
+        <GeometryDrawing Brush="#F4B82C" Geometry="M 4 10 L 20 10 L 20 12 L 4 12 Z" />
+        <GeometryDrawing Brush="#1E9ACB" Geometry="M 7 14 L 17 14 L 17 20 L 13 20 L 13 17 L 11 17 L 11 20 L 7 20 Z" />
+      </DrawingGroup>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="FileAddedBrush" Color="#EBF9EF" />
+          <SolidColorBrush x:Key="FileRemovedBrush" Color="#FFF0EF" />
+          <SolidColorBrush x:Key="FileHunkBrush" Color="#F5F8FC" />
+          <SolidColorBrush x:Key="FileSearchBrush" Color="#FFF6D8" />
+          <SolidColorBrush x:Key="FileSearchCurrentBrush" Color="#FFE9A0" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="FileAddedBrush" Color="#173126" />
+          <SolidColorBrush x:Key="FileRemovedBrush" Color="#382321" />
+          <SolidColorBrush x:Key="FileHunkBrush" Color="#252D36" />
+          <SolidColorBrush x:Key="FileSearchBrush" Color="#3A3322" />
+          <SolidColorBrush x:Key="FileSearchCurrentBrush" Color="#594824" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+  <Style Selector="ui|AppBorder.file-preview-heading">
+    <Setter Property="Padding" Value="8,8" /><Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+  </Style>
+  <Style Selector="ScrollViewer.file-tabs-scroll">
+    <Setter Property="HorizontalScrollBarVisibility" Value="Hidden" /><Setter Property="VerticalScrollBarVisibility" Value="Disabled" />
+  </Style>
+  <Style Selector="ui|AppBorder.file-tab-host">
+    <Setter Property="Margin" Value="0,0,4,0" /><Setter Property="CornerRadius" Value="8" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="BorderThickness" Value="1" /><Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="ui|AppBorder.file-tab-host.selected">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+  </Style>
+  <Style Selector="ui|AppButton.file-tab">
+    <Setter Property="Height" Value="30" /><Setter Property="MaxWidth" Value="180" /><Setter Property="Padding" Value="8,0,6,0" />
+    <Setter Property="CornerRadius" Value="8" /><Setter Property="HorizontalContentAlignment" Value="Left" />
+  </Style>
+  <Style Selector="ui|AppButton.file-tab.selected"><Setter Property="Background" Value="Transparent" /></Style>
+  <Style Selector=".file-tab" x:SetterTargetType="ui:AppActionButton"><Setter Property="LabelMaxWidth" Value="140" /></Style>
+  <Style Selector=".file-tab" x:SetterTargetType="ui:AppActionButton"><Setter Property="IconData" Value="{StaticResource UiIconDocument}" /></Style>
+  <Style Selector=".file-tab.image" x:SetterTargetType="ui:AppActionButton"><Setter Property="IconData" Value="{StaticResource FilePreviewImageIcon}" /></Style>
+  <Style Selector="ui|AppButton.file-tab ui|AppIcon"><Setter Property="Size" Value="12" /></Style>
+  <Style Selector="ui|AppButton.file-tab ui|AppText"><Setter Property="FontSize" Value="12" /></Style>
+  <Style Selector="ui|AppButton.file-tab-close">
+    <Setter Property="Width" Value="24" /><Setter Property="Height" Value="24" /><Setter Property="Padding" Value="0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <Style Selector="ui|AppBorder.file-tab-host:not(.selected) ui|AppButton.file-tab-close">
+    <Setter Property="Opacity" Value="0" /><Setter Property="IsHitTestVisible" Value="False" /><Setter Property="Focusable" Value="False" />
+  </Style>
+  <Style Selector="ui|AppBorder.file-tab-host:pointerover ui|AppButton.file-tab-close, ui|AppBorder.file-tab-host:focus-within ui|AppButton.file-tab-close">
+    <Setter Property="Opacity" Value="1" /><Setter Property="IsHitTestVisible" Value="True" /><Setter Property="Focusable" Value="True" />
+  </Style>
+  <Style Selector="ui|AppButton.file-tab-close ui|AppIcon">
+    <Setter Property="Size" Value="6" /><Setter Property="StrokeThickness" Value="1" />
+  </Style>
+  <Style Selector="ui|AppBorder.file-preview-toolbar"><Setter Property="Padding" Value="12,7" /></Style>
+  <Style Selector="ui|AppBorder.file-action-pill">
+    <Setter Property="CornerRadius" Value="18" /><Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+    <Setter Property="BoxShadow" Value="{StaticResource SharedSurfaceShadow}" />
+  </Style>
+  <Style Selector="ui|AppButton.file-action-outline">
+    <Setter Property="CornerRadius" Value="18" /><Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+  </Style>
+  <Style Selector="ui|AppButton.file-action-outline /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BoxShadow" Value="{StaticResource SharedSurfaceShadow}" />
+  </Style>
+  <Style Selector="ui|AppButton.file-toolbar-action">
+    <Setter Property="Width" Value="32" /><Setter Property="Height" Value="32" /><Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="18" />
+  </Style>
+  <Style Selector="ui|AppButton.file-toolbar-chevron">
+    <Setter Property="Width" Value="24" /><Setter Property="Height" Value="32" /><Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="18" />
+  </Style>
+  <Style Selector="ui|AppButton.file-toolbar-open">
+    <Setter Property="Height" Value="32" /><Setter Property="Padding" Value="8,0,2,0" /><Setter Property="CornerRadius" Value="18" />
+  </Style>
+  <Style Selector="ui|AppButton.file-toolbar-open ui|AppText"><Setter Property="FontSize" Value="12" /></Style>
+  <Style Selector="ui|AppButton.file-toolbar-open ui|AppIcon, ui|AppButton.file-toolbar-action ui|AppIcon"><Setter Property="Size" Value="14" /></Style>
+  <Style Selector="ui|AppButton.file-toolbar-open ui|AppIcon:not(.action-trailing-icon)"><Setter Property="Drawing" Value="{StaticResource FilePreviewExplorerDrawing}" /></Style>
+  <Style Selector="ui|AppButton.file-toolbar-copy ui|AppIcon">
+    <Setter Property="Size" Value="12" />
+    <Setter Property="StrokeThickness" Value="1" />
+  </Style>
+  <Style Selector="ui|AppButton.file-toolbar-image-options ui|AppIcon">
+    <Setter Property="Size" Value="12" /><Setter Property="StrokeThickness" Value="1" />
+  </Style>
+  <Style Selector="ui|AppButton.file-toolbar-chevron ui|AppIcon"><Setter Property="Size" Value="10" /></Style>
+  <Style Selector="ui|AppButton.file-toolbar-action.file-action-outline">
+    <Setter Property="Width" Value="34" /><Setter Property="Height" Value="34" />
+  </Style>
+  <Style Selector="ui|AppBorder.file-preview-breadcrumb">
+    <Setter Property="Padding" Value="8,0" /><Setter Property="CornerRadius" Value="18" /><Setter Property="Height" Value="34" />
+    <Setter Property="BorderThickness" Value="1" /><Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+    <Setter Property="BoxShadow" Value="{StaticResource SharedSurfaceShadow}" />
+  </Style>
+  <Style Selector="ui|AppText.file-preview-path"><Setter Property="FontSize" Value="12" /><Setter Property="VerticalAlignment" Value="Center" /></Style>
+  <Style Selector="ui|AppText.file-breadcrumb-parent, ui|AppText.file-breadcrumb-name">
+    <Setter Property="FontSize" Value="12" /><Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" /><Setter Property="TextWrapping" Value="NoWrap" />
+  </Style>
+  <Style Selector="ui|AppText.file-breadcrumb-parent"><Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" /></Style>
+  <Style Selector="ui|AppText.file-breadcrumb-name"><Setter Property="FontWeight" Value="SemiBold" /></Style>
+  <Style Selector="ui|AppIcon.file-breadcrumb-separator">
+    <Setter Property="Size" Value="10" /><Setter Property="Data" Value="{StaticResource FilePreviewChevronRightIcon}" />
+    <Setter Property="VerticalAlignment" Value="Center" /><Setter Property="Stroke" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <Style Selector="ui|AppText.file-preview-status, ui|AppText.file-preview-notice">
+    <Setter Property="FontSize" Value="11" /><Setter Property="Margin" Value="12,4" /><Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <Style Selector="ScrollViewer.file-image-scroll">
+    <Setter Property="Padding" Value="12,36,12,12" /><Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+  </Style>
+  <Style Selector="Image.file-preview-image">
+    <Setter Property="Stretch" Value="Uniform" /><Setter Property="VerticalAlignment" Value="Top" /><Setter Property="HorizontalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="ui|AppBorder.file-image-frame">
+    <Setter Property="CornerRadius" Value="8" /><Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="VerticalAlignment" Value="Top" /><Setter Property="HorizontalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="ui|AppBorder.file-preview-search">
+    <Setter Property="Padding" Value="12,4" /><Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+  </Style>
+  <Style Selector="TextBox.app-input.file-search-input"><Setter Property="MinHeight" Value="32" /></Style>
+  <Style Selector="ui|AppText.file-search-results, ui|AppText.file-zoom-label">
+    <Setter Property="FontSize" Value="11" /><Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <Style Selector="ui|AppText.file-zoom-label"><Setter Property="MinWidth" Value="48" /><Setter Property="TextAlignment" Value="Center" /></Style>
+  <Style Selector="ScrollViewer.file-code-scroll">
+    <Setter Property="HorizontalScrollBarVisibility" Value="Auto" /><Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+  </Style>
+  <Style Selector=".app-code-preview" x:SetterTargetType="ui:AppCodePreview">
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+  </Style>
+  <Style Selector="ui|AppBorder.inspector-output-surface .app-code-preview" x:SetterTargetType="ui:AppCodePreview">
+    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+  </Style>
+  <Style Selector="ui|AppBorder.file-code-row"><Setter Property="MinHeight" Value="22" /></Style>
+  <Style Selector="ui|AppBorder.file-code-gutter">
+    <Setter Property="ZIndex" Value="1" />
+    <Setter Property="RenderTransform" Value="{Binding $parent[ui:AppCodePreview].GutterTransform}" />
+    <Setter Property="Background" Value="{Binding $parent[ui:AppCodePreview].Background}" />
+  </Style>
+  <Style Selector="ui|AppText.file-code-old"><Setter Property="Width" Value="34" /></Style>
+  <Style Selector="ui|AppText.file-code-prefix"><Setter Property="Width" Value="12" /></Style>
+  <Style Selector="ui|AppBorder.file-code-row.added, ui|AppBorder.file-code-row.added ui|AppBorder.file-code-gutter"><Setter Property="Background" Value="{DynamicResource FileAddedBrush}" /></Style>
+  <Style Selector="ui|AppBorder.file-code-row.removed, ui|AppBorder.file-code-row.removed ui|AppBorder.file-code-gutter"><Setter Property="Background" Value="{DynamicResource FileRemovedBrush}" /></Style>
+  <Style Selector="ui|AppBorder.file-code-row.hunk, ui|AppBorder.file-code-row.hunk ui|AppBorder.file-code-gutter"><Setter Property="Background" Value="{DynamicResource FileHunkBrush}" /></Style>
+  <Style Selector="ui|AppBorder.file-code-row.search-match, ui|AppBorder.file-code-row.search-match ui|AppBorder.file-code-gutter"><Setter Property="Background" Value="{DynamicResource FileSearchBrush}" /></Style>
+  <Style Selector="ui|AppBorder.file-code-row.current-match, ui|AppBorder.file-code-row.current-match ui|AppBorder.file-code-gutter"><Setter Property="Background" Value="{DynamicResource FileSearchCurrentBrush}" /></Style>
+  <Style Selector="ui|AppText.file-code-number, ui|AppText.file-code-prefix">
+    <Setter Property="FontSize" Value="12" /><Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" /><Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="Margin" Value="0,0,8,0" />
+  </Style>
+  <Style Selector="ui|SyntaxHighlightedSelectableTextBlock.file-code-text">
+    <Setter Property="FontSize" Value="12" /><Setter Property="LineHeight" Value="22" /><Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextWrapping" Value="NoWrap" /><Setter Property="Margin" Value="0,0,12,0" />
+  </Style>
+</Styles>

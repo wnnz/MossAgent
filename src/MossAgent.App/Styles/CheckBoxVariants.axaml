@@ -1,0 +1,66 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:MossAgent.App.Controls">
+  <Styles.Resources>
+    <ControlTheme x:Key="SharedCheckBoxTheme" TargetType="CheckBox">
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" Background="Transparent">
+            <ui:AppBorder x:Name="PART_CheckSurface" Width="16" Height="16" CornerRadius="4"
+                          VerticalAlignment="Center"
+                          Background="{DynamicResource InputBackgroundBrush}"
+                          BorderBrush="{DynamicResource TextMutedBrush}" BorderThickness="1">
+              <ui:AppIcon x:Name="PART_CheckGlyph" Size="12" StrokeThickness="2"
+                          Data="M 5 12 L 9 16 L 19 6" IsVisible="False" IsHitTestVisible="False"
+                          Stroke="{DynamicResource PrimaryButtonForegroundBrush}"
+                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </ui:AppBorder>
+            <ContentPresenter x:Name="PART_ContentPresenter" Grid.Column="1"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              Foreground="{TemplateBinding Foreground}"
+                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                              VerticalAlignment="Center" RecognizesAccessKey="True" />
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:checked /template/ ui|AppBorder#PART_CheckSurface">
+        <Setter Property="Background" Value="{DynamicResource PrimaryButtonBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryButtonBackgroundBrush}" />
+      </Style>
+      <Style Selector="^:checked /template/ ui|AppIcon#PART_CheckGlyph">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^:indeterminate /template/ ui|AppBorder#PART_CheckSurface">
+        <Setter Property="Background" Value="{DynamicResource PrimaryButtonBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryButtonBackgroundBrush}" />
+      </Style>
+      <Style Selector="^:indeterminate /template/ ui|AppIcon#PART_CheckGlyph">
+        <Setter Property="IsVisible" Value="True" />
+        <Setter Property="Data" Value="M 5 12 L 19 12" />
+      </Style>
+      <Style Selector="^:pointerover /template/ ui|AppBorder#PART_CheckSurface">
+        <Setter Property="Opacity" Value="0.8" />
+      </Style>
+      <Style Selector="^:pressed /template/ ui|AppBorder#PART_CheckSurface">
+        <Setter Property="Opacity" Value="0.65" />
+      </Style>
+      <Style Selector="^:focus-visible /template/ ui|AppBorder#PART_CheckSurface">
+        <Setter Property="BorderBrush" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Opacity" Value="0.45" />
+      </Style>
+    </ControlTheme>
+  </Styles.Resources>
+  <Style Selector=".app-check-box" x:SetterTargetType="ui:AppCheckBox">
+    <Setter Property="Theme" Value="{StaticResource SharedCheckBoxTheme}" />
+  </Style>
+</Styles>

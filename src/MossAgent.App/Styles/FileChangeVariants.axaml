@@ -1,0 +1,123 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:MossAgent.App.Controls">
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="FileChangeStatisticsAddedBrush" Color="#00A240" />
+          <SolidColorBrush x:Key="FileChangeStatisticsRemovedBrush" Color="#BA2623" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="FileChangeStatisticsAddedBrush" Color="#4ADE80" />
+          <SolidColorBrush x:Key="FileChangeStatisticsRemovedBrush" Color="#F87171" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+      <StreamGeometry x:Key="FileChangeSummaryIcon">M 6 2 L 18 2 Q 22 2 22 6 L 22 18 Q 22 22 18 22 L 6 22 Q 2 22 2 18 L 2 6 Q 2 2 6 2 Z M 8 10 L 16 10 M 12 6 L 12 14 M 8 18 L 16 18</StreamGeometry>
+      <StreamGeometry x:Key="FileChangeUndoIcon">M 4 5 L 4 11 L 10 11 M 4 11 C 7 6 16 6 19 11 C 23 17 16 22 11 19</StreamGeometry>
+    </ResourceDictionary>
+  </Styles.Resources>
+  <Style Selector="UserControl.app-file-change-summary">
+    <Setter Property="Margin" Value="0,4,0,20" />
+  </Style>
+  <Style Selector="ui|AppBorder.file-change-surface">
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="BoxShadow" Value="{StaticResource SharedSurfaceShadow}" />
+  </Style>
+  <Style Selector="Grid.file-change-header">
+    <Setter Property="Margin" Value="12" />
+    <Setter Property="MinHeight" Value="40" />
+  </Style>
+  <Style Selector="ui|AppBorder.file-change-icon-surface">
+    <Setter Property="Width" Value="40" />
+    <Setter Property="Height" Value="40" />
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="Background" Value="{DynamicResource CardSubtleBackgroundBrush}" />
+  </Style>
+  <Style Selector="ui|AppBorder.file-change-icon-surface ui|AppIcon">
+    <Setter Property="Size" Value="18" />
+    <Setter Property="Stroke" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <Style Selector="ui|AppIcon.file-change-summary-icon">
+    <Setter Property="Data" Value="{StaticResource FileChangeSummaryIcon}" />
+  </Style>
+  <Style Selector="ui|AppButton.file-change-action" x:SetterTargetType="ui:AppActionButton">
+    <Setter Property="TrailingIconData" Value="{StaticResource FileChangeUndoIcon}" />
+  </Style>
+  <Style Selector="ui|AppButton.file-change-action ui|AppIcon.action-trailing-icon">
+    <Setter Property="Size" Value="12" />
+  </Style>
+  <Style Selector="ui|AppText.diff-statistics-added, ui|AppText.diff-statistics-removed">
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+  <Style Selector="ui|AppText.diff-statistics-added">
+    <Setter Property="Foreground" Value="{DynamicResource FileChangeStatisticsAddedBrush}" />
+  </Style>
+  <Style Selector="ui|AppText.diff-statistics-removed">
+    <Setter Property="Foreground" Value="{DynamicResource FileChangeStatisticsRemovedBrush}" />
+  </Style>
+  <Style Selector="StackPanel.file-change-statistics-notice">
+    <Setter Property="Margin" Value="12,8,12,10" />
+    <Setter Property="Spacing" Value="4" />
+  </Style>
+  <Style Selector="ui|AppText.file-change-title">
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+  <Style Selector="ui|AppText.file-change-scope">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}" />
+  </Style>
+  <Style Selector="StackPanel.file-change-actions">
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="ui|AppButton.file-change-action, ui|AppButton.file-change-review, ui|AppButton.file-change-undo-action, ui|AppButton.file-change-statistics-retry">
+    <Setter Property="Height" Value="28" />
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="Padding" Value="8,3" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="CornerRadius" Value="12" />
+  </Style>
+  <Style Selector="ui|AppBorder.file-change-divider">
+    <Setter Property="Height" Value="1" />
+    <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}" />
+  </Style>
+  <Style Selector="ui|AppButton.file-change-action, ui|AppButton.file-change-review">
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+  <Style Selector="ui|AppButton.file-change-file">
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="Padding" Value="12,7" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+  <Style Selector="ui|AppText.file-change-path">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <Style Selector="ui|AppButton.file-change-more" x:SetterTargetType="ui:AppActionButton">
+    <Setter Property="MinHeight" Value="34" />
+    <Setter Property="Padding" Value="12,6" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="TrailingIconSpacing" Value="10" />
+  </Style>
+  <Style Selector="ui|AppButton.file-change-more ui|AppIcon.action-trailing-icon">
+    <Setter Property="Size" Value="8" />
+  </Style>
+  <Style Selector="ui|AppText.file-change-warning">
+    <Setter Property="Margin" Value="12,8,12,10" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource StatusWarningBrush}" />
+  </Style>
+  <Style Selector="StackPanel.file-change-undo-notice">
+    <Setter Property="Margin" Value="12,8,12,12" />
+    <Setter Property="Spacing" Value="8" />
+  </Style>
+  <Style Selector="StackPanel.file-change-undo-notice ui|AppButton">
+    <Setter Property="Margin" Value="0,0,4,0" />
+  </Style>
+</Styles>

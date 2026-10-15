@@ -1,0 +1,11 @@
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="InvalidLengthConstraint" xml:space="preserve"><value>{0}.{1} 必须是非负整数。</value></data>
+  <data name="InvertedLengthRange" xml:space="preserve"><value>{0} 的 minLength 不能大于 maxLength。</value></data>
+  <data name="InvalidSchema" xml:space="preserve"><value>工具参数架构无效或超出安全校验限制，请检查工具配置。</value></data>
+  <data name="InvalidArguments" xml:space="preserve"><value>工具参数不符合架构，请检查必填字段、类型及允许的值。</value></data>
+  <data name="RequiredFieldMissing" xml:space="preserve"><value>缺少必填参数：{0}</value></data>
+</root>

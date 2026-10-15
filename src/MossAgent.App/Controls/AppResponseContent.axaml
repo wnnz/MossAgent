@@ -1,0 +1,54 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:vm="clr-namespace:MossAgent.App.ViewModels"
+                   x:Class="MossAgent.App.Controls.AppResponseContent"
+                   x:Name="Root" x:CompileBindings="False">
+  <ui:AppItemsControl Classes="chat-blocks" ItemsSource="{Binding Blocks, ElementName=Root}">
+    <ItemsControl.DataTemplates>
+      <DataTemplate DataType="vm:ChatTextBlockViewModel">
+        <Grid Classes="response-text-block" Classes.body="{Binding IsBody}">
+          <ui:MarkdownSelectableTextBlock Classes="content-font response-body" Markdown="{Binding Text}"
+                                         TextWrapping="Wrap" IsVisible="{Binding IsBody}" />
+          <ui:MarkdownSelectableTextBlock Classes="content-font response-heading weight-semibold"
+                                         Markdown="{Binding Text}" TextWrapping="Wrap"
+                                         IsVisible="{Binding IsHeading}" />
+          <Grid ColumnDefinitions="28,*" Margin="{Binding IndentMargin}" IsVisible="{Binding IsListItem}">
+            <ui:AppText Text="{Binding Prefix}" Classes="response-list-prefix" />
+            <ui:MarkdownSelectableTextBlock Classes="content-font response-body" Grid.Column="1"
+                                           Markdown="{Binding Text}" TextWrapping="Wrap" />
+          </Grid>
+          <ui:AppBorder Classes="chat-quote-rule response-quote" IsVisible="{Binding IsQuote}">
+            <ui:MarkdownSelectableTextBlock Classes="content-font muted response-quote-text"
+                                           Markdown="{Binding Text}" TextWrapping="Wrap" />
+          </ui:AppBorder>
+        </Grid>
+      </DataTemplate>
+      <DataTemplate DataType="vm:ChatCodeBlockViewModel">
+        <ui:AppBorder Classes="code-surface">
+          <Grid RowDefinitions="Auto,*">
+            <ui:AppBorder Classes="chat-code-heading response-code-heading">
+              <Grid ColumnDefinitions="*,Auto">
+                <ui:AppText Text="{Binding Language}" Classes="subtle type-10 code-font"
+                            VerticalAlignment="Center" />
+                <ui:AppIconButton Grid.Column="1" Classes="icon-copy"
+                                  Label="{Binding $parent[ui:AppResponseContent].CopyCodeLabel}"
+                                  Command="{Binding $parent[ui:AppResponseContent].CopyCodeCommand}"
+                                  CommandParameter="{Binding Code}"
+                                  IsEnabled="{Binding $parent[ui:AppResponseContent].HasCopyCodeCommand}"
+                                  IconData="{StaticResource UiIconCopy}" />
+              </Grid>
+            </ui:AppBorder>
+            <ui:AppScrollViewer Grid.Row="1" Classes="response-code-scroll">
+              <ui:SyntaxHighlightedSelectableTextBlock Code="{Binding Code}" Language="{Binding Language}"
+                                                       Classes="code-font type-12 line-18" />
+            </ui:AppScrollViewer>
+          </Grid>
+        </ui:AppBorder>
+      </DataTemplate>
+      <DataTemplate DataType="vm:ChatTableBlockViewModel">
+        <ui:AppResponseTable />
+      </DataTemplate>
+    </ItemsControl.DataTemplates>
+  </ui:AppItemsControl>
+</ui:AppUserControl>

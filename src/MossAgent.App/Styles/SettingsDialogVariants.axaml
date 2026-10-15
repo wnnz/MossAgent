@@ -1,0 +1,46 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:MossAgent.App.Controls">
+  <Styles.Resources>
+    <ui:ModalAvailableExtentConverter x:Key="DialogAvailableExtent" />
+  </Styles.Resources>
+  <Style Selector="ui|AppSettingsDialog">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ui:AppBorder Classes="overlay-scrim">
+          <ui:AppCard x:Name="PART_Dialog" Classes="card settings-dialog-surface"
+                      KeyboardNavigation.TabNavigation="Cycle"
+                      MaxWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DialogAvailableExtent}}"
+                      MaxHeight="{Binding Bounds.Height, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DialogAvailableExtent}}">
+            <Grid RowDefinitions="Auto,*,Auto">
+              <Grid ColumnDefinitions="*,Auto" Margin="4,4,22,10">
+                <ui:AppText Text="{TemplateBinding Title}" Classes="type-16 weight-semibold"
+                           TextWrapping="Wrap" VerticalAlignment="Center" />
+                <ui:AppIconButton Grid.Column="1" IconData="{StaticResource UiIconClose}"
+                                  IsVisible="{TemplateBinding IsCloseButtonVisible}"
+                                  Label="{TemplateBinding CloseLabel}" Command="{TemplateBinding CloseCommand}" />
+              </Grid>
+              <ui:AppScrollViewer x:Name="PART_DialogBody" Grid.Row="1" Classes="modal-scroll"
+                                  HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <ContentPresenter Name="PART_ContentPresenter" Margin="4"
+                                  Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+              </ui:AppScrollViewer>
+              <ui:AppContentControl Grid.Row="2" Content="{TemplateBinding Footer}" Margin="4,10,22,4" />
+            </Grid>
+          </ui:AppCard>
+        </ui:AppBorder>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="ui|AppSettingsDialog /template/ ui|AppCard.settings-dialog-surface">
+    <Setter Property="Width" Value="440" />
+    <Setter Property="Margin" Value="24" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="ui|AppSettingsDialog.wide /template/ ui|AppCard.settings-dialog-surface">
+    <Setter Property="Width" Value="480" />
+  </Style>
+</Styles>

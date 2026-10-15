@@ -21,7 +21,7 @@ public sealed class GitWorktreeServiceTests
             await InitializeRepositoryAsync(repository, cancellationToken);
             var project = new ProjectProfile(
                 Guid.NewGuid(), "test", repository, [repository], DateTimeOffset.UtcNow);
-            var service = new GitWorktreeService(new AppDataPaths(appData));
+            var service = new GitWorktreeService(new AppDataPaths(appData), new GitProcessRunner(new FixtureTaskProcessLauncher()));
             var worktree = await service.CreateAsync(
                 project, Guid.NewGuid(), cancellationToken);
             Assert.True(Directory.Exists(worktree));

@@ -1,0 +1,107 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="DiffPreviewKeywordBrush" Color="#751ED9" />
+          <SolidColorBrush x:Key="DiffPreviewIdentifierBrush" Color="#BD5800" />
+          <SolidColorBrush x:Key="DiffPreviewTypeBrush" Color="#751ED9" />
+          <SolidColorBrush x:Key="DiffPreviewPropertyBrush" Color="#BD5800" />
+          <SolidColorBrush x:Key="DiffPreviewStringBrush" Color="#008809" />
+          <SolidColorBrush x:Key="DiffPreviewNumberBrush" Color="#0071EA" />
+          <SolidColorBrush x:Key="AppearanceDiffRemovedBrush" Color="#FBE6E2" />
+          <SolidColorBrush x:Key="AppearanceDiffAddedBrush" Color="#E7F4E7" />
+          <SolidColorBrush x:Key="AppearanceDiffRemovedGutterBrush" Color="#FDECE9" />
+          <SolidColorBrush x:Key="AppearanceDiffAddedGutterBrush" Color="#EDF7ED" />
+          <SolidColorBrush x:Key="AppearanceDiffRemoveRuleBrush" Color="#BA2623" />
+          <SolidColorBrush x:Key="AppearanceDiffAddRuleBrush" Color="#00A240" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="DiffPreviewKeywordBrush" Color="#C586C0" />
+          <SolidColorBrush x:Key="DiffPreviewIdentifierBrush" Color="#9CDCFE" />
+          <SolidColorBrush x:Key="DiffPreviewTypeBrush" Color="#4EC9B0" />
+          <SolidColorBrush x:Key="DiffPreviewPropertyBrush" Color="#D7BA7D" />
+          <SolidColorBrush x:Key="DiffPreviewStringBrush" Color="#A5D6A7" />
+          <SolidColorBrush x:Key="DiffPreviewNumberBrush" Color="#B5CEA8" />
+          <SolidColorBrush x:Key="AppearanceDiffRemovedBrush" Color="#20D84343" />
+          <SolidColorBrush x:Key="AppearanceDiffAddedBrush" Color="#2616A34A" />
+          <SolidColorBrush x:Key="AppearanceDiffRemovedGutterBrush" Color="#20D84343" />
+          <SolidColorBrush x:Key="AppearanceDiffAddedGutterBrush" Color="#2616A34A" />
+          <SolidColorBrush x:Key="AppearanceDiffRemoveRuleBrush" Color="#F87171" />
+          <SolidColorBrush x:Key="AppearanceDiffAddRuleBrush" Color="#4ADE80" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+  <StyleInclude Source="avares://MossAgent.App/Styles/ThemeThumbnailVariants.axaml" />
+  <Style Selector=".app-diff-preview controls|AppText.type-10">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector=".app-diff-preview" x:SetterTargetType="controls:AppUserControl">
+    <Setter Property="Height" Value="125" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="UseLayoutRounding" Value="False" />
+  </Style>
+  <Style Selector=".app-diff-preview Grid.diff-preview-row">
+    <Setter Property="Height" Value="21.3333333333333" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppBorder.diff-preview-surface">
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="MinHeight" Value="125" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppBorder.diff-preview-divider">
+    <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppBorder.diff-preview-removed">
+    <Setter Property="Background" Value="{DynamicResource AppearanceDiffRemovedBrush}" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppBorder.diff-preview-added">
+    <Setter Property="Background" Value="{DynamicResource AppearanceDiffAddedBrush}" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppBorder.diff-preview-removed-gutter">
+    <Setter Property="Background" Value="{DynamicResource AppearanceDiffRemovedGutterBrush}" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppBorder.diff-preview-added-gutter">
+    <Setter Property="Background" Value="{DynamicResource AppearanceDiffAddedGutterBrush}" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppBorder.diff-preview-removed controls|AppText.subtle">
+    <Setter Property="Foreground" Value="{DynamicResource AppearanceDiffRemoveRuleBrush}" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppBorder.diff-preview-added controls|AppText.subtle">
+    <Setter Property="Foreground" Value="{DynamicResource AppearanceDiffAddRuleBrush}" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppBorder.diff-preview-remove-rule">
+    <Setter Property="Background" Value="{DynamicResource AppearanceDiffRemoveRuleBrush}" />
+    <Setter Property="Width" Value="4" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppBorder.diff-preview-add-rule">
+    <Setter Property="Background" Value="{DynamicResource AppearanceDiffAddRuleBrush}" />
+    <Setter Property="Width" Value="4" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppText.diff-token-keyword">
+    <Setter Property="Foreground" Value="{DynamicResource DiffPreviewKeywordBrush}" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppText.diff-token-identifier">
+    <Setter Property="Foreground" Value="{DynamicResource DiffPreviewIdentifierBrush}" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppText.diff-token-type">
+    <Setter Property="Foreground" Value="{DynamicResource DiffPreviewTypeBrush}" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppText.diff-token-property">
+    <Setter Property="Foreground" Value="{DynamicResource DiffPreviewPropertyBrush}" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppText.diff-token-string">
+    <Setter Property="Foreground" Value="{DynamicResource DiffPreviewStringBrush}" />
+  </Style>
+  <Style Selector=".app-diff-preview controls|AppText.diff-token-number">
+    <Setter Property="Foreground" Value="{DynamicResource DiffPreviewNumberBrush}" />
+  </Style>
+</Styles>

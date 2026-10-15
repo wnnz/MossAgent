@@ -1,0 +1,43 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppSettingsItemRow"
+                   x:Name="Row" x:CompileBindings="False">
+  <ui:AppBorder Classes="divider-bottom settings-item-surface">
+    <Grid Classes="settings-item-layout" ColumnDefinitions="*,Auto,Auto">
+      <StackPanel Classes="settings-item-labels">
+        <Grid Classes="settings-item-heading" ColumnDefinitions="*,Auto,Auto">
+          <ui:AppText x:Name="TitleText" Classes="type-13 weight-semibold settings-item-label"
+                      Text="{Binding Title, ElementName=Row}" TextTrimming="CharacterEllipsis"
+                      ToolTip.Tip="{Binding Title, ElementName=Row}" />
+          <ui:AppText Grid.Column="1" x:Name="MetadataText" Classes="subtle type-11 settings-item-label settings-item-metadata"
+                      Text="{Binding Metadata, ElementName=Row}" TextTrimming="CharacterEllipsis"
+                      ToolTip.Tip="{Binding Metadata, ElementName=Row}"
+                      IsVisible="{Binding HasMetadata, ElementName=Row}" />
+          <ui:AppText Grid.Column="2" x:Name="BadgeTextControl" Classes="subtle type-10 settings-item-label settings-item-badge"
+                      Text="{Binding BadgeText, ElementName=Row}" TextTrimming="CharacterEllipsis"
+                      ToolTip.Tip="{Binding BadgeText, ElementName=Row}"
+                      IsVisible="{Binding HasBadge, ElementName=Row}" />
+        </Grid>
+        <ui:AppText x:Name="SubtitleText" Classes="muted type-12 settings-item-subtitle"
+                    Text="{Binding Subtitle, ElementName=Row}" TextTrimming="CharacterEllipsis"
+                    ToolTip.Tip="{Binding Subtitle, ElementName=Row}"
+                    IsVisible="{Binding HasSubtitle, ElementName=Row}" />
+      </StackPanel>
+      <ui:AppButton Grid.Column="1" x:Name="PrimaryActionButton" Classes="ghost button-xs settings-item-action"
+                    Content="{Binding PrimaryActionLabel, ElementName=Row}"
+                    AutomationProperties.Name="{Binding PrimaryActionName, ElementName=Row}"
+                    IsVisible="{Binding HasPrimaryAction, ElementName=Row}"
+                    IsEnabled="{Binding IsPrimaryAvailable, ElementName=Row}"
+                    Command="{Binding PrimaryCommand, ElementName=Row}"
+                    CommandParameter="{Binding ActionTarget, ElementName=Row}" />
+      <ui:AppButton Grid.Column="2" x:Name="SecondaryActionButton" Classes="ghost button-xs settings-item-action"
+                    Content="{Binding SecondaryLabel, ElementName=Row}"
+                    AutomationProperties.Name="{Binding SecondaryActionName, ElementName=Row}"
+                    IsVisible="{Binding HasSecondaryAction, ElementName=Row}"
+                    IsEnabled="{Binding IsSecondaryAvailable, ElementName=Row}"
+                    Command="{Binding SecondaryCommand, ElementName=Row}"
+                    CommandParameter="{Binding ActionTarget, ElementName=Row}" />
+    </Grid>
+  </ui:AppBorder>
+</ui:AppUserControl>

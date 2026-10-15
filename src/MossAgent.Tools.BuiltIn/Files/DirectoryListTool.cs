@@ -3,7 +3,7 @@ using MossAgent.Tools.Abstractions;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class DirectoryListTool(AuthorizedPathResolver paths) : IAgentTool
+public sealed class DirectoryListTool(AuthorizedPathResolver paths) : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "filesystem.list_directory",
@@ -11,6 +11,11 @@ public sealed class DirectoryListTool(AuthorizedPathResolver paths) : IAgentTool
         """{"type":"object","required":["path"],"properties":{"path":{"type":"string"},"maximumEntries":{"type":"integer","minimum":1,"maximum":2000}}}""",
         ToolRiskLevel.ReadOnly,
         ToolCapability.FileRead);
+
+    public void ValidateRequest(ToolRequest request, ToolExecutionContext context)
+    {
+        paths.Resolve(request.Arguments.GetRequiredString("path"), context);
+    }
 
     public Task<ToolResult> ExecuteAsync(
         ToolRequest request,

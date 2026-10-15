@@ -1,0 +1,15 @@
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Title" xml:space="preserve"><value>工具权限</value></data>
+  <data name="ChoosePolicy" xml:space="preserve"><value>选择工具审批策略</value></data>
+  <data name="ReadOnly" xml:space="preserve"><value>只读模式</value></data>
+  <data name="AskEveryTime" xml:space="preserve"><value>每次询问</value></data>
+  <data name="FullAccess" xml:space="preserve"><value>完全访问</value></data>
+  <data name="UnknownPolicy" xml:space="preserve"><value>未知权限策略</value></data>
+  <data name="ReadOnlyHint" xml:space="preserve"><value>只允许读取文件和明确的只读操作</value></data>
+  <data name="AskEveryTimeHint" xml:space="preserve"><value>修改文件、运行命令或操作浏览器前询问</value></data>
+  <data name="FullAccessHint" xml:space="preserve"><value>授权目录和当前浏览器会话内无需逐次询问</value></data>
+</root>

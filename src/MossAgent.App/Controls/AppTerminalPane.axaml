@@ -1,0 +1,76 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   xmlns:vm="clr-namespace:MossAgent.App.ViewModels"
+                   x:Class="MossAgent.App.Controls.AppTerminalPane" x:DataType="vm:TerminalPaneViewModel">
+  <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" Classes="inspector-content">
+    <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto" Classes="terminal-toolbar">
+      <ui:AppText Classes="type-12 weight-semibold" Text="{x:Static text:InspectorText.TerminalTitle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+      <ui:AppButton Grid.Column="1" Content="{x:Static text:InspectorText.TerminalStart}" Classes="primary button-xs"
+                    Command="{Binding StartCommand}" IsVisible="{Binding !IsBusy}" />
+      <ui:AppButton Grid.Column="1" Content="{Binding CancelOperationLabel}" Classes="ghost button-xs"
+                    Command="{Binding CancelOperationCommand}" IsVisible="{Binding IsBusy}" />
+      <ui:AppButton Grid.Column="2" Content="{x:Static text:InspectorText.TerminalStop}" Classes="danger button-xs"
+                    Command="{Binding StopCommand}" />
+      <ui:AppIconButton Grid.Column="3" Classes="icon-compact" IconData="{StaticResource UiIconClose}"
+                        Label="{x:Static text:InspectorText.TerminalResizeCancel}" Command="{Binding Resize.CancelCommand}"
+                        IsVisible="{Binding Resize.IsBusy}" />
+      <ui:AppIconButton Grid.Column="4" Classes="icon-compact" IconData="{StaticResource UiIconClose}"
+                        Label="{x:Static text:InspectorText.TerminalKeysCancel}" Command="{Binding Keyboard.CancelCommand}"
+                        IsVisible="{Binding Keyboard.IsBusy}" />
+      <ui:AppIconButton Grid.Column="5" x:Name="TerminalMenuButton" Classes="icon-compact" IconData="{StaticResource UiIconMore}"
+                        Label="{x:Static text:InspectorText.TerminalClipboardOptions}">
+        <Button.Flyout>
+          <ui:AppFlyout Placement="BottomEdgeAlignedRight" DismissOnButtonClick="True">
+            <ui:AppCard Classes="flyout-surface card-inset-tight">
+              <StackPanel>
+                <ui:AppButton Content="{x:Static text:InspectorText.TerminalCopySelection}" Classes="ghost menu-option align-leading"
+                              Command="{Binding ClipboardActions.CopyCommand, ElementName=TerminalViewport}" />
+                <ui:AppButton Content="{x:Static text:InspectorText.TerminalPaste}" Classes="ghost menu-option align-leading"
+                              Command="{Binding ClipboardActions.PasteCommand, ElementName=TerminalViewport}" />
+                <ui:AppButton Content="{x:Static text:InspectorText.TerminalSelectAll}" Classes="ghost menu-option align-leading"
+                              Command="{Binding ClipboardActions.SelectAllCommand, ElementName=TerminalViewport}" />
+              </StackPanel>
+            </ui:AppCard>
+          </ui:AppFlyout>
+        </Button.Flyout>
+      </ui:AppIconButton>
+    </Grid>
+    <ui:AppText Grid.Row="1" Text="{Binding SessionStatus}" Classes="terminal-status type-11 subtle line-18" TextWrapping="Wrap" IsVisible="{Binding HasSessionState}" />
+    <ui:AppText Grid.Row="2" Text="{Binding Status}" Classes="terminal-status type-11 subtle line-18" TextWrapping="Wrap" IsVisible="{Binding HasOperationNotice}" />
+    <StackPanel Grid.Row="3">
+      <Grid ColumnDefinitions="*,Auto,Auto" Classes="terminal-resize-notice" IsVisible="{Binding ClipboardActions.HasNotice, ElementName=TerminalViewport}">
+        <ui:AppText Text="{Binding ClipboardActions.Notice, ElementName=TerminalViewport}" Classes="terminal-status type-11 subtle line-18" TextWrapping="Wrap" />
+        <ui:AppButton Grid.Column="1" Content="{x:Static text:InspectorText.TerminalPasteConfirm}" Classes="ghost button-xs"
+                      Command="{Binding ClipboardActions.ConfirmPasteCommand, ElementName=TerminalViewport}" IsVisible="{Binding ClipboardActions.HasPendingPaste, ElementName=TerminalViewport}" />
+        <ui:AppButton Grid.Column="2" Content="{x:Static text:InspectorText.TerminalClipboardCancel}" Classes="ghost button-xs"
+                      Command="{Binding ClipboardActions.CancelCommand, ElementName=TerminalViewport}" />
+      </Grid>
+      <Grid ColumnDefinitions="*,Auto" Classes="terminal-resize-notice" IsVisible="{Binding Keyboard.HasNotice}">
+        <ui:AppText Text="{Binding Keyboard.Notice}" Classes="terminal-status type-11 subtle line-18" TextWrapping="Wrap" />
+        <ui:AppButton Grid.Column="1" Content="{x:Static text:InspectorText.TerminalKeysResume}" Classes="ghost button-xs"
+                      Command="{Binding Keyboard.ResumeCommand}" IsVisible="{Binding !Keyboard.IsBusy}" />
+      </Grid>
+      <Grid ColumnDefinitions="*,Auto" Classes="terminal-resize-notice" IsVisible="{Binding Resize.HasNotice}">
+        <ui:AppText Text="{Binding Resize.Notice}" Classes="terminal-status type-11 subtle line-18" TextWrapping="Wrap" />
+        <ui:AppButton Grid.Column="1" Content="{x:Static text:InspectorText.TerminalResizeRetry}" Classes="ghost button-xs"
+                      Command="{Binding Resize.RetryCommand}" IsVisible="{Binding !Resize.IsBusy}" />
+      </Grid>
+      <ui:AppText Text="{x:Static text:InspectorText.TerminalTruncated}" Classes="terminal-status type-11 muted line-18"
+                  TextWrapping="Wrap" IsVisible="{Binding HasTruncatedOutput}" />
+      <ui:AppText Text="{x:Static text:InspectorText.TerminalRenderingFailed}" Classes="terminal-status type-11 muted line-18"
+                  TextWrapping="Wrap" IsVisible="{Binding HasRenderingFailure}" />
+    </StackPanel>
+    <ui:AppEmptyState Grid.Row="4" Title="{Binding EmptyTitle}" IconData="{StaticResource UiIconTerminal}"
+                      IsVisible="{Binding !HasOutput}" />
+    <ui:AppBorder Grid.Row="4" Classes="inspector-output-surface terminal-output" IsVisible="{Binding HasOutput}">
+      <ui:AppTerminalViewport x:Name="TerminalViewport" Frame="{Binding Frame}" ResizeCommand="{Binding Resize.ResizeCommand}"
+                              InputCommand="{Binding Keyboard.InputCommand}" InputScopeVersion="{Binding Keyboard.Generation}" />
+    </ui:AppBorder>
+    <Grid Grid.Row="5" ColumnDefinitions="*,Auto" Classes="terminal-input-row">
+      <ui:AppInput Classes="terminal-input code-font" Text="{Binding Input}" PlaceholderText="{x:Static text:InspectorText.TerminalInputHint}"
+                   MaxLength="32000" IsEnabled="{Binding CanEditInput}" />
+      <ui:AppButton Grid.Column="1" Classes="primary button-sm" Content="{x:Static text:InspectorText.TerminalSend}" Command="{Binding SendCommand}" />
+    </Grid>
+  </Grid>
+</ui:AppUserControl>

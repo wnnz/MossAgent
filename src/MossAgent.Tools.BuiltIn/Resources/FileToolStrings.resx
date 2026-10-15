@@ -1,0 +1,43 @@
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="FileChanged" xml:space="preserve"><value>文件已被修改、创建或删除，已拒绝覆盖。请重新读取文件后再修改。</value></data>
+  <data name="FileNotFound" xml:space="preserve"><value>目标文件不存在，请检查路径或先创建文件。</value></data>
+  <data name="InvalidHash" xml:space="preserve"><value>expectedSha256 必须是 64 位十六进制 SHA-256。</value></data>
+  <data name="FileTooLarge" xml:space="preserve"><value>文本替换仅支持不超过 16 MiB 的文件，请缩小文件或使用其他编辑方式。</value></data>
+  <data name="EmptySearch" xml:space="preserve"><value>要替换的原文本不能为空。</value></data>
+  <data name="TextNotFound" xml:space="preserve"><value>未找到要替换的文本。</value></data>
+  <data name="TextNotUnique" xml:space="preserve"><value>目标文本出现多次，无法安全替换。</value></data>
+  <data name="ReadDescription" xml:space="preserve"><value>读取授权目录内文本文件的一段内容，并返回完整文件的 SHA-256。</value></data>
+  <data name="WriteDescription" xml:space="preserve"><value>原子写入授权目录内的文本文件。自动保护本轮已读取的文件，可提供 expectedSha256 校验读取版本。</value></data>
+  <data name="ReplaceDescription" xml:space="preserve"><value>原子替换文本文件中唯一的一段文本，保留原编码并检测并发修改。可提供 expectedSha256 校验读取版本。</value></data>
+  <data name="ReadSummary" xml:space="preserve"><value>已读取 {0} 个字符：{1}
+SHA-256：{2}</value></data>
+  <data name="WriteSummary" xml:space="preserve"><value>已写入 {0} 个字符：{1}
+SHA-256：{2}</value></data>
+  <data name="ReplaceSummary" xml:space="preserve"><value>已更新文件：{0}
+SHA-256：{1}</value></data>
+  <data name="PreviewDescription" xml:space="preserve"><value>读取授权目录中的 UTF-8 文本、PNG 或 JPEG 文件，生成有大小限制的任务预览快照。</value></data>
+  <data name="PreviewSummary" xml:space="preserve"><value>文件预览快照已生成。</value></data>
+  <data name="PreviewTooLarge" xml:space="preserve"><value>预览文件不能超过 2 MiB。</value></data>
+  <data name="PreviewUnsupported" xml:space="preserve"><value>支持 128 KiB 以内的 UTF-8 文本和 2 MiB、800 万像素以内的 PNG/JPEG 图片。</value></data>
+  <data name="RevealDescription" xml:space="preserve"><value>经授权与审批，在 Windows 文件资源管理器中显示并选中文件；不执行文件或启动文件关联程序。</value></data>
+  <data name="RevealSummary" xml:space="preserve"><value>已请求在文件资源管理器中显示文件。</value></data>
+  <data name="RevealFailed" xml:space="preserve"><value>无法在文件资源管理器中显示文件，请检查文件是否仍存在后重试。</value></data>
+  <data name="SnapshotUnavailable" xml:space="preserve"><value>此任务没有可读取的文件快照。旧记录或超出大小限制的文件无法恢复原文。</value></data>
+  <data name="SnapshotInvalid" xml:space="preserve"><value>文件快照缺失、被修改或不属于当前任务，已拒绝读取。请重新检查任务记录。</value></data>
+  <data name="ReviewChangeDescription" xml:space="preserve"><value>读取当前任务文件工具记录的前后快照，校验授权、长度与摘要，生成只读差异预览。不读取当前文件或 Git 工作区版本。</value></data>
+  <data name="ReviewChangeSummary" xml:space="preserve"><value>任务文件快照差异已生成。</value></data>
+  <data name="ChangeStatisticsDescription" xml:space="preserve"><value>校验当前任务可信前后文件快照，统计文本增删行数。不读取当前文件或 Git 工作区，不执行文件修改。</value></data>
+  <data name="ChangeStatisticsSummary" xml:space="preserve"><value>任务文件快照增删行数已统计。</value></data>
+  <data name="ReviewChangeFailed" xml:space="preserve"><value>无法生成快照差异。请检查 Git 是否可用及任务权限后重试。</value></data>
+  <data name="ReviewChangeTooLarge" xml:space="preserve"><value>快照差异超出预览限制，未显示截断的不完整差异。</value></data>
+  <data name="ReviewChangeUnsupported" xml:space="preserve"><value>快照差异仅支持有效的 UTF-8 或带 BOM 的 UTF-16/UTF-32 文本。</value></data>
+  <data name="ReviewChangeUntrusted" xml:space="preserve"><value>请从当前任务的文件变更记录中打开差异，不接受自由传入或替换的快照引用。</value></data>
+  <data name="RestoreChangeDescription" xml:space="preserve"><value>经授权与审批，将任务记录的原始字节快照恢复到文件；当前文件必须仍匹配任务提交后的版本，否则拒绝覆盖。</value></data>
+  <data name="RestoreChangeSummary" xml:space="preserve"><value>已恢复任务记录的原始文件版本。</value></data>
+  <data name="RemoveCreatedDescription" xml:space="preserve"><value>经高风险审批删除本任务创建的文件；必须具有可校验的创建快照且当前文件未被外部改动，不递归删除目录。</value></data>
+  <data name="RemoveCreatedSummary" xml:space="preserve"><value>已删除本任务创建且未被外部改动的文件。</value></data>
+</root>

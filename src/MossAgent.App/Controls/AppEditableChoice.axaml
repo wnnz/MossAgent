@@ -1,0 +1,19 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppEditableChoice"
+                   x:Name="Root" x:CompileBindings="False">
+  <Grid ColumnDefinitions="*,Auto" Classes="editable-choice">
+    <ui:AppInput x:Name="ChoiceInput" Classes="editable-choice-input"
+                 Text="{Binding SelectedChoice, ElementName=Root, Mode=TwoWay}"
+                 AutomationProperties.Name="{Binding (AutomationProperties.Name), ElementName=Root}" />
+    <ui:AppIconButton x:Name="ChoiceButton" Grid.Column="1" Classes="editable-choice-button"
+                       IconData="{StaticResource UiIconChevronDown}">
+      <ui:AppIconButton.Flyout>
+        <ui:AppFlyout Placement="BottomEdgeAlignedRight">
+          <ui:AppListBox x:Name="ChoiceList" Classes="editable-choice-list" />
+        </ui:AppFlyout>
+      </ui:AppIconButton.Flyout>
+    </ui:AppIconButton>
+  </Grid>
+</ui:AppUserControl>

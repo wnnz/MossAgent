@@ -1,0 +1,57 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppComposerContextBar"
+                   x:Name="Root" x:CompileBindings="False">
+  <ui:AppBorder Classes="composer-context-surface">
+    <Grid x:Name="ContextLayout" Classes="composer-context-layout" ColumnDefinitions="Auto,*,Auto"
+          DataContext="{Binding #Root}">
+      <ui:AppActionButton x:Name="ProjectButton" Classes="composer-context-button composer-project-button"
+                          HorizontalAlignment="Stretch" IconData="{StaticResource UiIconFolder}"
+                          Label="{Binding ProjectLabel}" ToolTip.Tip="{Binding ProjectLabel}"
+                          Command="{Binding OpenProjectCommand}" IsEnabled="{Binding IsProjectAvailable}"
+                          AutomationProperties.Name="{Binding ProjectLabel}">
+        <Button.Flyout>
+          <ui:AppFlyout Placement="TopEdgeAlignedLeft" DismissOnButtonClick="True">
+            <ui:AppContentControl DataContext="{Binding #Root.DataContext}"
+                                  Content="{Binding #Root.ProjectPickerContent}" />
+          </ui:AppFlyout>
+        </Button.Flyout>
+      </ui:AppActionButton>
+      <ui:AppIconLabel Grid.Column="1" Classes="composer-context-label muted"
+                       IsVisible="{Binding Project, Converter={x:Static ObjectConverters.IsNotNull}}"
+                       IconData="{StaticResource UiIconBranch}" Label="{Binding BranchLabel}"
+                       ToolTip.Tip="{Binding BranchLabel}" />
+      <ui:AppActionButton x:Name="AgentButton" Grid.Column="2"
+                          Classes="composer-context-button composer-agent-button"
+                          HorizontalAlignment="Stretch" IconData="{StaticResource UiIconAssistant}"
+                          Label="{Binding AgentName}" ToolTip.Tip="{Binding AgentName}"
+                          IsVisible="{Binding HasAgents}" IsEnabled="{Binding IsAgentAvailable}">
+        <Button.Flyout>
+          <ui:AppFlyout Placement="TopEdgeAlignedRight" DismissOnButtonClick="True">
+            <ui:AppCard Classes="flyout-surface card-inset-menu">
+              <StackPanel Classes="composer-agent-menu" Spacing="2" DataContext="{Binding #Root}">
+                <ui:AppButton Classes="ghost menu-option align-leading" Content="{Binding DefaultAgentLabel}"
+                              HorizontalAlignment="Stretch" Command="{Binding SelectAgentCommand}"
+                              IsEnabled="{Binding IsAgentAvailable}" />
+                <ui:AppScrollViewer Classes="composer-agent-options">
+                <ui:AppItemsControl ItemsSource="{Binding Agents}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <ui:AppActionButton Classes="ghost menu-option align-leading"
+                                          HorizontalAlignment="Stretch" Label="{Binding Name}"
+                                          Command="{Binding $parent[ItemsControl].DataContext.SelectAgentCommand}"
+                                          IsEnabled="{Binding $parent[ItemsControl].DataContext.IsAgentAvailable}"
+                                          CommandParameter="{Binding}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ui:AppItemsControl>
+                </ui:AppScrollViewer>
+              </StackPanel>
+            </ui:AppCard>
+          </ui:AppFlyout>
+        </Button.Flyout>
+      </ui:AppActionButton>
+    </Grid>
+  </ui:AppBorder>
+</ui:AppUserControl>

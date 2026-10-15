@@ -1,0 +1,186 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Controls.AppFilePreview" x:Name="Root" x:CompileBindings="False">
+  <Grid RowDefinitions="52,48,*">
+    <ui:AppBorder Classes="file-preview-heading">
+      <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+        <ui:AppScrollViewer Classes="file-tabs-scroll">
+          <ui:AppItemsControl ItemsSource="{Binding Tabs}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <ui:AppBorder Classes="file-tab-host" Classes.selected="{Binding IsSelected}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <ui:AppActionButton Classes="ghost file-tab" Classes.selected="{Binding IsSelected}"
+                                      Label="{Binding Name}" Classes.image="{Binding IsImage}"
+                                      Command="{Binding $parent[ui:AppFilePreview].DataContext.SelectCommand}" CommandParameter="{Binding}" />
+                  <ui:AppIconButton Grid.Column="1" Classes="ghost file-tab-close" Label="{x:Static text:InspectorText.PreviewClose}"
+                                    IconData="{StaticResource UiIconClose}"
+                                    Command="{Binding $parent[ui:AppFilePreview].DataContext.CloseCommand}" CommandParameter="{Binding}" />
+                </Grid>
+                </ui:AppBorder>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ui:AppItemsControl>
+        </ui:AppScrollViewer>
+        <ui:AppIconButton Grid.Column="1" x:Name="NewTabButton" Classes="ghost inspector-header-action" IconData="{StaticResource UiIconPlus}"
+                          Label="{x:Static text:InspectorText.PreviewNewTab}" IsEnabled="{Binding HasTask, FallbackValue=False}">
+          <Button.Flyout>
+            <ui:AppFlyout Placement="BottomEdgeAlignedRight" DismissOnButtonClick="True">
+              <ui:AppCard Classes="flyout-surface card-inset-tight">
+                <StackPanel>
+                  <ui:AppActionButton Classes="ghost menu-option align-leading" Label="{x:Static text:InspectorText.PreviewOpenFiles}"
+                                      IconData="{StaticResource UiIconDocument}" Command="{Binding FilePicker.AddFilesCommand}" />
+                  <ui:AppActionButton x:Name="BackButton" Classes="ghost menu-option align-leading" Label="{x:Static text:InspectorText.Back}"
+                                      IconData="{StaticResource UiIconArrowLeft}" Command="{Binding HideCommand}" />
+                </StackPanel>
+              </ui:AppCard>
+            </ui:AppFlyout>
+          </Button.Flyout>
+        </ui:AppIconButton>
+        <ui:AppIconButton Grid.Column="2" x:Name="ExpandButton" Classes="ghost inspector-header-action" IconData="{StaticResource FilePreviewExpandIcon}"
+                          Label="{x:Static text:InspectorText.PreviewExpand}" IsVisible="{Binding !IsExpanded, ElementName=Root}"
+                          IsEnabled="{Binding ExpansionCommand, ElementName=Root, Converter={x:Static ObjectConverters.IsNotNull}}"
+                          Command="{Binding ExpansionCommand, ElementName=Root}" />
+        <ui:AppIconButton Grid.Column="2" x:Name="RestoreButton" Classes="ghost inspector-header-action" IconData="{StaticResource FilePreviewRestoreIcon}"
+                          Label="{x:Static text:InspectorText.PreviewRestore}" IsVisible="{Binding IsExpanded, ElementName=Root}"
+                          IsEnabled="{Binding ExpansionCommand, ElementName=Root, Converter={x:Static ObjectConverters.IsNotNull}}"
+                          Command="{Binding ExpansionCommand, ElementName=Root}" />
+        <ui:AppIconButton Grid.Column="3" x:Name="CloseButton" Classes="ghost inspector-header-action" IconData="{StaticResource UiIconPanelRight}"
+                          Label="{x:Static text:InspectorText.CloseInspector}" Command="{Binding ClosePaneCommand, ElementName=Root}" />
+      </Grid>
+    </ui:AppBorder>
+    <ui:AppBorder Grid.Row="1" Classes="file-preview-toolbar">
+      <Grid x:Name="FileToolbarLayout" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="6">
+        <ui:AppBorder Classes="file-preview-breadcrumb">
+        <ui:AppFileBreadcrumb ParentPath="{Binding Active.ParentDisplayPath}" FileName="{Binding Active.Name}"
+                              ToolTip.Tip="{Binding Active.Path}" />
+        </ui:AppBorder>
+        <ui:AppBorder Grid.Column="1" Classes="file-action-pill">
+          <Grid ColumnDefinitions="Auto,Auto">
+            <ui:AppIconButton x:Name="CopyDefaultButton" Classes="ghost file-toolbar-action file-toolbar-copy" Label="{Binding CopyActions.DefaultLabel, ElementName=Root}"
+                              IconData="{StaticResource FilePreviewCopyIcon}" Command="{Binding CopyActions.CopyDefaultCommand, ElementName=Root}" />
+            <ui:AppIconButton Grid.Column="1" x:Name="CopyMenuButton" Classes="ghost file-toolbar-chevron" Label="{x:Static text:InspectorText.PreviewCopyOptions}"
+                              IconData="{StaticResource UiIconChevronDown}" IsEnabled="{Binding CopyActions.CanShowMenu, ElementName=Root}">
+              <Button.Flyout>
+                <ui:AppFlyout Placement="BottomEdgeAlignedRight" DismissOnButtonClick="True">
+                  <ui:AppCard Classes="flyout-surface card-inset-tight">
+                    <StackPanel>
+                      <ui:AppButton Content="{x:Static text:InspectorText.PreviewCopyPath}" Classes="ghost menu-option align-leading"
+                                    Command="{Binding CopyActions.CopyPathCommand, ElementName=Root}" />
+                      <ui:AppButton Content="{x:Static text:InspectorText.PreviewCopyRelative}" Classes="ghost menu-option align-leading"
+                                    Command="{Binding CopyActions.CopyRelativePathCommand, ElementName=Root}" />
+                      <ui:AppButton Content="{x:Static text:InspectorText.PreviewCopyContent}" Classes="ghost menu-option align-leading"
+                                    Command="{Binding CopyActions.CopyContentCommand, ElementName=Root}" />
+                    </StackPanel>
+                  </ui:AppCard>
+                </ui:AppFlyout>
+              </Button.Flyout>
+            </ui:AppIconButton>
+          </Grid>
+        </ui:AppBorder>
+        <ui:AppIconButton Grid.Column="2" Classes="ghost file-toolbar-action file-action-outline" Label="{x:Static text:InspectorText.PreviewFind}"
+                          IsVisible="{Binding !Active.IsImage}"
+                          IconData="{StaticResource UiIconSearch}" Command="{Binding Active.Search.ShowCommand}" />
+        <ui:AppIconButton Grid.Column="2" x:Name="ImageViewButton" Classes="ghost file-toolbar-action file-action-outline file-toolbar-image-options"
+                          Label="{x:Static text:InspectorText.PreviewImageOptions}" IsVisible="{Binding Active.IsImage}"
+                          IsEnabled="{Binding Active.IsReady}" IconData="{StaticResource FilePreviewImageOptionsIcon}">
+          <Button.Flyout>
+            <ui:AppFlyout Placement="BottomEdgeAlignedRight">
+              <ui:AppCard Classes="flyout-surface card-inset-tight">
+                <StackPanel Spacing="6">
+                  <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+                    <ui:AppIconButton Classes="ghost inspector-header-action" Label="{x:Static text:InspectorText.PreviewZoomOut}"
+                                      IconData="{StaticResource FilePreviewMinusIcon}" Command="{Binding Active.ZoomOutCommand}" />
+                    <ui:AppText Text="{Binding Active.ZoomLabel}" Classes="file-zoom-label" />
+                    <ui:AppIconButton Classes="ghost inspector-header-action" Label="{x:Static text:InspectorText.PreviewZoomIn}"
+                                      IconData="{StaticResource UiIconPlus}" Command="{Binding Active.ZoomInCommand}" />
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="4">
+                    <ui:AppButton Content="{x:Static text:InspectorText.PreviewActualSize}" Classes="ghost button-xs" Command="{Binding Active.ActualSizeCommand}" />
+                    <ui:AppButton Content="{x:Static text:InspectorText.PreviewFit}" Classes="ghost button-xs" Command="{Binding Active.FitCommand}" />
+                  </StackPanel>
+                </StackPanel>
+              </ui:AppCard>
+            </ui:AppFlyout>
+          </Button.Flyout>
+        </ui:AppIconButton>
+        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" IsVisible="{Binding !IsToolbarCompact, ElementName=Root}">
+        <ui:AppBorder Classes="file-action-pill">
+          <Grid ColumnDefinitions="Auto,Auto">
+            <ui:AppActionButton x:Name="RevealButton" Classes="ghost file-toolbar-open" Label="{x:Static text:InspectorText.PreviewOpenExternal}"
+                                IconData="{StaticResource UiIconFolderOpen}" Command="{Binding RevealCommand}"
+                                ToolTip.Tip="{x:Static text:InspectorText.PreviewRevealHint}" />
+            <ui:AppIconButton Grid.Column="1" x:Name="OpenMenuButton" Classes="ghost file-toolbar-chevron" Label="{x:Static text:InspectorText.PreviewOpenOptions}"
+                              IconData="{StaticResource UiIconChevronDown}" IsEnabled="{Binding CanReveal}">
+              <Button.Flyout>
+                <ui:AppFlyout Placement="BottomEdgeAlignedRight" DismissOnButtonClick="True">
+                  <ui:AppCard Classes="flyout-surface card-inset-tight">
+                    <ui:AppButton Content="{x:Static text:InspectorText.PreviewReveal}" Classes="ghost menu-option align-leading" Command="{Binding RevealCommand}" />
+                  </ui:AppCard>
+                </ui:AppFlyout>
+              </Button.Flyout>
+            </ui:AppIconButton>
+          </Grid>
+        </ui:AppBorder>
+        <ui:AppIconButton Classes="ghost file-toolbar-action file-action-outline" Label="{x:Static text:InspectorText.PreviewRefresh}"
+                          IconData="{StaticResource UiIconRefresh}" Command="{Binding RefreshCommand}" />
+        </StackPanel>
+        <ui:AppIconButton Grid.Column="3" x:Name="MoreActionsButton" Classes="ghost file-toolbar-action file-action-outline"
+                          Label="{x:Static text:InspectorText.PreviewMoreActions}" IconData="{StaticResource UiIconMore}"
+                          IsVisible="{Binding IsToolbarCompact, ElementName=Root}" IsEnabled="{Binding IsOpen, FallbackValue=False}">
+          <Button.Flyout>
+            <ui:AppFlyout Placement="BottomEdgeAlignedRight" DismissOnButtonClick="True">
+              <ui:AppCard Classes="flyout-surface card-inset-tight">
+                <StackPanel>
+                  <ui:AppActionButton x:Name="CompactRevealButton" Classes="ghost menu-option align-leading"
+                                      Label="{x:Static text:InspectorText.PreviewReveal}" IconData="{StaticResource UiIconFolderOpen}"
+                                      Command="{Binding RevealCommand}" ToolTip.Tip="{x:Static text:InspectorText.PreviewRevealHint}" />
+                  <ui:AppActionButton x:Name="CompactRefreshButton" Classes="ghost menu-option align-leading"
+                                      Label="{x:Static text:InspectorText.PreviewRefresh}" IconData="{StaticResource UiIconRefresh}"
+                                      Command="{Binding RefreshCommand}" />
+                </StackPanel>
+              </ui:AppCard>
+            </ui:AppFlyout>
+          </Button.Flyout>
+        </ui:AppIconButton>
+      </Grid>
+    </ui:AppBorder>
+    <Grid Grid.Row="2" RowDefinitions="Auto,Auto,*,Auto">
+      <StackPanel>
+        <ui:AppText Text="{Binding Notice}" IsVisible="{Binding HasNotice}" Classes="file-preview-notice" TextWrapping="Wrap" />
+        <ui:AppText Text="{Binding FilePicker.Status}" IsVisible="{Binding FilePicker.HasStatus}" Classes="file-preview-notice" TextWrapping="Wrap" />
+        <ui:AppText Text="{Binding CopyActions.Notice, ElementName=Root}" IsVisible="{Binding CopyActions.HasNotice, ElementName=Root}"
+                    Classes="file-preview-notice" TextWrapping="Wrap" />
+      </StackPanel>
+      <ui:AppBorder Grid.Row="1" Classes="file-preview-search" IsVisible="{Binding Active.Search.IsOpen}">
+        <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto,Auto">
+          <ui:AppInput x:Name="SearchInput" Grid.ColumnSpan="2" Text="{Binding Active.Search.Query}"
+                       MaxLength="256" Classes="file-search-input" PlaceholderText="{x:Static text:InspectorText.PreviewFind}"
+                       AutomationProperties.Name="{x:Static text:InspectorText.PreviewFind}" />
+          <ui:AppIconButton Grid.Column="2" Classes="ghost inspector-header-action" Label="{x:Static text:InspectorText.PreviewFindClose}"
+                            IconData="{StaticResource UiIconClose}" Command="{Binding Active.Search.CloseCommand}" />
+          <ui:AppText Grid.Row="1" Text="{Binding Active.Search.ResultLabel}" Classes="file-search-results" />
+          <ui:AppIconButton Grid.Row="1" Grid.Column="1" Classes="ghost inspector-header-action" Label="{x:Static text:InspectorText.PreviewFindPrevious}"
+                            IconData="{StaticResource UiIconArrowUp}" Command="{Binding Active.Search.PreviousCommand}" />
+          <ui:AppIconButton Grid.Row="1" Grid.Column="2" Classes="ghost inspector-header-action" Label="{x:Static text:InspectorText.PreviewFindNext}"
+                            IconData="{StaticResource UiIconArrowDown}" Command="{Binding Active.Search.NextCommand}" />
+        </Grid>
+      </ui:AppBorder>
+      <ui:AppEmptyState Grid.Row="2" Title="{Binding Active.Status}" IconData="{StaticResource UiIconDocument}"
+                        IsVisible="{Binding Active.IsLoading}" />
+      <Grid Grid.Row="2" IsVisible="{Binding !Active.IsLoading}">
+        <ui:AppEmptyState Title="{Binding Active.Status}" IconData="{StaticResource UiIconDocument}" IsVisible="{Binding !Active.IsReady}" />
+        <Grid IsVisible="{Binding Active.IsReady}">
+        <ui:AppCodePreview Code="{Binding Active.Text}" FilePath="{Binding Active.Name}" IsDiff="{Binding Active.IsDiff}" IsVisible="{Binding !Active.IsImage}"
+                           SearchQuery="{Binding Active.Search.ActiveQuery}" SelectedLine="{Binding Active.Search.SelectedLine}" />
+        <ui:AppImagePreview Source="{Binding Active.Image}" IsVisible="{Binding Active.IsImage}"
+                            IsFit="{Binding Active.IsFit}" Scale="{Binding Active.Scale}" />
+        </Grid>
+      </Grid>
+      <ui:AppText Grid.Row="3" Text="{Binding Active.Status}" Classes="file-preview-status" TextWrapping="Wrap" />
+    </Grid>
+  </Grid>
+</ui:AppUserControl>

@@ -1,0 +1,20 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppThemePreview"
+                   Classes="app-theme-preview" IsHitTestVisible="False">
+  <ui:AppBorder Classes="preview-frame" ClipToBounds="True">
+    <Grid>
+    <ui:AppThemePreviewScene Classes="preview-standard-scene" />
+    <Grid Classes="preview-system-scene" ColumnDefinitions="*,*">
+      <ui:AppBorder ClipToBounds="True">
+        <ui:AppThemePreviewScene HorizontalAlignment="Left" />
+      </ui:AppBorder>
+      <ui:AppBorder Grid.Column="1" ClipToBounds="True">
+        <ui:AppThemePreviewScene Classes="scene-dark" HorizontalAlignment="Left" />
+      </ui:AppBorder>
+    </Grid>
+    <ui:AppBorder Classes="preview-selection-outline" IsHitTestVisible="False" />
+    </Grid>
+  </ui:AppBorder>
+</ui:AppUserControl>

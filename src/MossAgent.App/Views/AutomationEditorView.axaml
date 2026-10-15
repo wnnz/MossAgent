@@ -1,0 +1,75 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Views.AutomationEditorView" x:CompileBindings="False">
+  <StackPanel Spacing="14">
+    <StackPanel Spacing="6">
+      <ui:AppText Text="{x:Static text:AutomationText.Name}" Classes="type-12 weight-semibold" />
+      <ui:AppInput Text="{Binding Name}" MaxLength="120" AutomationProperties.Name="{x:Static text:AutomationText.Name}" />
+    </StackPanel>
+    <StackPanel Spacing="6">
+      <ui:AppText Text="{x:Static text:AutomationText.Prompt}" Classes="type-12 weight-semibold" />
+      <ui:AppInput Text="{Binding Prompt}" Classes="automation-prompt" MaxLength="32000" AcceptsReturn="True" TextWrapping="Wrap"
+                    AutomationProperties.Name="{x:Static text:AutomationText.Prompt}" />
+    </StackPanel>
+    <StackPanel Spacing="6">
+      <ui:AppText Text="{x:Static text:AutomationText.Project}" Classes="type-12 weight-semibold" />
+      <ui:AppComboBox ItemsSource="{Binding Projects}" SelectedItem="{Binding SelectedProject}" HorizontalAlignment="Stretch"
+                      AutomationProperties.Name="{x:Static text:AutomationText.Project}">
+        <ComboBox.ItemTemplate><DataTemplate><ui:AppText Text="{Binding Name}" Classes="type-12" TextTrimming="CharacterEllipsis" /></DataTemplate></ComboBox.ItemTemplate>
+      </ui:AppComboBox>
+    </StackPanel>
+    <StackPanel Spacing="6">
+      <ui:AppText Text="{x:Static text:AutomationText.Model}" Classes="type-12 weight-semibold" />
+      <ui:AppComboBox ItemsSource="{Binding Models}" SelectedItem="{Binding SelectedModel}" HorizontalAlignment="Stretch"
+                      AutomationProperties.Name="{x:Static text:AutomationText.Model}">
+        <ComboBox.ItemTemplate><DataTemplate><ui:AppText Text="{Binding AccessibleName}" Classes="type-12" TextTrimming="CharacterEllipsis" /></DataTemplate></ComboBox.ItemTemplate>
+      </ui:AppComboBox>
+    </StackPanel>
+    <Grid ColumnDefinitions="*,*" ColumnSpacing="14">
+      <StackPanel Spacing="6">
+        <ui:AppText Text="{x:Static text:AutomationText.Frequency}" Classes="type-12 weight-semibold" />
+        <ui:AppComboBox ItemsSource="{Binding Frequencies}" SelectedItem="{Binding SelectedFrequency}" HorizontalAlignment="Stretch"
+                        AutomationProperties.Name="{x:Static text:AutomationText.Frequency}" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Spacing="6" IsVisible="{Binding !IsHourly}">
+        <ui:AppText Text="{x:Static text:AutomationText.Time}" Classes="type-12 weight-semibold" />
+        <ui:AppInput Text="{Binding Time}" MaxLength="5" AutomationProperties.Name="{x:Static text:AutomationText.Time}" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Spacing="6" IsVisible="{Binding IsHourly}">
+        <ui:AppText Text="{x:Static text:AutomationText.Interval}" Classes="type-12 weight-semibold" />
+        <ui:AppNumericUpDown Value="{Binding IntervalHours}" Minimum="1" Maximum="24" Increment="1" FormatString="0"
+                             AutomationProperties.Name="{x:Static text:AutomationText.Interval}" />
+      </StackPanel>
+    </Grid>
+    <StackPanel Spacing="6" IsVisible="{Binding IsWeekly}">
+      <ui:AppText Text="{x:Static text:AutomationText.Weekday}" Classes="type-12 weight-semibold" />
+      <ui:AppComboBox ItemsSource="{Binding Weekdays}" SelectedItem="{Binding SelectedWeekday}" HorizontalAlignment="Stretch"
+                      AutomationProperties.Name="{x:Static text:AutomationText.Weekday}" />
+    </StackPanel>
+    <StackPanel Spacing="6">
+      <ui:AppText Text="{x:Static text:AutomationText.TimeZone}" Classes="type-12 weight-semibold" />
+      <ui:AppComboBox ItemsSource="{Binding TimeZones}" SelectedItem="{Binding SelectedTimeZone}" HorizontalAlignment="Stretch"
+                      AutomationProperties.Name="{x:Static text:AutomationText.TimeZone}">
+        <ComboBox.ItemTemplate><DataTemplate><ui:AppText Text="{Binding DisplayName}" Classes="type-12" TextTrimming="CharacterEllipsis" /></DataTemplate></ComboBox.ItemTemplate>
+      </ui:AppComboBox>
+    </StackPanel>
+    <ui:AppBorder Classes="automation-schedule-preview">
+      <ui:AppText Text="{Binding SchedulePreview}" Classes="type-12 muted line-18" TextWrapping="Wrap" />
+    </ui:AppBorder>
+    <Grid ColumnDefinitions="*,*" ColumnSpacing="14">
+      <StackPanel Spacing="6">
+        <ui:AppText Text="{x:Static text:AutomationText.Policy}" Classes="type-12 weight-semibold" />
+        <ui:AppComboBox ItemsSource="{Binding Policies}" SelectedItem="{Binding SelectedPolicy}" HorizontalAlignment="Stretch"
+                        AutomationProperties.Name="{x:Static text:AutomationText.Policy}" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Spacing="6">
+        <ui:AppText Text="{x:Static text:AutomationText.Timeout}" Classes="type-12 weight-semibold" />
+        <ui:AppNumericUpDown Value="{Binding TimeoutMinutes}" Minimum="1" Maximum="240" Increment="1" FormatString="0"
+                             AutomationProperties.Name="{x:Static text:AutomationText.Timeout}" />
+      </StackPanel>
+    </Grid>
+    <ui:AppText Text="{x:Static text:AutomationText.PausedDefault}" Classes="type-11 subtle line-18" TextWrapping="Wrap" />
+  </StackPanel>
+</ui:AppUserControl>

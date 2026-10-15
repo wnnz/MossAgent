@@ -1,0 +1,20 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
+             xmlns:resources="clr-namespace:MossAgent.App.Resources"
+             x:Class="MossAgent.App.Views.KeyboardShortcutsFlyoutView"
+             x:CompileBindings="False">
+  <ui:AppCard Classes="flyout-surface" Width="230">
+    <StackPanel Spacing="6">
+      <ui:AppText Classes="type-12 weight-semibold" Text="键盘快捷键" />
+      <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="{x:Static resources:NavigationRailText.Settings}" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Ctrl+," Classes="subtle type-11" /></Grid>
+      <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="新建任务" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Ctrl+N" Classes="subtle type-11" /></Grid>
+      <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="{x:Static resources:ComposerInputText.SubmitLabel}" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Enter / Ctrl+Enter" Classes="subtle type-11" /></Grid>
+      <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="{x:Static resources:ComposerInputText.NewlineLabel}" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Shift+Enter" Classes="subtle type-11" /></Grid>
+      <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="代码审查" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Ctrl+Shift+G" Classes="subtle type-11" /></Grid>
+      <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="终端" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Ctrl+J" Classes="subtle type-11" /></Grid>
+      <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="浏览器" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Ctrl+T" Classes="subtle type-11" /></Grid>
+      <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="审计与产物" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Ctrl+P" Classes="subtle type-11" /></Grid>
+    </StackPanel>
+  </ui:AppCard>
+</ui:AppUserControl>

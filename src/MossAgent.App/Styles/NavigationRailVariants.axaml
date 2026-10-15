@@ -1,0 +1,54 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="NavigationRailSelectionBrush" Color="#E2E9ED" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="NavigationRailSelectionBrush" Color="#2C333A" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+  <Style Selector=".app-navigation-rail" x:SetterTargetType="controls:AppNavigationRail">
+    <Setter Property="Width" Value="52" />
+  </Style>
+  <Style Selector="controls|AppBorder.navigation-rail-body">
+    <Setter Property="Padding" Value="8" />
+  </Style>
+  <Style Selector="StackPanel.navigation-rail-actions">
+    <Setter Property="Spacing" Value="8" />
+  </Style>
+  <Style Selector="controls|AppButton.navigation-rail-button">
+    <Setter Property="Width" Value="36" />
+    <Setter Property="Height" Value="36" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="ToolTip.Placement" Value="Right" />
+    <Setter Property="ToolTip.HorizontalOffset" Value="8" />
+    <Setter Property="ToolTip.VerticalOffset" Value="0" />
+  </Style>
+  <Style Selector="controls|AppButton.navigation-rail-button.selected" x:SetterTargetType="controls:AppIconButton">
+    <Setter Property="Background" Value="{DynamicResource NavigationRailSelectionBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="IsFilledIcon" Value="True" />
+    <Setter Property="IsAlternateIcon" Value="True" />
+  </Style>
+  <Style Selector="controls|AppButton.navigation-rail-home controls|AppIcon.ui-icon">
+    <Setter Property="Size" Value="17" />
+    <Setter Property="RenderTransform">
+      <TranslateTransform X="-1" Y="-0.5" />
+    </Setter>
+  </Style>
+  <Style Selector="controls|AppButton.navigation-rail-settings controls|AppIcon.ui-icon">
+    <Setter Property="Size" Value="15" />
+    <Setter Property="RenderTransform">
+      <TranslateTransform X="0.5" Y="0.5" />
+    </Setter>
+  </Style>
+  <Style Selector="controls|AppCard.navigation-rail-menu">
+    <Setter Property="Width" Value="168" />
+  </Style>
+</Styles>

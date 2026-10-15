@@ -5,12 +5,17 @@ namespace MossAgent.Tools.BuiltIn.Git;
 
 public sealed class GitLogTool(
     AuthorizedPathResolver paths,
-    GitCommandRunner git) : IAgentTool
+    GitCommandRunner git) : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "git.log", "读取最近的 Git 提交记录。",
         """{"type":"object","properties":{"repository":{"type":"string"},"count":{"type":"integer","minimum":1,"maximum":100}}}""",
         ToolRiskLevel.ReadOnly, ToolCapability.FileRead | ToolCapability.Process);
+
+    public void ValidateRequest(ToolRequest request, ToolExecutionContext context)
+    {
+        paths.Resolve(request.Arguments.GetOptionalString("repository") ?? context.WorkingDirectory, context);
+    }
 
     public Task<ToolResult> ExecuteAsync(
         ToolRequest request,
@@ -28,4 +33,3 @@ public sealed class GitLogTool(
             cancellationToken);
     }
 }
-

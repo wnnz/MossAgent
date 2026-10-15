@@ -8,6 +8,7 @@ internal sealed class RecordingBrowserSessionFactory :
 {
     public int CreateCount { get; private set; }
     public BrowserLaunchOptions? LastOptions { get; private set; }
+    public StubBrowserSession? LastSession { get; private set; }
 
     public Task<IBrowserSession> CreateAsync(
         BrowserLaunchOptions options,
@@ -15,6 +16,7 @@ internal sealed class RecordingBrowserSessionFactory :
     {
         CreateCount++;
         LastOptions = options;
-        return Task.FromResult<IBrowserSession>(new StubBrowserSession());
+        LastSession = new StubBrowserSession();
+        return Task.FromResult<IBrowserSession>(LastSession);
     }
 }

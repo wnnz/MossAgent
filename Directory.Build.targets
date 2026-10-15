@@ -1,0 +1,25 @@
+<Project>
+  <Target Name="ValidateWindowsDesktopRuntime" BeforeTargets="PrepareForBuild;PrepareForPublish"
+          Condition="'$(MSBuildProjectName)' == 'MossAgent.App'">
+    <Error Condition="'$(RuntimeIdentifier)' != 'win-x64' or '$(PlatformTarget)' != 'x64'"
+           Text="MossAgent desktop packages support only win-x64 with PlatformTarget=x64." />
+  </Target>
+  <Target Name="ValidateWindowsPlaywrightPlatform" BeforeTargets="CopyPlaywrightFilesToOutput">
+    <Error Condition="'$(PlaywrightPlatform)' != 'win-x64'"
+           Text="MossAgent packages must use PlaywrightPlatform=win-x64." />
+  </Target>
+  <Target Name="ExcludeDesktopPublishSymbols" BeforeTargets="_ComputeFilesToBundle;CopyFilesToPublishDirectory"
+          Condition="'$(MSBuildProjectName)' == 'MossAgent.App' and '$(DebugSymbols)' == 'false'">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                            Condition="'%(ResolvedFileToPublish.Extension)' == '.pdb'" />
+    </ItemGroup>
+  </Target>
+  <Target Name="ExcludeOtherPlatformPlaywrightInstallers" AfterTargets="CopyPlaywrightFilesToOutput">
+    <ItemGroup>
+      <_OtherPlatformPlaywrightContent Include="@(Content)"
+          Condition="'%(Content.NuGetPackageId)' == 'Microsoft.Playwright' and $([System.Text.RegularExpressions.Regex]::IsMatch('%(Content.Identity)', '[\\/](?:[^\\/]+_(?:linux|mac)\.sh|install_webkit_wsl\.ps1)$'))" />
+      <Content Remove="@(_OtherPlatformPlaywrightContent)" />
+    </ItemGroup>
+  </Target>
+</Project>

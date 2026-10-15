@@ -3,4 +3,9 @@
     <ProjectReference Include="../MossAgent.Application/MossAgent.Application.csproj" />
     <ProjectReference Include="../MossAgent.Tools.Abstractions/MossAgent.Tools.Abstractions.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>MossAgent.Tools.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 </Project>

@@ -1,212 +1,407 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:MossAgent.App.Controls"
              x:Class="MossAgent.App.App"
-             RequestedThemeVariant="Dark">
+             RequestedThemeVariant="Default">
   <Application.Resources>
     <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://MossAgent.App/Styles/ComponentVariants.axaml" />
+        <ResourceInclude Source="avares://MossAgent.App/Styles/DangerButtonResources.axaml" />
+        <ResourceInclude Source="avares://MossAgent.App/Styles/WindowCaptionResources.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+      <BoxShadows x:Key="SharedSurfaceShadow">0 0 14 0 #0A000000</BoxShadows>
+      <BoxShadows x:Key="SharedWindowFrameShadow">0 0 28 0 #0C000000, 0 0 0 1 #04000000</BoxShadows>
       <ResourceDictionary.ThemeDictionaries>
-        <!-- Codex 极简暗夜深色主题 (Dark) -->
+        <!-- ChatGPT 风格深色主题 (Dark) -->
         <ResourceDictionary x:Key="Dark">
-          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#0A0A0C" />
-          <SolidColorBrush x:Key="HeaderBackgroundBrush" Color="#111114" />
-          <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#121216" />
-          <SolidColorBrush x:Key="CardBackgroundBrush" Color="#16161B" />
-          <SolidColorBrush x:Key="CardSubtleBackgroundBrush" Color="#1C1C23" />
-          <SolidColorBrush x:Key="InputBackgroundBrush" Color="#18181E" />
-          <SolidColorBrush x:Key="BorderDefaultBrush" Color="#272732" />
-          <SolidColorBrush x:Key="BorderSubtleBrush" Color="#1E1E26" />
-          <SolidColorBrush x:Key="BorderFocusBrush" Color="#3F3F4E" />
+          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#181818" />
+          <SolidColorBrush x:Key="HeaderBackgroundBrush" Color="#1A2228" />
+          <SolidColorBrush x:Key="TitlebarDividerBrush" Color="#2F2F2F" />
+          <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#1A2229" />
+          <SolidColorBrush x:Key="WorkspaceSidebarBackgroundBrush" Color="#1A2229" />
+          <SolidColorBrush x:Key="SettingsSelectionBrush" Color="#2C333A" />
+          <SolidColorBrush x:Key="SettingsNavigationSelectionBrush" Color="#2C333A" />
+          <SolidColorBrush x:Key="CardBackgroundBrush" Color="#212121" />
+          <SolidColorBrush x:Key="CardBorderBrush" Color="#424242" />
+          <SolidColorBrush x:Key="CardSubtleBackgroundBrush" Color="#2F2F2F" />
+          <SolidColorBrush x:Key="InputBackgroundBrush" Color="#303030" />
+          <SolidColorBrush x:Key="BorderDefaultBrush" Color="#424242" />
+          <SolidColorBrush x:Key="BorderSubtleBrush" Color="#2F2F2F" />
+          <SolidColorBrush x:Key="SidebarBorderBrush" Color="#2F2F2F" />
+          <SolidColorBrush x:Key="SidebarScrollThumbBrush" Color="#40474D" />
+          <SolidColorBrush x:Key="SidebarScrollThumbHoverBrush" Color="#6D757C" />
+          <SolidColorBrush x:Key="BorderFocusBrush" Color="#8E8E8E" />
+          <SolidColorBrush x:Key="CodeKeywordBrush" Color="#C586C0" />
+          <SolidColorBrush x:Key="CodeStringBrush" Color="#CE9178" />
+          <SolidColorBrush x:Key="CodeNumberBrush" Color="#B5CEA8" />
+          <SolidColorBrush x:Key="CodeCommentBrush" Color="#6A9955" />
+          <SolidColorBrush x:Key="CodeTypeBrush" Color="#4EC9B0" />
 
           <!-- 文字 -->
-          <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F4F4F5" />
-          <SolidColorBrush x:Key="TextMutedBrush" Color="#8E8E98" />
-          <SolidColorBrush x:Key="TextSubtleBrush" Color="#5E5E68" />
+          <SolidColorBrush x:Key="TextPrimaryBrush" Color="#ECECEC" />
+          <SolidColorBrush x:Key="TextMutedBrush" Color="#B4B4B4" />
+          <SolidColorBrush x:Key="TextSubtleBrush" Color="#8E8E8E" />
+          <SolidColorBrush x:Key="TitlebarMenuForegroundBrush" Color="#A9AFB4" />
+          <SolidColorBrush x:Key="SidebarTextBrush" Color="#E6E6E6" />
+          <SolidColorBrush x:Key="SidebarSectionTextBrush" Color="#8E8E8E" />
+          <SolidColorBrush x:Key="StatusWarningBrush" Color="#F97316" />
+          <SolidColorBrush x:Key="StatusErrorBrush" Color="#F87171" />
+          <SolidColorBrush x:Key="StatusSuccessBrush" Color="#4ADE80" />
+          <SolidColorBrush x:Key="ApprovalTextBrush" Color="#FBBF24" />
+          <SolidColorBrush x:Key="ApprovalBadgeBrush" Color="#452B0C" />
 
           <!-- 按钮 -->
-          <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#1F1F26" />
-          <SolidColorBrush x:Key="ButtonForegroundBrush" Color="#E4E4E7" />
-          <SolidColorBrush x:Key="ButtonBorderBrush" Color="#2E2E3A" />
-          <SolidColorBrush x:Key="ButtonHoverBrush" Color="#2B2B36" />
+          <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#2F2F2F" />
+          <SolidColorBrush x:Key="ButtonForegroundBrush" Color="#ECECEC" />
+          <SolidColorBrush x:Key="ButtonBorderBrush" Color="#424242" />
+          <SolidColorBrush x:Key="ButtonHoverBrush" Color="#3A3A3A" />
           <SolidColorBrush x:Key="PrimaryButtonBackgroundBrush" Color="#F4F4F6" />
           <SolidColorBrush x:Key="PrimaryButtonForegroundBrush" Color="#0A0A0C" />
-          <SolidColorBrush x:Key="OverlayBackgroundBrush" Color="#D90A0A0C" />
+          <SolidColorBrush x:Key="OverlayBackgroundBrush" Color="#D9212121" />
+          <SolidColorBrush x:Key="ReasoningSliderActiveBrush" Color="#399BFB" />
+          <SolidColorBrush x:Key="ReasoningSliderTrackBrush" Color="#55575B" />
+          <SolidColorBrush x:Key="ThemeChoiceSelectionBrush" Color="#EEEEEE" />
 
           <!-- 覆盖系统高亮为中性质感，杜绝任何蓝色蓝框 -->
-          <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#3F3F4E" />
+          <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#8E8E8E" />
           <SolidColorBrush x:Key="SystemControlHighlightAccentBrush" Color="#F4F4F6" />
         </ResourceDictionary>
-
-        <!-- Codex 现代质感浅色主题 (Light) -->
+        <!-- ChatGPT 风格浅色主题 (Light) -->
         <ResourceDictionary x:Key="Light">
-          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F8F9FA" />
-          <SolidColorBrush x:Key="HeaderBackgroundBrush" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#F2F3F5" />
+          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="HeaderBackgroundBrush" Color="#EEF4F9" />
+          <SolidColorBrush x:Key="TitlebarDividerBrush" Color="#E6EBF0" />
+          <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#EEF4F9" />
+          <SolidColorBrush x:Key="WorkspaceSidebarBackgroundBrush" Color="#F9FBFD" />
+          <SolidColorBrush x:Key="SettingsSelectionBrush" Color="#ECEFF1" />
+          <SolidColorBrush x:Key="SettingsNavigationSelectionBrush" Color="#ECEFF1" />
           <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="CardSubtleBackgroundBrush" Color="#F5F6F8" />
+          <SolidColorBrush x:Key="CardBorderBrush" Color="#EDEDED" />
+          <SolidColorBrush x:Key="CardSubtleBackgroundBrush" Color="#F4F4F4" />
           <SolidColorBrush x:Key="InputBackgroundBrush" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="BorderDefaultBrush" Color="#E2E4E8" />
-          <SolidColorBrush x:Key="BorderSubtleBrush" Color="#EBECEF" />
-          <SolidColorBrush x:Key="BorderFocusBrush" Color="#9CA3AF" />
+          <SolidColorBrush x:Key="BorderDefaultBrush" Color="#E5E5E5" />
+          <SolidColorBrush x:Key="BorderSubtleBrush" Color="#F1F1F1" />
+          <SolidColorBrush x:Key="SidebarBorderBrush" Color="#DDE3E7" />
+          <SolidColorBrush x:Key="SidebarScrollThumbBrush" Color="#E7E9EB" />
+          <SolidColorBrush x:Key="SidebarScrollThumbHoverBrush" Color="#CED2D6" />
+          <SolidColorBrush x:Key="BorderFocusBrush" Color="#8E8E8E" />
+          <SolidColorBrush x:Key="CodeKeywordBrush" Color="#AF00DB" />
+          <SolidColorBrush x:Key="CodeStringBrush" Color="#A31515" />
+          <SolidColorBrush x:Key="CodeNumberBrush" Color="#098658" />
+          <SolidColorBrush x:Key="CodeCommentBrush" Color="#008000" />
+          <SolidColorBrush x:Key="CodeTypeBrush" Color="#267F99" />
 
           <!-- 文字 -->
-          <SolidColorBrush x:Key="TextPrimaryBrush" Color="#18181B" />
-          <SolidColorBrush x:Key="TextMutedBrush" Color="#52525B" />
-          <SolidColorBrush x:Key="TextSubtleBrush" Color="#71717A" />
+          <SolidColorBrush x:Key="TextPrimaryBrush" Color="#1A1C1F" />
+          <SolidColorBrush x:Key="TextMutedBrush" Color="#5D5D5D" />
+          <SolidColorBrush x:Key="TextSubtleBrush" Color="#8A8A8A" />
+          <SolidColorBrush x:Key="TitlebarMenuForegroundBrush" Color="#85898D" />
+          <SolidColorBrush x:Key="SidebarTextBrush" Color="#3B3E40" />
+          <SolidColorBrush x:Key="SidebarSectionTextBrush" Color="#8B8D8F" />
+          <SolidColorBrush x:Key="StatusWarningBrush" Color="#9A3412" />
+          <SolidColorBrush x:Key="StatusErrorBrush" Color="#B42318" />
+          <SolidColorBrush x:Key="StatusSuccessBrush" Color="#15803D" />
+          <SolidColorBrush x:Key="ApprovalTextBrush" Color="#92400E" />
+          <SolidColorBrush x:Key="ApprovalBadgeBrush" Color="#FFF1D7" />
 
           <!-- 按钮：扁平现代无廉价边框质感 -->
           <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ButtonForegroundBrush" Color="#27272A" />
-          <SolidColorBrush x:Key="ButtonBorderBrush" Color="#D4D4D8" />
-          <SolidColorBrush x:Key="ButtonHoverBrush" Color="#F4F4F5" />
-          <SolidColorBrush x:Key="PrimaryButtonBackgroundBrush" Color="#18181B" />
+          <SolidColorBrush x:Key="ButtonBorderBrush" Color="#E5E5E5" />
+          <SolidColorBrush x:Key="ButtonHoverBrush" Color="#F1F1F1" />
+          <SolidColorBrush x:Key="PrimaryButtonBackgroundBrush" Color="#1A1C1F" />
           <SolidColorBrush x:Key="PrimaryButtonForegroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="OverlayBackgroundBrush" Color="#99000000" />
+          <SolidColorBrush x:Key="ReasoningSliderActiveBrush" Color="#399BFB" />
+          <SolidColorBrush x:Key="ReasoningSliderTrackBrush" Color="#E4E5E8" />
+          <SolidColorBrush x:Key="ThemeChoiceSelectionBrush" Color="#202020" />
 
           <!-- 覆盖系统高亮为中性质感，杜绝任何蓝色蓝框 -->
-          <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#9CA3AF" />
-          <SolidColorBrush x:Key="SystemControlHighlightAccentBrush" Color="#18181B" />
+          <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#8E8E8E" />
+          <SolidColorBrush x:Key="SystemControlHighlightAccentBrush" Color="#0D0D0D" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
+      <FontFamily x:Key="CodeFontFamily">Consolas, Cascadia Code, Courier New</FontFamily>
+      <FontFamily x:Key="UiFontFamily">Segoe UI</FontFamily>
+      <FontFamily x:Key="ContentFontFamily">Segoe UI</FontFamily>
+      <StreamGeometry x:Key="UiIconPanel">M 6 3 Q 3 3 3 6 L 3 18 Q 3 21 6 21 L 18 21 Q 21 21 21 18 L 21 6 Q 21 3 18 3 Z M 9 3 L 9 21</StreamGeometry>
+      <StreamGeometry x:Key="UiIconHome">M 3 10 L 12 3 L 21 10 L 21 20 L 14 20 L 14 14 L 10 14 L 10 20 L 3 20 Z</StreamGeometry>
+      <StreamGeometry x:Key="UiIconHomeFilled">M 10.2 3.4 Q 12 2 13.8 3.4 L 21.3 9.6 Q 22 10.2 21.5 11 L 20 11 L 20 19 Q 20 21 18 21 L 15 21 L 15 14 L 9 14 L 9 21 L 6 21 Q 4 21 4 19 L 4 11 L 2.5 11 Q 2 10.2 2.7 9.6 Z</StreamGeometry>
+      <StreamGeometry x:Key="UiIconArrowLeft">M 18 12 L 6 12 M 6 12 L 12 6 M 6 12 L 12 18</StreamGeometry>
+      <StreamGeometry x:Key="UiIconArrowRight">M 6 12 L 18 12 M 18 12 L 12 6 M 18 12 L 12 18</StreamGeometry>
+      <StreamGeometry x:Key="UiIconSearch">M 10 17 C 6.13 17 3 13.87 3 10 C 3 6.13 6.13 3 10 3 C 13.87 3 17 6.13 17 10 C 17 12 16.2 13.8 14.8 15.2 M 14.8 15.2 L 21 21</StreamGeometry>
+      <StreamGeometry x:Key="UiIconCompose">M 10 2 L 5 2 A 2 2 0 0 0 3 4 L 3 19 A 2 2 0 0 0 5 21 L 20 21 A 2 2 0 0 0 22 19 L 22 14 M 18.5 2.5 A 2.121 2.121 0 0 1 21.5 5.5 L 12 15 L 8 16 L 9 12 Z</StreamGeometry>
+      <StreamGeometry x:Key="UiIconFolderOpen">M 3 20 L 21 20 L 23 10 L 5 10 Z M 3 20 L 3 5 L 10 5 L 12 7 L 20 7 L 20 10</StreamGeometry>
+      <StreamGeometry x:Key="UiIconReview">M 5 4 L 19 4 L 19 13 M 8 8 L 16 8 M 8 12 L 12 12 M 12 18 L 15 21 L 21 14</StreamGeometry>
+      <StreamGeometry x:Key="UiIconTerminal">M 3 5 L 21 5 L 21 19 L 3 19 Z M 7 9 L 10 12 L 7 15 M 13 15 L 17 15</StreamGeometry>
+      <StreamGeometry x:Key="UiIconTerminalActivity">M 6 3 L 18 3 Q 21 3 21 6 L 21 18 Q 21 21 18 21 L 6 21 Q 3 21 3 18 L 3 6 Q 3 3 6 3 Z M 7 8 L 11 12 L 7 16 M 13 16 L 17 16</StreamGeometry>
+      <StreamGeometry x:Key="UiIconBrowser">M 3 5 L 21 5 L 21 19 L 3 19 Z M 3 9 L 21 9 M 7 7 L 7.01 7 M 10 7 L 10.01 7</StreamGeometry>
+      <StreamGeometry x:Key="UiIconFolder">M 3 7 C 3 5.9 3.9 5 5 5 L 9 5 L 11 7 L 19 7 C 20.1 7 21 7.9 21 9 L 21 19 C 21 20.1 20.1 21 19 21 L 5 21 C 3.9 21 3 20.1 3 19 Z M 3 10 L 21 10</StreamGeometry>
+      <StreamGeometry x:Key="UiIconConversation">M 6 5 L 18 5 C 19.7 5 21 6.3 21 8 L 21 15 C 21 16.7 19.7 18 18 18 L 11 18 L 7 21 L 7 18 L 6 18 C 4.3 18 3 16.7 3 15 L 3 8 C 3 6.3 4.3 5 6 5 Z</StreamGeometry>
+      <StreamGeometry x:Key="UiIconPlus">M 12 5 L 12 19 M 5 12 L 19 12</StreamGeometry>
+      <StreamGeometry x:Key="UiIconCheck">M 5 12 L 10 17 L 19 7</StreamGeometry>
+      <StreamGeometry x:Key="UiIconArrowUp">M 12 19 L 12 5 M 5 12 L 12 5 L 19 12</StreamGeometry>
+      <StreamGeometry x:Key="UiIconArrowDown">M 12 5 L 12 19 M 5 12 L 12 19 L 19 12</StreamGeometry>
+      <StreamGeometry x:Key="UiIconShield">M 12 3 L 20 6 L 20 12 C 20 17 16.5 20 12 22 C 7.5 20 4 17 4 12 L 4 6 Z M 9 12 L 11 14 L 15 10</StreamGeometry>
+      <StreamGeometry x:Key="UiIconLock">M 5 10 L 19 10 L 19 20 L 5 20 Z M 8 10 L 8 7 A 4 4 0 0 1 16 7 L 16 10</StreamGeometry>
+      <StreamGeometry x:Key="UiIconWarning">M 12 3 A 9 9 0 1 1 12 21 A 9 9 0 1 1 12 3 Z M 12 8 L 12 13 M 12 17 L 12 17.1</StreamGeometry>
+      <StreamGeometry x:Key="UiIconClock">M 12 3 A 9 9 0 1 1 12 21 A 9 9 0 1 1 12 3 Z M 12 7 L 12 12 L 16 14</StreamGeometry>
+      <StreamGeometry x:Key="UiIconArchive">M 4 8 L 20 8 L 20 20 L 4 20 Z M 3 4 L 21 4 L 21 8 L 3 8 Z M 9 13 L 15 13</StreamGeometry>
+      <StreamGeometry x:Key="UiIconMinimize">M 4 12 L 20 12</StreamGeometry>
+      <StreamGeometry x:Key="UiIconMaximize">M 5 5 L 19 5 L 19 19 L 5 19 Z</StreamGeometry>
+      <StreamGeometry x:Key="UiIconRestore">M 8 3 L 20 3 L 20 15 L 8 15 Z M 4 7 L 4 19 L 16 19 L 16 7</StreamGeometry>
+      <StreamGeometry x:Key="UiIconClose">M 6 6 L 18 18 M 18 6 L 6 18</StreamGeometry>
+      <StreamGeometry x:Key="UiIconRefresh">M 20 8 C 18.5 4.5 14.5 2.5 10.5 3.2 C 6.5 3.9 3.5 7.6 3.5 12 C 3.5 16.7 7.3 20.5 12 20.5 C 15.7 20.5 18.8 18.1 20 15 M 20 3 L 20 8 L 15 8</StreamGeometry>
+      <StreamGeometry x:Key="UiIconPanelBottom">M 4 4 Q 3 4 3 5 L 3 19 Q 3 20 4 20 L 20 20 Q 21 20 21 19 L 21 5 Q 21 4 20 4 Z M 3 16 L 21 16</StreamGeometry>
+      <StreamGeometry x:Key="UiIconPanelRight">M 4 4 Q 3 4 3 5 L 3 19 Q 3 20 4 20 L 20 20 Q 21 20 21 19 L 21 5 Q 21 4 20 4 Z M 15 4 L 15 20</StreamGeometry>
+      <StreamGeometry x:Key="UiIconPanelAdd">M 6 4 Q 4 4 4 6 L 4 18 Q 4 20 6 20 L 18 20 Q 20 20 20 18 L 20 6 Q 20 4 18 4 Z M 12 8 L 12 16 M 8 12 L 16 12</StreamGeometry>
+      <StreamGeometry x:Key="UiIconContext">M 11 7 L 20 7 M 11 17 L 20 17 M 3 7 A 2.5 2.5 0 1 0 8 7 A 2.5 2.5 0 1 0 3 7 M 3 17 A 2.5 2.5 0 1 0 8 17 A 2.5 2.5 0 1 0 3 17</StreamGeometry>
+      <StreamGeometry x:Key="UiIconSend">M 12 19 L 12 5 M 6 11 L 12 5 L 18 11</StreamGeometry>
+      <StreamGeometry x:Key="UiIconStop">M 4 4 L 20 4 L 20 20 L 4 20 Z</StreamGeometry>
+      <StreamGeometry x:Key="UiIconBranch">M 7 5 L 7 19 M 7 8 C 7 12 17 9 17 14 L 17 19 M 7 5 A 2 2 0 1 1 3 5 A 2 2 0 1 1 7 5 M 19 19 A 2 2 0 1 1 15 19 A 2 2 0 1 1 19 19</StreamGeometry>
+      <StreamGeometry x:Key="UiIconWorktree">M 6 4 L 18 4 Q 20 4 20 6 L 20 18 Q 20 20 18 20 L 6 20 Q 4 20 4 18 L 4 6 Q 4 4 6 4 Z M 9 12 L 15 12 M 12 8 L 12 16 M 10 14 L 12 16 L 14 14</StreamGeometry>
+      <StreamGeometry x:Key="UiIconSources">M 6 5 A 2 2 0 1 0 10 5 A 2 2 0 1 0 6 5 M 16 5 A 2 2 0 1 0 20 5 A 2 2 0 1 0 16 5 M 11 19 A 2 2 0 1 0 15 19 A 2 2 0 1 0 11 19 M 10 5 L 16 5 M 8 7 L 12 17 M 18 7 L 14 17</StreamGeometry>
+      <StreamGeometry x:Key="UiIconDocument">M 5 3 L 15 3 L 19 7 L 19 21 L 5 21 Z M 15 3 L 15 7 L 19 7 M 8 12 L 16 12 M 8 16 L 16 16</StreamGeometry>
+      <StreamGeometry x:Key="UiIconCopy">M 8 8 L 20 8 L 20 20 L 8 20 Z M 4 16 L 4 4 L 16 4</StreamGeometry>
+      <StreamGeometry x:Key="UiIconMore">M 4 12 A 1 1 0 1 0 6 12 A 1 1 0 1 0 4 12 M 11 12 A 1 1 0 1 0 13 12 A 1 1 0 1 0 11 12 M 18 12 A 1 1 0 1 0 20 12 A 1 1 0 1 0 18 12</StreamGeometry>
+      <StreamGeometry x:Key="UiIconChevronDown">M 6 9 L 12 15 L 18 9</StreamGeometry>
+      <StreamGeometry x:Key="UiIconChevronRight">M 9 6 L 15 12 L 9 18</StreamGeometry>
+      <StreamGeometry x:Key="UiIconBell">M 18 8 A 6 6 0 0 0 6 8 C 6 15 3 15 3 17 L 21 17 C 21 15 18 15 18 8 M 10 21 A 2 2 0 0 0 14 21</StreamGeometry>
+      <StreamGeometry x:Key="UiIconSettings">M 9.4 2.5 L 14.6 2.5 L 15.1 5.1 C 16 5.4 16.8 5.9 17.4 6.5 L 19.8 5.5 L 22.4 10 L 20.3 11.8 C 20.2 12.6 20.2 13.4 20.3 14.2 L 22.4 16 L 19.8 20.5 L 17.4 19.5 C 16.8 20.1 16 20.6 15.1 20.9 L 14.6 23.5 L 9.4 23.5 L 8.9 20.9 C 8 20.6 7.2 20.1 6.6 19.5 L 4.2 20.5 L 1.6 16 L 3.7 14.2 C 3.8 13.4 3.8 12.6 3.7 11.8 L 1.6 10 L 4.2 5.5 L 6.6 6.5 C 7.2 5.9 8 5.4 8.9 5.1 Z M 12 9 A 3 3 0 1 0 12 15 A 3 3 0 1 0 12 9 Z</StreamGeometry>
+      <StreamGeometry x:Key="UiIconAppearance">M 12 8 A 4 4 0 1 0 12 16 A 4 4 0 1 0 12 8 M 12 2 L 12 4 M 12 20 L 12 22 M 2 12 L 4 12 M 20 12 L 22 12 M 4.93 4.93 L 6.34 6.34 M 17.66 17.66 L 19.07 19.07 M 4.93 19.07 L 6.34 17.66 M 17.66 6.34 L 19.07 4.93</StreamGeometry>
+      <StreamGeometry x:Key="UiIconHelp">M 12 3 A 9 9 0 1 1 12 21 A 9 9 0 1 1 12 3 Z M 9.5 9 C 9.5 7.5 10.5 7 12 7 C 13.5 7 14.5 8 14.5 9.3 C 14.5 10.5 13.5 11 12 12 L 12 14 M 12 17 L 12.01 17</StreamGeometry>
+      <StreamGeometry x:Key="UiIconAssistant">M 12 2 C 9.6 2 8 4 8 6 C 8 8.4 10 10 12 12 C 14 10 16 8.4 16 6 C 16 4 14.4 2 12 2 Z M 22 12 C 22 9.6 20 8 18 8 C 15.6 8 14 10 12 12 C 14 14 15.6 16 18 16 C 20 16 22 14.4 22 12 Z M 12 22 C 14.4 22 16 20 16 18 C 16 15.6 14 14 12 12 C 10 14 8 15.6 8 18 C 8 20 9.6 22 12 22 Z M 2 12 C 2 14.4 4 16 6 16 C 8.4 16 10 14 12 12 C 10 10 8.4 8 6 8 C 4 8 2 9.6 2 12 Z</StreamGeometry>
+      <StreamGeometry x:Key="UiIconEmptyAgent">M 9 2.2 C 7.8 2.2 7 3.1 7 4.4 C 5.5 3.9 4.3 4.8 4.3 6.3 C 2.7 6.5 2 7.8 2.6 9.3 C 1.5 10.2 1.5 12 2.7 12.9 C 2 14.4 2.9 15.8 4.5 16 C 4.6 17.6 5.9 18.5 7.4 18.1 C 7.5 19.8 8.8 20.6 10.3 20.1 C 11.3 21.5 13.1 21.5 14.1 20.1 C 15.7 20.7 17 19.7 16.9 18.1 C 18.6 18.5 19.9 17.3 19.7 15.7 C 21.3 15.4 22 13.9 21.2 12.5 C 22.4 11.5 22.2 9.7 20.9 8.8 C 21.3 7.3 20.2 6 18.6 6.1 C 18.4 4.4 17 3.6 15.5 4 C 14.6 2.4 12.8 2.2 11.6 3.4 C 10.9 2.6 10 2.2 9 2.2 Z M 8 9 L 11 12 L 8 15 M 12 15 L 16 15</StreamGeometry>
+      <StreamGeometry x:Key="UiIconCloudTerminal">M 8 5.5 C 8 3.4 9.7 1.8 11.8 1.8 C 13.1 0.7 15.4 1.2 16.2 3.2 C 18.5 3 20.2 5 19.8 7.2 C 21.7 8 22.1 10.5 20.7 12 C 20.4 14.3 18.2 15.8 15.9 15 C 16.7 17.5 15.5 21.4 12 21.4 C 8.5 21.4 7.3 17.6 9.4 15.9 C 7.1 16.9 4.7 15.5 4.6 13.1 C 2.7 12.4 2.4 10 3.8 8.5 C 3.8 6.8 5.3 5.3 7.1 5.3 Z M 8.5 8.4 L 10.4 10.4 L 8.5 12.4 M 12.4 12.4 L 16.8 12.4</StreamGeometry>
+      <StreamGeometry x:Key="UiIconComputer">M 4 5 L 20 5 L 20 16 L 4 16 Z M 2 19 L 22 19 M 8 16 L 7 19 M 16 16 L 17 19</StreamGeometry>
+      <StreamGeometry x:Key="UiIconProvider">M 4 4 L 20 4 L 20 9 L 4 9 Z M 4 15 L 20 15 L 20 20 L 4 20 Z M 8 6.5 L 8.01 6.5 M 11 6.5 L 17 6.5 M 8 17.5 L 8.01 17.5 M 11 17.5 L 17 17.5</StreamGeometry>
+      <StreamGeometry x:Key="UiIconProxy">M 4 7 L 20 7 L 20 17 L 4 17 Z M 8 7 L 8 17 M 16 7 L 16 17 M 2 12 L 4 12 M 20 12 L 22 12</StreamGeometry>
+      <StreamGeometry x:Key="UiIconPlug">M 9 3 L 9 8 M 15 3 L 15 8 M 7 8 L 17 8 L 17 13 C 17 16 14.8 18 12 18 C 9.2 18 7 16 7 13 Z M 12 18 L 12 22</StreamGeometry>
     </ResourceDictionary>
   </Application.Resources>
-
   <Application.Styles>
+    <StyleInclude Source="avares://MossAgent.App/Styles/WindowVariants.axaml" />
     <FluentTheme />
+    <StyleInclude Source="avares://MossAgent.App/Styles/ScrollBarVariants.axaml" />
+
+    <Style Selector="Window">
+      <Setter Property="FontFamily" Value="{DynamicResource UiFontFamily}" />
+    </Style>
+
+    <Style Selector="FlyoutPresenter.app-flyout">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
 
     <!-- 文本样式 -->
-    <Style Selector="TextBlock">
+    <Style Selector="controls|AppText">
       <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
-    <Style Selector="TextBlock.muted">
+    <Style Selector="controls|AppText.muted">
       <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
     </Style>
-    <Style Selector="TextBlock.subtle">
+    <Style Selector="controls|AppText.subtle">
       <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}" />
+    </Style>
+    <Style Selector="controls|AppIconLabel">
+      <Setter Property="Spacing" Value="5" />
+    </Style>
+    <Style Selector="controls|AppIconLabel.owned-icon-label">
+      <Setter Property="Spacing" Value="9" />
     </Style>
 
     <!-- 基础按钮：精致极简，无老旧立体浮雕 -->
-    <Style Selector="Button">
+    <Style Selector="controls|AppButton">
       <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="CornerRadius" Value="10" />
       <Setter Property="Padding" Value="12,5" />
       <Setter Property="FontSize" Value="13" />
       <Setter Property="Cursor" Value="Hand" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
-    <Style Selector="Button:pointerover">
+    <Style Selector="controls|AppButton:pointerover">
       <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     </Style>
-    <Style Selector="Button:pressed">
+    <Style Selector="controls|AppButton:pressed">
       <Setter Property="Opacity" Value="0.8" />
     </Style>
 
     <!-- 主按钮：深色纯白高光、浅色纯黑高光，绝无多余阴影或灰色模糊 -->
-    <Style Selector="Button.primary">
+    <Style Selector="controls|AppButton.primary">
       <Setter Property="Background" Value="{DynamicResource PrimaryButtonBackgroundBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource PrimaryButtonForegroundBrush}" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="CornerRadius" Value="10" />
       <Setter Property="Padding" Value="14,6" />
     </Style>
-    <Style Selector="Button.primary:pointerover">
+    <Style Selector="controls|AppButton.primary:pointerover">
       <Setter Property="Opacity" Value="0.9" />
+    </Style>
+    <Style Selector="controls|AppButton.primary:disabled">
+      <Setter Property="Background" Value="#D9D9D9" />
+      <Setter Property="Foreground" Value="#7A7A7A" />
+      <Setter Property="Opacity" Value="1" />
     </Style>
 
     <!-- 幽灵按钮 -->
-    <Style Selector="Button.ghost">
+    <Style Selector="controls|AppButton.ghost">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="10" />
       <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
       <Setter Property="Padding" Value="8,5" />
     </Style>
-    <Style Selector="Button.ghost:pointerover">
+    <Style Selector="controls|AppButton.ghost:pointerover">
       <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     </Style>
-    <Style Selector="Button.icon">
-      <Setter Property="Width" Value="38" />
-      <Setter Property="Height" Value="38" />
+    <Style Selector="controls|AppButton.ghost:disabled">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+    </Style>
+    <Style Selector="controls|AppButton.ghost.navigation-history">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="controls|AppButton.ghost.navigation-history:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="controls|AppButton.ghost.navigation-history:disabled">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="controls|AppButton.closeButton">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+    </Style>
+    <Style Selector="controls|AppButton.closeButton:pointerover">
+      <Setter Property="Background" Value="#E81123" />
+      <Setter Property="BorderBrush" Value="#E81123" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+    </Style>
+    <Style Selector="controls|AppButton.icon">
+      <Setter Property="Width" Value="32" />
+      <Setter Property="Height" Value="32" />
       <Setter Property="Padding" Value="0" />
-      <Setter Property="FontSize" Value="18" />
+      <Setter Property="FontSize" Value="12" />
       <Setter Property="CornerRadius" Value="8" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
-
-    <!-- 危险操作按钮 -->
-    <Style Selector="Button.danger">
-      <Setter Property="Background" Value="#2E1517" />
-      <Setter Property="BorderBrush" Value="#6B2127" />
-      <Setter Property="Foreground" Value="#F87171" />
+    <Style Selector="controls|AppButton.icon.navigation-history">
+      <Setter Property="Height" Value="30" />
+    </Style>
+    <Style Selector="controls|AppButton.icon.icon-compact">
+      <Setter Property="Width" Value="28" />
+      <Setter Property="Height" Value="28" />
+    </Style>
+    <Style Selector="controls|AppButton.icon.icon-micro">
+      <Setter Property="Width" Value="24" />
+      <Setter Property="Height" Value="24" />
+    </Style>
+    <Style Selector="controls|AppButton.icon.icon-copy">
+      <Setter Property="Width" Value="28" />
+      <Setter Property="Height" Value="24" />
+    </Style>
+    <Style Selector="controls|AppIcon">
+      <Setter Property="Fill" Value="Transparent" />
+      <Setter Property="Stroke" Value="{DynamicResource TextMutedBrush}" />
+      <Setter Property="StrokeThickness" Value="1.2" />
+      <Setter Property="StrokeLineCap" Value="Round" />
+      <Setter Property="StrokeJoin" Value="Round" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="controls|AppIcon.icon-micro">
+      <Setter Property="Size" Value="10" />
+    </Style>
+    <Style Selector="controls|AppIcon.icon-small">
+      <Setter Property="Size" Value="12" />
+    </Style>
+    <Style Selector="controls|AppButton.expand-icon controls|AppIcon.ui-icon">
+      <Setter Property="Size" Value="12" />
+    </Style>
+    <Style Selector="controls|AppIcon.icon-large">
+      <Setter Property="Size" Value="16" />
+    </Style>
+    <Style Selector="controls|AppIcon.icon-hero">
+      <Setter Property="Size" Value="24" />
+    </Style>
+    <Style Selector="controls|AppIcon.icon-brand">
+      <Setter Property="Size" Value="46" />
+      <Setter Property="StrokeThickness" Value="2" />
+    </Style>
+    <Style Selector="controls|AppCard">
+      <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="CornerRadius" Value="16" />
+      <Setter Property="Padding" Value="12" />
+      <Setter Property="BoxShadow" Value="{StaticResource SharedSurfaceShadow}" />
+    </Style>
+    <Style Selector="controls|AppButton.closeButton:pointerover controls|AppIcon.ui-icon">
+      <Setter Property="Stroke" Value="#FFFFFF" />
+    </Style>
+    <!-- 危险操作按钮 -->
+    <Style Selector="controls|AppButton.danger">
+      <Setter Property="Background" Value="{DynamicResource DangerButtonBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DangerButtonBorderBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource DangerButtonForegroundBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="14" />
     </Style>
 
     <!-- 容器卡片 -->
-    <Style Selector="Border.card">
-      <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
-      <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="8" />
-      <Setter Property="Padding" Value="12" />
-    </Style>
-
     <!-- 核心：彻底消除任何蓝色蓝框与原生蓝边高光！ -->
-    <Style Selector="TextBox">
+    <Style Selector=".app-input" x:SetterTargetType="controls:AppInput">
       <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="CornerRadius" Value="12" />
       <Setter Property="Padding" Value="9,6" />
       <Setter Property="FontSize" Value="13" />
       <Setter Property="SelectionBrush" Value="#4B5563" />
     </Style>
-    <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+    <Style Selector=".app-input:focus /template/ Border#PART_BorderElement">
       <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
     </Style>
-    <Style Selector="TextBox:focus-within /template/ Border#PART_BorderElement">
+    <Style Selector=".app-input:focus-within /template/ Border#PART_BorderElement">
       <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
     </Style>
-    <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+    <Style Selector=".app-input:pointerover /template/ Border#PART_BorderElement">
       <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
-    </Style>
-
-    <!-- 下拉框无蓝边 -->
-    <Style Selector="ComboBox">
-      <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
-      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-      <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="7" />
-      <Setter Property="FontSize" Value="13" />
-      <Setter Property="Padding" Value="9,5" />
-    </Style>
-    <Style Selector="ComboBox:focus /template/ Border#Background">
-      <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
-    </Style>
-    <Style Selector="ComboBox:pointerover /template/ Border#Background">
-      <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
     </Style>
 
     <!-- 列表项微交互 -->
-    <Style Selector="ListBox">
+    <Style Selector=".app-list-box" x:SetterTargetType="controls:AppListBox">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
     </Style>
     <Style Selector="ListBoxItem">
-      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="CornerRadius" Value="20" />
       <Setter Property="Padding" Value="8,6" />
       <Setter Property="Margin" Value="0,1" />
     </Style>
@@ -217,16 +412,86 @@
       <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
     </Style>
 
+    <Style Selector=".app-check-box" x:SetterTargetType="controls:AppCheckBox">
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector=".app-toggle-button" x:SetterTargetType="controls:AppToggleButton">
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector=".app-toggle-button.settings-nav" x:SetterTargetType="controls:AppToggleButton">
+      <Setter Property="Theme" Value="{StaticResource SettingsNavTheme}" />
+      <Setter Property="Margin" Value="0" />
+    </Style>
+    <Style Selector=".app-toggle-button.settings-nav:pointerover" x:SetterTargetType="controls:AppToggleButton">
+      <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+    </Style>
+    <Style Selector=".app-toggle-button.settings-nav:checked" x:SetterTargetType="controls:AppToggleButton">
+      <Setter Property="Background" Value="{DynamicResource SettingsNavigationSelectionBrush}" />
+    </Style>
+    <Style Selector=".app-numeric-up-down" x:SetterTargetType="controls:AppNumericUpDown">
+      <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="controls|AppSelectableText">
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+
     <!-- 标签页样式 -->
     <Style Selector="TabItem">
       <Setter Property="FontSize" Value="13" />
       <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
       <Setter Property="Padding" Value="12,8" />
-      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="CornerRadius" Value="18" />
     </Style>
     <Style Selector="TabItem:selected">
       <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
+    <Style Selector="controls|AppButton.composer-context-button">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="6,0" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Height" Value="24" />
+    </Style>
+    <Style Selector="controls|AppButton.composer-context-button:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <StyleInclude Source="avares://MossAgent.App/Styles/ComboBoxVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/EditableChoiceVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/NumericFieldVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/CheckBoxVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/SurfaceVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/ActionButtonVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/ConversationTabVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/ChatHeaderVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/ThemePaletteVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/ProjectPickerVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/CardInsetVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/ComposerResponsiveVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/SettingsLayoutVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/TypographyVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/ResponseContentVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/ThemePreviewVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/ThemeModePickerVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/DisclosureVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/PreviewScrollBarVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/SettingsDialogVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/ApprovalVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/AutomationVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/ConversationTurnVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/WindowCaptionVariants.axaml" />
   </Application.Styles>
 </Application>

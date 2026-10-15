@@ -14,12 +14,14 @@ public sealed class TaskBrowserSessionManagerTests
         var embedded = new RecordingBrowserSessionFactory();
         await using var manager = CreateManager(DefaultBrowserKind.Embedded, external, embedded);
 
-        var session = manager.GetLazySession(Guid.NewGuid());
+        var taskId = Guid.NewGuid();
+        var session = manager.GetLazySession(taskId);
         await session.GetPageTextAsync(CancellationToken.None);
 
         Assert.Equal(0, external.CreateCount);
         Assert.Equal(1, embedded.CreateCount);
         Assert.Equal(BrowserEngine.Embedded, embedded.LastOptions?.Engine);
+        Assert.Equal(taskId, embedded.LastOptions?.TaskId);
     }
 
     [Theory]
@@ -39,6 +41,70 @@ public sealed class TaskBrowserSessionManagerTests
         Assert.Equal(1, external.CreateCount);
         Assert.Equal(0, embedded.CreateCount);
         Assert.Equal(expectedEngine, external.LastOptions?.Engine);
+    }
+
+    [Fact]
+    public async Task ReleaseBeforeFirstUse_PreventsStaleSessionFromLaunching()
+    {
+        var external = new RecordingBrowserSessionFactory();
+        var embedded = new RecordingBrowserSessionFactory();
+        await using var manager = CreateManager(DefaultBrowserKind.Chrome, external, embedded);
+        var taskId = Guid.NewGuid();
+        var session = manager.GetLazySession(taskId);
+
+        await manager.ReleaseAsync(taskId);
+
+        await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+            session.GetPageTextAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(0, external.CreateCount);
+    }
+
+    [Fact]
+    public async Task ReleaseAfterFirstUse_DisposesSessionAndAllowsFreshResume()
+    {
+        var external = new RecordingBrowserSessionFactory();
+        var embedded = new RecordingBrowserSessionFactory();
+        await using var manager = CreateManager(DefaultBrowserKind.Chrome, external, embedded);
+        var taskId = Guid.NewGuid();
+        var session = manager.GetLazySession(taskId);
+        await session.GetPageTextAsync(TestContext.Current.CancellationToken);
+        var previous = external.LastSession;
+
+        await manager.ReleaseAsync(taskId);
+
+        Assert.True(previous?.IsDisposed);
+        await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+            session.GetPageTextAsync(TestContext.Current.CancellationToken));
+        var resumed = manager.GetLazySession(taskId);
+        Assert.NotSame(session, resumed);
+        await resumed.GetPageTextAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(2, external.CreateCount);
+    }
+
+    [Fact]
+    public async Task ConcurrentTasks_KeepOwnershipProfilesAndReleaseIndependent()
+    {
+        var external = new RecordingBrowserSessionFactory();
+        var embedded = new RecordingBrowserSessionFactory();
+        await using var manager = CreateManager(DefaultBrowserKind.Embedded, external, embedded);
+        var firstId = Guid.NewGuid();
+        var secondId = Guid.NewGuid();
+        var first = manager.GetLazySession(firstId);
+        var second = manager.GetLazySession(secondId);
+        Assert.Equal(0, embedded.CreateCount);
+        await first.GetPageTextAsync(TestContext.Current.CancellationToken);
+        var firstOptions = embedded.LastOptions;
+        await second.GetPageTextAsync(TestContext.Current.CancellationToken);
+        var secondOptions = embedded.LastOptions;
+        var surviving = embedded.LastSession;
+
+        Assert.Equal(firstId, firstOptions?.TaskId);
+        Assert.Equal(secondId, secondOptions?.TaskId);
+        Assert.NotEqual(firstOptions?.ProfileDirectory, secondOptions?.ProfileDirectory);
+        await manager.ReleaseAsync(firstId);
+        Assert.False(surviving?.IsDisposed);
+        await second.GetPageTextAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(2, embedded.CreateCount);
     }
 
     private static TaskBrowserSessionManager CreateManager(

@@ -8,7 +8,8 @@ internal static class AvaloniaUiThread
         Action action,
         CancellationToken cancellationToken)
     {
-        if (Dispatcher.UIThread.CheckAccess())
+        cancellationToken.ThrowIfCancellationRequested();
+        if (Avalonia.Application.Current is null || Dispatcher.UIThread.CheckAccess())
         {
             action();
             return;
@@ -22,7 +23,8 @@ internal static class AvaloniaUiThread
         Func<Task> action,
         CancellationToken cancellationToken)
     {
-        if (Dispatcher.UIThread.CheckAccess())
+        cancellationToken.ThrowIfCancellationRequested();
+        if (Avalonia.Application.Current is null || Dispatcher.UIThread.CheckAccess())
         {
             await action();
             return;
@@ -37,7 +39,8 @@ internal static class AvaloniaUiThread
         Func<T> action,
         CancellationToken cancellationToken)
     {
-        if (Dispatcher.UIThread.CheckAccess())
+        cancellationToken.ThrowIfCancellationRequested();
+        if (Avalonia.Application.Current is null || Dispatcher.UIThread.CheckAccess())
         {
             return action();
         }
@@ -50,7 +53,8 @@ internal static class AvaloniaUiThread
         Func<Task<T>> action,
         CancellationToken cancellationToken)
     {
-        if (Dispatcher.UIThread.CheckAccess())
+        cancellationToken.ThrowIfCancellationRequested();
+        if (Avalonia.Application.Current is null || Dispatcher.UIThread.CheckAccess())
         {
             return await action();
         }

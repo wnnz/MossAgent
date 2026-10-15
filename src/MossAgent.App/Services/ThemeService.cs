@@ -1,99 +1,145 @@
-using System.Text.Json;
+using Avalonia;
 using Avalonia.Styling;
 using Avalonia.Threading;
-using MossAgent.Infrastructure.Persistence;
+using Avalonia.Media;
+using MossAgent.Application.Settings;
 
 namespace MossAgent.App.Services;
 
 /// <summary>
 /// 界面主题管理服务实现，支持明暗主题在本地存储中持久化并应用到 Avalonia 应用程序。
 /// </summary>
-public sealed class ThemeService : IThemeService
+public sealed class ThemeService : IThemeService, IDisposable
 {
-    private readonly string? _settingsFilePath;
-    private bool _isDarkMode = true;
+    private readonly IAppearancePreferenceStore? _store;
+    private readonly Avalonia.Application? _application;
+    private ThemePreference _preference;
+    private ThemePalette _lightPalette;
+    private ThemePalette _darkPalette;
 
-    public ThemeService(AppDataPaths? appDataPaths = null)
+    public ThemeService(IAppearancePreferenceStore? store = null)
     {
-        if (appDataPaths is not null)
-        {
-            _settingsFilePath = Path.Combine(appDataPaths.Root, "ui-settings.json");
-            LoadSavedTheme();
-        }
-        else if (Avalonia.Application.Current is not null)
-        {
-            _isDarkMode = Avalonia.Application.Current.RequestedThemeVariant != ThemeVariant.Light;
-        }
+        _store = store;
+        _preference = store?.LoadTheme() ?? ThemePreference.System;
+        _lightPalette = store?.LoadThemePalette(ThemePreference.Light) ?? ThemePalette.LightDefault;
+        _darkPalette = store?.LoadThemePalette(ThemePreference.Dark) ?? ThemePalette.DarkDefault;
+        _application = Avalonia.Application.Current;
+        if (_application is not null) _application.PropertyChanged += OnApplicationPropertyChanged;
+        ApplyTheme();
     }
 
     /// <inheritdoc />
-    public bool IsDarkMode => _isDarkMode;
+    public bool IsDarkMode => Preference == ThemePreference.System
+        ? Avalonia.Application.Current?.ActualThemeVariant == ThemeVariant.Dark
+        : Preference == ThemePreference.Dark;
+
+    public ThemePreference Preference => _preference;
+
+    public string? PersistenceError { get; private set; }
 
     /// <inheritdoc />
     public event Action? ThemeChanged;
 
+    public void Dispose()
+    {
+        if (_application is not null) _application.PropertyChanged -= OnApplicationPropertyChanged;
+    }
+
     /// <inheritdoc />
     public void ToggleTheme()
     {
-        _isDarkMode = !_isDarkMode;
-        var nextVariant = _isDarkMode ? ThemeVariant.Dark : ThemeVariant.Light;
-
-        Dispatcher.UIThread.Post(() =>
-        {
-            if (Avalonia.Application.Current is not null)
-            {
-                Avalonia.Application.Current.RequestedThemeVariant = nextVariant;
-            }
-            ThemeChanged?.Invoke();
-        });
-
-        SaveTheme();
+        SetPreference(IsDarkMode ? ThemePreference.Light : ThemePreference.Dark);
     }
 
-    private void LoadSavedTheme()
+    public void SetPreference(ThemePreference preference)
     {
+        if (!Enum.IsDefined(preference)) return;
+        _preference = preference;
         try
         {
-            if (_settingsFilePath is not null && File.Exists(_settingsFilePath))
-            {
-                var json = File.ReadAllText(_settingsFilePath);
-                using var doc = JsonDocument.Parse(json);
-                if (doc.RootElement.TryGetProperty("Theme", out var themeProp))
-                {
-                    var saved = themeProp.GetString();
-                    _isDarkMode = !string.Equals(saved, "Light", StringComparison.OrdinalIgnoreCase);
-                }
-            }
+            _store?.SaveTheme(preference);
+            PersistenceError = null;
         }
         catch
         {
-            _isDarkMode = true;
+            PersistenceError = "主题已应用，但保存失败。请检查应用数据目录的写入权限。";
         }
 
-        var variant = _isDarkMode ? ThemeVariant.Dark : ThemeVariant.Light;
+        ApplyTheme();
+    }
+
+    public ThemePalette PaletteFor(ThemePreference theme) => theme switch
+    {
+        ThemePreference.Light => _lightPalette,
+        ThemePreference.Dark => _darkPalette,
+        _ => IsDarkMode ? _darkPalette : _lightPalette
+    };
+
+    public void SetPalette(ThemePreference theme, ThemePalette? palette)
+    {
+        if (theme is not (ThemePreference.Light or ThemePreference.Dark))
+            throw new ArgumentOutOfRangeException(nameof(theme));
+        var applied = palette ?? (theme == ThemePreference.Dark
+            ? ThemePalette.DarkDefault : ThemePalette.LightDefault);
+        if (theme == ThemePreference.Dark) _darkPalette = applied;
+        else _lightPalette = applied;
+        try
+        {
+            _store?.SaveThemePalette(theme, palette);
+            PersistenceError = null;
+        }
+        catch
+        {
+            PersistenceError = "主题颜色已应用，但保存失败。请检查应用数据目录的写入权限。";
+        }
+
+        ApplyTheme();
+    }
+
+    private void ApplyTheme()
+    {
+        var variant = ToVariant(_preference);
         Dispatcher.UIThread.Post(() =>
         {
-            if (Avalonia.Application.Current is not null)
+            if (Avalonia.Application.Current is { } application)
             {
-                Avalonia.Application.Current.RequestedThemeVariant = variant;
+                application.RequestedThemeVariant = variant;
+                ApplyPalette(application, ThemeVariant.Light, _lightPalette);
+                ApplyPalette(application, ThemeVariant.Dark, _darkPalette);
             }
             ThemeChanged?.Invoke();
         });
     }
 
-    private void SaveTheme()
+    private void OnApplicationPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs args)
     {
-        if (_settingsFilePath is null) return;
-        try
+        if (_preference == ThemePreference.System
+            && args.Property.Name == nameof(Avalonia.Application.ActualThemeVariant))
+            ThemeChanged?.Invoke();
+    }
+
+    private static void ApplyPalette(Avalonia.Application application, ThemeVariant variant,
+        ThemePalette palette)
+    {
+        SetBrush("AppBackgroundBrush", palette.Background);
+        SetBrush("TextPrimaryBrush", palette.Foreground);
+        SetBrush("PrimaryButtonBackgroundBrush", palette.AccentHex
+            ?? (variant == ThemeVariant.Dark ? "#F4F4F6" : ThemePalette.LightDefault.Foreground));
+        SetBrush("PrimaryButtonForegroundBrush", palette.AccentHex is null
+            && variant == ThemeVariant.Dark ? "#0A0A0C" : "#FFFFFF");
+
+        void SetBrush(string key, string hex)
         {
-            var dir = Path.GetDirectoryName(_settingsFilePath);
-            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-            var json = JsonSerializer.Serialize(new { Theme = _isDarkMode ? "Dark" : "Light" });
-            File.WriteAllText(_settingsFilePath, json);
-        }
-        catch
-        {
-            // 忽略写入失败，保证界面交互无阻
+            if (application.TryGetResource(key, variant, out var value)
+                && value is SolidColorBrush brush)
+                brush.Color = Color.Parse(hex);
         }
     }
+
+    private static ThemeVariant ToVariant(ThemePreference preference) => preference switch
+    {
+        ThemePreference.Dark => ThemeVariant.Dark,
+        ThemePreference.System => ThemeVariant.Default,
+        _ => ThemeVariant.Light
+    };
 }

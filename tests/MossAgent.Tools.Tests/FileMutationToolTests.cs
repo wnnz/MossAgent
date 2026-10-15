@@ -131,7 +131,7 @@ public sealed class FileMutationToolTests
                 Context(root),
                 cancellationToken);
 
-            await Assert.ThrowsAsync<IOException>(action);
+            await Assert.ThrowsAnyAsync<IOException>(action);
             Assert.Equal("external change", await File.ReadAllTextAsync(path, cancellationToken));
         }
         finally

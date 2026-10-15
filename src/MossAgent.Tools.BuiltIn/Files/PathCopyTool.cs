@@ -2,7 +2,7 @@ using MossAgent.Tools.Abstractions;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class PathCopyTool(AuthorizedPathResolver paths) : IAgentTool
+public sealed class PathCopyTool(AuthorizedPathResolver paths) : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "filesystem.copy_path",
@@ -10,6 +10,12 @@ public sealed class PathCopyTool(AuthorizedPathResolver paths) : IAgentTool
         """{"type":"object","required":["source","destination"],"properties":{"source":{"type":"string"},"destination":{"type":"string"},"overwrite":{"type":"boolean"}}}""",
         ToolRiskLevel.Mutation,
         ToolCapability.FileRead | ToolCapability.FileWrite);
+
+    public void ValidateRequest(ToolRequest request, ToolExecutionContext context)
+    {
+        paths.Resolve(request.Arguments.GetRequiredString("source"), context);
+        paths.Resolve(request.Arguments.GetRequiredString("destination"), context);
+    }
 
     public async Task<ToolResult> ExecuteAsync(
         ToolRequest request,
@@ -33,6 +39,7 @@ public sealed class PathCopyTool(AuthorizedPathResolver paths) : IAgentTool
             return ToolResult.Failure("源路径不存在。", "path_not_found");
         }
 
+        context.FileSnapshots.Forget(context.TaskId, FileSnapshotReader.CacheKey(destination));
         return ToolResult.Success($"已复制：{source} -> {destination}");
     }
 

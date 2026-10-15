@@ -9,5 +9,7 @@ public sealed record AiProvider(
     Guid? ProxyId,
     bool IsDefault,
     bool IsEnabled,
-    IReadOnlyDictionary<string, string> Headers);
-
+    IReadOnlyDictionary<string, string> Headers)
+{
+    public override string ToString() => Name;
+}

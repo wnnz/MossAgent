@@ -1,0 +1,25 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Controls.AppAttachmentChip"
+                   x:Name="Chip" Classes="app-attachment-chip" x:CompileBindings="False"
+                   ToolTip.Tip="{Binding DisplayPath, ElementName=Chip}">
+  <ui:AppBorder Classes="attachment-chip-surface">
+    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="7">
+      <ui:AppIcon x:Name="FileIcon" Classes="ui-icon attachment-file-icon"
+                   Data="{DynamicResource UiIconDocument}" IsHitTestVisible="False" />
+      <StackPanel x:Name="FileDetails" Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+        <ui:AppText x:Name="PathLabel" Classes="attachment-path"
+                     Text="{Binding DisplayPath, ElementName=Chip}" TextTrimming="CharacterEllipsis" />
+        <ui:AppText x:Name="SizeText" Classes="subtle attachment-size"
+                     Text="{Binding SizeLabel, ElementName=Chip}" />
+      </StackPanel>
+      <ui:AppIconButton x:Name="RemoveButton" Grid.Column="2" Classes="attachment-remove"
+                        Label="{x:Static text:AttachmentChipText.RemoveLabel}"
+                        IconData="{DynamicResource UiIconClose}"
+                        Command="{Binding RemoveCommand, ElementName=Chip}"
+                        IsVisible="{Binding HasRemoveAction, ElementName=Chip}" />
+    </Grid>
+  </ui:AppBorder>
+</ui:AppUserControl>

@@ -1,0 +1,28 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Style Selector="controls|AppCard.sidebar-search-surface">
+    <Setter Property="Width" Value="270" />
+  </Style>
+  <Style Selector="controls|AppButton.sidebar-search-trigger.filter-active">
+    <Setter Property="Background" Value="{DynamicResource SettingsSelectionBrush}" />
+  </Style>
+  <Style Selector="controls|AppButton.sidebar-search-clear controls|AppIcon.ui-icon">
+    <Setter Property="Size" Value="12" />
+  </Style>
+  <Style Selector=".app-input.sidebar-search-input" x:SetterTargetType="controls:AppInput">
+    <Setter Property="Padding" Value="4,2" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+  <Style Selector=".app-input.sidebar-search-input /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="controls|AppText.sidebar-search-empty">
+    <Setter Property="Margin" Value="4,2,4,4" />
+  </Style>
+</Styles>

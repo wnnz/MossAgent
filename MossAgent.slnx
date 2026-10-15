@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/MossAgent.Agent/MossAgent.Agent.csproj" />
     <Project Path="src/MossAgent.App/MossAgent.App.csproj" />
+    <Project Path="src/MossAgent.App.Analyzers/MossAgent.App.Analyzers.csproj" />
     <Project Path="src/MossAgent.Application/MossAgent.Application.csproj" />
     <Project Path="src/MossAgent.Browser/MossAgent.Browser.csproj" />
     <Project Path="src/MossAgent.Domain/MossAgent.Domain.csproj" />
@@ -15,6 +16,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/MossAgent.Agent.Tests/MossAgent.Agent.Tests.csproj" />
     <Project Path="tests/MossAgent.App.Tests/MossAgent.App.Tests.csproj" />
+    <Project Path="tests/MossAgent.App.Visual.Tests/MossAgent.App.Visual.Tests.csproj" />
     <Project Path="tests/MossAgent.Tools.Tests/MossAgent.Tools.Tests.csproj" />
     <Project Path="tests/MossAgent.Platform.Windows.Tests/MossAgent.Platform.Windows.Tests.csproj" />
     <Project Path="tests/MossAgent.Browser.Tests/MossAgent.Browser.Tests.csproj" />

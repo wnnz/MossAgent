@@ -1,0 +1,33 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Style Selector="Grid.composer-context-layout">
+    <Setter Property="ColumnSpacing" Value="8" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="StackPanel.composer-agent-menu">
+    <Setter Property="Width" Value="230" />
+  </Style>
+  <Style Selector=".app-scroll-viewer.composer-agent-options" x:SetterTargetType="controls:AppScrollViewer">
+    <Setter Property="MaxHeight" Value="240" />
+    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+  </Style>
+  <Style Selector="Grid.composer-root">
+    <Setter Property="Margin" Value="24,0,28,16" />
+  </Style>
+  <Style Selector="Grid.composer-root.compact-composer">
+    <Setter Property="Margin" Value="15,0,19,20" />
+  </Style>
+  <Style Selector="Grid.compact-composer controls|AppBorder.composer-context-surface">
+    <Setter Property="Margin" Value="15,0,15,0" />
+    <Setter Property="Height" Value="32" />
+  </Style>
+  <Style Selector="Grid.compact-composer controls|AppCard.card-inset-composer">
+    <Setter Property="Padding" Value="14,0,14,6" />
+  </Style>
+  <Style Selector="Grid.compact-composer .app-input.composer-input" x:SetterTargetType="controls:AppInput">
+    <Setter Property="Padding" Value="2,0,2,4" />
+    <Setter Property="MinHeight" Value="36" />
+  </Style>
+</Styles>

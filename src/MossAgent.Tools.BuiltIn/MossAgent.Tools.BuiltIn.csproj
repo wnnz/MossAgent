@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <PackageReference Include="JsonSchema.Net" />
     <ProjectReference Include="../MossAgent.Tools.Abstractions/MossAgent.Tools.Abstractions.csproj" />
   </ItemGroup>
 </Project>
-

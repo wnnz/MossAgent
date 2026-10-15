@@ -10,13 +10,15 @@ internal static class WorkspaceConversationMapper
         if (message.Role == MessageRole.Tool
             && WorkspaceToolMessageSerializer.TryDeserialize(message.Content, out var tool))
         {
-            return ChatMessageViewModel.CreateTool(tool!);
+            return ChatMessageViewModel.CreateTool(tool!, message.ToolCallId, createdAt: message.CreatedAt);
         }
-        return new ChatMessageViewModel(ToDisplayRole(message.Role), message.Content);
+        return new ChatMessageViewModel(ToDisplayRole(message.Role), message.Content, createdAt: message.CreatedAt);
     }
 
     public static ModelMessage ToModelMessage(ConversationMessage message) =>
-        new(ToModelRole(message.Role), message.Content, message.ToolCallId);
+        message.Role == MessageRole.Tool
+            ? HistoricalToolObservation.Create(message.Content, message.ToolCallId)
+            : new(ToModelRole(message.Role), message.Content);
 
     private static string ToDisplayRole(MessageRole role) =>
         role switch
@@ -32,7 +34,7 @@ internal static class WorkspaceConversationMapper
         {
             MessageRole.User => ModelRole.User,
             MessageRole.Assistant => ModelRole.Assistant,
-            MessageRole.Tool => ModelRole.Tool,
-            _ => ModelRole.System
+            MessageRole.System => ModelRole.System,
+            _ => throw new InvalidOperationException("Unknown conversation role.")
         };
 }

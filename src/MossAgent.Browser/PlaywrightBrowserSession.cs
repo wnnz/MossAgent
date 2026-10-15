@@ -198,12 +198,15 @@ public sealed class PlaywrightBrowserSession : IBrowserSession
 
     public async ValueTask DisposeAsync()
     {
-        if (_closeContext)
+        try
         {
-            await _context.CloseAsync();
+            if (_closeContext)
+                await _context.CloseAsync().ConfigureAwait(false);
         }
-
-        _playwright.Dispose();
+        finally
+        {
+            _playwright.Dispose();
+        }
     }
 
     private void SynchronizeTabs()

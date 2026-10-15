@@ -1,0 +1,56 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Style Selector=".app-combo-box" x:SetterTargetType="controls:AppComboBox">
+    <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Padding" Value="9,5" />
+  </Style>
+  <Style Selector=".app-combo-box:focus /template/ Border#Background">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
+  </Style>
+  <Style Selector=".app-combo-box:focus-visible /template/ Border#HighlightBackground">
+    <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
+  </Style>
+  <Style Selector=".app-combo-box:focus /template/ ContentControl#ContentPresenter, .app-combo-box:focus:pressed /template/ ContentControl#ContentPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+  <Style Selector=".app-combo-box:focus /template/ PathIcon#DropDownGlyph, .app-combo-box:focus:pressed /template/ PathIcon#DropDownGlyph">
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <Style Selector=".app-combo-box:pointerover /template/ Border#Background, .app-combo-box:pressed /template/ Border#Background">
+    <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
+  </Style>
+  <Style Selector=".app-combo-box /template/ Border#PopupBorder">
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="4" />
+    <Setter Property="BoxShadow" Value="{StaticResource SharedSurfaceShadow}" />
+  </Style>
+  <Style Selector="ComboBoxItem">
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="9,6" />
+  </Style>
+  <Style Selector="ComboBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="ComboBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SettingsSelectionBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="ComboBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SettingsSelectionBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+</Styles>

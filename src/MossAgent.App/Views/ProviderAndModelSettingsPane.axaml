@@ -1,164 +1,193 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
              x:Class="MossAgent.App.Views.ProviderAndModelSettingsPane"
              x:CompileBindings="False">
-  <Grid Margin="16">
-    <!-- 主界面：供应商与模型双栏列表 -->
-    <Grid RowDefinitions="Auto,*">
-      <!-- 顶栏：标题与全局操作 -->
-      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
-        <StackPanel Spacing="2">
-          <TextBlock Text="AI 供应商与模型配置" FontSize="17" FontWeight="SemiBold" />
-          <TextBlock Text="集中管理各供应商连接凭据及挂载的语言模型。" Classes="muted" FontSize="12" />
-        </StackPanel>
-        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-          <Button Content="↻ 刷新" Classes="ghost" Command="{Binding Providers.RefreshCommand}" />
-          <Button Content="＋ 新建供应商" Classes="primary" Command="{Binding Providers.OpenCreateFormCommand}" />
-        </StackPanel>
-      </Grid>
-
-      <!-- 双栏内容区 -->
-      <Grid Grid.Row="1" ColumnDefinitions="360,*">
-        <!-- 左侧：供应商列表卡片 -->
-        <Border Classes="card" Margin="0,0,12,0">
-          <Grid RowDefinitions="Auto,*">
-            <TextBlock Text="已配置供应商" Classes="muted" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8" />
-            <ListBox Grid.Row="1" ItemsSource="{Binding Providers.Items}" SelectedItem="{Binding Providers.SelectedItem}">
-              <ListBox.ItemTemplate>
-                <DataTemplate>
-                  <Border BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="6,10">
-                    <Grid ColumnDefinitions="*,Auto">
-                      <StackPanel Spacing="2">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                          <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" />
-                          <TextBlock Text="默认" Classes="subtle" FontSize="10" IsVisible="{Binding IsDefault}" />
-                        </StackPanel>
-                        <TextBlock Text="{Binding BaseUri}" Classes="subtle" FontSize="11" TextTrimming="CharacterEllipsis" />
-                      </StackPanel>
-                      <Button Grid.Column="1" Content="编辑" Classes="ghost" Padding="6,2" FontSize="11"
-                              Command="{Binding $parent[UserControl].DataContext.Providers.OpenEditFormCommand}" />
-                    </Grid>
-                  </Border>
-                </DataTemplate>
-              </ListBox.ItemTemplate>
-            </ListBox>
-          </Grid>
-        </Border>
-
-        <!-- 右侧：当前选中供应商下的模型列表 -->
-        <Border Grid.Column="1" Classes="card">
-          <Grid RowDefinitions="Auto,*">
-            <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,10">
-              <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                <TextBlock Text="模型列表" Classes="muted" FontWeight="SemiBold" FontSize="13" />
-                <TextBlock Text="{Binding Providers.SelectedItem.Name, StringFormat='({0})'}" Classes="subtle" FontSize="12" />
-              </StackPanel>
-              <Button Grid.Column="1" Content="获取模型" Classes="ghost"
-                      Command="{Binding Models.FetchModelsCommand}" Margin="0,0,8,0" />
-              <Button Grid.Column="2" Content="＋ 添加模型" Classes="primary"
-                      Command="{Binding Models.OpenCreateFormCommand}" />
-            </Grid>
-
-            <ListBox Grid.Row="1" ItemsSource="{Binding Models.Models}" SelectedItem="{Binding Models.SelectedModel}">
-              <ListBox.ItemTemplate>
-                <DataTemplate>
-                  <Border BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="6,8">
-                    <Grid ColumnDefinitions="*,Auto,Auto">
-                      <StackPanel Spacing="2">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                          <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="13" />
-                          <TextBlock Text="{Binding ModelId, StringFormat='({0})'}" Classes="subtle" FontSize="11" />
-                        </StackPanel>
-                        <TextBlock Text="{Binding ContextLength, StringFormat='上下文：{0} tokens'}" Classes="subtle" FontSize="11" />
-                      </StackPanel>
-                      <Button Grid.Column="1" Content="编辑" Classes="ghost" Padding="6,2" FontSize="11" Margin="0,0,4,0"
-                              Command="{Binding $parent[UserControl].DataContext.Models.OpenEditFormCommand}" />
-                      <Button Grid.Column="2" Content="删除" Classes="danger" Padding="6,2" FontSize="11"
-                              Command="{Binding $parent[UserControl].DataContext.Models.DeleteModelCommand}" />
-                    </Grid>
-                  </Border>
-                </DataTemplate>
-              </ListBox.ItemTemplate>
-            </ListBox>
-          </Grid>
-        </Border>
-      </Grid>
+  <Grid x:Name="ProviderSettingsRoot">
+    <Grid Classes="settings-content-column"
+          RowDefinitions="Auto,*">
+    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,24">
+      <StackPanel Spacing="5">
+        <ui:AppText Text="AI 提供商" Classes="settings-title" />
+        <ui:AppText Text="管理连接、模型列表与模型参数。" Classes="settings-description" />
+        <ui:AppText Text="{Binding Models.Status}" Classes="muted type-12"
+                   Classes.status-error="{Binding Models.HasStatusError}"
+                   TextWrapping="Wrap" IsVisible="{Binding Models.HasStatus}" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <ui:AppActionButton Label="刷新" IconData="{StaticResource UiIconRefresh}" Classes="ghost" Command="{Binding Providers.RefreshCommand}" />
+        <ui:AppActionButton Label="添加提供商" IconData="{StaticResource UiIconPlus}" Classes="primary" Command="{Binding Providers.OpenCreateFormCommand}" />
+      </StackPanel>
     </Grid>
 
-    <!-- 弹窗 1：供应商编辑模态弹窗 -->
-    <Border Background="{DynamicResource OverlayBackgroundBrush}" IsVisible="{Binding Providers.IsFormOpen}" Margin="-16">
-      <Border Classes="card" Width="480" VerticalAlignment="Center" HorizontalAlignment="Center"
-              Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderDefaultBrush}"
-              BoxShadow="0 12 36 0 #55000000">
-        <ScrollViewer MaxHeight="520">
-          <StackPanel Spacing="9" Margin="4">
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Text="{Binding Providers.EditorTitle}" FontSize="16" FontWeight="SemiBold" />
-              <Button Grid.Column="1" Content="✕" Classes="ghost icon" Command="{Binding Providers.CloseFormCommand}" />
-            </Grid>
-            <TextBlock Text="供应商名称" Classes="muted" FontSize="12" />
-            <TextBox Text="{Binding Providers.Name}" PlaceholderText="例如 OpenAI / DeepSeek" />
-            <TextBlock Text="协议类型" Classes="muted" FontSize="12" />
-            <ComboBox ItemsSource="{Binding Providers.Protocols}" SelectedItem="{Binding Providers.Protocol}" HorizontalAlignment="Stretch" />
-            <TextBlock Text="Base URL" Classes="muted" FontSize="12" />
-            <TextBox Text="{Binding Providers.BaseUrl}" />
-            <TextBlock Text="API Key" Classes="muted" FontSize="12" />
-            <TextBox Text="{Binding Providers.ApiKey}" PasswordChar="●" PlaceholderText="留空保留原密钥" />
-            <TextBlock Text="网络代理" Classes="muted" FontSize="12" />
-            <ComboBox ItemsSource="{Binding Providers.Proxies}" SelectedItem="{Binding Providers.SelectedProxy}"
-                      DisplayMemberBinding="{Binding Name}" HorizontalAlignment="Stretch" />
-            <WrapPanel Margin="0,4">
-              <CheckBox Content="设为默认" IsChecked="{Binding Providers.IsDefault}" Margin="0,0,16,0" />
-              <CheckBox Content="启用" IsChecked="{Binding Providers.IsEnabled}" />
-            </WrapPanel>
-            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,6,0,0">
-              <Button Classes="primary" Content="保存供应商" Command="{Binding Providers.SaveCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
-              <Button Grid.Column="1" Classes="danger" Content="{Binding Providers.DeleteButtonText}" Command="{Binding Providers.DeleteCommand}" />
-              <Button Grid.Column="2" Content="取消" Command="{Binding Providers.CloseFormCommand}" />
-            </Grid>
-            <TextBlock Text="{Binding Providers.Status}" Classes="subtle" FontSize="11" TextWrapping="Wrap" />
-          </StackPanel>
-        </ScrollViewer>
-      </Border>
-    </Border>
+    <ui:AppScrollViewer Grid.Row="1" Classes="settings-page-scroll">
+      <StackPanel Spacing="12">
+      <ui:AppCard x:Name="CatalogNotice" Classes="card card-inset-emphasis" IsVisible="{Binding Models.Catalog.HasNotice}">
+        <ui:AppText Text="{Binding Models.Catalog.Notice}" Classes="muted type-12"
+                    Classes.status-error="{Binding Models.Catalog.HasLoadError}" TextWrapping="Wrap" />
+      </ui:AppCard>
+      <ui:AppCard x:Name="EmptyCatalog" Classes="card card-inset-emphasis" IsVisible="{Binding Models.Catalog.IsEmpty}">
+        <StackPanel Spacing="6">
+          <ui:AppText Classes="type-14 weight-semibold" Text="还没有 AI 提供商" />
+          <ui:AppText Text="添加提供商后，可以获取模型列表或手动配置模型。"
+                     Classes="muted type-12" />
+          <ui:AppButton Content="添加提供商" Classes="ghost" HorizontalAlignment="Left"
+                  Command="{Binding Providers.OpenCreateFormCommand}" />
+        </StackPanel>
+      </ui:AppCard>
+      <ui:AppItemsControl x:Name="ProviderRows" ItemsSource="{Binding Models.ProviderGroups}"
+                          IsEnabled="{Binding Models.Catalog.CanMutate}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <ui:AppCard Classes="card card-inset-popover" Margin="0,0,0,10">
+              <Grid RowDefinitions="Auto,Auto">
+                <ui:AppProviderSettingsHeader Provider="{Binding Provider}"
+                      ModelCount="{Binding ModelCount}" IsExpanded="{Binding IsExpanded}"
+                      ToggleCommand="{Binding $parent[UserControl].DataContext.Models.ToggleProviderCommand}"
+                      ToggleCommandParameter="{Binding}"
+                      EditCommand="{Binding $parent[UserControl].DataContext.Providers.EditProviderCommand}" />
 
-    <!-- 弹窗 2：模型编辑模态弹窗 -->
-    <Border Background="{DynamicResource OverlayBackgroundBrush}" IsVisible="{Binding Models.IsFormOpen}" Margin="-16">
-      <Border Classes="card" Width="480" VerticalAlignment="Center" HorizontalAlignment="Center"
-              Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderDefaultBrush}"
-              BoxShadow="0 12 36 0 #55000000">
-        <ScrollViewer MaxHeight="520">
-          <StackPanel Spacing="9" Margin="4">
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Text="配置模型" FontSize="16" FontWeight="SemiBold" />
-              <Button Grid.Column="1" Content="✕" Classes="ghost icon" Command="{Binding Models.CloseFormCommand}" />
+                <ui:AppBorder Grid.Row="1" IsVisible="{Binding IsExpanded}" Margin="36,8,0,0" Padding="0,8,0,0"
+                        Classes="divider-top">
+                  <StackPanel Spacing="4">
+                    <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,4">
+                      <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <ui:AppText Text="模型" Classes="muted type-12 weight-semibold" />
+                      </StackPanel>
+                      <ui:AppButton Grid.Column="1" Content="获取模型" Classes="ghost provider-settings-action" Margin="0,0,8,0"
+                              Command="{Binding $parent[UserControl].DataContext.Models.FetchModelsForProviderCommand}"
+                              CommandParameter="{Binding}" />
+                      <ui:AppActionButton Grid.Column="2" Label="添加模型" IconData="{StaticResource UiIconPlus}" Classes="ghost provider-settings-action"
+                              Command="{Binding $parent[UserControl].DataContext.Models.AddModelForProviderCommand}"
+                              CommandParameter="{Binding}" />
+                    </Grid>
+                    <ui:AppText Text="尚未配置模型。可获取模型列表，或手动添加模型。" Classes="subtle type-11" Margin="10,6" IsVisible="{Binding HasNoModels}" />
+                    <ui:AppItemsControl ItemsSource="{Binding Models}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <ui:AppModelSettingsRow Model="{Binding}"
+                              EditCommand="{Binding $parent[UserControl].DataContext.Models.EditProviderModelCommand}"
+                              DeleteCommand="{Binding $parent[UserControl].DataContext.Models.DeleteProviderModelCommand}" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ui:AppItemsControl>
+                  </StackPanel>
+                </ui:AppBorder>
+              </Grid>
+            </ui:AppCard>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ui:AppItemsControl>
+      </StackPanel>
+    </ui:AppScrollViewer>
+    </Grid>
+
+    <ui:AppSettingsDialog Classes="wide" IsOpen="{Binding Providers.IsFormOpen}"
+                          Title="{Binding Providers.EditorTitle}" CloseLabel="关闭提供商配置"
+                          CloseCommand="{Binding Providers.CloseFormCommand}">
+            <StackPanel Spacing="9">
+            <ui:AppText Text="提供商名称" Classes="muted type-12" />
+             <ui:AppInput Text="{Binding Providers.Name}" PlaceholderText="例如 OpenAI / DeepSeek"
+                          AutomationProperties.Name="提供商名称" />
+            <ui:AppText Text="协议类型" Classes="muted type-12" />
+             <ui:AppComboBox ItemsSource="{Binding Providers.ProtocolOptions}"
+                       SelectedItem="{Binding Providers.SelectedProtocolOption}"
+                       HorizontalAlignment="Stretch" DisplayMemberBinding="{Binding DisplayName}"
+                       AutomationProperties.Name="协议类型" />
+            <ui:AppText Text="Base URL" Classes="muted type-12" />
+             <ui:AppInput Text="{Binding Providers.BaseUrl}" AutomationProperties.Name="Base URL" />
+            <ui:AppText Text="API Key" Classes="muted type-12" />
+             <ui:AppInput Text="{Binding Providers.ApiKey}" PasswordChar="●" PlaceholderText="{Binding Providers.ApiKeyPlaceholder}"
+                          AutomationProperties.Name="API Key" />
+            <ui:AppText Text="网络代理" Classes="muted type-12" />
+             <ui:AppComboBox ItemsSource="{Binding Providers.Proxies}" SelectedItem="{Binding Providers.SelectedProxy}"
+                       DisplayMemberBinding="{Binding Name}" HorizontalAlignment="Stretch"
+                       AutomationProperties.Name="网络代理" />
+            <WrapPanel Margin="0,4">
+              <ui:AppCheckBox Content="设为默认" IsChecked="{Binding Providers.IsDefault}" Margin="0,0,16,0" />
+              <ui:AppCheckBox Content="启用" IsChecked="{Binding Providers.IsEnabled}" />
+            </WrapPanel>
+            </StackPanel>
+          <ui:AppSettingsDialog.Footer>
+          <StackPanel Spacing="4">
+            <ui:AppText Text="{Binding Providers.EditorNotice}" IsVisible="{Binding Providers.HasEditorNotice}"
+                        Classes="muted type-12" TextWrapping="Wrap" />
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+<ui:AppButton Classes="primary" Content="保存提供商" Command="{Binding Providers.SaveCommand}" HorizontalAlignment="Stretch" />
+              <ui:AppButton Grid.Column="1" Classes="danger" Content="{Binding Providers.DeleteButtonText}"
+                            Command="{Binding Providers.DeleteCommand}" IsVisible="{Binding Providers.HasSelectedProvider}" />
+              <ui:AppButton Grid.Column="2" Content="取消" Command="{Binding Providers.CloseFormCommand}" />
             </Grid>
-            <TextBlock Text="模型 ID" Classes="muted" FontSize="12" />
-            <TextBox Text="{Binding Models.ModelId}" PlaceholderText="例如 gpt-5" />
-            <TextBlock Text="显示名称" Classes="muted" FontSize="12" />
-            <TextBox Text="{Binding Models.DisplayName}" />
+            <ui:AppText Text="{Binding Providers.Status}" Classes="subtle type-11"
+                        Classes.status-error="{Binding Providers.HasValidationError}"
+                        TextWrapping="Wrap" />
+          </StackPanel>
+          </ui:AppSettingsDialog.Footer>
+    </ui:AppSettingsDialog>
+
+    <ui:AppSettingsDialog Classes="wide" IsOpen="{Binding Models.IsFormOpen}"
+                          Title="配置模型" CloseLabel="关闭模型配置"
+                          CloseCommand="{Binding Models.CloseFormCommand}">
+            <StackPanel Spacing="9">
+            <ui:AppText Text="模型 ID" Classes="muted type-12" />
+             <ui:AppInput Text="{Binding Models.ModelId}" PlaceholderText="例如 gpt-5"
+                          AutomationProperties.Name="模型 ID" />
+            <ui:AppText Text="显示名称" Classes="muted type-12" />
+             <ui:AppInput Text="{Binding Models.DisplayName}" AutomationProperties.Name="显示名称" />
             <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
               <StackPanel>
-                <TextBlock Text="上下文长度" Classes="muted" FontSize="12" />
-                <NumericUpDown Value="{Binding Models.ContextLength}" Minimum="1024" Maximum="4000000" />
+                <ui:AppText Text="上下文长度" Classes="muted type-12" />
+                 <ui:AppNumericUpDown Value="{Binding Models.ContextLength}" Minimum="1024" Maximum="4000000"
+                                      AutomationProperties.Name="上下文长度" />
               </StackPanel>
               <StackPanel Grid.Column="1">
-                <TextBlock Text="思考强度" Classes="muted" FontSize="12" />
-                <ComboBox ItemsSource="{Binding Models.ReasoningEfforts}" SelectedItem="{Binding Models.ReasoningEffort}" HorizontalAlignment="Stretch" />
+                <ui:AppText Text="最大输出 Token" Classes="muted type-12" />
+                 <ui:AppNumericUpDown Value="{Binding Models.MaximumOutputTokens}" Minimum="256" Maximum="1000000"
+                                      AutomationProperties.Name="最大输出 Token" />
+              </StackPanel>
+            </Grid>
+            <StackPanel>
+              <ui:AppText Text="思考强度" Classes="muted type-12" />
+               <ui:AppEditableChoice Choices="{Binding Models.ReasoningEfforts}" SelectedChoice="{Binding Models.ReasoningEffort}"
+                               HorizontalAlignment="Stretch" AutomationProperties.Name="思考强度" />
+            </StackPanel>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+              <StackPanel>
+                <ui:AppText Text="Temperature（可留空）" Classes="muted type-12" />
+                 <ui:AppNumericUpDown Value="{Binding Models.Temperature}" Minimum="0" Maximum="2" Increment="0.1" FormatString="0.0"
+                                      AutomationProperties.Name="Temperature" />
+              </StackPanel>
+              <StackPanel Grid.Column="1">
+                <ui:AppText Text="Top-P（可留空）" Classes="muted type-12" />
+                 <ui:AppNumericUpDown Value="{Binding Models.TopP}" Minimum="0" Maximum="1" Increment="0.05" FormatString="0.00"
+                                      AutomationProperties.Name="Top-P" />
               </StackPanel>
             </Grid>
             <WrapPanel Margin="0,4">
-              <CheckBox Content="默认模型" IsChecked="{Binding Models.IsDefault}" Margin="0,0,16,0" />
-              <CheckBox Content="启用" IsChecked="{Binding Models.IsEnabled}" />
+              <ui:AppCheckBox Content="默认模型" IsChecked="{Binding Models.IsDefault}" Margin="0,0,16,0" />
+              <ui:AppCheckBox Content="启用" IsChecked="{Binding Models.IsEnabled}" />
             </WrapPanel>
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,6,0,0">
-              <Button Classes="primary" Content="保存模型" Command="{Binding Models.SaveModelCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
-              <Button Grid.Column="1" Content="取消" Command="{Binding Models.CloseFormCommand}" />
+            <WrapPanel Margin="0,0,0,4">
+              <ui:AppCheckBox Content="支持图像" IsChecked="{Binding Models.SupportsImages}" Margin="0,0,16,0" />
+              <ui:AppCheckBox Content="支持文件" IsChecked="{Binding Models.SupportsFiles}" />
+            </WrapPanel>
+            <ui:AppText Text="高级参数 JSON（可选）" Classes="muted type-12" />
+             <ui:AppInput Text="{Binding Models.AdvancedJson}" AcceptsReturn="True" TextWrapping="Wrap"
+                      Classes="code-font field-multiline"
+                      AutomationProperties.Name="高级参数 JSON" />
+            </StackPanel>
+          <ui:AppSettingsDialog.Footer>
+          <StackPanel Spacing="4">
+            <ui:AppText Text="{Binding Models.EditorNotice}" IsVisible="{Binding Models.HasEditorNotice}"
+                        Classes="muted type-12" Classes.status-warning="{Binding Models.HasReasoningError}" TextWrapping="Wrap" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+<ui:AppButton Classes="primary" Content="保存模型" Command="{Binding Models.SaveModelCommand}" HorizontalAlignment="Stretch" />
+              <ui:AppButton Grid.Column="1" Content="取消" Command="{Binding Models.CloseFormCommand}" />
             </Grid>
-            <TextBlock Text="{Binding Models.Status}" Classes="subtle" FontSize="11" TextWrapping="Wrap" />
+            <ui:AppText Text="{Binding Models.EditorStatus}" Classes="muted type-12 status-error"
+                        IsVisible="{Binding Models.HasEditorStatus}" TextWrapping="Wrap" />
           </StackPanel>
-        </ScrollViewer>
-      </Border>
-    </Border>
+          </ui:AppSettingsDialog.Footer>
+    </ui:AppSettingsDialog>
   </Grid>
-</UserControl>
+</ui:AppUserControl>

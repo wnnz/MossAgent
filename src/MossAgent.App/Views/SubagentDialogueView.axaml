@@ -1,0 +1,41 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
+             xmlns:views="clr-namespace:MossAgent.App.Views"
+             x:Class="MossAgent.App.Views.SubagentDialogueView"
+             x:CompileBindings="False">
+  <ui:AppItemsControl ItemsSource="{Binding DialogueEntries}">
+    <ItemsControl.ItemTemplate>
+      <DataTemplate>
+        <ui:AppBorder Classes="subagent-event-row"
+                      Classes.tool="{Binding IsTool}"
+                      Classes.answer="{Binding IsAnswer}"
+                      Margin="0,0,0,4">
+          <Grid ColumnDefinitions="14,*" ColumnSpacing="8">
+            <Panel Width="14" Height="14" VerticalAlignment="Top">
+              <ui:AppIcon Classes="ui-icon icon-small" Data="{StaticResource UiIconClock}"
+                          IsVisible="{Binding IsStatus}" />
+              <ui:AppIcon Classes="ui-icon icon-small" Data="{StaticResource UiIconTerminal}"
+                          IsVisible="{Binding IsTool}" />
+              <ui:AppIcon Classes="ui-icon icon-small" Data="{StaticResource UiIconAssistant}"
+                          IsVisible="{Binding IsAnswer}" />
+              <ui:AppIcon Classes="ui-icon icon-small" Data="{StaticResource UiIconReview}"
+                          IsVisible="{Binding IsTask}" />
+              <ui:AppIcon Classes="ui-icon icon-small" Data="{StaticResource UiIconDocument}"
+                          IsVisible="{Binding IsOther}" />
+            </Panel>
+            <StackPanel Grid.Column="1" Spacing="2">
+              <ui:AppText Classes="muted type-10-5 weight-semibold"
+                          Text="{Binding DisplayRole}" IsVisible="{Binding ShowLabel}" />
+              <ui:AppSelectableText Classes="type-12-5" Classes.code-font="{Binding IsTool}"
+                                    Classes.content-font="{Binding !IsTool}"
+                                    Text="{Binding Content}" TextWrapping="Wrap" IsVisible="{Binding !IsAnswer}" />
+              <ui:AppResponseContent Classes="compact" Blocks="{Binding Blocks}" IsVisible="{Binding IsAnswer}"
+                                     CopyCodeCommand="{Binding $parent[views:SubagentDialogueView].CopyCodeCommand}" />
+            </StackPanel>
+          </Grid>
+        </ui:AppBorder>
+      </DataTemplate>
+    </ItemsControl.ItemTemplate>
+  </ui:AppItemsControl>
+</ui:AppUserControl>

@@ -19,11 +19,11 @@ public sealed class ApprovalViewModelTests
 
         Assert.True(viewModel.IsPending);
         Assert.Equal("write_file", viewModel.ToolName);
-        viewModel.ApproveCommand.Execute(null);
+        viewModel.ApproveCommand.Execute(viewModel.CurrentRequestId);
         Assert.True(await first);
         Assert.Equal("run_shell", viewModel.ToolName);
 
-        viewModel.DenyCommand.Execute(null);
+        viewModel.DenyCommand.Execute(viewModel.CurrentRequestId);
         Assert.False(await second);
         Assert.False(viewModel.IsPending);
     }
@@ -43,11 +43,11 @@ public sealed class ApprovalViewModelTests
 
         cancellation.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await cancelled);
-        viewModel.ApproveCommand.Execute(null);
+        viewModel.ApproveCommand.Execute(viewModel.CurrentRequestId);
         Assert.True(await first);
         Assert.Equal("browser_click", viewModel.ToolName);
 
-        viewModel.ApproveCommand.Execute(null);
+        viewModel.ApproveCommand.Execute(viewModel.CurrentRequestId);
         Assert.True(await third);
         Assert.False(viewModel.IsPending);
     }
@@ -67,7 +67,7 @@ public sealed class ApprovalViewModelTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await first);
         Assert.Equal("run_shell", viewModel.ToolName);
 
-        viewModel.ApproveCommand.Execute(null);
+        viewModel.ApproveCommand.Execute(viewModel.CurrentRequestId);
         Assert.True(await second);
         Assert.False(viewModel.IsPending);
     }
@@ -87,7 +87,7 @@ public sealed class ApprovalViewModelTests
         {
             var approved = index % 2 == 0;
             Assert.Equal($"tool_{index}", viewModel.ToolName);
-            (approved ? viewModel.ApproveCommand : viewModel.DenyCommand).Execute(null);
+            (approved ? viewModel.ApproveCommand : viewModel.DenyCommand).Execute(viewModel.CurrentRequestId);
             Assert.Equal(approved, await results[index]);
         }
 

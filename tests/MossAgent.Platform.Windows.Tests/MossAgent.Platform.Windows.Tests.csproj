@@ -4,10 +4,16 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Shared/ManualToolTimeProvider.cs" Link="Fixtures/ManualToolTimeProvider.cs" />
+    <Compile Include="../Shared/OneShotToolTestTimer.cs" Link="Fixtures/OneShotToolTestTimer.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <ProjectReference Include="../../src/MossAgent.Platform.Windows/MossAgent.Platform.Windows.csproj" />
+    <ProjectReference Include="../../src/MossAgent.Tools.BuiltIn/MossAgent.Tools.BuiltIn.csproj" />
+    <ProjectReference Include="../../src/MossAgent.Mcp/MossAgent.Mcp.csproj" />
+    <ProjectReference Include="../../src/MossAgent.Infrastructure/MossAgent.Infrastructure.csproj" />
   </ItemGroup>
 </Project>
-

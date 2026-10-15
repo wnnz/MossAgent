@@ -1,15 +1,17 @@
-using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 
 namespace MossAgent.Agent.Tests;
 
-public sealed partial class ArchitectureConstraintsTests
+public sealed class ArchitectureConstraintsTests
 {
     [Fact]
-    public void HandwrittenCSharpFiles_ContainAtMostOneTypeAndStayUnderLimit()
+    public void HandwrittenCSharpFiles_ContainExactlyOneTypeAndStayUnderLimit()
     {
         var root = FindRepositoryRoot();
-        var files = Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
+        var files = new[] { "src", "tests" }
+            .SelectMany(directory => Directory.EnumerateFiles(Path.Combine(root, directory), "*.cs", SearchOption.AllDirectories))
             .Where(static path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"))
             .Where(static path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"));
         var failures = new List<string>();
@@ -17,15 +19,28 @@ public sealed partial class ArchitectureConstraintsTests
         foreach (var file in files)
         {
             var lines = File.ReadAllLines(file);
-            var typeCount = lines.Count(line => TypeDeclarationRegex().IsMatch(line));
-            if (typeCount > 1 || lines.Length > 500)
+            var typeCount = CountTypes(string.Join(Environment.NewLine, lines));
+            if (typeCount != 1 || lines.Length > 500)
             {
                 failures.Add($"{Path.GetRelativePath(root, file)}: types={typeCount}, lines={lines.Length}");
             }
         }
 
-        Assert.Empty(failures);
+        Assert.True(failures.Count == 0, string.Join(Environment.NewLine, failures));
     }
+
+    [Theory]
+    [InlineData("class Real { string fixture = \"class Example { }\"; }", 1)]
+    [InlineData("class Real { string fixture = \"\"\"class First { } class Second { }\"\"\"; }", 1)]
+    [InlineData("// class Ignored { }\nclass Real { }", 1)]
+    [InlineData("class First { } class Second { }", 2)]
+    [InlineData("class Outer { private class Nested { } }", 2)]
+    [InlineData("record Entry(); struct Value { } interface Contract { } enum Kind { Item } delegate void Callback();", 5)]
+    public void TypeCounting_UsesDeclarationsInsteadOfFixtureText(string source, int expected) =>
+        Assert.Equal(expected, CountTypes(source));
+
+    private static int CountTypes(string source) => CSharpSyntaxTree.ParseText(source).GetRoot()
+        .DescendantNodes().Count(node => node is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax);
 
     private static string FindRepositoryRoot()
     {
@@ -38,6 +53,4 @@ public sealed partial class ArchitectureConstraintsTests
         return current?.FullName ?? throw new DirectoryNotFoundException("找不到 MossAgent 仓库根目录。");
     }
 
-    [GeneratedRegex(@"^\s*(public|internal|private|protected|file)?\s*(sealed\s+|abstract\s+|static\s+|partial\s+|readonly\s+)*(class|record|struct|interface|enum|delegate)\s+")]
-    private static partial Regex TypeDeclarationRegex();
 }

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <ProjectReference Include="../../src/MossAgent.App/MossAgent.App.csproj" />
+    <Compile Include="../Shared/SharedVisualTestApplication.cs" Link="Testing/SharedVisualTestApplication.cs" />
+    <Using Include="MossAgent.Testing" />
+  </ItemGroup>
+</Project>

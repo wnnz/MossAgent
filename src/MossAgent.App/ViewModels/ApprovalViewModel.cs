@@ -2,6 +2,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.Tools.Abstractions;
+using MossAgent.App.Resources;
 
 namespace MossAgent.App.ViewModels;
 
@@ -13,58 +14,90 @@ public sealed class ApprovalViewModel : ObservableObject
     private bool _isPending;
     private string _toolName = string.Empty;
     private string _description = string.Empty;
+    private string _workingDirectory = string.Empty;
+    private string _summary = string.Empty;
+    private string _taskLabel = string.Empty;
+    private string _riskLabel = string.Empty;
+    private Guid? _currentRequestId;
+    private int _pendingCount;
+    private ToolApprovalContentViewModel? _contentPreview;
 
     public ApprovalViewModel()
     {
-        ApproveCommand = new RelayCommand(() => ResolveCurrent(true), () => IsPending);
-        DenyCommand = new RelayCommand(() => ResolveCurrent(false), () => IsPending);
+        ApproveCommand = new RelayCommand<Guid?>(requestId => ResolveCurrent(requestId, true), CanResolve);
+        DenyCommand = new RelayCommand<Guid?>(requestId => ResolveCurrent(requestId, false), CanResolve);
     }
 
-    public IRelayCommand ApproveCommand { get; }
-    public IRelayCommand DenyCommand { get; }
+    public IRelayCommand<Guid?> ApproveCommand { get; }
+    public IRelayCommand<Guid?> DenyCommand { get; }
     public bool IsPending { get => _isPending; private set => SetProperty(ref _isPending, value); }
     public string ToolName { get => _toolName; private set => SetProperty(ref _toolName, value); }
     public string Description { get => _description; private set => SetProperty(ref _description, value); }
+    public string WorkingDirectory { get => _workingDirectory; private set => SetProperty(ref _workingDirectory, value); }
+    public string Summary { get => _summary; private set => SetProperty(ref _summary, value); }
+    public string TaskLabel { get => _taskLabel; private set => SetProperty(ref _taskLabel, value); }
+    public string RiskLabel { get => _riskLabel; private set => SetProperty(ref _riskLabel, value); }
+    public Guid? CurrentRequestId { get => _currentRequestId; private set => SetProperty(ref _currentRequestId, value); }
+    public ToolApprovalContentViewModel? ContentPreview { get => _contentPreview; private set => SetProperty(ref _contentPreview, value); }
+    public string QueueLabel => PendingCount > 1 ? ApprovalText.Format("Queue", PendingCount - 1) : string.Empty;
+    public bool HasQueuedRequests => PendingCount > 1;
+    public int PendingCount
+    {
+        get => _pendingCount;
+        private set
+        {
+            if (!SetProperty(ref _pendingCount, value)) return;
+            OnPropertyChanged(nameof(QueueLabel));
+            OnPropertyChanged(nameof(HasQueuedRequests));
+        }
+    }
+
+    public ValueTask<bool> RequestAsync(ToolDescriptor descriptor, ToolRequest request, CancellationToken cancellationToken) =>
+        RequestAsync(descriptor, request, null, cancellationToken);
 
     public async ValueTask<bool> RequestAsync(
         ToolDescriptor descriptor,
         ToolRequest request,
+        ToolExecutionContext? context,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        _ = request;
-        var pending = new ToolApprovalRequestViewModel(descriptor);
-        var becameCurrent = Enqueue(pending);
+        var pending = new ToolApprovalRequestViewModel(descriptor, request, context);
+        Enqueue(pending);
 
         using var registration = cancellationToken.Register(
             () => Cancel(pending, cancellationToken));
-        if (becameCurrent)
-        {
-            await RefreshPresentationAsync();
-        }
+        await RefreshPresentationAsync();
 
         return await pending.Completion.Task;
     }
 
-    private bool Enqueue(ToolApprovalRequestViewModel pending)
+    private void Enqueue(ToolApprovalRequestViewModel pending)
     {
         lock (_lock)
         {
             _queue.Enqueue(pending);
             if (_current is not null)
             {
-                return false;
+                return;
             }
 
             ActivateNextLocked();
-            return ReferenceEquals(_current, pending);
         }
     }
 
-    private void ResolveCurrent(bool approved)
+    private bool CanResolve(Guid? requestId)
+    {
+        lock (_lock)
+            return _current is not null && !_current.Completion.Task.IsCompleted
+                && requestId == _current.RequestId;
+    }
+
+    private void ResolveCurrent(Guid? requestId, bool approved)
     {
         lock (_lock)
         {
+            if (_current is null || requestId != _current.RequestId) return;
             _current?.Completion.TrySetResult(approved);
             _current = null;
             ActivateNextLocked();
@@ -135,14 +168,25 @@ public sealed class ApprovalViewModel : ObservableObject
     private void RefreshPresentation()
     {
         ToolApprovalRequestViewModel? current;
+        int pendingCount;
         lock (_lock)
         {
             current = _current;
+            pendingCount = _queue.Count + (current is null ? 0 : 1);
         }
 
+        if (!ReferenceEquals(ContentPreview, current?.ContentPreview)) ContentPreview?.Close();
+        ContentPreview = current?.ContentPreview;
         IsPending = current is not null;
         ToolName = current?.ToolName ?? string.Empty;
         Description = current?.Description ?? string.Empty;
+        WorkingDirectory = current?.WorkingDirectory ?? string.Empty;
+        Summary = current?.Summary ?? string.Empty;
+        TaskLabel = current?.TaskId is Guid taskId ? ApprovalText.Format("Task", taskId)
+            : current is null ? string.Empty : ApprovalText.Get("ContextUnavailable");
+        RiskLabel = current?.RiskLabel ?? string.Empty;
+        PendingCount = pendingCount;
+        CurrentRequestId = current?.RequestId;
         ApproveCommand.NotifyCanExecuteChanged();
         DenyCommand.NotifyCanExecuteChanged();
     }

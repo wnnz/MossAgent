@@ -18,43 +18,57 @@ public sealed class WorkspaceRunExecutor(
         CancellationToken cancellationToken)
     {
         var history = await workspaces.GetMessagesAsync(state.Task.Id, cancellationToken);
-        var messages = history.Where(message => message.Role != MessageRole.Tool)
-            .Select(WorkspaceConversationMapper.ToModelMessage).ToList();
+        if (history.Any(message => message.TaskId != state.Task.Id))
+            throw new InvalidOperationException("Conversation history belongs to another task.");
+        var messages = history.Select(WorkspaceConversationMapper.ToModelMessage).ToList();
         WorkspaceAttachmentContextAppender.AppendToLastUserMessage(
             messages, state.AttachmentContext);
         var request = new AgentRunRequest(
             state.Provider,
             state.Model,
             messages,
-            context);
+            context,
+            AgentInstructions: state.AgentInstructions);
         var failed = false;
+        TaskFailureReason? failureReason = null;
         await foreach (var agentEvent in agent.RunAsync(request, cancellationToken))
         {
-            failed |= agentEvent is AgentFailureEvent;
+            if (agentEvent is AgentFailureEvent failure)
+            {
+                if (!failed) failureReason = TaskFailureClassifier.FromCode(failure.Code);
+                failed = true;
+            }
             if (agentEvent is AgentToolEvent tool)
             {
-                await PersistToolEventAsync(state.Task.Id, tool, cancellationToken);
+                await PersistToolEventAsync(state, tool, CancellationToken.None);
             }
             await present(agentEvent);
         }
 
-        return await taskFactory.CompleteAsync(
+        var completed = await taskFactory.CompleteAsync(
             state.Task,
-            state.Assistant.Content,
+            state.PendingAssistantContent,
             failed ? AgentTaskStatus.Failed : AgentTaskStatus.Completed,
-            cancellationToken);
+            cancellationToken, failureReason);
+        state.MarkAssistantPersisted();
+        return completed;
     }
 
     private async Task PersistToolEventAsync(
-        Guid taskId,
+        WorkspaceRunState state,
         AgentToolEvent tool,
         CancellationToken cancellationToken)
     {
-        await workspaces.AppendMessageAsync(
+        var messages = new List<ConversationMessage>();
+        if (!string.IsNullOrWhiteSpace(state.PendingAssistantContent))
+            messages.Add(new ConversationMessage(Guid.NewGuid(), state.Task.Id, MessageRole.Assistant,
+                state.PendingAssistantContent, DateTimeOffset.UtcNow));
+        messages.Add(
             new ConversationMessage(
-                Guid.NewGuid(), taskId, MessageRole.Tool,
+                Guid.NewGuid(), state.Task.Id, MessageRole.Tool,
                 WorkspaceToolMessageSerializer.Serialize(tool),
-                DateTimeOffset.UtcNow, tool.CallId),
-            cancellationToken);
+                DateTimeOffset.UtcNow, tool.CallId));
+        await workspaces.SaveTaskWithMessagesAsync(state.Task, messages, cancellationToken);
+        state.MarkAssistantPersisted();
     }
 }

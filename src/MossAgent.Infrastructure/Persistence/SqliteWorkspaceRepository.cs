@@ -8,6 +8,9 @@ namespace MossAgent.Infrastructure.Persistence;
 public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connections)
     : IWorkspaceRepository
 {
+    private readonly SqliteWorkspaceWriter _writer = new(connections);
+    private readonly SqliteTaskRenameWriter _renameWriter = new(connections);
+
     public async Task<IReadOnlyList<ProjectProfile>> GetProjectsAsync(CancellationToken cancellationToken)
     {
         await using var connection = connections.Create();
@@ -46,27 +49,7 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
     }
 
     public async Task<IReadOnlyList<AgentTask>> GetTasksAsync(
-        Guid projectId,
-        CancellationToken cancellationToken)
-    {
-        await using var connection = connections.Create();
-        await connection.OpenAsync(cancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT id,project_id,title,approval_policy,status,created_at,updated_at,worktree_path
-            FROM agent_tasks
-            WHERE project_id=$project
-              AND NOT EXISTS (
-                  SELECT 1 FROM archived_agent_tasks archived
-                  WHERE archived.task_id=agent_tasks.id)
-            ORDER BY updated_at DESC;
-            """;
-        command.Parameters.AddWithValue("$project", projectId.ToString());
-        return await ReadTasksAsync(command, cancellationToken);
-    }
-
-    public async Task<IReadOnlyList<AgentTask>> GetArchivedTasksAsync(
-        Guid projectId,
+        Guid? projectId,
         CancellationToken cancellationToken)
     {
         await using var connection = connections.Create();
@@ -74,36 +57,92 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
         await using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT task.id,task.project_id,task.title,task.approval_policy,task.status,
-                   task.created_at,task.updated_at,task.worktree_path
+                   task.created_at,task.updated_at,task.worktree_path,
+                   pinned.task_id IS NOT NULL, failure.reason
             FROM agent_tasks task
-            INNER JOIN archived_agent_tasks archived ON archived.task_id=task.id
-            WHERE task.project_id=$project
-            ORDER BY archived.archived_at DESC;
+            LEFT JOIN pinned_agent_tasks pinned ON pinned.task_id=task.id
+            LEFT JOIN agent_task_failures failure ON failure.task_id=task.id
+            WHERE task.project_id IS $project
+              AND NOT EXISTS (
+                  SELECT 1 FROM archived_agent_tasks archived
+                  WHERE archived.task_id=task.id)
+            ORDER BY task.updated_at DESC;
             """;
-        command.Parameters.AddWithValue("$project", projectId.ToString());
-        return await ReadTasksAsync(command, cancellationToken);
+        command.Parameters.AddWithValue("$project", (object?)projectId?.ToString() ?? DBNull.Value);
+        return await SqliteWorkspaceTaskReader.ReadAsync(command, cancellationToken);
     }
 
-    public async Task SaveTaskAsync(AgentTask task, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<AgentTask>> GetArchivedTasksAsync(
+        Guid? projectId,
+        CancellationToken cancellationToken)
     {
         await using var connection = connections.Create();
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO agent_tasks(id,project_id,title,approval_policy,status,created_at,updated_at,worktree_path)
-            VALUES($id,$project,$title,$approval,$status,$created,$updated,$worktree)
-            ON CONFLICT(id) DO UPDATE SET title=$title,approval_policy=$approval,status=$status,
-            updated_at=$updated,worktree_path=$worktree;
+            SELECT task.id,task.project_id,task.title,task.approval_policy,task.status,
+                   task.created_at,task.updated_at,task.worktree_path,
+                   pinned.task_id IS NOT NULL, failure.reason
+            FROM agent_tasks task
+            INNER JOIN archived_agent_tasks archived ON archived.task_id=task.id
+            LEFT JOIN pinned_agent_tasks pinned ON pinned.task_id=task.id
+            LEFT JOIN agent_task_failures failure ON failure.task_id=task.id
+            WHERE task.project_id IS $project
+            ORDER BY archived.archived_at DESC;
             """;
-        command.Parameters.AddWithValue("$id", task.Id.ToString());
-        command.Parameters.AddWithValue("$project", task.ProjectId.ToString());
-        command.Parameters.AddWithValue("$title", task.Title);
-        command.Parameters.AddWithValue("$approval", (int)task.ApprovalPolicy);
-        command.Parameters.AddWithValue("$status", (int)task.Status);
-        command.Parameters.AddWithValue("$created", task.CreatedAt.ToString("O"));
-        command.Parameters.AddWithValue("$updated", task.UpdatedAt.ToString("O"));
-        command.Parameters.AddWithValue("$worktree", (object?)task.WorktreePath ?? DBNull.Value);
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        command.Parameters.AddWithValue("$project", (object?)projectId?.ToString() ?? DBNull.Value);
+        return await SqliteWorkspaceTaskReader.ReadAsync(command, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<AgentTask>> GetPinnedTasksAsync(CancellationToken cancellationToken)
+    {
+        await using var connection = connections.Create();
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT task.id,task.project_id,task.title,task.approval_policy,task.status,
+                   task.created_at,task.updated_at,task.worktree_path,1,failure.reason
+            FROM pinned_agent_tasks pinned
+            INNER JOIN agent_tasks task ON task.id=pinned.task_id
+            LEFT JOIN agent_task_failures failure ON failure.task_id=task.id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM archived_agent_tasks archived WHERE archived.task_id=task.id)
+            ORDER BY pinned.pinned_at DESC;
+            """;
+        return await SqliteWorkspaceTaskReader.ReadAsync(command, cancellationToken);
+    }
+
+    public Task SaveTaskAsync(AgentTask task, CancellationToken cancellationToken) =>
+        _writer.SaveAsync(task, [], cancellationToken);
+
+    public Task<AgentTask?> RenameTaskAsync(AgentTask expectedTask, string title, CancellationToken cancellationToken) =>
+        _renameWriter.RenameAsync(expectedTask, title, cancellationToken);
+
+    public Task SaveTaskWithMessagesAsync(AgentTask task, IReadOnlyList<ConversationMessage> messages,
+        CancellationToken cancellationToken) => _writer.SaveAsync(task, messages, cancellationToken);
+
+    public async Task<bool> SetTaskPinnedAsync(
+        Guid taskId, bool isPinned, CancellationToken cancellationToken)
+    {
+        await using var connection = connections.Create();
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = isPinned
+            ? """
+              INSERT INTO pinned_agent_tasks(task_id,pinned_at)
+              SELECT task.id,$pinned FROM agent_tasks task
+              WHERE task.id=$task AND NOT EXISTS (
+                  SELECT 1 FROM archived_agent_tasks archived WHERE archived.task_id=task.id)
+              ON CONFLICT(task_id) DO UPDATE SET pinned_at=$pinned;
+              """
+            : """
+              DELETE FROM pinned_agent_tasks WHERE task_id=$task
+              AND NOT EXISTS (
+                  SELECT 1 FROM archived_agent_tasks archived WHERE archived.task_id=$task);
+              """;
+        command.Parameters.AddWithValue("$task", taskId.ToString());
+        command.Parameters.AddWithValue("$pinned", DateTimeOffset.UtcNow.ToString("O"));
+        return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
     }
 
     public async Task SetTaskArchivedAsync(
@@ -135,7 +174,7 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
         await using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT id,task_id,role,content,created_at,tool_call_id
-            FROM messages WHERE task_id=$task ORDER BY created_at;
+            FROM messages WHERE task_id=$task ORDER BY created_at,rowid;
             """;
         command.Parameters.AddWithValue("$task", taskId.ToString());
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -152,41 +191,8 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
         return results;
     }
 
-    public async Task AppendMessageAsync(
+    public Task AppendMessageAsync(
         ConversationMessage message,
-        CancellationToken cancellationToken)
-    {
-        await using var connection = connections.Create();
-        await connection.OpenAsync(cancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText = """
-            INSERT INTO messages(id,task_id,role,content,created_at,tool_call_id)
-            VALUES($id,$task,$role,$content,$created,$tool);
-            """;
-        command.Parameters.AddWithValue("$id", message.Id.ToString());
-        command.Parameters.AddWithValue("$task", message.TaskId.ToString());
-        command.Parameters.AddWithValue("$role", (int)message.Role);
-        command.Parameters.AddWithValue("$content", message.Content);
-        command.Parameters.AddWithValue("$created", message.CreatedAt.ToString("O"));
-        command.Parameters.AddWithValue("$tool", (object?)message.ToolCallId ?? DBNull.Value);
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
+        CancellationToken cancellationToken) => _writer.AppendAsync(message, cancellationToken);
 
-    private static async Task<IReadOnlyList<AgentTask>> ReadTasksAsync(
-        SqliteCommand command,
-        CancellationToken cancellationToken)
-    {
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        var results = new List<AgentTask>();
-        while (await reader.ReadAsync(cancellationToken))
-        {
-            results.Add(new AgentTask(
-                Guid.Parse(reader.GetString(0)), Guid.Parse(reader.GetString(1)), reader.GetString(2),
-                (ApprovalPolicy)reader.GetInt32(3), (AgentTaskStatus)reader.GetInt32(4),
-                DateTimeOffset.Parse(reader.GetString(5)), DateTimeOffset.Parse(reader.GetString(6)),
-                reader.IsDBNull(7) ? null : reader.GetString(7)));
-        }
-
-        return results;
-    }
 }

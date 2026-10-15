@@ -1,0 +1,30 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppCodePreview" x:CompileBindings="False">
+  <ui:AppScrollViewer x:Name="Scroller" Classes="file-code-scroll" ScrollChanged="HandleScrollChanged">
+    <ui:AppItemsControl x:Name="RowsHost">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <ui:AppBorder Classes="file-code-row" Classes.added="{Binding IsAdded}"
+                        Classes.removed="{Binding IsRemoved}" Classes.hunk="{Binding IsHeader}"
+                        Classes.search-match="{Binding IsSearchMatch}" Classes.current-match="{Binding IsCurrentSearchMatch}">
+            <Grid ColumnDefinitions="Auto,*">
+              <ui:AppBorder Classes="file-code-gutter">
+                <Grid ColumnDefinitions="Auto,42,Auto">
+                  <ui:AppText Text="{Binding OldNumber}" Classes="file-code-number file-code-old code-font"
+                              IsVisible="{Binding $parent[ui:AppCodePreview].IsDiff}" />
+                  <ui:AppText Grid.Column="1" Text="{Binding NewNumber}" Classes="file-code-number code-font" />
+                  <ui:AppText Grid.Column="2" Text="{Binding Prefix}" Classes="file-code-prefix code-font"
+                              IsVisible="{Binding $parent[ui:AppCodePreview].IsDiff}" />
+                </Grid>
+              </ui:AppBorder>
+              <ui:SyntaxHighlightedSelectableTextBlock Grid.Column="1" Code="{Binding Code}"
+                                                       Language="{Binding Language}" Classes="file-code-text code-font" />
+            </Grid>
+          </ui:AppBorder>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ui:AppItemsControl>
+  </ui:AppScrollViewer>
+</ui:AppUserControl>

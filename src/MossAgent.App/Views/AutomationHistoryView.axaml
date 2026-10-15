@@ -1,0 +1,50 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Views.AutomationHistoryView" x:CompileBindings="False">
+  <Grid RowDefinitions="Auto,Auto,*" RowSpacing="12">
+    <StackPanel Spacing="6">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+        <ui:AppText Text="{x:Static text:AutomationText.History}" Classes="type-14 weight-semibold" VerticalAlignment="Center" />
+        <ui:AppIconButton Grid.Column="1" Label="{x:Static text:AutomationText.Refresh}" Classes="icon-button icon-small"
+                          Command="{Binding RefreshCommand}" IconData="{StaticResource UiIconRefresh}" />
+      </Grid>
+      <ui:AppText Text="{Binding SelectionName}" Classes="type-12 muted" TextTrimming="CharacterEllipsis" />
+      <ui:AppText Text="{x:Static text:AutomationText.HistoryLimit}" IsVisible="{Binding HasSelection}" Classes="type-11 subtle" />
+    </StackPanel>
+    <ui:AppText Grid.Row="1" Text="{Binding OpenError}" IsVisible="{Binding HasOpenError}" Classes="type-12 status-error line-18" TextWrapping="Wrap" />
+    <Grid Grid.Row="2">
+      <ui:AppText Text="{x:Static text:AutomationText.HistoryLoading}" IsVisible="{Binding IsLoading}" Classes="type-12 subtle line-18" />
+      <ui:AppText Text="{x:Static text:AutomationText.NoRuns}" IsVisible="{Binding IsEmpty}" Classes="type-12 subtle line-18" TextWrapping="Wrap" />
+      <StackPanel Spacing="10" IsVisible="{Binding HasLoadError}">
+        <ui:AppText Text="{Binding LoadError}" Classes="type-12 status-error line-18" TextWrapping="Wrap" />
+        <ui:AppButton Content="{x:Static text:AutomationText.Retry}" Classes="ghost button-xs align-leading"
+                      HorizontalAlignment="Left" Command="{Binding RefreshCommand}" />
+      </StackPanel>
+      <ui:AppScrollViewer Classes="automation-history-scroll thin-scrollbar" IsVisible="{Binding HasRuns}">
+        <ui:AppItemsControl ItemsSource="{Binding Runs}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <ui:AppBorder Classes="automation-run-row divider-bottom">
+                <StackPanel Spacing="8">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <ui:AppIconLabel Label="{Binding StatusLabel}" Classes="automation-run-status"
+                                     Classes.completed="{Binding IsCompleted}" Classes.failure="{Binding IsFailure}"
+                                     Classes.attention="{Binding NeedsAttention}" />
+                    <ui:AppText Grid.Column="1" Text="{Binding TriggerLabel}" Classes="type-11 subtle" VerticalAlignment="Center" />
+                  </Grid>
+                  <ui:AppText Text="{Binding StartedAt, StringFormat={}{0:yyyy/MM/dd HH:mm:ss}}" Classes="type-11 subtle" />
+                  <ui:AppText Text="{Binding DurationLabel}" Classes="type-11 subtle" />
+                  <ui:AppText Text="{Binding Detail}" IsVisible="{Binding HasDetail}" Classes="type-12 muted line-18" TextWrapping="Wrap" />
+                  <ui:AppButton Content="{x:Static text:AutomationText.OpenConversation}" Classes="ghost button-xs align-leading"
+                                HorizontalAlignment="Left" Command="{Binding $parent[ui:AppItemsControl].DataContext.OpenCommand}" CommandParameter="{Binding}" />
+                </StackPanel>
+              </ui:AppBorder>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ui:AppItemsControl>
+      </ui:AppScrollViewer>
+    </Grid>
+  </Grid>
+</ui:AppUserControl>

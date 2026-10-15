@@ -7,5 +7,5 @@ public sealed record BrowserLaunchOptions(
     Uri? CdpEndpoint,
     Uri? ProxyUri,
     string? ProxyUsername,
-    string? ProxyPassword);
-
+    string? ProxyPassword,
+    Guid? TaskId = null);

@@ -1,0 +1,43 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
+             x:Class="MossAgent.App.Views.ProjectPickerFlyoutView"
+             x:CompileBindings="False">
+  <ui:AppCard Classes="flyout-surface card-inset-menu">
+    <StackPanel Width="248" Spacing="2">
+      <Grid Margin="2,2,2,4">
+        <ui:AppInput Classes="project-picker-search"
+                     AutomationProperties.Name="{Binding ProjectPickerSearchPlaceholder}"
+                     PlaceholderText="{Binding ProjectPickerSearchPlaceholder}"
+                     Text="{Binding ProjectPickerQuery, Mode=TwoWay}" />
+        <ui:AppIcon Classes="ui-icon icon-small subtle" Data="{StaticResource UiIconSearch}"
+                    HorizontalAlignment="Left" Margin="9,0,0,0" IsHitTestVisible="False" />
+      </Grid>
+      <ui:AppScrollViewer MaxHeight="180" HorizontalScrollBarVisibility="Disabled">
+        <ui:AppItemsControl ItemsSource="{Binding ProjectPickerProjects}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <ui:AppActionButton Classes="ghost project-picker-row align-leading" Classes.selected="{Binding IsSelected}"
+                            HorizontalAlignment="Stretch"
+                            IconData="{StaticResource UiIconFolder}" Label="{Binding Project.Name}"
+                            TrailingIconData="{StaticResource UiIconCheck}" IsTrailingIconVisible="{Binding IsSelected}"
+                            Command="{Binding $parent[Window].DataContext.Workspace.Catalog.SelectProjectCommand}"
+                            CommandParameter="{Binding Project}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ui:AppItemsControl>
+      </ui:AppScrollViewer>
+      <ui:AppActionButton Classes="ghost project-picker-row align-leading" HorizontalAlignment="Stretch"
+                          Label="{Binding ProjectlessChatLabel}" IconData="{StaticResource UiIconCompose}"
+                          Command="{Binding Catalog.NewChatCommand}" />
+      <ui:AppText Classes="muted type-12" Text="{Binding ProjectPickerNoMatches}"
+                  Margin="8,8" IsVisible="{Binding !ProjectPickerHasMatches}" />
+      <ui:AppBorder Classes="divider-fill" Height="1" Margin="4,4" />
+      <ui:AppActionButton Classes="ghost menu-option align-leading"
+                          HorizontalAlignment="Stretch"
+                          Click="HandleCreateProjectClick"
+                          IconData="{StaticResource UiIconPlus}"
+                          Label="{Binding ProjectPickerCreateLabel}" />
+    </StackPanel>
+  </ui:AppCard>
+</ui:AppUserControl>

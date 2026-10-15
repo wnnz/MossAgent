@@ -60,8 +60,28 @@ public sealed class SqliteConfigurationRepository(SqliteConnectionFactory connec
         await transaction.CommitAsync(cancellationToken);
     }
 
-    public Task DeleteProxyAsync(Guid id, CancellationToken cancellationToken) =>
-        DeleteAsync("proxies", id, cancellationToken);
+    public async Task DeleteProxyAsync(Guid id, CancellationToken cancellationToken)
+    {
+        await using var connection = connections.Create();
+        await connection.OpenAsync(cancellationToken);
+        await using var transaction = connection.BeginTransaction();
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = """
+            DELETE FROM proxies WHERE id=$id
+                AND NOT EXISTS (SELECT 1 FROM providers WHERE proxy_id=$id)
+                AND NOT EXISTS (SELECT 1 FROM browser_configuration WHERE proxy_id=$id)
+                AND NOT EXISTS (SELECT 1 FROM mcp_servers WHERE proxy_id=$id);
+            """;
+        command.Parameters.AddWithValue("$id", id.ToString());
+        if (await command.ExecuteNonQueryAsync(cancellationToken) == 0)
+        {
+            command.CommandText = "SELECT EXISTS(SELECT 1 FROM proxies WHERE id=$id)";
+            if (Convert.ToInt64(await command.ExecuteScalarAsync(cancellationToken)) != 0)
+                throw new ProxyInUseException();
+        }
+        await transaction.CommitAsync(cancellationToken);
+    }
 
     public async Task<IReadOnlyList<AiProvider>> GetProvidersAsync(CancellationToken cancellationToken)
     {
@@ -158,12 +178,16 @@ public sealed class SqliteConfigurationRepository(SqliteConnectionFactory connec
             INSERT INTO models(id,provider_id,model_id,display_name,context_length,maximum_output_tokens,
             reasoning_effort,temperature,top_p,supports_images,supports_files,is_default,is_enabled,advanced_parameters_json)
             VALUES($id,$provider,$model,$name,$context,$output,$reasoning,$temperature,$top_p,$images,$files,$default,$enabled,$json)
+            ON CONFLICT(id) DO UPDATE SET model_id=$model,display_name=$name,context_length=$context,
+            maximum_output_tokens=$output,reasoning_effort=$reasoning,temperature=$temperature,top_p=$top_p,
+            supports_images=$images,supports_files=$files,is_default=$default,is_enabled=$enabled,advanced_parameters_json=$json
+            WHERE models.provider_id=$provider
             ON CONFLICT(provider_id,model_id) DO UPDATE SET display_name=$name,context_length=$context,
             maximum_output_tokens=$output,reasoning_effort=$reasoning,temperature=$temperature,top_p=$top_p,
             supports_images=$images,supports_files=$files,is_default=$default,is_enabled=$enabled,advanced_parameters_json=$json;
             """;
         AddModelParameters(command, model);
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        if (await command.ExecuteNonQueryAsync(cancellationToken) == 0) throw new InvalidOperationException();
         await transaction.CommitAsync(cancellationToken);
     }
 

@@ -1,16 +1,24 @@
-using System.Diagnostics;
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Processes;
+using MossAgent.Tools.BuiltIn.Files;
+using MossAgent.Tools.BuiltIn.Resources;
 
 namespace MossAgent.Tools.BuiltIn.Processes;
 
-public sealed class ShellRunTool : IAgentTool
+public sealed class ShellRunTool(AuthorizedPathResolver paths, ITaskProcessLauncher processes)
+    : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "shell.run",
-        "在授权工作目录中运行 PowerShell 命令。",
+        ToolExecutionText.Get("CommandDescription"),
         """{"type":"object","required":["command"],"properties":{"command":{"type":"string"},"workingDirectory":{"type":["string","null"]}}}""",
         ToolRiskLevel.ExternalSideEffect,
         ToolCapability.Process);
+
+    public void ValidateRequest(ToolRequest request, ToolExecutionContext context)
+    {
+        ResolveWorkingDirectory(request.Arguments.GetOptionalString("workingDirectory"), context);
+    }
 
     public async Task<ToolResult> ExecuteAsync(
         ToolRequest request,
@@ -21,61 +29,45 @@ public sealed class ShellRunTool : IAgentTool
         var requestedDirectory = request.Arguments.GetOptionalString("workingDirectory");
         var workingDirectory = ResolveWorkingDirectory(requestedDirectory, context);
         var output = new BoundedTextBuffer(context.MaximumOutputCharacters);
-        using var process = CreateProcess(command, workingDirectory);
-        process.OutputDataReceived += (_, args) => output.AppendLine(args.Data);
-        process.ErrorDataReceived += (_, args) => output.AppendLine(args.Data);
-
-        process.Start();
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
+        await using var process = processes.Start(CreateRequest(command, workingDirectory), cancellationToken);
+        var standardOutput = ReadOutputAsync(process.StandardOutput, output, cancellationToken);
+        var standardError = ReadOutputAsync(process.StandardError, output, cancellationToken);
 
         try
         {
             await process.WaitForExitAsync(cancellationToken);
         }
-        catch (OperationCanceledException)
+        finally
         {
-            if (!process.HasExited)
-            {
-                process.Kill(entireProcessTree: true);
-            }
-
-            throw;
+            await process.TerminateAsync();
+            await Task.WhenAll(standardOutput, standardError).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
         }
+        await Task.WhenAll(standardOutput, standardError);
         var content = output.ToString();
         return process.ExitCode == 0
-            ? ToolResult.Success($"命令执行完成，退出码 {process.ExitCode}。", content)
-            : ToolResult.Failure($"命令执行失败，退出码 {process.ExitCode}。\n{content}", "process_failed");
+            ? ToolResult.Success(ToolExecutionText.Format("CommandCompleted", process.ExitCode), content)
+            : new ToolResult(false, ToolExecutionText.Format("CommandFailed", process.ExitCode), content,
+                ErrorCode: "process_failed");
     }
 
-    private static Process CreateProcess(string command, string workingDirectory)
+    private static async Task ReadOutputAsync(
+        TextReader reader, BoundedTextBuffer output, CancellationToken cancellationToken)
     {
-        var startInfo = new ProcessStartInfo("pwsh")
-        {
-            WorkingDirectory = workingDirectory,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-        startInfo.ArgumentList.Add("-NoLogo");
-        startInfo.ArgumentList.Add("-NoProfile");
-        startInfo.ArgumentList.Add("-NonInteractive");
-        startInfo.ArgumentList.Add("-Command");
-        startInfo.ArgumentList.Add(command);
-        return new Process { StartInfo = startInfo };
+        var buffer = new char[4096];
+        int count;
+        while ((count = await reader.ReadAsync(buffer, cancellationToken)) > 0)
+            output.Append(buffer.AsSpan(0, count));
     }
 
-    private static string ResolveWorkingDirectory(string? requested, ToolExecutionContext context)
+    private static TaskProcessStartRequest CreateRequest(string command, string workingDirectory)
     {
-        var candidate = Path.GetFullPath(requested ?? context.WorkingDirectory, context.WorkingDirectory);
-        var allowed = context.AuthorizedRoots.Append(context.WorkingDirectory)
-            .Select(Path.GetFullPath)
-            .Any(root => candidate.Equals(root, StringComparison.OrdinalIgnoreCase)
-                || candidate.StartsWith(Path.TrimEndingDirectorySeparator(root) + Path.DirectorySeparatorChar,
-                    StringComparison.OrdinalIgnoreCase));
-        return allowed
-            ? candidate
-            : throw new UnauthorizedAccessException("命令工作目录不在授权目录中。");
+        var script = "[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); "
+            + "$OutputEncoding = [Console]::OutputEncoding; & ([ScriptBlock]::Create('"
+            + command.Replace("'", "''", StringComparison.Ordinal) + "'))";
+        return new TaskProcessStartRequest("pwsh", workingDirectory,
+            ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script]);
     }
+
+    private string ResolveWorkingDirectory(string? requested, ToolExecutionContext context) =>
+        paths.Resolve(requested ?? context.WorkingDirectory, context);
 }

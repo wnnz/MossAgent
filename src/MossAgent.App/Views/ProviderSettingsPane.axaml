@@ -1,76 +1,77 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
              x:Class="MossAgent.App.Views.ProviderSettingsPane"
              x:CompileBindings="False">
   <Grid ColumnDefinitions="420,*" Margin="16">
     <!-- 左侧编辑卡片 -->
-    <Border Classes="card" Margin="0,0,16,0">
-      <ScrollViewer>
+    <ui:AppCard Classes="card" Margin="0,0,16,0">
+      <ui:AppScrollViewer>
         <StackPanel Spacing="10">
           <Grid ColumnDefinitions="*,Auto">
-            <TextBlock Text="{Binding EditorTitle}" FontSize="17" FontWeight="SemiBold" />
-            <Button Grid.Column="1" Content="新建" Command="{Binding NewCommand}" />
+            <ui:AppText Classes="type-17 weight-semibold" Text="{Binding EditorTitle}" />
+            <ui:AppButton Grid.Column="1" Content="新建" Command="{Binding NewCommand}" />
           </Grid>
-          <TextBlock Text="API Key 将按当前设置保存在本机 SQLite。" Classes="subtle" TextWrapping="Wrap" />
+          <ui:AppText Text="API Key 将按当前设置保存在本机 SQLite。" Classes="subtle" TextWrapping="Wrap" />
 
-          <TextBlock Text="供应商名称" Classes="muted" />
-          <TextBox Text="{Binding Name}" PlaceholderText="例如 OpenAI / DeepSeek" />
+          <ui:AppText Text="供应商名称" Classes="muted" />
+          <ui:AppInput Text="{Binding Name}" PlaceholderText="例如 OpenAI / DeepSeek" />
 
-          <TextBlock Text="协议类型" Classes="muted" />
-          <ComboBox ItemsSource="{Binding Protocols}" SelectedItem="{Binding Protocol}" HorizontalAlignment="Stretch" />
+          <ui:AppText Text="协议类型" Classes="muted" />
+          <ui:AppComboBox ItemsSource="{Binding Protocols}" SelectedItem="{Binding Protocol}" HorizontalAlignment="Stretch" />
 
-          <TextBlock Text="Base URL" Classes="muted" />
-          <TextBox Text="{Binding BaseUrl}" PlaceholderText="https://api.openai.com/v1" />
+          <ui:AppText Text="Base URL" Classes="muted" />
+          <ui:AppInput Text="{Binding BaseUrl}" PlaceholderText="https://api.openai.com/v1" />
 
-          <TextBlock Text="API Key" Classes="muted" />
-          <TextBox Text="{Binding ApiKey}" PasswordChar="●" />
+          <ui:AppText Text="API Key" Classes="muted" />
+          <ui:AppInput Text="{Binding ApiKey}" PasswordChar="●" />
 
-          <TextBlock Text="网络代理" Classes="muted" />
-          <ComboBox ItemsSource="{Binding Proxies}" SelectedItem="{Binding SelectedProxy}"
+          <ui:AppText Text="网络代理" Classes="muted" />
+          <ui:AppComboBox ItemsSource="{Binding Proxies}" SelectedItem="{Binding SelectedProxy}"
                     DisplayMemberBinding="{Binding Name}" HorizontalAlignment="Stretch" />
 
-          <TextBlock Text="额外请求头 JSON" Classes="muted" />
-          <TextBox Text="{Binding HeadersJson}" AcceptsReturn="True" MinHeight="58" FontFamily="Consolas" />
+          <ui:AppText Text="额外请求头 JSON" Classes="muted" />
+          <ui:AppInput Text="{Binding HeadersJson}" AcceptsReturn="True" Classes="code-font field-multiline" />
 
           <WrapPanel Margin="0,4">
-            <CheckBox Content="设为默认供应商" IsChecked="{Binding IsDefault}" Margin="0,0,16,0" />
-            <CheckBox Content="启用此供应商" IsChecked="{Binding IsEnabled}" />
+            <ui:AppCheckBox Content="设为默认供应商" IsChecked="{Binding IsDefault}" Margin="0,0,16,0" />
+            <ui:AppCheckBox Content="启用此供应商" IsChecked="{Binding IsEnabled}" />
           </WrapPanel>
 
           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="0,6,0,0">
-            <Button Classes="primary" Content="保存供应商" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
-            <Button Grid.Column="1" Classes="danger" Content="{Binding DeleteButtonText}" Command="{Binding DeleteCommand}" />
+            <ui:AppButton Classes="primary" Content="保存供应商" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
+            <ui:AppButton Grid.Column="1" Classes="danger" Content="{Binding DeleteButtonText}" Command="{Binding DeleteCommand}" />
           </Grid>
 
-          <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Classes="muted" Margin="0,6,0,0" />
+          <ui:AppText Text="{Binding Status}" TextWrapping="Wrap" Classes="muted" Margin="0,6,0,0" />
         </StackPanel>
-      </ScrollViewer>
-    </Border>
+      </ui:AppScrollViewer>
+    </ui:AppCard>
 
     <!-- 右侧列表卡片 -->
-    <Border Grid.Column="1" Classes="card">
+    <ui:AppCard Grid.Column="1" Classes="card">
       <Grid RowDefinitions="Auto,*">
         <Grid ColumnDefinitions="*,Auto">
-          <TextBlock Text="已配置供应商" FontSize="17" FontWeight="SemiBold" />
-          <Button Grid.Column="1" Content="刷新" Command="{Binding RefreshCommand}" />
+          <ui:AppText Classes="type-17 weight-semibold" Text="已配置供应商" />
+          <ui:AppButton Grid.Column="1" Content="刷新" Command="{Binding RefreshCommand}" />
         </Grid>
-        <ListBox Grid.Row="1" Margin="0,12,0,0" ItemsSource="{Binding Items}"
+        <ui:AppListBox Grid.Row="1" Margin="0,12,0,0" ItemsSource="{Binding Items}"
                  SelectedItem="{Binding SelectedItem}">
           <ListBox.ItemTemplate>
             <DataTemplate>
-              <Border BorderBrush="#26262F" BorderThickness="0,0,0,1" Padding="8,10">
+              <ui:AppBorder Classes="divider-bottom" Padding="8,10">
                 <Grid ColumnDefinitions="*,Auto">
                   <StackPanel Spacing="2">
-                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                    <TextBlock Text="{Binding BaseUri}" Classes="subtle" FontSize="11" />
+                    <ui:AppText Classes="weight-semibold" Text="{Binding Name}" />
+                    <ui:AppText Text="{Binding BaseUri}" Classes="subtle type-11" />
                   </StackPanel>
-                  <TextBlock Grid.Column="1" Text="{Binding Protocol}" Classes="muted" VerticalAlignment="Center" />
+                  <ui:AppText Grid.Column="1" Text="{Binding Protocol}" Classes="muted" VerticalAlignment="Center" />
                 </Grid>
-              </Border>
+              </ui:AppBorder>
             </DataTemplate>
           </ListBox.ItemTemplate>
-        </ListBox>
+        </ui:AppListBox>
       </Grid>
-    </Border>
+    </ui:AppCard>
   </Grid>
-</UserControl>
+</ui:AppUserControl>

@@ -4,11 +4,11 @@ namespace MossAgent.Tools.Abstractions;
 
 public static class ToolArguments
 {
-    public static string GetRequiredString(this JsonElement element, string name)
+    public static string GetRequiredString(this JsonElement element, string name, bool allowEmpty = false)
     {
         if (!element.TryGetProperty(name, out var property)
             || property.ValueKind != JsonValueKind.String
-            || string.IsNullOrWhiteSpace(property.GetString()))
+            || !allowEmpty && string.IsNullOrWhiteSpace(property.GetString()))
         {
             throw new InvalidOperationException($"参数 {name} 必须是非空字符串。");
         }
@@ -46,4 +46,3 @@ public static class ToolArguments
                 : null;
     }
 }
-

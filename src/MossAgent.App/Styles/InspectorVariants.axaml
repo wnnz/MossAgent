@@ -1,0 +1,120 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:MossAgent.App.Controls">
+  <Styles.Resources><ui:AuditOutcomeConverter x:Key="AuditOutcome" /></Styles.Resources>
+  <Style Selector="StackPanel.inspector-overview-layout">
+    <Setter Property="Spacing" Value="10" />
+  </Style>
+  <Style Selector="StackPanel.inspector-overview-heading">
+    <Setter Property="Spacing" Value="4" />
+  </Style>
+  <Style Selector="Grid.inspector-overview-sources">
+    <Setter Property="Margin" Value="0,6,0,0" />
+  </Style>
+  <Style Selector="StackPanel.inspector-overview-source-list">
+    <Setter Property="Spacing" Value="5" />
+  </Style>
+  <Style Selector="ui|AppBorder.inspector-header">
+    <Setter Property="Padding" Value="12,8" />
+  </Style>
+  <Style Selector="StackPanel.inspector-toolbar">
+    <Setter Property="Spacing" Value="4" />
+  </Style>
+  <Style Selector="ui|AppButton.inspector-tab, ui|AppButton.inspector-header-action">
+    <Setter Property="Width" Value="32" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+  <Style Selector="ui|AppButton.inspector-tab ui|AppIcon, ui|AppButton.inspector-header-action ui|AppIcon">
+    <Setter Property="Size" Value="15" />
+  </Style>
+  <Style Selector="ui|AppButton.inspector-tab.selected">
+    <Setter Property="Background" Value="{DynamicResource CardSubtleBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+  <Style Selector="Grid.inspector-content">
+    <Setter Property="Margin" Value="16,12,16,16" />
+  </Style>
+  <StyleInclude Source="avares://MossAgent.App/Styles/FilePreviewVariants.axaml" />
+  <Style Selector="Grid.terminal-toolbar">
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="Margin" Value="2,0,2,8" />
+    <Setter Property="ColumnSpacing" Value="6" />
+  </Style>
+  <Style Selector="ui|AppText.terminal-status">
+    <Setter Property="Margin" Value="0,0,0,8" />
+  </Style>
+  <Style Selector="ui|AppBorder.terminal-output">
+    <Setter Property="Padding" Value="6" />
+    <Setter Property="Margin" Value="0,0,0,8" />
+  </Style>
+  <Style Selector="Grid.terminal-input-row">
+    <Setter Property="ColumnSpacing" Value="6" />
+  </Style>
+  <Style Selector="Grid.terminal-resize-notice">
+    <Setter Property="ColumnSpacing" Value="4" />
+  </Style>
+  <Style Selector="ui|AppTerminalScreen">
+    <Setter Property="FontFamily" Value="{DynamicResource CodeFontFamily}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="CellHeight" Value="18" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+    <Setter Property="SelectionBrush" Value="{DynamicResource SettingsSelectionBrush}" />
+  </Style>
+  <Style Selector=".app-terminal-viewport" x:SetterTargetType="ui:AppTerminalViewport">
+    <Setter Property="Focusable" Value="True" />
+  </Style>
+  <Style Selector="ui|AppText.terminal-preedit">
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="FontFamily" Value="{DynamicResource CodeFontFamily}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="LineHeight" Value="18" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
+    <Setter Property="TextWrapping" Value="NoWrap" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    <Setter Property="TextDecorations">
+      <Setter.Value>
+        <TextDecorationCollection>
+          <TextDecoration Location="Underline" />
+        </TextDecorationCollection>
+      </Setter.Value>
+    </Setter>
+  </Style>
+  <Style Selector=".app-scroll-viewer.terminal-grid-scroll" x:SetterTargetType="ui:AppScrollViewer">
+    <Setter Property="AllowAutoHide" Value="False" />
+  </Style>
+  <Style Selector=".app-scroll-viewer.terminal-grid-scroll /template/ ScrollBar#PART_HorizontalScrollBar /template/ Thumb">
+    <Setter Property="Background" Value="{DynamicResource SidebarScrollThumbBrush}" />
+  </Style>
+  <Style Selector=".app-scroll-viewer.terminal-grid-scroll /template/ ScrollBar#PART_HorizontalScrollBar /template/ Thumb:pointerover, .app-scroll-viewer.terminal-grid-scroll /template/ ScrollBar#PART_HorizontalScrollBar /template/ Thumb:pressed">
+    <Setter Property="Background" Value="{DynamicResource SidebarScrollThumbHoverBrush}" />
+  </Style>
+  <Style Selector="Grid.audit-row-layout">
+    <Setter Property="Margin" Value="8" />
+    <Setter Property="ColumnSpacing" Value="8" />
+    <Setter Property="RowSpacing" Value="4" />
+  </Style>
+  <Style Selector=".app-audit-execution-row ui|AppIcon.audit-outcome-icon">
+    <Setter Property="Data" Value="{StaticResource UiIconWarning}" />
+    <Setter Property="Stroke" Value="{DynamicResource StatusErrorBrush}" />
+    <Setter Property="Size" Value="14" />
+  </Style>
+  <Style Selector=".app-audit-execution-row.pending ui|AppIcon.audit-outcome-icon">
+    <Setter Property="Data" Value="{StaticResource UiIconClock}" />
+    <Setter Property="Stroke" Value="{DynamicResource TextMutedBrush}" />
+  </Style>
+  <Style Selector=".app-audit-execution-row.success ui|AppIcon.audit-outcome-icon">
+    <Setter Property="Data" Value="{StaticResource UiIconCheck}" />
+    <Setter Property="Stroke" Value="{DynamicResource StatusSuccessBrush}" />
+  </Style>
+  <Style Selector=".app-audit-execution-row.cancelled ui|AppIcon.audit-outcome-icon, .app-audit-execution-row.denied ui|AppIcon.audit-outcome-icon">
+    <Setter Property="Stroke" Value="{DynamicResource StatusWarningBrush}" />
+  </Style>
+  <Style Selector="ListBox.audit-history-list">
+    <Setter Property="Padding" Value="0" />
+  </Style>
+</Styles>

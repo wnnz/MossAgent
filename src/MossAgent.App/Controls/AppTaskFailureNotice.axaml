@@ -1,0 +1,14 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppTaskFailureNotice"
+                   x:Name="Notice" x:CompileBindings="False">
+  <ui:AppCard Classes="card-inset-tight">
+    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+      <ui:AppIcon Classes="ui-icon icon-small status-error failure-notice-icon"
+                  Data="{StaticResource UiIconWarning}" IsHitTestVisible="False" />
+      <ui:AppText Grid.Column="1" Classes="type-13 status-error"
+                  Text="{Binding Hint, ElementName=Notice}" TextWrapping="Wrap" />
+    </Grid>
+  </ui:AppCard>
+</ui:AppUserControl>

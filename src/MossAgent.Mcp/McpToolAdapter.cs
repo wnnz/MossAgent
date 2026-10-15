@@ -20,10 +20,9 @@ public sealed class McpToolAdapter(
         ToolExecutionContext context,
         CancellationToken cancellationToken)
     {
-        var result = await client.CallToolAsync(remoteName, request.Arguments, cancellationToken);
+        var result = await client.CallToolAsync(remoteName, request.Arguments, cancellationToken).ConfigureAwait(false);
         return result.IsError
-            ? ToolResult.Failure(result.Content, "mcp_tool_error")
+            ? ToolResult.Failure("MCP 工具执行失败，请检查 MCP 服务状态或参数。", "mcp_tool_error")
             : ToolResult.Success($"MCP 工具 {remoteName} 执行完成。", result.Content);
     }
 }
-

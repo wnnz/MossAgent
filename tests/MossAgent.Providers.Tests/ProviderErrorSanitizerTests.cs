@@ -1,3 +1,4 @@
+using MossAgent.Application.Models;
 using MossAgent.Domain;
 using Xunit;
 
@@ -40,5 +41,35 @@ public sealed class ProviderErrorSanitizerTests
 
         Assert.Equal(501, result.Length);
         Assert.EndsWith("…", result, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Sanitize_PreservesNonFailureEventIdentity(bool completed)
+    {
+        var provider = ProviderStreamingTestFixture.CreateRequest(ProviderProtocol.OpenAiResponses).Provider;
+        ModelEvent modelEvent = completed ? new ModelCompleted() : new TextDelta("hello");
+
+        var result = ProviderErrorSanitizer.Sanitize(modelEvent, provider);
+
+        Assert.Same(modelEvent, result);
+    }
+
+    [Fact]
+    public void Sanitize_RedactsFailureThroughBaseEventTypeWithoutMutatingIt()
+    {
+        var provider = ProviderStreamingTestFixture.CreateRequest(ProviderProtocol.OpenAiResponses,
+            headers: new Dictionary<string, string> { ["X-Secret"] = "fixture-header-secret" }).Provider;
+        ModelEvent modelEvent = new ModelFailed(provider.ApiKey, $"{provider.Headers["X-Secret"]}\r\n");
+
+        var result = ProviderErrorSanitizer.Sanitize(modelEvent, provider);
+
+        Assert.True(result is ModelFailed);
+        var failure = (ModelFailed)result;
+        Assert.Equal("***", failure.Code);
+        Assert.Equal("***  ", failure.Message);
+        Assert.True(((ModelFailed)modelEvent).Code == provider.ApiKey);
+        Assert.NotSame(modelEvent, result);
     }
 }

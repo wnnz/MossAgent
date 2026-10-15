@@ -1,0 +1,45 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppTaskNavigationRow"
+                   x:Name="Root" x:CompileBindings="False">
+  <Grid Classes="task-navigation-row" Classes.selected="{Binding #Root.IsSelected}"
+        Classes.running="{Binding #Root.IsRunning}" Classes.actions-visible="{Binding #Root.IsOptionsOpen}"
+        ColumnDefinitions="*,Auto" DataContext="{Binding #Root}">
+    <ui:AppBorder Grid.ColumnSpan="2" Classes="transparent-hit-target" />
+    <ui:AppBorder Grid.ColumnSpan="2" Classes="sidebar-selected-surface"
+                  IsVisible="{Binding IsSelected}" IsHitTestVisible="False" />
+    <ui:AppButton x:Name="SelectTaskButton" Grid.ColumnSpan="2" Classes="ghost align-stretch"
+                  Classes.sidebar-task-row="{Binding IsProjectTask}"
+                  Classes.sidebar-recent-task-row="{Binding !IsProjectTask}"
+                  HorizontalAlignment="Stretch" Command="{Binding SelectCommand}"
+                  CommandParameter="{Binding CommandParameter}"
+                  AutomationProperties.Name="{Binding Title}" ToolTip.Tip="{Binding Title}">
+      <ui:AppText Classes="sidebar-row" Text="{Binding Title}" TextTrimming="None" />
+    </ui:AppButton>
+    <ui:AppIcon Grid.Column="1" Classes="sidebar-task-activity" IsVisible="{Binding IsRunning}"
+                HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"
+                AutomationProperties.Name="{Binding RunningLabel}" />
+    <ui:AppIconButton x:Name="TaskOptionsButton" Grid.Column="1" Classes="icon-compact task-options"
+                      Label="{Binding OptionsLabel}" IconData="{DynamicResource UiIconMore}">
+      <Button.Flyout>
+        <ui:AppFlyout Placement="BottomEdgeAlignedRight" DismissOnButtonClick="True"
+                      IsOpen="{Binding #Root.IsOptionsOpen, Mode=TwoWay}">
+          <ui:AppCard Classes="flyout-surface card-inset-tight">
+            <StackPanel Width="170">
+              <ui:AppButton x:Name="PinTaskButton" Classes="ghost align-leading" HorizontalAlignment="Stretch"
+                            Content="{Binding PinLabel}" Command="{Binding TogglePinCommand}"
+                            CommandParameter="{Binding CommandParameter}" />
+              <ui:AppButton x:Name="RenameTaskButton" Classes="ghost align-leading" HorizontalAlignment="Stretch"
+                            Content="{Binding RenameLabel}" Command="{Binding RenameCommand}"
+                            CommandParameter="{Binding CommandParameter}" />
+              <ui:AppButton x:Name="ArchiveTaskButton" Classes="ghost align-leading" HorizontalAlignment="Stretch"
+                            Content="{Binding ArchiveLabel}" Command="{Binding ArchiveCommand}"
+                            CommandParameter="{Binding CommandParameter}" />
+            </StackPanel>
+          </ui:AppCard>
+        </ui:AppFlyout>
+      </Button.Flyout>
+    </ui:AppIconButton>
+  </Grid>
+</ui:AppUserControl>

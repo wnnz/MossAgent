@@ -1,0 +1,40 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Controls.AppBrowserToolbar"
+                   x:Name="Toolbar" x:CompileBindings="False">
+  <Grid RowDefinitions="Auto,Auto" RowSpacing="4">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4">
+      <ui:AppInput x:Name="AddressInput" Classes="browser-address"
+                   Text="{Binding Address, ElementName=Toolbar, Mode=TwoWay}"
+                   AutomationProperties.Name="{x:Static text:BrowserToolbarText.AddressLabel}">
+        <ui:AppInput.KeyBindings>
+          <KeyBinding Gesture="Enter" Command="{Binding NavigateCommand, ElementName=Toolbar}" />
+        </ui:AppInput.KeyBindings>
+      </ui:AppInput>
+      <ui:AppIconButton x:Name="NavigateButton" Grid.Column="1" Classes="icon-compact"
+                        Label="{x:Static text:BrowserToolbarText.NavigateLabel}"
+                        IconData="{DynamicResource UiIconArrowRight}"
+                        Command="{Binding NavigateCommand, ElementName=Toolbar}" />
+    </Grid>
+    <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,Auto,*,Auto" ColumnSpacing="2">
+      <ui:AppIconButton x:Name="BackButton" Classes="icon-compact"
+                        Label="{x:Static text:BrowserToolbarText.BackLabel}"
+                        IconData="{DynamicResource UiIconArrowLeft}"
+                        Command="{Binding BackCommand, ElementName=Toolbar}" />
+      <ui:AppIconButton x:Name="ForwardButton" Grid.Column="1" Classes="icon-compact"
+                        Label="{x:Static text:BrowserToolbarText.ForwardLabel}"
+                        IconData="{DynamicResource UiIconArrowRight}"
+                        Command="{Binding ForwardCommand, ElementName=Toolbar}" />
+      <ui:AppIconButton x:Name="ReloadButton" Grid.Column="2" Classes="icon-compact"
+                        Label="{x:Static text:BrowserToolbarText.ReloadLabel}"
+                        IconData="{DynamicResource UiIconRefresh}"
+                        Command="{Binding ReloadCommand, ElementName=Toolbar}" />
+      <ui:AppIconButton x:Name="DevToolsButton" Grid.Column="4" Classes="icon-compact"
+                        Label="{x:Static text:BrowserToolbarText.DevToolsLabel}"
+                        IconData="{DynamicResource UiIconTerminal}"
+                        Command="{Binding DevToolsCommand, ElementName=Toolbar}" />
+    </Grid>
+  </Grid>
+</ui:AppUserControl>

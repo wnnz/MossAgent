@@ -1,0 +1,127 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
+             x:Class="MossAgent.App.Controls.AppDiffPreview"
+             Classes="app-diff-preview">
+  <ui:AppBorder Classes="diff-preview-surface" ClipToBounds="True">
+    <Grid ColumnDefinitions="*,1,*">
+      <ui:AppScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Disabled">
+      <StackPanel Classes="diff-preview-lines" Spacing="0">
+        <Grid Classes="diff-preview-row" ColumnDefinitions="23,33,*">
+          <ui:AppText Grid.Column="1" Text="1" Classes="subtle type-10 code-font" HorizontalAlignment="Center" />
+          <StackPanel Grid.Column="2" Orientation="Horizontal">
+            <ui:AppText Text="const" Classes="type-10 code-font diff-token-keyword" />
+            <ui:AppText Text=" themePreview" Classes="type-10 code-font diff-token-identifier" />
+            <ui:AppText Text=": " Classes="type-10 code-font" />
+            <ui:AppText Text="ThemeConfig" Classes="type-10 code-font diff-token-type" />
+            <ui:AppText Text=" = {" Classes="type-10 code-font" />
+          </StackPanel>
+        </Grid>
+        <ui:AppBorder Classes="diff-preview-removed">
+        <Grid Classes="diff-preview-row" ColumnDefinitions="23,33,*">
+            <ui:AppBorder Grid.ColumnSpan="2" Classes="diff-preview-removed-gutter" />
+            <ui:AppBorder Classes="diff-preview-remove-rule" />
+            <ui:AppText Grid.Column="1" Text="2" Classes="subtle type-10 code-font" HorizontalAlignment="Center" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+              <ui:AppText Text="  surface" Classes="type-10 code-font diff-token-property" />
+              <ui:AppText Text=": " Classes="type-10 code-font" />
+              <ui:AppText Text="&quot;sidebar&quot;" Classes="type-10 code-font diff-token-string" />
+              <ui:AppText Text="," Classes="type-10 code-font" />
+            </StackPanel>
+          </Grid>
+        </ui:AppBorder>
+        <ui:AppBorder Classes="diff-preview-removed">
+        <Grid Classes="diff-preview-row" ColumnDefinitions="23,33,*">
+            <ui:AppBorder Grid.ColumnSpan="2" Classes="diff-preview-removed-gutter" />
+            <ui:AppBorder Classes="diff-preview-remove-rule" />
+            <ui:AppText Grid.Column="1" Text="3" Classes="subtle type-10 code-font" HorizontalAlignment="Center" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+              <ui:AppText Text="  accent" Classes="type-10 code-font diff-token-property" />
+              <ui:AppText Text=": " Classes="type-10 code-font" />
+              <ui:AppText Text="&quot;#2563eb&quot;" Classes="type-10 code-font diff-token-string" />
+              <ui:AppText Text="," Classes="type-10 code-font" />
+            </StackPanel>
+          </Grid>
+        </ui:AppBorder>
+        <ui:AppBorder Classes="diff-preview-removed">
+        <Grid Classes="diff-preview-row" ColumnDefinitions="23,33,*">
+            <ui:AppBorder Grid.ColumnSpan="2" Classes="diff-preview-removed-gutter" />
+            <ui:AppBorder Classes="diff-preview-remove-rule" />
+            <ui:AppText Grid.Column="1" Text="4" Classes="subtle type-10 code-font" HorizontalAlignment="Center" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+              <ui:AppText Text="  contrast" Classes="type-10 code-font diff-token-property" />
+              <ui:AppText Text=": " Classes="type-10 code-font" />
+              <ui:AppText Text="42" Classes="type-10 code-font diff-token-number" />
+              <ui:AppText Text="," Classes="type-10 code-font" />
+            </StackPanel>
+          </Grid>
+        </ui:AppBorder>
+        <Grid Classes="diff-preview-row" ColumnDefinitions="23,33,*">
+          <ui:AppText Grid.Column="1" Text="5" Classes="subtle type-10 code-font" HorizontalAlignment="Center" />
+          <ui:AppText Grid.Column="2" Text="};" Classes="type-10 code-font" />
+        </Grid>
+      </StackPanel>
+      </ui:AppScrollViewer>
+
+      <ui:AppBorder Grid.Column="1" Classes="diff-preview-divider" />
+
+      <ui:AppScrollViewer Grid.Column="2" HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Disabled">
+      <StackPanel Classes="diff-preview-lines" Spacing="0">
+        <Grid Classes="diff-preview-row" ColumnDefinitions="23,33,*">
+          <ui:AppText Grid.Column="1" Text="1" Classes="subtle type-10 code-font" HorizontalAlignment="Center" />
+          <StackPanel Grid.Column="2" Orientation="Horizontal">
+            <ui:AppText Text="const" Classes="type-10 code-font diff-token-keyword" />
+            <ui:AppText Text=" themePreview" Classes="type-10 code-font diff-token-identifier" />
+            <ui:AppText Text=": " Classes="type-10 code-font" />
+            <ui:AppText Text="ThemeConfig" Classes="type-10 code-font diff-token-type" />
+            <ui:AppText Text=" = {" Classes="type-10 code-font" />
+          </StackPanel>
+        </Grid>
+        <ui:AppBorder Classes="diff-preview-added">
+        <Grid Classes="diff-preview-row" ColumnDefinitions="23,33,*">
+            <ui:AppBorder Grid.ColumnSpan="2" Classes="diff-preview-added-gutter" />
+            <ui:AppBorder Classes="diff-preview-add-rule" />
+            <ui:AppText Grid.Column="1" Text="2" Classes="subtle type-10 code-font" HorizontalAlignment="Center" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+              <ui:AppText Text="  surface" Classes="type-10 code-font diff-token-property" />
+              <ui:AppText Text=": " Classes="type-10 code-font" />
+              <ui:AppText Text="&quot;sidebar-elevated&quot;" Classes="type-10 code-font diff-token-string" />
+              <ui:AppText Text="," Classes="type-10 code-font" />
+            </StackPanel>
+          </Grid>
+        </ui:AppBorder>
+        <ui:AppBorder Classes="diff-preview-added">
+        <Grid Classes="diff-preview-row" ColumnDefinitions="23,33,*">
+            <ui:AppBorder Grid.ColumnSpan="2" Classes="diff-preview-added-gutter" />
+            <ui:AppBorder Classes="diff-preview-add-rule" />
+            <ui:AppText Grid.Column="1" Text="3" Classes="subtle type-10 code-font" HorizontalAlignment="Center" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+              <ui:AppText Text="  accent" Classes="type-10 code-font diff-token-property" />
+              <ui:AppText Text=": " Classes="type-10 code-font" />
+              <ui:AppText Text="&quot;#0ea5e9&quot;" Classes="type-10 code-font diff-token-string" />
+              <ui:AppText Text="," Classes="type-10 code-font" />
+            </StackPanel>
+          </Grid>
+        </ui:AppBorder>
+        <ui:AppBorder Classes="diff-preview-added">
+        <Grid Classes="diff-preview-row" ColumnDefinitions="23,33,*">
+            <ui:AppBorder Grid.ColumnSpan="2" Classes="diff-preview-added-gutter" />
+            <ui:AppBorder Classes="diff-preview-add-rule" />
+            <ui:AppText Grid.Column="1" Text="4" Classes="subtle type-10 code-font" HorizontalAlignment="Center" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+              <ui:AppText Text="  contrast" Classes="type-10 code-font diff-token-property" />
+              <ui:AppText Text=": " Classes="type-10 code-font" />
+              <ui:AppText Text="68" Classes="type-10 code-font diff-token-number" />
+              <ui:AppText Text="," Classes="type-10 code-font" />
+            </StackPanel>
+          </Grid>
+        </ui:AppBorder>
+        <Grid Classes="diff-preview-row" ColumnDefinitions="23,33,*">
+          <ui:AppText Grid.Column="1" Text="5" Classes="subtle type-10 code-font" HorizontalAlignment="Center" />
+          <ui:AppText Grid.Column="2" Text="};" Classes="type-10 code-font" />
+        </Grid>
+      </StackPanel>
+      </ui:AppScrollViewer>
+    </Grid>
+  </ui:AppBorder>
+</ui:AppUserControl>

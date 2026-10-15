@@ -1,0 +1,38 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppModelSettingsRow"
+                   x:Name="Row" x:CompileBindings="False">
+  <ui:AppBorder Classes="divider-bottom model-settings-row-surface">
+    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+      <StackPanel Spacing="3">
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+          <ui:AppText x:Name="ModelNameText" Classes="type-12 weight-semibold provider-settings-label"
+                      Text="{Binding Model.DisplayName, ElementName=Row}" TextTrimming="CharacterEllipsis"
+                      ToolTip.Tip="{Binding Model.DisplayName, ElementName=Row}" />
+          <ui:AppText Grid.Column="1" x:Name="ModelIdText" Classes="subtle type-11 provider-settings-label"
+                      Text="{Binding Model.ModelId, ElementName=Row}" TextTrimming="CharacterEllipsis"
+                      ToolTip.Tip="{Binding Model.ModelId, ElementName=Row}" />
+        </Grid>
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+          <ui:AppText x:Name="ContextText" Classes="subtle type-11 provider-settings-label"
+                      Text="{Binding ContextLabel, ElementName=Row}" TextTrimming="CharacterEllipsis" />
+          <ui:AppText Grid.Column="1" x:Name="ReasoningText" Classes="subtle type-11 provider-settings-label"
+                      Text="{Binding ReasoningLabel, ElementName=Row}" TextTrimming="CharacterEllipsis" />
+        </Grid>
+      </StackPanel>
+      <ui:AppButton Grid.Column="1" x:Name="EditModelButton" Classes="ghost button-xs provider-settings-action"
+                    Content="{Binding EditLabel, ElementName=Row}"
+                    AutomationProperties.Name="{Binding EditActionLabel, ElementName=Row}"
+                    IsEnabled="{Binding HasEditAction, ElementName=Row}"
+                    Command="{Binding EditCommand, ElementName=Row}"
+                    CommandParameter="{Binding Model, ElementName=Row}" />
+      <ui:AppButton Grid.Column="2" x:Name="DeleteModelButton" Classes="danger button-xs provider-settings-action"
+                    Content="{Binding DeleteLabel, ElementName=Row}"
+                    AutomationProperties.Name="{Binding DeleteActionLabel, ElementName=Row}"
+                    IsEnabled="{Binding HasDeleteAction, ElementName=Row}"
+                    Command="{Binding DeleteCommand, ElementName=Row}"
+                    CommandParameter="{Binding Model, ElementName=Row}" />
+    </Grid>
+  </ui:AppBorder>
+</ui:AppUserControl>

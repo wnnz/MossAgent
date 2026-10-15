@@ -100,6 +100,12 @@ apply to all new code and refactors unless the user explicitly overrides one.
 
 ## UI and concurrency
 
+- AXAML views and reusable control markup must use `MossAgent.App.Controls`
+  wrappers for visual controls. Native Avalonia elements are allowed only as
+  layout/template primitives (`Grid`, `StackPanel`, `ContentPresenter`, etc.);
+  wrapper classes may inherit their native counterparts. Add shared appearance
+  variants instead of per-view colors, shadows, icon sizes, or control
+  dimensions. The App build and visual-component tests enforce this boundary.
 - Keep long-running work off the UI thread. Marshal only final observable state
   changes to Avalonia's dispatcher.
 - Every running task owns its cancellation token, event stream, process tree,

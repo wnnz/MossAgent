@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="TaskFailureHint" xml:space="preserve"><value>任务失败。请检查 AI 提供商连接、模型设置或工具执行记录后重试。</value></data>
+  <data name="TaskFailureStreamLineLimit" xml:space="preserve"><value>响应中的单行超过安全上限，任务已停止。请检查 AI 提供商的流式输出，调整后重新发送。</value></data>
+  <data name="TaskFailureStreamEventLimit" xml:space="preserve"><value>单个响应事件超过安全上限，任务已停止。请检查 AI 提供商的流式输出，调整后重新发送。</value></data>
+  <data name="TaskFailureInvalidStreamEncoding" xml:space="preserve"><value>AI 提供商的流式响应不是有效的 UTF-8，任务已停止。请检查接口编码后重试。</value></data>
+  <data name="TaskFailureProviderHttp" xml:space="preserve"><value>AI 提供商未能处理请求。请检查连接、凭据、模型和代理设置后重试。</value></data>
+  <data name="TaskFailureInvalidProviderResponse" xml:space="preserve"><value>AI 提供商返回了不完整或无效的响应。请检查协议和模型设置后重试。</value></data>
+  <data name="TaskFailureTurnLimit" xml:space="preserve"><value>已达到本次任务的模型轮次上限。请检查工具执行记录，并用更明确的指令继续。</value></data>
+  <data name="TaskFailureProviderConnection" xml:space="preserve"><value>无法连接 AI 提供商。请检查网络、接口地址和代理设置后重试。</value></data>
+  <data name="TaskFailureProviderTimeout" xml:space="preserve"><value>AI 提供商响应超时。请检查网络和代理设置，稍后重试。</value></data>
+  <data name="TaskFailureProviderAuthentication" xml:space="preserve"><value>AI 提供商认证失败。请在设置中检查凭据和访问权限后重试。</value></data>
+  <data name="TaskFailureProxyAuthentication" xml:space="preserve"><value>代理认证失败（HTTP 407）。请在网络代理设置中检查用户名、密码和代理是否启用后重试。</value></data>
+  <data name="TaskFailureProviderRateLimit" xml:space="preserve"><value>AI 提供商的请求频率或配额受限。请检查配额，稍后重试。</value></data>
+  <data name="TaskFailureProviderBlocked" xml:space="preserve"><value>AI 提供商拦截了本次生成，本轮工具未执行。请调整请求内容并确认其符合供应商使用规则后手动重试。</value></data>
+  <data name="TaskFailureProviderOutputLimit" xml:space="preserve"><value>AI 提供商响应达到了输出上限，本轮工具未执行。请在模型设置中调整输出上限，或拆分请求后手动重试。</value></data>
+  <data name="ProjectPickerSearchPlaceholder" xml:space="preserve"><value>搜索项目</value></data>
+  <data name="ProjectPickerCreateLabel" xml:space="preserve"><value>新建项目</value></data>
+  <data name="ProjectPickerNoMatches" xml:space="preserve"><value>没有匹配的项目</value></data>
+  <data name="ProjectPickerSwitchLabel" xml:space="preserve"><value>切换项目</value></data>
+  <data name="EmptySessionPrefix" xml:space="preserve"><value>你想让我们在 </value></data>
+  <data name="EmptySessionSuffix" xml:space="preserve"><value> 中构建什么？</value></data>
+  <data name="EmptySessionTitle" xml:space="preserve"><value>有什么可以帮忙的？</value></data>
+  <data name="ProjectlessChatLabel" xml:space="preserve"><value>无项目聊天</value></data>
+  <data name="ChatReady" xml:space="preserve"><value>直接输入即可聊天；选择项目后可使用项目工具。</value></data>
+  <data name="CloseTabLabel" xml:space="preserve"><value>关闭对话标签</value></data>
+  <data name="TabOptionsLabel" xml:space="preserve"><value>对话标签操作</value></data>
+  <data name="ToolRunning" xml:space="preserve"><value>运行中</value></data>
+  <data name="ToolCompleted" xml:space="preserve"><value>完成</value></data>
+  <data name="ToolFailed" xml:space="preserve"><value>失败</value></data>
+  <data name="ToolCancelled" xml:space="preserve"><value>已取消</value></data>
+  <data name="ToolTimedOut" xml:space="preserve"><value>超时</value></data>
+  <data name="SubagentRunning" xml:space="preserve"><value>子代理运行中</value></data>
+  <data name="RunCancelled" xml:space="preserve"><value>任务已取消。</value></data>
+  <data name="RunCompleted" xml:space="preserve"><value>任务已完成。</value></data>
+  <data name="ToolIncomplete" xml:space="preserve"><value>任务已结束，但工具未返回最终结果。</value></data>
+  <data name="BrowserTabsRefreshFailed" xml:space="preserve"><value>刷新标签页失败，请重试或重新启动浏览器会话。</value></data>
+  <data name="BrowserActionFailed" xml:space="preserve"><value>浏览器操作失败，请检查会话状态后重试。</value></data>
+  <data name="BrowserActionRunning" xml:space="preserve"><value>浏览器操作等待审批或正在执行，可取消。</value></data>
+  <data name="BrowserActionCancelling" xml:space="preserve"><value>正在取消浏览器操作，等待会话返回。</value></data>
+  <data name="BrowserActionCancelled" xml:space="preserve"><value>浏览器操作已取消。</value></data>
+  <data name="BrowserActionTimedOut" xml:space="preserve"><value>浏览器操作超时，请检查审批或会话状态后重试。</value></data>
+  <data name="BrowserActionCompleted" xml:space="preserve"><value>浏览器操作已完成。</value></data>
+  <data name="BrowserActionDenied" xml:space="preserve"><value>当前策略或用户拒绝了浏览器操作。</value></data>
+  <data name="BrowserDevToolsUnsupported" xml:space="preserve"><value>当前浏览器会话不支持打开开发工具。</value></data>
+  <data name="BrowserCancelActionLabel" xml:space="preserve"><value>取消浏览器操作</value></data>
+  <data name="BrowserNotStarted" xml:space="preserve"><value>浏览器将在代理首次使用浏览器工具时启动。</value></data>
+  <data name="BrowserReady" xml:space="preserve"><value>内置 WebView2 已就绪，可随时接管操作。</value></data>
+  <data name="BrowserSessionClosed" xml:space="preserve"><value>浏览器会话已关闭。</value></data>
+  <data name="BrowserInvalidAddress" xml:space="preserve"><value>请输入有效的 http 或 https 地址。</value></data>
+  <data name="BrowserPageLoaded" xml:space="preserve"><value>页面加载完成。</value></data>
+  <data name="BrowserNavigationFailed" xml:space="preserve"><value>页面加载失败，请检查地址和连接后重试。</value></data>
+  <data name="BrowserAddressLabel" xml:space="preserve"><value>浏览器地址</value></data>
+  <data name="BrowserNavigateLabel" xml:space="preserve"><value>打开地址</value></data>
+  <data name="BrowserBackLabel" xml:space="preserve"><value>后退</value></data>
+  <data name="BrowserForwardLabel" xml:space="preserve"><value>前进</value></data>
+  <data name="BrowserReloadLabel" xml:space="preserve"><value>刷新页面</value></data>
+  <data name="BrowserDevToolsLabel" xml:space="preserve"><value>打开开发工具</value></data>
+  <data name="SendPreparationError" xml:space="preserve"><value>无法保存并发送消息，请重试。输入内容和附件已保留。</value></data>
+  <data name="SendRunLabel" xml:space="preserve"><value>发送消息</value></data>
+  <data name="PreparingRunLabel" xml:space="preserve"><value>正在保存消息</value></data>
+  <data name="StopRunLabel" xml:space="preserve"><value>停止执行</value></data>
+  <data name="DefaultAgentLabel" xml:space="preserve"><value>默认代理</value></data>
+  <data name="UnavailableAgentLabelFormat" xml:space="preserve"><value>{0}（不可用）</value></data>
+  <data name="UnavailableAgentLabel" xml:space="preserve"><value>所选代理（不可用）</value></data>
+  <data name="LoadingAgents" xml:space="preserve"><value>正在刷新代理配置，输入内容和附件已保留。</value></data>
+  <data name="AgentCatalogReloadFailed" xml:space="preserve"><value>无法刷新代理配置，已暂停发送。请刷新配置后重试；输入内容和附件已保留。</value></data>
+  <data name="LoadingAgentModels" xml:space="preserve"><value>正在刷新所选代理的模型配置，输入内容和附件已保留。</value></data>
+  <data name="AgentModelsReloadFailed" xml:space="preserve"><value>所选代理的模型列表不可用，已暂停发送。请刷新配置后重试。</value></data>
+  <data name="SelectedAgentUnavailable" xml:space="preserve"><value>所选代理已停用、移除或模型不可用。请在设置中修复，或明确选择默认代理或其他模型后发送。</value></data>
+  <data name="RefreshAgentConfiguration" xml:space="preserve"><value>刷新配置</value></data>
+  <data name="AttachmentRemoveLabel" xml:space="preserve"><value>移除附件</value></data>
+  <data name="AttachmentAccessibleNameFormat" xml:space="preserve"><value>{0}，{1}</value></data>
+  <data name="ConversationMoreLabel" xml:space="preserve"><value>更多操作</value></data>
+  <data name="ConversationContextLabel" xml:space="preserve"><value>显示或隐藏项目上下文</value></data>
+  <data name="CopyCodeAction" xml:space="preserve"><value>复制代码</value></data>
+  <data name="ToolPhaseValidating" xml:space="preserve"><value>检查请求</value></data>
+  <data name="ToolPhaseAwaitingApproval" xml:space="preserve"><value>等待审批</value></data>
+  <data name="ToolPhaseExecuting" xml:space="preserve"><value>执行中</value></data>
+  <data name="ToolPhaseFinalizing" xml:space="preserve"><value>保存结果</value></data>
+  <data name="ToolPhaseValidatingSummary" xml:space="preserve"><value>{0} · 正在检查工具请求</value></data>
+  <data name="ToolPhaseAwaitingApprovalSummary" xml:space="preserve"><value>{0} · 等待工具审批</value></data>
+  <data name="ToolPhaseExecutingSummary" xml:space="preserve"><value>{0} · 正在执行工具</value></data>
+  <data name="ToolPhaseFinalizingSummary" xml:space="preserve"><value>{0} · 正在保存工具结果</value></data>
+  <data name="ToolProgressGenericName" xml:space="preserve"><value>工具</value></data>
+  <data name="TaskFailureUnsupportedReasoningEffort" xml:space="preserve"><value>所选 Gemini 模型不支持当前思考强度。请在模型设置中选择支持的档位，再手动重试。</value></data>
+  <data name="FileChangesTitle" xml:space="preserve"><value>已编辑 {0} 个文件</value></data>
+  <data name="FileChangesScope" xml:space="preserve"><value>此任务 · 文件工具记录</value></data>
+  <data name="FileChangesScopeHint" xml:space="preserve"><value>查看本任务文件工具实际提交的前后快照，包含子代理；连续写入合并为最初与最终版本。不读取当前文件或此前 Git 工作区变更。缺失快照或历史不连续时会明确提示；不包含 Shell/MCP 自行修改。</value></data>
+  <data name="FileChangesReview" xml:space="preserve"><value>查看变更</value></data>
+  <data name="FileChangesUndo" xml:space="preserve"><value>撤销</value></data>
+  <data name="FileChangesUndoUnavailable" xml:space="preserve"><value>此视图未连接撤销服务，请先在变更检查器中审阅差异。</value></data>
+  <data name="FileChangesIncomplete" xml:space="preserve"><value>部分记录缺失、超出限制或历史不连续；列表仅显示可验证的写入片段，不包含外部修改。</value></data>
+  <data name="FileChangesExpand" xml:space="preserve"><value>再显示 {0} 个文件</value></data>
+  <data name="FileStatisticsUnavailableLabel" xml:space="preserve"><value>未统计</value></data>
+  <data name="FileStatisticsUnavailableHint" xml:space="preserve"><value>部分快照无法统计，未显示不完整的总增删行数。旧记录、缺失快照或文本限制可能导致此状态。</value></data>
+  <data name="FileStatisticsRetry" xml:space="preserve"><value>重试统计</value></data>
+  <data name="FileUndoHint" xml:space="preserve"><value>确认后恢复本任务文件工具记录的原始字节；新建文件删除需要单独审批。外部改动、缺失快照或不连续历史会阻止撤销。</value></data>
+  <data name="FileUndoConfirm" xml:space="preserve"><value>确认撤销</value></data>
+  <data name="FileUndoCancel" xml:space="preserve"><value>取消</value></data>
+  <data name="FileUndoDismiss" xml:space="preserve"><value>关闭</value></data>
+  <data name="FileUndoRetrySave" xml:space="preserve"><value>重试保存记录</value></data>
+  <data name="FileUndoConfirmation" xml:space="preserve"><value>将 {0} 个文件恢复到本任务首次编辑前的版本，其中 {1} 个为新建文件并将删除。只处理本任务的完整快照记录，不覆盖外部改动。此操作逐项提交，不是多文件事务；删除仍需单独审批。是否继续？</value></data>
+  <data name="FileUndoRunning" xml:space="preserve"><value>正在撤销并保存记录。取消后已提交的步骤仍会保留。</value></data>
+  <data name="FileUndoCompleted" xml:space="preserve"><value>撤销完成，反向变更已保存。</value></data>
+  <data name="FileUndoStopped" xml:space="preserve"><value>撤销已停止；已提交的步骤已保存，未处理的文件保持原状。</value></data>
+  <data name="FileUndoFailed" xml:space="preserve"><value>撤销未能完成。请检查任务授权、审批及文件版本后再试；不会自动重放操作。</value></data>
+  <data name="FileUndoSaveFailed" xml:space="preserve"><value>撤销结果未能保存，记录暂留内存。请重试保存，暂时不能继续撤销；重试只保存历史，不重复文件操作。关闭应用前必须处理此记录。</value></data>
+  <data name="FileUndoSaved" xml:space="preserve"><value>撤销记录已保存，未重复执行文件操作。</value></data>
+  <data name="FileUndoReadOnly" xml:space="preserve"><value>当前策略为只读，不能撤销文件修改。</value></data>
+  <data name="RepositoryStatusUnknown" xml:space="preserve"><value>Git 状态未知</value></data>
+  <data name="RepositoryNoDirectory" xml:space="preserve"><value>未选择目录</value></data>
+  <data name="RepositoryNoSelection" xml:space="preserve"><value>未选择仓库</value></data>
+  <data name="RepositoryNotGit" xml:space="preserve"><value>非 Git 仓库</value></data>
+  <data name="TimelineToday" xml:space="preserve"><value>今天 {0:HH:mm}</value></data>
+  <data name="TimelineYesterday" xml:space="preserve"><value>昨天 {0:HH:mm}</value></data>
+  <data name="TimelineDate" xml:space="preserve"><value>{0:yyyy/MM/dd HH:mm}</value></data>
+  <data name="TimelineSeconds" xml:space="preserve"><value>用时 {0}秒</value></data>
+  <data name="TimelineMinutes" xml:space="preserve"><value>用时 {0}分钟 {1}秒</value></data>
+  <data name="TimelineHours" xml:space="preserve"><value>用时 {0}小时 {1}分钟 {2}秒</value></data>
+  <data name="TimelineRunning" xml:space="preserve"><value>正在处理</value></data>
+  <data name="TimelineActivities" xml:space="preserve"><value>执行过程</value></data>
+  <data name="ComposerInputHint" xml:space="preserve"><value>Enter 或 Ctrl+Enter 发送，Shift+Enter 换行。运行时请点击停止按钮。</value></data>
+  <data name="ComposerNewlineLabel" xml:space="preserve"><value>输入框换行</value></data>
+</root>

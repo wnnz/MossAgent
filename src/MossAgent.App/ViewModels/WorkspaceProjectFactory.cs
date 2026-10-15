@@ -10,17 +10,22 @@ internal static class WorkspaceProjectFactory
     {
         if (string.IsNullOrWhiteSpace(name) || directories.Count == 0)
         {
-            throw new InvalidOperationException("请填写项目名称并至少添加一个目录。");
+            throw new WorkspaceProjectValidationException(WorkspaceProjectValidationFailure.RequiredFields);
         }
 
-        var authorized = directories
-            .Where(static path => !string.IsNullOrWhiteSpace(path))
-            .Select(Path.GetFullPath)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+        string[] authorized;
+        try
+        {
+            authorized = directories.Where(static path => !string.IsNullOrWhiteSpace(path))
+                .Select(Path.GetFullPath).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            throw new WorkspaceProjectValidationException(WorkspaceProjectValidationFailure.InvalidDirectories);
+        }
         if (authorized.Length == 0 || authorized.Any(static path => !Directory.Exists(path)))
         {
-            throw new InvalidOperationException("一个或多个授权目录不存在。");
+            throw new WorkspaceProjectValidationException(WorkspaceProjectValidationFailure.InvalidDirectories);
         }
 
         return new ProjectProfile(

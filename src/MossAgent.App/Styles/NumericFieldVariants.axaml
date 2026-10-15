@@ -1,0 +1,107 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:MossAgent.App.Controls">
+  <Styles.Resources>
+    <ControlTheme x:Key="SharedNumericSpinButtonTheme" TargetType="RepeatButton">
+      <Setter Property="Width" Value="22" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <ContentPresenter x:Name="PART_ContentPresenter" CornerRadius="6"
+                            Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Background="{TemplateBinding Background}" Foreground="{TemplateBinding Foreground}"
+                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+      </Style>
+      <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SettingsSelectionBrush}" />
+      </Style>
+      <Style Selector="^:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Opacity" Value="0.45" />
+      </Style>
+    </ControlTheme>
+    <ControlTheme x:Key="SharedNumericSpinnerTheme" TargetType="ButtonSpinner">
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <ui:AppBorder Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}"
+                        ClipToBounds="True">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <StackPanel Name="PART_SpinnerPanel" Grid.Column="2" Orientation="Horizontal"
+                          IsVisible="{TemplateBinding ShowButtonSpinner}">
+                <ui:AppRepeatButton Name="PART_IncreaseButton" IsTabStop="{TemplateBinding IsTabStop}"
+                                    AutomationProperties.Name="{Binding IncreaseLabel, RelativeSource={RelativeSource FindAncestor, AncestorType=ui:AppNumericUpDown}}"
+                                    ToolTip.Tip="{Binding IncreaseLabel, RelativeSource={RelativeSource FindAncestor, AncestorType=ui:AppNumericUpDown}}"
+                                    Theme="{StaticResource SharedNumericSpinButtonTheme}" VerticalAlignment="Stretch">
+                  <ui:AppIcon Size="10" Data="M 6 15 L 12 9 L 18 15" StrokeThickness="1"
+                              Stroke="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType=RepeatButton}}"
+                              StrokeLineCap="Round" StrokeJoin="Round" IsHitTestVisible="False"
+                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </ui:AppRepeatButton>
+                <ui:AppRepeatButton Name="PART_DecreaseButton" IsTabStop="{TemplateBinding IsTabStop}"
+                                    AutomationProperties.Name="{Binding DecreaseLabel, RelativeSource={RelativeSource FindAncestor, AncestorType=ui:AppNumericUpDown}}"
+                                    ToolTip.Tip="{Binding DecreaseLabel, RelativeSource={RelativeSource FindAncestor, AncestorType=ui:AppNumericUpDown}}"
+                                    Theme="{StaticResource SharedNumericSpinButtonTheme}" VerticalAlignment="Stretch">
+                  <ui:AppIcon Size="10" Data="{StaticResource UiIconChevronDown}" StrokeThickness="1"
+                              Stroke="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType=RepeatButton}}"
+                              StrokeLineCap="Round" StrokeJoin="Round" IsHitTestVisible="False"
+                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </ui:AppRepeatButton>
+              </StackPanel>
+              <ContentPresenter Name="PART_ContentPresenter" Grid.Column="1" Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}" Padding="{TemplateBinding Padding}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            </Grid>
+          </ui:AppBorder>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:left /template/ StackPanel#PART_SpinnerPanel">
+        <Setter Property="Grid.Column" Value="0" />
+      </Style>
+      <Style Selector="^:error">
+        <Setter Property="BorderBrush" Value="{DynamicResource StatusErrorBrush}" />
+      </Style>
+    </ControlTheme>
+  </Styles.Resources>
+  <Style Selector=".app-numeric-up-down" x:SetterTargetType="ui:AppNumericUpDown">
+    <Setter Property="Padding" Value="9,5" />
+  </Style>
+  <Style Selector=".app-numeric-up-down /template/ ButtonSpinner#PART_Spinner">
+    <Setter Property="Theme" Value="{StaticResource SharedNumericSpinnerTheme}" />
+  </Style>
+  <Style Selector=".app-numeric-up-down /template/ TextBox#PART_TextBox">
+    <Setter Property="MinHeight" Value="0" />
+  </Style>
+  <Style Selector=".app-numeric-up-down:focus-within /template/ ButtonSpinner#PART_Spinner">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
+  </Style>
+  <Style Selector=".app-numeric-up-down /template/ TextBox#PART_TextBox:focus /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector=".app-numeric-up-down /template/ TextBox#PART_TextBox:pointerover /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+</Styles>

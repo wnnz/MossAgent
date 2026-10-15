@@ -5,6 +5,6 @@ public enum ModelRole
     System,
     User,
     Assistant,
-    Tool
+    Tool,
+    ToolObservation
 }
-

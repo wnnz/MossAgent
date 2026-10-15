@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -24,6 +25,13 @@ internal sealed class McpHttpFixtureServer : IAsyncDisposable
     public bool SessionHeaderObserved { get; private set; }
     public bool CustomHeaderObserved { get; private set; }
     public bool DeleteObserved { get; private set; }
+    public string? InitializeError { get; set; }
+    public TimeSpan InitializeDelay { get; set; }
+    public Uri? RedirectUrl { get; set; }
+    public IReadOnlyList<string> ToolNames { get; set; } = ["echo"];
+    public IReadOnlySet<string> MutatingToolNames { get; set; } = new HashSet<string>(StringComparer.Ordinal);
+    public string ResultPrefix { get; set; } = "echo";
+    public ConcurrentQueue<string> Calls { get; } = new();
 
     public async ValueTask DisposeAsync()
     {
@@ -57,6 +65,13 @@ internal sealed class McpHttpFixtureServer : IAsyncDisposable
     {
         CustomHeaderObserved |= context.Request.Headers["X-Moss-Fixture"] == "enabled";
         SessionHeaderObserved |= context.Request.Headers["Mcp-Session-Id"] == "fixture-session";
+        if (RedirectUrl is { } redirect)
+        {
+            context.Response.StatusCode = (int)HttpStatusCode.TemporaryRedirect;
+            context.Response.RedirectLocation = redirect.AbsoluteUri;
+            context.Response.Close();
+            return;
+        }
         if (context.Request.HttpMethod == HttpMethod.Delete.Method)
         {
             DeleteObserved = true;
@@ -77,6 +92,26 @@ internal sealed class McpHttpFixtureServer : IAsyncDisposable
         }
 
         var id = root.GetProperty("id").GetInt64();
+        if (method == "initialize")
+        {
+            if (InitializeDelay > TimeSpan.Zero)
+            {
+                await Task.Delay(InitializeDelay, _cancellation.Token);
+            }
+
+            if (InitializeError is { } error)
+            {
+                context.Response.Headers["Mcp-Session-Id"] = "fixture-session";
+                await WriteJsonAsync(context.Response, new
+                {
+                    jsonrpc = "2.0",
+                    id,
+                    error = new { code = -32000, message = error }
+                });
+                return;
+            }
+        }
+
         object result = method switch
         {
             "initialize" => InitializeResult(),
@@ -106,31 +141,29 @@ internal sealed class McpHttpFixtureServer : IAsyncDisposable
         serverInfo = new { name = "fixture", version = "1.0" }
     };
 
-    private static object ToolsResult() => new
+    private object ToolsResult() => new
     {
-        tools = new[]
+        tools = ToolNames.Select(name => new
         {
-            new
+            name,
+            description = "Echo text",
+            inputSchema = new
             {
-                name = "echo",
-                description = "Echo text",
-                inputSchema = new
-                {
-                    type = "object",
-                    required = new[] { "text" },
-                    properties = new { text = new { type = "string" } }
-                },
-                annotations = new { readOnlyHint = true }
-            }
-        }
+                type = "object",
+                required = new[] { "text" },
+                properties = new { text = new { type = "string" } }
+            },
+            annotations = new { readOnlyHint = !MutatingToolNames.Contains(name) }
+        }).ToArray()
     };
 
-    private static object CallResult(JsonElement parameters)
+    private object CallResult(JsonElement parameters)
     {
+        Calls.Enqueue(parameters.GetProperty("name").GetString()!);
         var text = parameters.GetProperty("arguments").GetProperty("text").GetString();
         return new
         {
-            content = new[] { new { type = "text", text = $"echo:{text}" } },
+            content = new[] { new { type = "text", text = $"{ResultPrefix}:{text}" } },
             isError = false
         };
     }

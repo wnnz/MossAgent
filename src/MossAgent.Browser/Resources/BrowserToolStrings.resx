@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="DeveloperToolsDescription" xml:space="preserve"><value>打开当前任务绑定的浏览器开发工具窗口。</value></data>
+  <data name="DeveloperToolsOpened" xml:space="preserve"><value>已打开浏览器开发工具。</value></data>
+  <data name="DeveloperToolsUnsupported" xml:space="preserve"><value>当前浏览器会话不支持开发工具窗口。</value></data>
+</root>

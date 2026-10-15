@@ -9,9 +9,4 @@ public interface IModelProvider
     IAsyncEnumerable<ModelEvent> StreamAsync(
         ModelRequest request,
         CancellationToken cancellationToken);
-
-    Task<IReadOnlyList<string>> ListModelsAsync(
-        AiProvider provider,
-        CancellationToken cancellationToken);
 }
-

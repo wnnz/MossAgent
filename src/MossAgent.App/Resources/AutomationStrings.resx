@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Title" xml:space="preserve"><value>定时任务</value></data>
+  <data name="Subtitle" xml:space="preserve"><value>让 MossAgent 按计划处理项目任务。仅在应用运行期间执行；关闭期间不补跑。</value></data>
+  <data name="Create" xml:space="preserve"><value>新建定时任务</value></data>
+  <data name="EmptyTitle" xml:space="preserve"><value>把重复工作交给定时任务</value></data>
+  <data name="EmptyHint" xml:space="preserve"><value>选择项目和模型，写下要完成的工作，再设置运行时间。</value></data>
+  <data name="Refresh" xml:space="preserve"><value>刷新</value></data>
+  <data name="ListLoading" xml:space="preserve"><value>正在读取定时任务…</value></data>
+  <data name="ListLoadingHint" xml:space="preserve"><value>正在确认项目、模型和计划状态。</value></data>
+  <data name="ListLoadFailed" xml:space="preserve"><value>无法加载定时任务</value></data>
+  <data name="Edit" xml:space="preserve"><value>编辑</value></data>
+  <data name="RunNow" xml:space="preserve"><value>立即运行</value></data>
+  <data name="Stop" xml:space="preserve"><value>停止运行</value></data>
+  <data name="Remove" xml:space="preserve"><value>移除</value></data>
+  <data name="Name" xml:space="preserve"><value>名称</value></data>
+  <data name="Prompt" xml:space="preserve"><value>任务提示词</value></data>
+  <data name="Project" xml:space="preserve"><value>项目</value></data>
+  <data name="Model" xml:space="preserve"><value>模型</value></data>
+  <data name="Frequency" xml:space="preserve"><value>重复频率</value></data>
+  <data name="Time" xml:space="preserve"><value>时间（HH:mm）</value></data>
+  <data name="Weekday" xml:space="preserve"><value>星期</value></data>
+  <data name="Interval" xml:space="preserve"><value>间隔小时</value></data>
+  <data name="TimeZone" xml:space="preserve"><value>时区</value></data>
+  <data name="Policy" xml:space="preserve"><value>工具权限</value></data>
+  <data name="Timeout" xml:space="preserve"><value>最长运行时间（分钟）</value></data>
+  <data name="Save" xml:space="preserve"><value>保存</value></data>
+  <data name="Cancel" xml:space="preserve"><value>取消</value></data>
+  <data name="History" xml:space="preserve"><value>运行记录</value></data>
+  <data name="HistoryLimit" xml:space="preserve"><value>最近 50 次运行</value></data>
+  <data name="HistoryLoading" xml:space="preserve"><value>正在读取运行记录…</value></data>
+  <data name="HistoryLoadError" xml:space="preserve"><value>无法读取运行记录。请检查数据目录后重试。</value></data>
+  <data name="HistoryOpenError" xml:space="preserve"><value>无法打开这次运行的对话。请稍后重试。</value></data>
+  <data name="Retry" xml:space="preserve"><value>重试</value></data>
+  <data name="RunDuration" xml:space="preserve"><value>耗时 {0:0} 秒</value></data>
+  <data name="RunNotFinished" xml:space="preserve"><value>尚未结束</value></data>
+  <data name="ExecutionUnavailable" xml:space="preserve"><value>无法启动或完成执行。请检查项目与模型配置；已有对话仍可查看。</value></data>
+  <data name="RunFailedHint" xml:space="preserve"><value>执行未成功。打开对话查看错误后，再决定是否重新运行。</value></data>
+  <data name="RunTimedOutHint" xml:space="preserve"><value>已达到最长运行时间并取消执行。请查看对话结果或调整超时设置。</value></data>
+  <data name="RunInterruptedHint" xml:space="preserve"><value>应用退出时执行未完成，不会自动重试。请先检查已有结果。</value></data>
+  <data name="RunCancelledHint" xml:space="preserve"><value>执行已取消。已产生的操作或结果不会自动撤回。</value></data>
+  <data name="NoRuns" xml:space="preserve"><value>还没有运行记录。可以立即运行一次，或启用计划后等待下一次执行。</value></data>
+  <data name="SelectSchedule" xml:space="preserve"><value>选择一个定时任务，查看最近的运行结果。</value></data>
+  <data name="OpenConversation" xml:space="preserve"><value>打开对话</value></data>
+  <data name="DeleteTitle" xml:space="preserve"><value>移除定时任务？</value></data>
+  <data name="DeleteHint" xml:space="preserve"><value>计划将被移除，已有对话和运行记录仍会保留。正在运行的任务需先停止。</value></data>
+  <data name="PausedDefault" xml:space="preserve"><value>新计划默认暂停。保存后需明确启用；立即运行仍可能产生模型费用。工具操作遵循所选权限。</value></data>
+  <data name="Paused" xml:space="preserve"><value>已暂停</value></data>
+  <data name="Enable" xml:space="preserve"><value>启用计划</value></data>
+  <data name="Pause" xml:space="preserve"><value>暂停计划</value></data>
+  <data name="Next" xml:space="preserve"><value>下次：{0:MM/dd HH:mm} · {1}</value></data>
+  <data name="Hourly" xml:space="preserve"><value>每隔数小时</value></data>
+  <data name="Daily" xml:space="preserve"><value>每天</value></data>
+  <data name="Weekly" xml:space="preserve"><value>每周</value></data>
+  <data name="HourlySummary" xml:space="preserve"><value>每 {0} 小时</value></data>
+  <data name="DailySummary" xml:space="preserve"><value>每天 {0:00}:{1:00}</value></data>
+  <data name="WeeklySummary" xml:space="preserve"><value>每{0} {1:00}:{2:00}</value></data>
+  <data name="Day0" xml:space="preserve"><value>星期日</value></data>
+  <data name="Day1" xml:space="preserve"><value>星期一</value></data>
+  <data name="Day2" xml:space="preserve"><value>星期二</value></data>
+  <data name="Day3" xml:space="preserve"><value>星期三</value></data>
+  <data name="Day4" xml:space="preserve"><value>星期四</value></data>
+  <data name="Day5" xml:space="preserve"><value>星期五</value></data>
+  <data name="Day6" xml:space="preserve"><value>星期六</value></data>
+  <data name="Running" xml:space="preserve"><value>运行中</value></data>
+  <data name="Completed" xml:space="preserve"><value>已完成</value></data>
+  <data name="Failed" xml:space="preserve"><value>运行失败</value></data>
+  <data name="Cancelled" xml:space="preserve"><value>已取消</value></data>
+  <data name="TimedOut" xml:space="preserve"><value>运行超时</value></data>
+  <data name="Interrupted" xml:space="preserve"><value>已中断，不自动重试</value></data>
+  <data name="Manual" xml:space="preserve"><value>手动运行</value></data>
+  <data name="Scheduled" xml:space="preserve"><value>计划运行</value></data>
+  <data name="Unavailable" xml:space="preserve"><value>不可用，请重新选择</value></data>
+  <data name="Invalid" xml:space="preserve"><value>请填写名称和提示词，选择可用的项目与模型，并检查时间、时区和超时设置。</value></data>
+  <data name="Conflict" xml:space="preserve"><value>计划已被更新或正在运行。请刷新后重试。</value></data>
+  <data name="LoadError" xml:space="preserve"><value>无法读取定时任务，请检查数据目录并刷新重试。</value></data>
+  <data name="SaveError" xml:space="preserve"><value>无法确认操作结果，请刷新检查计划后再重试。</value></data>
+  <data name="LoadingEditor" xml:space="preserve"><value>正在加载计划配置…</value></data>
+  <data name="SavingPlan" xml:space="preserve"><value>正在保存定时任务…</value></data>
+  <data name="ChangingPlan" xml:space="preserve"><value>正在更新计划状态…</value></data>
+  <data name="StartingRun" xml:space="preserve"><value>正在启动执行…</value></data>
+  <data name="RemovingPlan" xml:space="preserve"><value>正在移除计划…</value></data>
+  <data name="RefreshingPlans" xml:space="preserve"><value>正在确认计划的最新状态…</value></data>
+  <data name="CancellingOperation" xml:space="preserve"><value>正在取消操作，等待已开始的步骤结束…</value></data>
+  <data name="CancelOperation" xml:space="preserve"><value>取消操作</value></data>
+  <data name="OperationCancelled" xml:space="preserve"><value>已请求取消。已开始的操作可能已完成，请检查最新计划或运行记录。</value></data>
+  <data name="OperationTimedOut" xml:space="preserve"><value>操作已超时并请求取消。请检查最新计划或运行记录；不会自动重试。</value></data>
+  <data name="PreviousDraftSaved" xml:space="preserve"><value>上一版已保存，当前新草稿仍保留，可以继续保存。</value></data>
+  <data name="CancelledWriteCompleted" xml:space="preserve"><value>取消前的保存已经完成。当前草稿已保留，不会创建重复计划。</value></data>
+  <data name="SavedRefreshPending" xml:space="preserve"><value>保存已返回成功，但无法读取最新计划。草稿已保留，请重试刷新以确认结果。</value></data>
+  <data name="NotReady" xml:space="preserve"><value>调度尚未就绪；请等待应用启动完成。</value></data>
+  <data name="AnotherInstance" xml:space="preserve"><value>另一应用实例拥有调度权。本实例可编辑计划，但不能触发运行。</value></data>
+  <data name="RuntimeError" xml:space="preserve"><value>调度或记录保存出现问题，请检查数据目录并重启应用。</value></data>
+  <data name="TaskUnavailable" xml:space="preserve"><value>这次运行尚未创建对话，或对话已归档。请检查项目与模型配置。</value></data>
+  <data name="PreviewIncomplete" xml:space="preserve"><value>完善项目、模型和时间设置后显示预计运行时间。</value></data>
+  <data name="SchedulePreview" xml:space="preserve"><value>预计下次：{0:yyyy/MM/dd HH:mm} · {1}（保存时重新计算）</value></data>
+</root>

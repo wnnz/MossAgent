@@ -29,7 +29,16 @@ internal static class AnthropicRequestBuilder
             root["temperature"] = temperature;
         }
 
-        MergeAdvancedParameters(root, request.Model.AdvancedParametersJson);
+        if (request.Model.TopP is { } topP)
+            root["top_p"] = topP;
+
+        AnthropicThinkingOptions.Apply(
+            root,
+            request.Model.ModelId,
+            request.Model.ReasoningEffort,
+            request.Model.MaximumOutputTokens);
+
+        AdvancedParameterMerger.Merge(root, request.Model.AdvancedParametersJson, request.Provider.Protocol);
         return root.ToJsonString();
     }
 
@@ -65,7 +74,7 @@ internal static class AnthropicRequestBuilder
             });
         }
 
-        if (message.ToolCalls is not { Count: > 0 })
+        if (message.Role != ModelRole.Assistant || message.ToolCalls is not { Count: > 0 })
         {
             return JsonValue.Create(message.Content)!;
         }
@@ -108,20 +117,4 @@ internal static class AnthropicRequestBuilder
         return tools;
     }
 
-    private static void MergeAdvancedParameters(JsonObject root, string json)
-    {
-        if (string.IsNullOrWhiteSpace(json) || JsonNode.Parse(json) is not JsonObject advanced)
-        {
-            return;
-        }
-
-        string[] protectedNames = ["model", "stream", "messages", "tools"];
-        foreach (var pair in advanced)
-        {
-            if (!protectedNames.Contains(pair.Key, StringComparer.OrdinalIgnoreCase))
-            {
-                root[pair.Key] = pair.Value?.DeepClone();
-            }
-        }
-    }
 }

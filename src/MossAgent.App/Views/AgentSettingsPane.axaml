@@ -1,0 +1,84 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:labels="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Views.AgentSettingsPane"
+                   x:CompileBindings="False">
+  <Grid>
+    <Grid Classes="settings-content-column">
+    <ui:AppScrollViewer Classes="settings-page-scroll">
+      <StackPanel Spacing="24" Margin="0,0,0,32">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+          <StackPanel Spacing="5">
+            <ui:AppText Text="{x:Static labels:AgentSettingsLabels.AgentTitle}" Classes="settings-title" />
+            <ui:AppText Text="{x:Static labels:AgentSettingsLabels.AgentDescription}" Classes="settings-description" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <ui:AppActionButton Label="{x:Static labels:AgentSettingsLabels.Refresh}" IconData="{StaticResource UiIconRefresh}"
+                                Classes="ghost" Command="{Binding RefreshCommand}" />
+            <ui:AppActionButton Label="{x:Static labels:AgentSettingsLabels.AgentCreate}" IconData="{StaticResource UiIconPlus}"
+                                Classes="primary" Command="{Binding OpenCreateFormCommand}" />
+          </StackPanel>
+        </Grid>
+        <ui:AppCard Classes="card card-inset-list">
+          <StackPanel>
+            <StackPanel Margin="12,16" Spacing="6" IsVisible="{Binding HasNoItems}">
+              <ui:AppText Text="{x:Static labels:AgentSettingsLabels.AgentEmpty}" Classes="type-14 weight-semibold" />
+              <ui:AppText Text="{x:Static labels:AgentSettingsLabels.AgentEmptyHint}" Classes="muted type-12" TextWrapping="Wrap" />
+            </StackPanel>
+            <ui:AppListBox MaxHeight="560" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedProfile, Mode=TwoWay}">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <ui:AppSettingsItemRow Classes="compact" Title="{Binding Name}"
+                                         BadgeText="{Binding StatusLabel}" ActionTarget="{Binding}"
+                                         SecondaryLabel="{x:Static labels:SettingsItemLabels.Edit}"
+                                         SecondaryCommand="{Binding $parent[UserControl].DataContext.OpenEditFormCommand}" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ui:AppListBox>
+          </StackPanel>
+        </ui:AppCard>
+        <ui:AppText Text="{Binding Status}" Classes="muted type-12" Classes.status-error="{Binding HasStatusError}"
+                    TextWrapping="Wrap" IsVisible="{Binding !IsFormOpen}" />
+      </StackPanel>
+    </ui:AppScrollViewer>
+    </Grid>
+    <ui:AppSettingsDialog Classes="wide" IsOpen="{Binding IsFormOpen}" Title="{Binding EditorTitle}"
+                          CloseLabel="{x:Static labels:AgentSettingsLabels.AgentClose}" CloseCommand="{Binding CloseFormCommand}">
+      <StackPanel Spacing="9">
+        <ui:AppText Text="{x:Static labels:AgentSettingsLabels.Name}" Classes="muted type-12" />
+        <ui:AppInput Text="{Binding Name}" PlaceholderText="{x:Static labels:AgentSettingsLabels.AgentNameHint}"
+                     AutomationProperties.Name="{x:Static labels:AgentSettingsLabels.Name}" />
+        <ui:AppText Text="{x:Static labels:AgentSettingsLabels.SystemPrompt}" Classes="muted type-12" />
+        <ui:AppInput Text="{Binding SystemPrompt}" AcceptsReturn="True" TextWrapping="Wrap" Classes="field-prompt"
+                     AutomationProperties.Name="{x:Static labels:AgentSettingsLabels.SystemPrompt}" />
+        <ui:AppText Text="{x:Static labels:AgentSettingsLabels.Model}" Classes="muted type-12" />
+        <ui:AppComboBox ItemsSource="{Binding Models}" SelectedItem="{Binding SelectedModel}"
+                        HorizontalAlignment="Stretch" IsEnabled="{Binding HasModels}"
+                        AutomationProperties.Name="{x:Static labels:AgentSettingsLabels.Model}">
+          <ComboBox.ItemTemplate>
+            <DataTemplate><ui:AppText Text="{Binding Label}" TextTrimming="CharacterEllipsis" /></DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ui:AppComboBox>
+        <ui:AppText Text="{x:Static labels:AgentSettingsLabels.NoModels}" Classes="muted type-11-5"
+                    IsVisible="{Binding HasNoModels}" TextWrapping="Wrap" />
+        <ui:AppText Text="{x:Static labels:AgentSettingsLabels.Reasoning}" Classes="muted type-12" />
+        <ui:AppEditableChoice Choices="{Binding ReasoningEfforts}" SelectedChoice="{Binding ReasoningEffort}"
+                              AutomationProperties.Name="{x:Static labels:AgentSettingsLabels.Reasoning}" />
+        <ui:AppCheckBox Content="{x:Static labels:AgentSettingsLabels.AgentEnabled}" IsChecked="{Binding IsEnabled}" />
+      </StackPanel>
+      <ui:AppSettingsDialog.Footer>
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+            <ui:AppButton Content="{Binding SaveLabel}" Classes="primary" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
+            <ui:AppButton Grid.Column="1" Content="{x:Static labels:AgentSettingsLabels.Delete}" Classes="danger" Command="{Binding DeleteCommand}" />
+            <ui:AppButton Grid.Column="2" Content="{x:Static labels:AgentSettingsLabels.Cancel}" Command="{Binding CloseFormCommand}" />
+          </Grid>
+          <ui:AppText Text="{Binding EditorNotice}" Classes="status-error type-12"
+                      TextWrapping="Wrap" IsVisible="{Binding HasEditorNotice}" />
+          <ui:AppText Text="{Binding Status}" Classes="subtle type-11" Classes.status-error="{Binding HasStatusError}" TextWrapping="Wrap" />
+        </StackPanel>
+      </ui:AppSettingsDialog.Footer>
+    </ui:AppSettingsDialog>
+  </Grid>
+</ui:AppUserControl>

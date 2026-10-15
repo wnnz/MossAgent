@@ -1,0 +1,36 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Views.WorkspaceConversationTabsView"
+                   x:CompileBindings="False">
+  <Grid>
+    <ui:AppIconLabel x:Name="ConversationHeading" Classes="conversation-heading"
+                     IconData="{StaticResource UiIconFolder}" Label="{Binding Tabs.SelectedTab.Title}"
+                     IsVisible="{Binding Tabs.IsSingleTab}" />
+  <ui:AppSelectionScrollViewer SelectedItem="{Binding Tabs.SelectedTab}"
+                               IsVisible="{Binding Tabs.ShowTabStrip}">
+    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+      <ui:AppItemsControl ItemsSource="{Binding Tabs.Items}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Orientation="Horizontal" Spacing="4" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <ui:AppConversationTab Title="{Binding Title}" IsSelected="{Binding IsSelected}" CommandParameter="{Binding .}"
+                                    SelectCommand="{Binding $parent[Window].DataContext.Workspace.Tabs.SelectTabCommand}"
+                                    CloseCommand="{Binding $parent[Window].DataContext.Workspace.Tabs.CloseTabCommand}"
+                                    CloseLabel="{Binding $parent[Window].DataContext.Workspace.Tabs.CloseTabLabel}"
+                                    OptionsLabel="{Binding $parent[Window].DataContext.Workspace.Tabs.TabOptionsLabel}" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ui:AppItemsControl>
+      <ui:AppIconButton Classes="conversation-tab-add" Label="新对话"
+                        Command="{Binding Catalog.NewTaskCommand}"
+                        IsEnabled="{Binding Catalog.SelectedProject, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        IconData="{StaticResource UiIconPlus}" />
+    </StackPanel>
+  </ui:AppSelectionScrollViewer>
+  </Grid>
+</ui:AppUserControl>

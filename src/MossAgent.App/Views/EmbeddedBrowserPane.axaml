@@ -1,35 +1,37 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
+             xmlns:resources="clr-namespace:MossAgent.App.Resources"
              x:Class="MossAgent.App.Views.EmbeddedBrowserPane"
              x:CompileBindings="False">
   <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="6">
-    <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="5">
-      <Button Content="←" Command="{Binding BackCommand}" ToolTip.Tip="后退" />
-      <Button Grid.Column="1" Content="→" Command="{Binding ForwardCommand}" ToolTip.Tip="前进" />
-      <TextBox Grid.Column="2" Text="{Binding Address}" PlaceholderText="https://example.com" />
-      <Button Grid.Column="3" Content="打开" Classes="primary" Command="{Binding NavigateCommand}" />
-      <Button Grid.Column="4" Content="刷新" Command="{Binding ReloadCommand}" />
-      <Button Grid.Column="5" Content="开发工具" Command="{Binding DevToolsCommand}" />
+    <ui:AppBrowserToolbar Address="{Binding Address}" NavigateCommand="{Binding NavigateCommand}"
+                          BackCommand="{Binding BackCommand}" ForwardCommand="{Binding ForwardCommand}"
+                          ReloadCommand="{Binding ReloadCommand}" DevToolsCommand="{Binding DevToolsCommand}" />
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
+      <ui:AppText Text="{Binding Status}" Classes="muted" TextWrapping="Wrap" Margin="2,6" />
+      <ui:AppIconButton Grid.Column="1" Classes="icon-compact" Command="{Binding Actions.CancelCommand}"
+                        IsVisible="{Binding Actions.IsBusy}" IconData="{StaticResource UiIconClose}"
+                        Label="{x:Static resources:BrowserToolbarText.CancelActionLabel}" />
     </Grid>
-    <TextBlock Grid.Row="1" Text="{Binding Status}" Foreground="#899189"
-               TextWrapping="Wrap" Margin="2,6" />
     <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,5">
-      <ComboBox ItemsSource="{Binding Tabs}" SelectedItem="{Binding SelectedTab}"
-                DisplayMemberBinding="{Binding Title}" />
-      <Button Grid.Column="1" Content="+" Classes="ghost icon" Command="{Binding NewTabCommand}" Margin="5,0,0,0"
-              ToolTip.Tip="新建标签页" />
-      <Button Grid.Column="2" Content="×" Classes="ghost icon" Command="{Binding CloseTabCommand}" Margin="5,0,0,0"
-              ToolTip.Tip="关闭当前标签页" />
+      <ui:AppComboBox ItemsSource="{Binding Tabs}" SelectedItem="{Binding SelectedTab}"
+                      IsEnabled="{Binding Actions.CanExecute}"
+                      Classes="compact-selector browser-tabs" DisplayMemberBinding="{Binding Title}" />
+      <ui:AppIconButton Grid.Column="1" Classes="icon-compact" Command="{Binding NewTabCommand}" Margin="5,0,0,0"
+                        Label="新建标签页" IconData="{StaticResource UiIconPlus}" />
+      <ui:AppIconButton Grid.Column="2" Classes="icon-compact" Command="{Binding CloseTabCommand}" Margin="5,0,0,0"
+                        Label="关闭当前标签页" IconData="{StaticResource UiIconClose}" />
     </Grid>
-    <Border Grid.Row="3" Background="#FFFFFF" BorderBrush="#303630" BorderThickness="1">
+    <ui:AppBorder Grid.Row="3" Classes="embedded-browser-surface">
       <Grid>
-        <ContentControl Content="{Binding Content}" />
-        <TextBlock Text="内置浏览器尚未启动"
+        <ui:AppBrowserViewport Host="{Binding Host}" View="{Binding Content}" />
+        <ui:AppText Text="内置浏览器尚未启动"
                    IsVisible="{Binding !HasBrowser}"
-                   Foreground="#899189"
+                   Classes="muted"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center" />
       </Grid>
-    </Border>
+    </ui:AppBorder>
   </Grid>
-</UserControl>
+</ui:AppUserControl>

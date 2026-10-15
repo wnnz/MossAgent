@@ -43,12 +43,28 @@ public sealed class ProxyConnectionTester : IProxyConnectionTester
                     ? $"代理可用，探测状态 {(int)response.StatusCode}。"
                     : $"代理已连接，但探测返回 {(int)response.StatusCode}。");
         }
-        catch (Exception exception) when (
-            exception is HttpRequestException or TaskCanceledException or OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            stopwatch.Stop();
+            throw;
+        }
+        catch (OperationCanceledException)
         {
             stopwatch.Stop();
             return new ProxyConnectionTestResult(
-                false, stopwatch.Elapsed, $"代理测试失败：{exception.Message}");
+                false, stopwatch.Elapsed, "代理测试超时，请检查代理地址和网络连接。");
+        }
+        catch (UriFormatException)
+        {
+            stopwatch.Stop();
+            return new ProxyConnectionTestResult(
+                false, stopwatch.Elapsed, "代理主机名或端口无效，请修正配置后重试。");
+        }
+        catch (HttpRequestException)
+        {
+            stopwatch.Stop();
+            return new ProxyConnectionTestResult(
+                false, stopwatch.Elapsed, "代理测试失败，请检查代理地址、认证信息和网络连接。");
         }
     }
 

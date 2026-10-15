@@ -11,10 +11,15 @@ public sealed class McpHttpClientFactory(IConfigurationRepository configurations
         McpServerProfile profile,
         CancellationToken cancellationToken)
     {
-        var handler = new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromSeconds(20) };
+        var handler = new SocketsHttpHandler
+        {
+            ConnectTimeout = TimeSpan.FromSeconds(20),
+            AllowAutoRedirect = false,
+            UseProxy = false
+        };
         if (profile.ProxyId is not null)
         {
-            var proxies = await configurations.GetProxiesAsync(cancellationToken);
+            var proxies = await configurations.GetProxiesAsync(cancellationToken).ConfigureAwait(false);
             var selected = proxies.SingleOrDefault(proxy => proxy.Id == profile.ProxyId && proxy.IsEnabled)
                 ?? throw new InvalidOperationException("MCP server 选择的代理不存在或已禁用。");
             handler.Proxy = CreateProxy(selected);
@@ -41,4 +46,3 @@ public sealed class McpHttpClientFactory(IConfigurationRepository configurations
         return proxy;
     }
 }
-

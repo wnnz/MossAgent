@@ -1,0 +1,63 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:MossAgent.App.Controls">
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="ContentScrollThumbBrush" Color="#E4E4E5" />
+          <SolidColorBrush x:Key="ContentScrollThumbHoverBrush" Color="#CED2D6" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="ContentScrollThumbBrush" Color="#40474D" />
+          <SolidColorBrush x:Key="ContentScrollThumbHoverBrush" Color="#6D757C" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+  <Style Selector=".app-scroll-viewer /template/ ScrollBar, .app-list-box.thin-scrollbar /template/ ScrollViewer /template/ ScrollBar">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector=".app-scroll-viewer /template/ ScrollBar#PART_VerticalScrollBar, .app-list-box.thin-scrollbar /template/ ScrollViewer /template/ ScrollBar#PART_VerticalScrollBar">
+    <Setter Property="Width" Value="12" />
+    <Setter Property="MinWidth" Value="12" />
+  </Style>
+  <Style Selector=".app-scroll-viewer /template/ ScrollBar#PART_HorizontalScrollBar, .app-list-box.thin-scrollbar /template/ ScrollViewer /template/ ScrollBar#PART_HorizontalScrollBar">
+    <Setter Property="Height" Value="12" />
+    <Setter Property="MinHeight" Value="12" />
+  </Style>
+  <Style Selector=".app-scroll-viewer /template/ ScrollBar /template/ Grid#Root, .app-list-box.thin-scrollbar /template/ ScrollViewer /template/ ScrollBar /template/ Grid#Root">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector=".app-scroll-viewer /template/ ScrollBar /template/ Rectangle#TrackRect, .app-list-box.thin-scrollbar /template/ ScrollViewer /template/ ScrollBar /template/ Rectangle#TrackRect">
+    <Setter Property="Opacity" Value="0" />
+  </Style>
+  <Style Selector=".app-scroll-viewer /template/ ScrollBar /template/ RepeatButton#PART_LineUpButton, .app-scroll-viewer /template/ ScrollBar /template/ RepeatButton#PART_LineDownButton, .app-list-box.thin-scrollbar /template/ ScrollViewer /template/ ScrollBar /template/ RepeatButton#PART_LineUpButton, .app-list-box.thin-scrollbar /template/ ScrollViewer /template/ ScrollBar /template/ RepeatButton#PART_LineDownButton">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+  <Style Selector=".app-scroll-viewer /template/ ScrollBar /template/ Thumb, .app-list-box.thin-scrollbar /template/ ScrollViewer /template/ ScrollBar /template/ Thumb">
+    <Setter Property="RenderTransform" Value="none" />
+    <Setter Property="Transitions" Value="{x:Null}" />
+    <Setter Property="Background" Value="{DynamicResource ContentScrollThumbBrush}" />
+  </Style>
+  <Style Selector=".app-scroll-viewer /template/ ScrollBar#PART_VerticalScrollBar /template/ Thumb, .app-list-box.thin-scrollbar /template/ ScrollViewer /template/ ScrollBar#PART_VerticalScrollBar /template/ Thumb">
+    <Setter Property="Width" Value="12" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ui:AppBorder Classes="vertical-scroll-thumb" Background="{TemplateBinding Background}" Width="6" CornerRadius="3" HorizontalAlignment="Center" />
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector=".app-scroll-viewer /template/ ScrollBar#PART_HorizontalScrollBar /template/ Thumb, .app-list-box.thin-scrollbar /template/ ScrollViewer /template/ ScrollBar#PART_HorizontalScrollBar /template/ Thumb">
+    <Setter Property="Height" Value="12" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ui:AppBorder Classes="horizontal-scroll-thumb" Background="{TemplateBinding Background}" Height="6" CornerRadius="3" VerticalAlignment="Center" />
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector=".app-scroll-viewer /template/ ScrollBar /template/ Thumb:pointerover, .app-scroll-viewer /template/ ScrollBar /template/ Thumb:pressed, .app-list-box.thin-scrollbar /template/ ScrollViewer /template/ ScrollBar /template/ Thumb:pointerover, .app-list-box.thin-scrollbar /template/ ScrollViewer /template/ ScrollBar /template/ Thumb:pressed">
+    <Setter Property="Background" Value="{DynamicResource ContentScrollThumbHoverBrush}" />
+  </Style>
+</Styles>

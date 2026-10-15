@@ -2,6 +2,7 @@
   <ItemGroup>
     <ProjectReference Include="../MossAgent.Domain/MossAgent.Domain.csproj" />
     <ProjectReference Include="../MossAgent.Tools.Abstractions/MossAgent.Tools.Abstractions.csproj" />
+    <EmbeddedResource Include="Data/model-capabilities.json" />
   </ItemGroup>
 </Project>
 

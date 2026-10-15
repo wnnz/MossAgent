@@ -11,22 +11,32 @@ public sealed class StreamableHttpMcpClient(
 {
     private long _nextId;
     private string? _sessionId;
+    private readonly CancellationTokenSource _shutdown = new();
+    private int _disposed;
 
     public async Task InitializeAsync(CancellationToken cancellationToken)
     {
-        await SendRequestAsync("initialize", new
+        try
         {
-            protocolVersion = "2025-03-26",
-            capabilities = new { },
-            clientInfo = new { name = "MossAgent", version = "0.1.0" }
-        }, cancellationToken);
-        await SendNotificationAsync("notifications/initialized", new { }, cancellationToken);
+            await SendRequestAsync("initialize", new
+            {
+                protocolVersion = "2025-03-26",
+                capabilities = new { },
+                clientInfo = new { name = "MossAgent", version = "0.1.0" }
+            }, cancellationToken).ConfigureAwait(false);
+            await SendNotificationAsync("notifications/initialized", new { }, cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            await DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 
     public async Task<IReadOnlyList<McpToolDefinition>> ListToolsAsync(
         CancellationToken cancellationToken)
     {
-        var result = await SendRequestAsync("tools/list", new { }, cancellationToken);
+        var result = await SendRequestAsync("tools/list", new { }, cancellationToken).ConfigureAwait(false);
         return McpProtocolParser.ReadTools(result);
     }
 
@@ -36,19 +46,22 @@ public sealed class StreamableHttpMcpClient(
         CancellationToken cancellationToken)
     {
         var result = await SendRequestAsync(
-            "tools/call", new { name, arguments }, cancellationToken);
+            "tools/call", new { name, arguments }, cancellationToken).ConfigureAwait(false);
         return McpProtocolParser.ReadCallResult(result);
     }
 
     public async ValueTask DisposeAsync()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         try
         {
-            await TerminateSessionAsync();
+            await _shutdown.CancelAsync().ConfigureAwait(false);
+            await TerminateSessionAsync().ConfigureAwait(false);
         }
         finally
         {
             client.Dispose();
+            _shutdown.Dispose();
         }
     }
 
@@ -57,17 +70,21 @@ public sealed class StreamableHttpMcpClient(
         object parameters,
         CancellationToken cancellationToken)
     {
+        ObjectDisposedException.ThrowIf(_disposed != 0, this);
+        cancellationToken.ThrowIfCancellationRequested();
         var id = Interlocked.Increment(ref _nextId);
-        var response = await SendAsync(
-            new { jsonrpc = "2.0", id, method, @params = parameters },
-            cancellationToken,
-            expectedId: id);
-        if (response.TryGetProperty("error", out var error))
+        try
         {
-            throw new InvalidOperationException(error.GetRawText());
+            var response = await SendAsync(new { jsonrpc = "2.0", id, method, @params = parameters },
+                cancellationToken, expectedId: id, acceptSessionId: method == "initialize").ConfigureAwait(false);
+            return response.GetProperty("result").Clone();
         }
-
-        return response.GetProperty("result").Clone();
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested
+            && method != "initialize" && _disposed == 0)
+        {
+            await NotifyCancellationAsync(id).ConfigureAwait(false);
+            throw;
+        }
     }
 
     private async Task SendNotificationAsync(
@@ -77,16 +94,45 @@ public sealed class StreamableHttpMcpClient(
     {
         await SendAsync(
             new { jsonrpc = "2.0", method, @params = parameters }, cancellationToken,
-            allowEmpty: true);
+            expectedId: null).ConfigureAwait(false);
+    }
+
+    private async Task NotifyCancellationAsync(long id)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+        try
+        {
+            await SendNotificationAsync("notifications/cancelled", new { requestId = id }, timeout.Token).ConfigureAwait(false);
+        }
+        catch (Exception) { }
     }
 
     private async Task<JsonElement> SendAsync(
         object payload,
         CancellationToken cancellationToken,
-        bool allowEmpty = false,
-        long? expectedId = null)
+        long? expectedId,
+        bool acceptSessionId = false)
     {
-        using var request = new HttpRequestMessage(
+        ObjectDisposedException.ThrowIf(_disposed != 0, this);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdown.Token);
+        using var request = CreateRequest(payload);
+        using var response = await client.SendAsync(
+            request, HttpCompletionOption.ResponseHeadersRead, linked.Token).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"MCP HTTP 服务请求失败（{(int)response.StatusCode}）。", null, response.StatusCode);
+        if (acceptSessionId && response.Headers.TryGetValues("Mcp-Session-Id", out var values))
+            _sessionId = values.FirstOrDefault();
+        return expectedId is { } id
+            ? await McpHttpResponseReader.ReadAsync(response.Content, id, linked.Token).ConfigureAwait(false)
+            : default;
+    }
+
+    private HttpRequestMessage CreateRequest(object payload)
+    {
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(payload);
+        if (bytes.Length > McpHttpResponseReader.MaximumResponseBytes)
+            throw new IOException("MCP HTTP 请求超过 2 MiB 大小限制。");
+        var request = new HttpRequestMessage(
             HttpMethod.Post,
             profile.Url ?? throw new InvalidOperationException("HTTP MCP server 缺少 URL。"));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -97,23 +143,9 @@ public sealed class StreamableHttpMcpClient(
             request.Headers.TryAddWithoutValidation("Mcp-Session-Id", _sessionId);
         }
 
-        request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-        using var response = await client.SendAsync(
-            request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        if (response.Headers.TryGetValues("Mcp-Session-Id", out var values))
-        {
-            _sessionId = values.FirstOrDefault();
-        }
-
-        if (allowEmpty && response.Content.Headers.ContentLength == 0)
-        {
-            return default;
-        }
-
-        var content = await response.Content.ReadAsStringAsync(cancellationToken);
-        return McpHttpResponseParser.Parse(
-            content, response.Content.Headers.ContentType?.MediaType, expectedId);
+        request.Content = new ByteArrayContent(bytes);
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json") { CharSet = Encoding.UTF8.WebName };
+        return request;
     }
 
     private async Task TerminateSessionAsync()
@@ -128,11 +160,11 @@ public sealed class StreamableHttpMcpClient(
         request.Headers.TryAddWithoutValidation("MCP-Protocol-Version", "2025-03-26");
         try
         {
-            using var response = await client.SendAsync(request, CancellationToken.None);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token).ConfigureAwait(false);
         }
         catch
         {
-            // Session termination is best-effort during disposal.
         }
     }
 }

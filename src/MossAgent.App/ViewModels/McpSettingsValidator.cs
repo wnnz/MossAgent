@@ -33,34 +33,43 @@ internal static class McpSettingsValidator
         if (transport == McpTransportKind.StreamableHttp
             && (!Uri.TryCreate(url, UriKind.Absolute, out endpoint)
                 || endpoint.Scheme != Uri.UriSchemeHttp
-                && endpoint.Scheme != Uri.UriSchemeHttps))
+                && endpoint.Scheme != Uri.UriSchemeHttps
+                || endpoint.UserInfo.Length > 0))
         {
-            error = "Streamable HTTP URL 必须是有效的 HTTP(S) 地址。";
+            error = "Streamable HTTP URL 必须是有效的 HTTP(S) 地址，且不能包含账号或密码。";
             return false;
         }
 
         try
         {
-            if (!HasKind(argumentsJson, JsonValueKind.Array)
-                || !HasKind(environmentJson, JsonValueKind.Object)
-                || !HasKind(headersJson, JsonValueKind.Object))
+            if (!HasStringArray(argumentsJson)
+                || !HasStringObject(environmentJson)
+                || !HasStringObject(headersJson))
             {
-                error = "参数必须是数组，环境变量和请求头必须是对象。";
+                error = "参数必须是数组，环境变量和请求头必须是对象；所有值均须为字符串。";
                 return false;
             }
 
             return true;
         }
-        catch (JsonException exception)
+        catch (JsonException)
         {
-            error = $"JSON 配置无效：{exception.Message}";
+            error = "JSON 配置无效，请检查参数、环境变量和请求头的格式。";
             return false;
         }
     }
 
-    private static bool HasKind(string json, JsonValueKind expected)
+    private static bool HasStringArray(string json)
     {
         using var document = JsonDocument.Parse(json);
-        return document.RootElement.ValueKind == expected;
+        return document.RootElement.ValueKind == JsonValueKind.Array
+            && document.RootElement.EnumerateArray().All(static item => item.ValueKind == JsonValueKind.String);
+    }
+
+    private static bool HasStringObject(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.ValueKind == JsonValueKind.Object
+            && document.RootElement.EnumerateObject().All(static item => item.Value.ValueKind == JsonValueKind.String);
     }
 }

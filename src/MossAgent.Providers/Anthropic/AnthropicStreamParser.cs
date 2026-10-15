@@ -7,9 +7,7 @@ namespace MossAgent.Providers.Anthropic;
 
 internal sealed class AnthropicStreamParser(ProviderToolNameMap toolNames)
 {
-    private readonly Dictionary<int, string> _callIds = [];
-    private readonly Dictionary<int, string> _toolNames = [];
-    private readonly Dictionary<int, StringBuilder> _arguments = [];
+    private readonly Dictionary<int, (string CallId, string WireName, StringBuilder Arguments)> _calls = [];
 
     public ModelEvent? Parse(JsonElement root)
     {
@@ -36,9 +34,8 @@ internal sealed class AnthropicStreamParser(ProviderToolNameMap toolNames)
         var type = block.TryGetProperty("type", out var typeValue) ? typeValue.GetString() : null;
         if (type == "tool_use")
         {
-            _callIds[index] = block.GetProperty("id").GetString() ?? Guid.NewGuid().ToString("N");
-            _toolNames[index] = block.GetProperty("name").GetString() ?? string.Empty;
-            _arguments[index] = new StringBuilder();
+            _calls[index] = (block.GetProperty("id").GetString() ?? Guid.NewGuid().ToString("N"),
+                block.GetProperty("name").GetString() ?? string.Empty, new StringBuilder());
         }
 
         return type == "text" && block.TryGetProperty("text", out var text)
@@ -54,9 +51,9 @@ internal sealed class AnthropicStreamParser(ProviderToolNameMap toolNames)
         }
 
         var type = delta.TryGetProperty("type", out var typeValue) ? typeValue.GetString() : null;
-        if (type == "input_json_delta" && _arguments.TryGetValue(index, out var arguments))
+        if (type == "input_json_delta" && _calls.TryGetValue(index, out var call))
         {
-            arguments.Append(delta.GetProperty("partial_json").GetString());
+            call.Arguments.Append(delta.GetProperty("partial_json").GetString());
             return null;
         }
 
@@ -67,17 +64,14 @@ internal sealed class AnthropicStreamParser(ProviderToolNameMap toolNames)
 
     private ModelEvent? StopBlock(JsonElement root)
     {
-        if (!TryGetIndex(root, out var index)
-            || !_callIds.Remove(index, out var callId)
-            || !_toolNames.Remove(index, out var name)
-            || !_arguments.Remove(index, out var arguments))
+        if (!TryGetIndex(root, out var index) || !_calls.Remove(index, out var call))
         {
             return null;
         }
 
-        using var document = JsonDocument.Parse(arguments.Length == 0 ? "{}" : arguments.ToString());
+        using var document = JsonDocument.Parse(call.Arguments.Length == 0 ? "{}" : call.Arguments.ToString());
         return new ToolCallCompleted(
-            callId, toolNames.Decode(name), document.RootElement.Clone());
+            call.CallId, toolNames.Decode(call.WireName), document.RootElement.Clone());
     }
 
     private static ModelEvent ReadError(JsonElement root)

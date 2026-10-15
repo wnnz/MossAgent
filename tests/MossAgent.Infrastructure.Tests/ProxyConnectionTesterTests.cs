@@ -39,6 +39,40 @@ public sealed class ProxyConnectionTesterTests
         Assert.StartsWith("GET /status", await server);
     }
 
+    [Fact]
+    public async Task TestAsync_PropagatesCallerCancellation()
+    {
+        var tester = new ProxyConnectionTester(new Uri("http://probe.test/status"));
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => tester.TestAsync(
+            CreateProxy(ProxyProtocol.Http, 1), cancellation.Token));
+    }
+
+    [Fact]
+    public async Task TestAsync_ReturnsActionableFailureForMalformedProxyHost()
+    {
+        var tester = new ProxyConnectionTester(new Uri("http://probe.test/status"));
+        var proxy = CreateProxy(ProxyProtocol.Http, 8080) with { Host = "proxy.example/path" };
+
+        var result = await tester.TestAsync(proxy, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("无效", result.Message);
+    }
+
+    [Fact]
+    public void ProxyProfile_ToUriSupportsIpv6Literals()
+    {
+        var proxy = CreateProxy(ProxyProtocol.Http, 8080) with { Host = "::1" };
+
+        var uri = proxy.ToUri();
+
+        Assert.Equal(UriHostNameType.IPv6, uri.HostNameType);
+        Assert.Equal(8080, uri.Port);
+    }
+
     private static TcpListener StartListener(out int port)
     {
         var listener = new TcpListener(IPAddress.Loopback, 0);

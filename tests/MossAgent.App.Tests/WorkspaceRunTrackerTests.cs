@@ -60,8 +60,8 @@ public sealed class WorkspaceRunTrackerTests
         Assert.False(tracker.IsRunning(second.Task.Id));
         first.Cancel();
         second.Cancel();
-        Assert.False(first.IsCancellationRequested);
-        Assert.False(second.IsCancellationRequested);
+        Assert.True(first.IsCancellationRequested);
+        Assert.True(second.IsCancellationRequested);
     }
 
     [Fact]
@@ -80,6 +80,79 @@ public sealed class WorkspaceRunTrackerTests
 
             Assert.False(tracker.IsRunning(state.Task.Id));
         }
+    }
+
+    [Fact]
+    public void DisposedState_PreservesCancellationForFinalClassification()
+    {
+        using var state = CreateState("cancelled");
+        state.Cancel();
+
+        state.Dispose();
+
+        Assert.True(state.IsCancellationRequested);
+        Assert.True(state.CancellationToken.IsCancellationRequested);
+    }
+
+    [Fact]
+    public async Task StopWaitsForEveryExecutionAndRejectsNewWork()
+    {
+        using var tracker = new WorkspaceRunTracker();
+        var first = CreateState("first");
+        var second = CreateState("second");
+        tracker.Add(first);
+        tracker.Add(second);
+        var firstRelease = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondRelease = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        tracker.TrackExecution(() => firstRelease.Task);
+        tracker.TrackExecution(() => secondRelease.Task);
+
+        var stopping = tracker.StopAsync();
+
+        Assert.True(first.IsCancellationRequested);
+        Assert.True(second.IsCancellationRequested);
+        Assert.False(stopping.IsCompleted);
+        using var late = CreateState("late");
+        Assert.Throws<ObjectDisposedException>(() => tracker.Add(late));
+        Assert.Throws<ObjectDisposedException>(() => tracker.TrackExecution(() => Task.CompletedTask));
+        firstRelease.SetResult();
+        Assert.False(stopping.IsCompleted);
+        secondRelease.SetResult();
+        await stopping.WaitAsync(TestContext.Current.CancellationToken);
+        await tracker.StopAsync();
+    }
+
+    [Fact]
+    public async Task ThrowingCancellationStillCancelsOthersAndDrainsBeforeReportingFailure()
+    {
+        using var tracker = new WorkspaceRunTracker();
+        var first = CreateState("first");
+        var second = CreateState("second");
+        tracker.Add(first);
+        tracker.Add(second);
+        using var registration = first.CancellationToken.Register(() => throw new InvalidOperationException("synthetic secret"));
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        tracker.TrackExecution(() => release.Task);
+
+        var stopping = tracker.StopAsync();
+
+        Assert.True(first.IsCancellationRequested);
+        Assert.True(second.IsCancellationRequested);
+        Assert.False(stopping.IsCompleted);
+        release.SetResult();
+        var failure = await Assert.ThrowsAsync<InvalidOperationException>(() => stopping);
+        Assert.DoesNotContain("synthetic secret", failure.Message);
+    }
+
+    [Fact]
+    public async Task CompletedExecutionFailureIsNotLostDuringShutdown()
+    {
+        using var tracker = new WorkspaceRunTracker();
+        tracker.TrackExecution(() => throw new InvalidOperationException("synthetic secret"));
+
+        var failure = await Assert.ThrowsAsync<InvalidOperationException>(() => tracker.StopAsync());
+
+        Assert.DoesNotContain("synthetic secret", failure.Message);
     }
 
     private static WorkspaceRunState CreateState(string title)

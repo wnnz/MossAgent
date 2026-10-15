@@ -1,0 +1,41 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppProviderSettingsHeader"
+                   x:Name="Header" x:CompileBindings="False">
+  <Grid Classes="provider-settings-header-layout" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+    <ui:AppIconButton x:Name="ToggleModelsButton" Classes="expand-icon provider-settings-action"
+                      Label="{Binding ExpansionLabel, ElementName=Header}"
+                      IconData="{StaticResource UiIconChevronRight}"
+                      AlternateIconData="{StaticResource UiIconChevronDown}"
+                      IsAlternateIcon="{Binding IsExpanded, ElementName=Header}"
+                      IsEnabled="{Binding HasToggleAction, ElementName=Header}"
+                      Command="{Binding ToggleCommand, ElementName=Header}"
+                      CommandParameter="{Binding ToggleCommandParameter, ElementName=Header}" />
+    <StackPanel Grid.Column="1" Spacing="3">
+      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+        <ui:AppText x:Name="ProviderNameText" Classes="type-13 weight-semibold provider-settings-label"
+                    Text="{Binding Provider.Name, ElementName=Header}" TextTrimming="CharacterEllipsis"
+                    ToolTip.Tip="{Binding Provider.Name, ElementName=Header}" />
+        <ui:AppText Grid.Column="1" x:Name="DefaultBadge" Classes="subtle type-10 provider-settings-label"
+                    Text="{Binding DefaultLabel, ElementName=Header}"
+                    IsVisible="{Binding Provider.IsDefault, ElementName=Header}" />
+        <ui:AppText Grid.Column="2" x:Name="DisabledBadge" Classes="subtle type-10 provider-settings-label"
+                    Text="{Binding DisabledLabel, ElementName=Header}"
+                    IsVisible="{Binding !Provider.IsEnabled, ElementName=Header}" />
+      </Grid>
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+        <ui:AppText x:Name="EndpointText" Classes="subtle type-11 provider-settings-label"
+                    Text="{Binding Provider.BaseUri, ElementName=Header}" TextTrimming="CharacterEllipsis" />
+        <ui:AppText Grid.Column="1" x:Name="ModelCountText" Classes="subtle type-11 provider-settings-label"
+                    Text="{Binding CountLabel, ElementName=Header}" />
+      </Grid>
+    </StackPanel>
+    <ui:AppButton Grid.Column="2" x:Name="EditProviderButton" Classes="ghost button-xs provider-settings-action"
+                  Content="{Binding EditLabel, ElementName=Header}"
+                  AutomationProperties.Name="{Binding EditActionLabel, ElementName=Header}"
+                  IsEnabled="{Binding HasEditAction, ElementName=Header}"
+                  Command="{Binding EditCommand, ElementName=Header}"
+                  CommandParameter="{Binding Provider, ElementName=Header}" />
+  </Grid>
+</ui:AppUserControl>

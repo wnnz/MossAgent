@@ -2,9 +2,10 @@
   <PropertyGroup><IsTestProject>true</IsTestProject></PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <ProjectReference Include="../../src/MossAgent.Agent/MossAgent.Agent.csproj" />
+    <ProjectReference Include="../../src/MossAgent.Tools.BuiltIn/MossAgent.Tools.BuiltIn.csproj" />
   </ItemGroup>
 </Project>
-

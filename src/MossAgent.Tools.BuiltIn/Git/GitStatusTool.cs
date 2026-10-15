@@ -5,12 +5,17 @@ namespace MossAgent.Tools.BuiltIn.Git;
 
 public sealed class GitStatusTool(
     AuthorizedPathResolver paths,
-    GitCommandRunner git) : IAgentTool
+    GitCommandRunner git) : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "git.status", "查看 Git 工作区状态。",
         """{"type":"object","properties":{"repository":{"type":"string"},"nullTerminated":{"type":"boolean"}}}""",
         ToolRiskLevel.ReadOnly, ToolCapability.FileRead | ToolCapability.Process);
+
+    public void ValidateRequest(ToolRequest request, ToolExecutionContext context)
+    {
+        paths.Resolve(request.Arguments.GetOptionalString("repository") ?? context.WorkingDirectory, context);
+    }
 
     public Task<ToolResult> ExecuteAsync(
         ToolRequest request,
@@ -22,7 +27,7 @@ public sealed class GitStatusTool(
             context);
         var arguments = new List<string>
         {
-            "-c", "core.quotepath=false", "status", "--short", "--branch"
+            "-c", "core.quotepath=false", "status", "--short", "--branch", "--untracked-files=all"
         };
         if (request.Arguments.GetOptionalBoolean("nullTerminated") == true)
         {

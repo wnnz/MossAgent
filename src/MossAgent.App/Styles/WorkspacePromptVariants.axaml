@@ -1,0 +1,75 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Style Selector=".app-project-prompt" x:SetterTargetType="controls:AppProjectPrompt">
+    <Setter Property="Margin" Value="16,0" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+  </Style>
+  <Style Selector=".app-project-prompt Panel.project-prompt-layout">
+    <Setter Property="HorizontalAlignment" Value="Center" />
+  </Style>
+  <Style Selector=".app-project-prompt controls|AppText.project-prompt-fragment">
+    <Setter Property="FontSize" Value="27.5" />
+    <Setter Property="FontWeight" Value="Normal" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="TextAlignment" Value="Center" />
+    <Setter Property="MaxWidth" Value="200" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector=".app-project-prompt controls|AppButton.empty-project-link">
+    <Setter Property="MaxWidth" Value="300" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector=".app-project-prompt controls|AppText.empty-project-name">
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+  </Style>
+  <Style Selector="controls|AppButton.app-approval-policy-button">
+    <Setter Property="Padding" Value="9,5" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="controls|AppButton.app-approval-policy-button controls|AppIconLabel.policy-label">
+    <Setter Property="Spacing" Value="5" />
+    <Setter Property="IconData" Value="{StaticResource UiIconWarning}" />
+  </Style>
+  <Style Selector="controls|AppButton.app-approval-policy-button.policy-readonly controls|AppIconLabel.policy-label">
+    <Setter Property="IconData" Value="{StaticResource UiIconLock}" />
+  </Style>
+  <Style Selector="controls|AppButton.app-approval-policy-button.policy-ask controls|AppIconLabel.policy-label">
+    <Setter Property="IconData" Value="{StaticResource UiIconShield}" />
+  </Style>
+  <Style Selector="controls|AppButton.app-approval-policy-button controls|AppIcon">
+    <Setter Property="Size" Value="12" />
+    <Setter Property="Stroke" Value="{DynamicResource StatusWarningBrush}" />
+  </Style>
+  <Style Selector="controls|AppButton.app-approval-policy-button controls|AppText">
+    <Setter Property="FontSize" Value="11.5" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource StatusWarningBrush}" />
+  </Style>
+  <Style Selector="controls|AppCard.policy-menu">
+    <Setter Property="Width" Value="310" />
+  </Style>
+  <Style Selector="controls|AppText.policy-menu-title">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="8,6,8,5" />
+  </Style>
+  <Style Selector="controls|AppButton.policy-option">
+    <Setter Property="Padding" Value="9,7" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+  <Style Selector="controls|AppButton.policy-option.selected">
+    <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+  </Style>
+  <Style Selector="controls|AppText.policy-option-title">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="controls|AppText.policy-option-hint">
+    <Setter Property="FontSize" Value="10.5" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+</Styles>

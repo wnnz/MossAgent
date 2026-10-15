@@ -1,14 +1,14 @@
-using System.Diagnostics;
 using MossAgent.Application.Git;
 
 namespace MossAgent.Infrastructure.Git;
 
-public sealed class GitRepositoryInfoService : IGitRepositoryInfoService
+public sealed class GitRepositoryInfoService(GitProcessRunner git) : IGitRepositoryInfoService
 {
     public async Task<string?> GetBranchNameAsync(
         string workingDirectory,
         CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (!Directory.Exists(workingDirectory))
         {
             return null;
@@ -16,27 +16,11 @@ public sealed class GitRepositoryInfoService : IGitRepositoryInfoService
 
         try
         {
-            var startInfo = new ProcessStartInfo("git")
-            {
-                WorkingDirectory = workingDirectory,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            startInfo.ArgumentList.Add("rev-parse");
-            startInfo.ArgumentList.Add("--abbrev-ref");
-            startInfo.ArgumentList.Add("HEAD");
-            using var process = Process.Start(startInfo);
-            if (process is null)
-            {
-                return null;
-            }
-
-            var output = process.StandardOutput.ReadToEndAsync(cancellationToken);
-            await process.WaitForExitAsync(cancellationToken);
-            var branch = (await output).Trim();
-            return process.ExitCode == 0 && branch.Length > 0 ? branch : null;
+            var result = await git.RunAsync(workingDirectory, ["symbolic-ref", "--quiet", "--short", "HEAD"], cancellationToken).ConfigureAwait(false);
+            if (result.ExitCode == 1 && !result.OutputTruncated)
+                result = await git.RunAsync(workingDirectory, ["rev-parse", "--abbrev-ref", "HEAD"], cancellationToken).ConfigureAwait(false);
+            var branch = result.StandardOutput.Trim();
+            return result.ExitCode == 0 && !result.OutputTruncated && branch.Length > 0 ? branch : null;
         }
         catch (Exception exception) when (
             exception is InvalidOperationException or System.ComponentModel.Win32Exception)

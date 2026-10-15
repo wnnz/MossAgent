@@ -1,49 +1,132 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
              xmlns:views="clr-namespace:MossAgent.App.Views"
              x:Class="MossAgent.App.Views.SettingsOverlay"
+             x:Name="Root" Classes="settings-shell"
              x:CompileBindings="False">
-  <Grid Background="{DynamicResource OverlayBackgroundBrush}">
-    <!-- 设置中心主卡片容器 -->
-    <Border Classes="card" Margin="40,24" Background="{DynamicResource CardBackgroundBrush}"
-            BorderBrush="{DynamicResource BorderDefaultBrush}" BoxShadow="0 16 48 0 #77000000">
-      <Grid RowDefinitions="50,*">
-        <!-- 顶栏：单色标题与关闭按钮 -->
-        <Border BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="20,0">
-          <Grid ColumnDefinitions="*,Auto">
-            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-              <TextBlock Text="⛭" FontSize="16" Classes="muted" VerticalAlignment="Center" />
-              <TextBlock Text="系统设置 · Settings" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
-            </StackPanel>
-            <Button Grid.Column="1" Content="✕ 关闭" Classes="ghost"
-                    Command="{Binding CloseSettingsCommand}"
-                    VerticalAlignment="Center" />
-          </Grid>
-        </Border>
+  <ui:AppBorder Classes="settings-shell-surface">
+  <Grid ColumnDefinitions="Auto,*">
+    <ui:AppNavigationRail Grid.Column="0" IsSettingsSelected="True"
+                          NewConversationCommand="{Binding CloseSettingsCommand}"
+                          AutomationsCommand="{Binding OpenAutomationsCommand}"
+                          IsAutomationsSelected="{Binding Pages.IsAutomationsOpen}"
+                          InspectorCommand="{Binding SelectInspectorTabCommand}"
+                          ToggleInspectorCommand="{Binding ToggleRightPanelCommand}"
+                          SettingsCommand="{Binding CloseSettingsCommand}">
+      <ui:AppNavigationRail.HelpContent>
+        <views:KeyboardShortcutsFlyoutView />
+      </ui:AppNavigationRail.HelpContent>
+    </ui:AppNavigationRail>
+    <ui:AppBorder Grid.Column="1" Classes="window-content-frame">
+    <ui:AppBorder Classes="window-content-clip">
+    <ui:AppNavigationPanes x:Name="SettingsNavigation">
+    <ui:AppNavigationPanes.NavigationPane>
+    <ui:AppBorder Classes="settings-sidebar-surface">
+      <Grid RowDefinitions="Auto,Auto,*">
+        <ui:AppText Classes="settings-sidebar-title" Text="{Binding #Root.SidebarTitle}" />
 
-        <!-- 主体区域：左侧单色图标导航 + 右侧配置内容 -->
-        <TabControl Grid.Row="1" TabStripPlacement="Left" Margin="8">
-          <!-- 1. 合并后的模型与供应商 -->
-          <TabItem Header="◈  模型与供应商">
-            <views:ProviderAndModelSettingsPane DataContext="{Binding}" />
-          </TabItem>
+        <Grid Grid.Row="1" Classes="settings-search-row">
+          <ui:AppInput Classes="settings-search"
+                       AutomationProperties.Name="搜索设置"
+                       Text="{Binding SettingsSearchQuery, Mode=TwoWay}"
+                       PlaceholderText="搜索" />
+          <ui:AppIcon Classes="ui-icon icon-small" Data="{StaticResource UiIconSearch}"
+                      Margin="14,0,0,0" HorizontalAlignment="Left"
+                      IsHitTestVisible="False" />
+        </Grid>
 
-          <!-- 2. 网络代理 -->
-          <TabItem Header="⬡  网络代理">
-            <views:ProxySettingsPane DataContext="{Binding Proxies}" />
-          </TabItem>
+        <ui:AppScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="1">
+            <ui:AppText Text="个人" Classes="subtle settings-navigation-heading first"
+                        IsVisible="{Binding IsPersonalSettingsMatch}" />
+            <ui:AppSettingsNavButton
+                          HorizontalAlignment="Stretch"
+                          IsVisible="{Binding IsAppearanceSettingsMatch}"
+                          IsChecked="{Binding IsAppearanceSettingsSelected, Mode=OneWay}"
+                          Command="{Binding SelectSettingsTabCommand}" CommandParameter="5"
+                          Label="外观" IconData="{StaticResource UiIconAppearance}" />
+            <ui:AppSettingsNavButton
+                          HorizontalAlignment="Stretch"
+                          IsVisible="{Binding IsProviderSettingsMatch}"
+                          IsChecked="{Binding IsProviderSettingsSelected, Mode=OneWay}"
+                          Command="{Binding SelectSettingsTabCommand}" CommandParameter="0"
+                          Label="AI 提供商" IconData="{StaticResource UiIconProvider}" />
+            <ui:AppSettingsNavButton
+                          HorizontalAlignment="Stretch"
+                          IsVisible="{Binding IsProxySettingsMatch}"
+                          IsChecked="{Binding IsProxySettingsSelected, Mode=OneWay}"
+                          Command="{Binding SelectSettingsTabCommand}" CommandParameter="1"
+                          Label="网络代理" IconData="{StaticResource UiIconProxy}" />
 
-          <!-- 3. 浏览器环境 -->
-          <TabItem Header="☵  浏览器设置">
-            <views:BrowserSettingsPane DataContext="{Binding Browser}" />
-          </TabItem>
+            <ui:AppText Text="集成" Classes="subtle settings-navigation-heading"
+                        IsVisible="{Binding IsIntegrationSettingsMatch}" />
+            <ui:AppSettingsNavButton
+                          HorizontalAlignment="Stretch"
+                          IsVisible="{Binding IsMcpSettingsMatch}"
+                          IsChecked="{Binding IsMcpSettingsSelected, Mode=OneWay}"
+                          Command="{Binding SelectSettingsTabCommand}" CommandParameter="3"
+                          Label="插件" IconData="{StaticResource UiIconPlug}" />
+            <ui:AppSettingsNavButton
+                          HorizontalAlignment="Stretch"
+                          IsVisible="{Binding IsBrowserSettingsMatch}"
+                          IsChecked="{Binding IsBrowserSettingsSelected, Mode=OneWay}"
+                          Command="{Binding SelectSettingsTabCommand}" CommandParameter="2"
+                          Label="浏览器" IconData="{StaticResource UiIconBrowser}" />
 
-          <!-- 4. MCP 扩展 -->
-          <TabItem Header="⌘  MCP 扩展">
-            <views:McpSettingsPane DataContext="{Binding Mcp}" />
-          </TabItem>
-        </TabControl>
+            <ui:AppText Text="代理" Classes="subtle settings-navigation-heading"
+                        IsVisible="{Binding IsAgentSectionSettingsMatch}" />
+            <ui:AppSettingsNavButton
+                          HorizontalAlignment="Stretch"
+                          IsVisible="{Binding IsAgentSettingsMatch}"
+                          IsChecked="{Binding IsAgentSettingsSelected, Mode=OneWay}"
+                          Command="{Binding SelectSettingsTabCommand}" CommandParameter="6"
+                          Label="自定义代理" IconData="{StaticResource UiIconAssistant}" />
+            <ui:AppSettingsNavButton
+                          HorizontalAlignment="Stretch"
+                          IsVisible="{Binding IsSubagentSettingsMatch}"
+                          IsChecked="{Binding IsSubagentSettingsSelected, Mode=OneWay}"
+                          Command="{Binding SelectSettingsTabCommand}" CommandParameter="4"
+                          Label="子代理" IconData="{StaticResource UiIconAssistant}" />
+            <ui:AppText Text="没有匹配的设置" Classes="muted type-12"
+                       Margin="8,12" IsVisible="{Binding !HasSettingsSearchResults}" />
+          </StackPanel>
+        </ui:AppScrollViewer>
       </Grid>
-    </Border>
+    </ui:AppBorder>
+    </ui:AppNavigationPanes.NavigationPane>
+
+    <ui:AppNavigationPanes.PrimaryPane>
+    <ui:AppBorder Classes="page-surface settings-page-surface">
+        <Grid>
+          <Grid Classes="settings-content-column">
+            <ui:AppBorder IsVisible="{Binding IsAppearanceSettingsSelected}">
+              <views:AppearanceSettingsPane DataContext="{Binding}" />
+            </ui:AppBorder>
+            <ui:AppBorder IsVisible="{Binding IsBrowserSettingsSelected}">
+              <views:BrowserSettingsPane DataContext="{Binding Browser}" />
+            </ui:AppBorder>
+          </Grid>
+          <ui:AppBorder IsVisible="{Binding IsSubagentSettingsSelected}">
+            <views:SubagentSettingsPane DataContext="{Binding Subagents}" />
+          </ui:AppBorder>
+          <ui:AppBorder IsVisible="{Binding IsAgentSettingsSelected}">
+            <views:AgentSettingsPane DataContext="{Binding Agents}" />
+          </ui:AppBorder>
+          <views:ProviderAndModelSettingsPane IsVisible="{Binding IsProviderSettingsSelected}"
+                                              DataContext="{Binding}" />
+          <ui:AppBorder IsVisible="{Binding IsProxySettingsSelected}">
+            <views:ProxySettingsPane DataContext="{Binding Proxies}" />
+          </ui:AppBorder>
+          <ui:AppBorder IsVisible="{Binding IsMcpSettingsSelected}">
+            <views:McpSettingsPane DataContext="{Binding Mcp}" />
+          </ui:AppBorder>
+        </Grid>
+    </ui:AppBorder>
+    </ui:AppNavigationPanes.PrimaryPane>
+    </ui:AppNavigationPanes>
+    </ui:AppBorder>
+    </ui:AppBorder>
   </Grid>
-</UserControl>
+  </ui:AppBorder>
+</ui:AppUserControl>

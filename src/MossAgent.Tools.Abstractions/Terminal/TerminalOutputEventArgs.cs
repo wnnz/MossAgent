@@ -1,8 +1,8 @@
 namespace MossAgent.Tools.Abstractions.Terminal;
 
-public sealed class TerminalOutputEventArgs(Guid taskId, string output) : EventArgs
+public sealed class TerminalOutputEventArgs(Guid taskId, string output, Guid? sessionId = null) : EventArgs
 {
     public Guid TaskId { get; } = taskId;
     public string Output { get; } = output;
+    public Guid? SessionId { get; } = sessionId;
 }
-

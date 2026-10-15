@@ -1,0 +1,33 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Style Selector=".app-input, .app-combo-box, .app-numeric-up-down" x:SetterTargetType="TemplatedControl">
+    <Setter Property="MinHeight" Value="32" />
+  </Style>
+  <Style Selector=".app-input" x:SetterTargetType="controls:AppInput">
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector=".app-combo-box" x:SetterTargetType="controls:AppComboBox">
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector=".app-numeric-up-down" x:SetterTargetType="controls:AppNumericUpDown">
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector=".app-input.field-multiline, .app-input.json-editor" x:SetterTargetType="controls:AppInput">
+    <Setter Property="MinHeight" Value="72" />
+    <Setter Property="VerticalContentAlignment" Value="Top" />
+  </Style>
+  <Style Selector=".app-input.field-prompt" x:SetterTargetType="controls:AppInput">
+    <Setter Property="MinHeight" Value="150" />
+    <Setter Property="VerticalContentAlignment" Value="Top" />
+  </Style>
+  <Style Selector=".app-input.field-multiline, .app-input.field-prompt, .app-input.composer-input" x:SetterTargetType="controls:AppInput">
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+  </Style>
+  <Style Selector=".app-input.composer-input" x:SetterTargetType="controls:AppInput">
+    <Setter Property="MaxHeight" Value="180" />
+    <Setter Property="VerticalContentAlignment" Value="Top" />
+  </Style>
+</Styles>

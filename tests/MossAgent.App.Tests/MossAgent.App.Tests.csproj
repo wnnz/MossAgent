@@ -4,9 +4,20 @@
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <ProjectReference Include="../../src/MossAgent.App/MossAgent.App.csproj" />
+    <ProjectReference Include="../../src/MossAgent.App.Analyzers/MossAgent.App.Analyzers.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../Shared/SharedVisualTestApplication.cs" Link="Testing/SharedVisualTestApplication.cs" />
+    <Compile Include="../Shared/SqliteTestPool.cs" Link="Testing/SqliteTestPool.cs" />
+    <Compile Include="../Shared/Socks5TestHandshake.cs" Link="Testing/Socks5TestHandshake.cs" />
+    <Compile Include="../Shared/AuthenticatedProxyTestServer.cs" Link="Testing/AuthenticatedProxyTestServer.cs" />
+    <Compile Include="../Shared/ProxyTestRequestReader.cs" Link="Testing/ProxyTestRequestReader.cs" />
+    <Using Include="MossAgent.Testing" />
   </ItemGroup>
 </Project>

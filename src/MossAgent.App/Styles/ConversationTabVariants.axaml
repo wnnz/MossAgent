@@ -1,0 +1,76 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Style Selector=".app-conversation-tab" x:SetterTargetType="controls:AppConversationTab">
+    <Setter Property="Width" Value="238" />
+    <Setter Property="Height" Value="34" />
+  </Style>
+  <Style Selector="controls|AppCard.conversation-tab-menu">
+    <Setter Property="Width" Value="190" />
+  </Style>
+  <Style Selector="controls|AppIconLabel.conversation-heading">
+    <Setter Property="Height" Value="32" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="Spacing" Value="16" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+  </Style>
+  <Style Selector="controls|AppIconLabel.conversation-heading controls|AppIcon">
+    <Setter Property="Size" Value="12" />
+    <Setter Property="StrokeThickness" Value="1" />
+  </Style>
+  <Style Selector="controls|AppIconLabel.conversation-heading controls|AppText">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontWeight" Value="Medium" />
+  </Style>
+  <Style Selector="controls|AppButton.conversation-tab">
+    <Setter Property="Width" Value="238" />
+    <Setter Property="Height" Value="34" />
+    <Setter Property="Padding" Value="10,0,34,0" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="controls|AppButton.conversation-tab.selected">
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+  </Style>
+  <Style Selector="controls|AppButton.conversation-tab:pointerover">
+    <Setter Property="Background" Value="{DynamicResource CardSubtleBackgroundBrush}" />
+  </Style>
+  <Style Selector="controls|AppButton.conversation-tab controls|AppIconLabel">
+    <Setter Property="LabelMaxWidth" Value="160" />
+  </Style>
+  <Style Selector="controls|AppButton.conversation-tab-options">
+    <Setter Property="Width" Value="24" />
+    <Setter Property="Height" Value="24" />
+    <Setter Property="MinWidth" Value="24" />
+    <Setter Property="Padding" Value="4" />
+    <Setter Property="Margin" Value="0,0,6,0" />
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+  </Style>
+  <Style Selector="controls|AppBorder.conversation-tab-host.selected controls|AppButton.conversation-tab-options">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="IsHitTestVisible" Value="True" />
+  </Style>
+  <Style Selector="controls|AppBorder.conversation-tab-host:pointerover controls|AppButton.conversation-tab-options">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="IsHitTestVisible" Value="True" />
+  </Style>
+  <Style Selector="controls|AppBorder.conversation-tab-host:focus-within controls|AppButton.conversation-tab-options">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="IsHitTestVisible" Value="True" />
+  </Style>
+  <Style Selector="controls|AppButton.conversation-tab-options:flyout-open">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="IsHitTestVisible" Value="True" />
+  </Style>
+  <Style Selector="controls|AppButton.conversation-tab-add">
+    <Setter Property="Width" Value="28" />
+    <Setter Property="Height" Value="28" />
+  </Style>
+</Styles>

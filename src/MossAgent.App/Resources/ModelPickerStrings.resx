@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="EmptyModelTitle" xml:space="preserve"><value>尚未配置可用模型</value></data>
+  <data name="EmptyModelDescription" xml:space="preserve"><value>请先在设置中添加并启用模型。</value></data>
+  <data name="OpenProviderSettingsLabel" xml:space="preserve"><value>前往 AI 提供商设置</value></data>
+  <data name="LoadingModels" xml:space="preserve"><value>正在刷新模型列表…</value></data>
+  <data name="CatalogReloadFailed" xml:space="preserve"><value>无法刷新模型列表，暂时不能发送。请重试刷新。</value></data>
+  <data name="SelectedModelUnavailable" xml:space="preserve"><value>所选模型已不可用。请重新启用它，或明确选择其他模型。</value></data>
+  <data name="CatalogUnavailableLabel" xml:space="preserve"><value>模型列表不可用</value></data>
+  <data name="SelectedModelUnavailableLabel" xml:space="preserve"><value>所选模型不可用</value></data>
+  <data name="UnsupportedReasoningEffort" xml:space="preserve"><value>当前模型不支持此思考强度，暂时不能发送。请调整档位，或修改模型默认设置。</value></data>
+  <data name="ConversationPreferenceLoading" xml:space="preserve"><value>正在恢复此对话的模型选择…</value></data>
+  <data name="ConversationPreferenceLoadFailed" xml:space="preserve"><value>无法恢复此对话的模型选择，暂时不能发送。请刷新重试，或明确选择模型。</value></data>
+  <data name="ConversationPreferenceSaveFailed" xml:space="preserve"><value>模型选择尚未保存。当前选择仍可使用，请刷新重试保存。</value></data>
+  <data name="ConversationPreferenceAgentUnavailable" xml:space="preserve"><value>此对话选择的自定义 Agent 已不可用。请重新启用它，或明确选择其他 Agent 或模型。</value></data>
+</root>

@@ -2,17 +2,24 @@ using System.Collections.Concurrent;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Processes;
 
 namespace MossAgent.Mcp;
 
 public sealed class McpManager(
     IMcpConfigurationRepository configurations,
     McpHttpClientFactory httpClients,
-    IMutableToolCatalog tools) : IMcpManager
+    IMutableToolCatalog tools,
+    ITaskProcessLauncher processes,
+    TimeSpan? initializationTimeout = null,
+    TimeProvider? timeProvider = null) : IMcpManager
 {
     private readonly ConcurrentDictionary<Guid, IMcpClient> _clients = [];
     private readonly Dictionary<string, string> _errors = [];
     private readonly SemaphoreSlim _reloadGate = new(1, 1);
+    private readonly McpReloadLifetime _lifetime = new();
+    private readonly TimeSpan _initializationTimeout = initializationTimeout ?? TimeSpan.FromSeconds(15);
+    private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
     public IReadOnlyDictionary<string, string> Errors
     {
@@ -27,58 +34,105 @@ public sealed class McpManager(
 
     public async Task ReloadAsync(CancellationToken cancellationToken = default)
     {
-        await _reloadGate.WaitAsync(cancellationToken);
+        using var operation = _lifetime.Enter();
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, operation.Token);
         try
         {
-            await DisposeClientsAsync();
-            tools.RemoveByPrefix("mcp.");
-            lock (_errors)
+            await _reloadGate.WaitAsync(linked.Token).ConfigureAwait(false);
+            try
             {
-                _errors.Clear();
-            }
+                linked.Token.ThrowIfCancellationRequested();
+                await DisposeClientsAsync().ConfigureAwait(false);
+                tools.RemoveByPrefix("mcp.");
+                lock (_errors) { _errors.Clear(); }
 
-            var profiles = await configurations.GetAllAsync(cancellationToken);
-            foreach (var profile in profiles.Where(static profile => profile.IsEnabled))
-            {
-                await LoadServerAsync(profile, cancellationToken);
+                var profiles = await configurations.GetAllAsync(linked.Token).ConfigureAwait(false);
+                linked.Token.ThrowIfCancellationRequested();
+                foreach (var profile in profiles.Where(static profile => profile.IsEnabled))
+                    await LoadServerAsync(profile, linked.Token).ConfigureAwait(false);
             }
+            finally { _reloadGate.Release(); }
         }
-        finally
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            _reloadGate.Release();
+            cancellationToken.ThrowIfCancellationRequested();
+            throw;
         }
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync() => _lifetime.StopAsync(CleanupAsync);
+
+    private async Task CleanupAsync()
     {
-        await DisposeClientsAsync();
-        _reloadGate.Dispose();
+        try { await DisposeClientsAsync().ConfigureAwait(false); }
+        finally
+        {
+            tools.RemoveByPrefix("mcp.");
+            _reloadGate.Dispose();
+        }
     }
 
     private async Task LoadServerAsync(
         McpServerProfile profile,
         CancellationToken cancellationToken)
     {
+        IMcpClient? client = null;
+        using var deadline = new CancellationTokenSource(_initializationTimeout, _timeProvider);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, deadline.Token);
         try
         {
-            var client = await CreateClientAsync(profile, cancellationToken);
-            await client.InitializeAsync(cancellationToken);
-            var definitions = await client.ListToolsAsync(cancellationToken);
+            client = await CreateClientAsync(profile, timeout.Token).ConfigureAwait(false);
+            await client.InitializeAsync(timeout.Token).ConfigureAwait(false);
+            var definitions = await client.ListToolsAsync(timeout.Token).ConfigureAwait(false);
+            var registrations = McpToolRegistration.Create(profile, definitions, client, timeout.Token);
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach (var registration in registrations) tools.RegisterOrReplace(registration);
+
             _clients[profile.Id] = client;
-            foreach (var definition in definitions)
-            {
-                var name = $"mcp.{Normalize(profile.Name)}.{Normalize(definition.Name)}";
-                tools.RegisterOrReplace(new McpToolAdapter(name, definition.Name, definition, client));
-            }
+            client = null;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            RecordError(profile.Name, "连接或工具发现超时，请检查 MCP 服务状态。");
         }
         catch (Exception exception)
         {
-            lock (_errors)
+            RecordError(profile.Name, DescribeError(exception));
+        }
+        finally
+        {
+            if (client is not null)
             {
-                _errors[profile.Name] = exception.Message;
+                try
+                {
+                    await client.DisposeAsync().ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                }
             }
         }
     }
+
+    private void RecordError(string name, string message)
+    {
+        lock (_errors)
+        {
+            _errors[name] = message;
+        }
+    }
+
+    private static string DescribeError(Exception exception) => exception switch
+    {
+        HttpRequestException => "连接失败，请检查 MCP 服务地址、网络和代理设置。",
+        InvalidDataException => "服务返回的数据或工具身份无效，请检查 MCP 服务。",
+        IOException => "连接已断开，请检查 MCP 服务进程或网络。",
+        _ => "加载失败，请检查 MCP 服务配置和运行状态。"
+    };
 
     private async Task<IMcpClient> CreateClientAsync(
         McpServerProfile profile,
@@ -86,10 +140,10 @@ public sealed class McpManager(
     {
         if (profile.Transport == McpTransportKind.Stdio)
         {
-            return new StdioMcpClient(profile);
+            return new StdioMcpClient(profile, processes);
         }
 
-        var client = await httpClients.CreateAsync(profile, cancellationToken);
+        var client = await httpClients.CreateAsync(profile, cancellationToken).ConfigureAwait(false);
         return new StreamableHttpMcpClient(profile, client);
     }
 
@@ -97,16 +151,10 @@ public sealed class McpManager(
     {
         foreach (var client in _clients.Values)
         {
-            await client.DisposeAsync();
+            await client.DisposeAsync().ConfigureAwait(false);
         }
 
         _clients.Clear();
     }
 
-    private static string Normalize(string value)
-    {
-        var characters = value.Select(character =>
-            char.IsLetterOrDigit(character) || character is '_' or '-' ? character : '_');
-        return new string(characters.ToArray()).Trim('_').ToLowerInvariant();
-    }
 }

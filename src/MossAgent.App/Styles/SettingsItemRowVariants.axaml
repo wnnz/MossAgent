@@ -1,0 +1,40 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Style Selector="controls|AppBorder.settings-item-surface">
+    <Setter Property="Padding" Value="8,12" />
+  </Style>
+  <Style Selector="Grid.settings-item-layout">
+    <Setter Property="ColumnSpacing" Value="8" />
+    <Setter Property="MinHeight" Value="32" />
+  </Style>
+  <Style Selector="StackPanel.settings-item-labels">
+    <Setter Property="Spacing" Value="3" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Grid.settings-item-heading">
+    <Setter Property="ColumnSpacing" Value="8" />
+  </Style>
+  <Style Selector="controls|AppText.settings-item-label">
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="MinHeight" Value="18" />
+  </Style>
+  <Style Selector="controls|AppText.settings-item-metadata">
+    <Setter Property="MaxWidth" Value="96" />
+  </Style>
+  <Style Selector="controls|AppText.settings-item-badge">
+    <Setter Property="MaxWidth" Value="84" />
+  </Style>
+  <Style Selector=".app-settings-item-row.compact controls|AppBorder.settings-item-surface">
+    <Setter Property="Padding" Value="8,8" />
+  </Style>
+  <Style Selector=".app-settings-item-row.compact Grid.settings-item-layout">
+    <Setter Property="MinHeight" Value="18" />
+  </Style>
+  <Style Selector=".app-settings-item-row.multiline controls|AppText.settings-item-subtitle">
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="MaxLines" Value="2" />
+  </Style>
+  <Style Selector=".app-settings-item-row.endpoint controls|AppText.settings-item-subtitle">
+    <Setter Property="FontFamily" Value="{DynamicResource CodeFontFamily}" />
+  </Style>
+</Styles>

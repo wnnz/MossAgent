@@ -1,0 +1,11 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppConversationTimeline"
+                   x:Name="Root" x:CompileBindings="False">
+  <ui:AppItemsControl ItemsSource="{Binding Timeline.Turns, ElementName=Root}">
+    <ItemsControl.ItemTemplate>
+      <DataTemplate><ui:AppConversationTurn Turn="{Binding}" /></DataTemplate>
+    </ItemsControl.ItemTemplate>
+  </ui:AppItemsControl>
+</ui:AppUserControl>

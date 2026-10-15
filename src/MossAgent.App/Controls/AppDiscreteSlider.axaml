@@ -1,0 +1,20 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppDiscreteSlider"
+                   x:CompileBindings="False">
+  <Grid>
+    <ui:AppSlider x:Name="StepSlider" Classes="reasoning-slider"
+                  Minimum="0" TickFrequency="1" IsSnapToTickEnabled="True"
+                  AutomationProperties.Name="{Binding (AutomationProperties.Name), RelativeSource={RelativeSource AncestorType=ui:AppDiscreteSlider}}" />
+    <ui:AppItemsControl ItemsSource="{Binding StepValues, RelativeSource={RelativeSource AncestorType=ui:AppDiscreteSlider}}"
+                        Classes="reasoning-ticks" IsHitTestVisible="False">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate><ui:AppSliderTickPanel /></ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate><ui:AppBorder Classes="reasoning-tick" /></DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ui:AppItemsControl>
+  </Grid>
+</ui:AppUserControl>

@@ -1,8 +1,10 @@
 using Avalonia.Controls;
 
+using MossAgent.App.Controls;
+
 namespace MossAgent.App.Views;
 
-public sealed partial class WorkspaceSidebar : UserControl
+public sealed partial class WorkspaceSidebar : AppUserControl
 {
     public WorkspaceSidebar() => InitializeComponent();
 }

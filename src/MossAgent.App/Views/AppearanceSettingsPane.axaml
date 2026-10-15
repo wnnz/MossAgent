@@ -1,0 +1,25 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
+             xmlns:resources="clr-namespace:MossAgent.App.Resources"
+             x:Class="MossAgent.App.Views.AppearanceSettingsPane"
+             x:CompileBindings="False">
+  <ui:AppScrollViewer Classes="settings-page-scroll">
+    <StackPanel Spacing="0" Margin="0,0,0,32">
+      <ui:AppText Text="外观" Classes="settings-title" />
+      <ui:AppText Text="{x:Static resources:AppearanceText.VisualStyle}" Classes="settings-section-title settings-theme-heading" />
+      <ui:AppThemeModePicker />
+      <ui:AppThemePaletteCard DataContext="{Binding ActivePalette}" Margin="0,16,0,0" />
+      <ui:AppExpander Header="{x:Static resources:AppearanceText.Advanced}" Classes="appearance-advanced">
+        <StackPanel Spacing="16">
+          <ui:AppDiffPreview />
+          <ui:AppCard Classes="card card-inset-rows">
+            <ui:AppThemeExtendedFontsCard DataContext="{Binding ActivePalette.Fonts}" />
+          </ui:AppCard>
+        </StackPanel>
+      </ui:AppExpander>
+      <ui:AppText Text="{Binding AppearanceError}" Classes="type-12 status-error"
+                 IsVisible="{Binding HasAppearanceError}" />
+    </StackPanel>
+  </ui:AppScrollViewer>
+</ui:AppUserControl>

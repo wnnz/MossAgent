@@ -45,7 +45,7 @@ public sealed class SqliteToolExecutionAuditSinkTests
         }
         finally
         {
-            SqliteConnection.ClearAllPools();
+            SqliteTestPool.Clear(root);
             Directory.Delete(root, recursive: true);
         }
     }

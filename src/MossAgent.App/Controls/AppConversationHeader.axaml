@@ -1,0 +1,58 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppConversationHeader"
+                   x:Name="Root" x:CompileBindings="False">
+  <ui:AppBorder Classes="chat-header" Classes.active="{Binding #Root.HasConversation}">
+    <Grid ColumnDefinitions="*,Auto" DataContext="{Binding #Root}">
+      <Grid RowDefinitions="*,Auto">
+        <ui:AppContentControl Classes="conversation-header-heading" DataContext="{Binding #Root.DataContext}"
+                              Content="{Binding #Root.HeadingContent}" />
+        <Grid x:Name="StatusLayout" Grid.Row="1" Classes="conversation-header-status"
+              ColumnDefinitions="*,Auto,*" IsVisible="{Binding HasStatus}">
+          <ui:AppText x:Name="StartupStatusText" Classes="subtle type-10" Text="{Binding StartupStatus}"
+                      ToolTip.Tip="{Binding StartupStatus}" IsVisible="{Binding HasStartupStatus}"
+                      VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+          <ui:AppButton x:Name="StartupSettingsButton" Grid.Column="1" Classes="ghost conversation-header-settings"
+                        Content="{Binding StartupActionLabel}" Command="{Binding StartupActionCommand}"
+                        ToolTip.Tip="{Binding StartupActionLabel}" IsVisible="{Binding HasStartupWarning}" />
+          <ui:AppText x:Name="ActivityText" Grid.Column="2" Classes="subtle type-10" Text="{Binding Activity}"
+                      ToolTip.Tip="{Binding Activity}" IsVisible="{Binding IsRunning}"
+                      VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+        </Grid>
+      </Grid>
+      <StackPanel Grid.Column="1" Classes="conversation-header-actions" IsVisible="{Binding HasConversation}">
+        <ui:AppIconButton x:Name="ChatMoreButton" Classes="chat-header-action chat-more-action" Label="{Binding MoreLabel}"
+                          IconData="{StaticResource UiIconMore}">
+          <Button.Flyout>
+            <ui:AppFlyout Placement="BottomEdgeAlignedRight" DismissOnButtonClick="True">
+              <ui:AppCard Classes="flyout-surface card-inset-tight">
+                <StackPanel>
+                  <ui:AppContentControl Classes="conversation-header-menu" DataContext="{Binding #Root.DataContext}"
+                                        Content="{Binding #Root.MenuContent}" />
+                  <ui:AppActionButton x:Name="ChatExpandInspectorButton" Classes="ghost menu-option"
+                                      Command="{Binding #Root.ExpandInspectorCommand}" Label="{Binding #Root.ExpandLabel}"
+                                      IconData="{StaticResource FilePreviewExpandIcon}" IsVisible="{Binding #Root.HasExpansion}" />
+                </StackPanel>
+              </ui:AppCard>
+            </ui:AppFlyout>
+          </Button.Flyout>
+        </ui:AppIconButton>
+        <Grid Classes="conversation-header-context">
+          <ui:AppBorder Classes="context-indicator" IsVisible="{Binding IsContextVisible}" />
+          <ui:AppIconButton x:Name="ChatContextButton" Classes="chat-header-action chat-context-action"
+                            Classes.active="{Binding IsContextVisible}"
+                            Command="{Binding ToggleContextCommand}" Label="{Binding ContextLabel}"
+                            IconData="{StaticResource UiIconContext}" />
+        </Grid>
+        <ui:AppBorder x:Name="ChatInspectorSeparator" Classes="chat-header-separator"
+                      IsVisible="{Binding !IsInspectorOpen}" />
+        <ui:AppIconButton x:Name="ChatInspectorButton" Classes="chat-header-action chat-inspector-toggle"
+                          Classes.active="{Binding IsInspectorOpen}" Command="{Binding ToggleInspectorCommand}"
+                          Label="{Binding InspectorLabel}" IconData="{StaticResource UiIconPanelAdd}"
+                          AlternateIconData="{StaticResource UiIconPanelRight}" IsAlternateIcon="{Binding IsInspectorOpen}"
+                          IsVisible="{Binding !IsInspectorOpen}" />
+      </StackPanel>
+    </Grid>
+  </ui:AppBorder>
+</ui:AppUserControl>

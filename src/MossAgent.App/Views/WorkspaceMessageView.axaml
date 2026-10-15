@@ -1,0 +1,52 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:views="clr-namespace:MossAgent.App.Views"
+                   x:Class="MossAgent.App.Views.WorkspaceMessageView"
+                   x:CompileBindings="False">
+  <ui:AppBorder Padding="4,4,4,16">
+    <Grid>
+      <ui:AppBorder IsVisible="{Binding IsUserMessage}" HorizontalAlignment="Right"
+                    MaxWidth="680" Classes="user-bubble" Padding="16,12">
+        <StackPanel Spacing="8">
+          <ui:AppItemsControl ItemsSource="{Binding Attachments}" IsVisible="{Binding HasAttachments}" MaxWidth="640">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate><ui:AppAttachmentChip DisplayPath="{Binding DisplayPath}" SizeLabel="{Binding SizeLabel}" /></DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ui:AppItemsControl>
+          <ui:AppSelectableText Classes="content-font type-15 line-24" Text="{Binding Content}" TextWrapping="Wrap" />
+        </StackPanel>
+      </ui:AppBorder>
+      <StackPanel IsVisible="{Binding IsAssistantMessage}" Spacing="2">
+        <ui:AppResponseContent Blocks="{Binding Blocks}" CopyCodeCommand="{Binding $parent[views:WorkspaceChatView].CopyCodeCommand}" />
+        <StackPanel Orientation="Horizontal" Spacing="2" Margin="0,0,0,4" IsVisible="{Binding HasContent}">
+          <ui:AppIconButton Classes="icon-compact" Label="复制回复"
+                            Click="HandleCopyMessage" IconData="{StaticResource UiIconCopy}" />
+        </StackPanel>
+      </StackPanel>
+      <ui:AppBorder IsVisible="{Binding IsTool}">
+        <Grid RowDefinitions="Auto,Auto">
+          <ui:AppToolActivityRow Summary="{Binding ToolSummary}" Status="{Binding ToolStatus}"
+                                 Description="{Binding Tool.Summary}" IsExpanded="{Binding IsToolExpanded}"
+                                 IsSubagent="{Binding IsSubagentTool}" CanExpand="{Binding HasToolDetails}"
+                                 Command="{Binding ToggleToolCommand}" />
+          <ui:AppBorder Grid.Row="1" IsVisible="{Binding IsToolExpanded}" Classes="tool-detail-surface">
+            <ui:AppScrollViewer Classes="tool-details-scroll">
+              <StackPanel Spacing="8">
+                <ui:AppSelectableText Classes="type-11-5 code-font" Text="{Binding ToolSummaryDetails}"
+                                      IsVisible="{Binding HasToolSummaryDetails}" TextWrapping="Wrap" />
+                <ui:AppSelectableText Classes="type-11-5 code-font" Text="{Binding Tool.Details}"
+                                      IsVisible="{Binding Tool.HasDetails}" TextWrapping="Wrap" />
+                <views:SubagentDialogueView CopyCodeCommand="{Binding $parent[views:WorkspaceChatView].CopyCodeCommand}"
+                                            IsVisible="{Binding Tool.HasDialogue}" />
+              </StackPanel>
+            </ui:AppScrollViewer>
+          </ui:AppBorder>
+        </Grid>
+      </ui:AppBorder>
+    </Grid>
+  </ui:AppBorder>
+</ui:AppUserControl>

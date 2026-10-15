@@ -1,0 +1,33 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:MossAgent.App.Controls">
+  <Styles.Resources>
+    <ui:ModalAvailableExtentConverter x:Key="ApprovalAvailableExtent" />
+  </Styles.Resources>
+  <Style Selector="ui|AppCard.tool-approval-card">
+    <Setter Property="Width" Value="520" />
+    <Setter Property="MaxWidth" Value="{Binding Bounds.Width, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:AppUserControl}}, Converter={StaticResource ApprovalAvailableExtent}}" />
+    <Setter Property="MaxHeight" Value="{Binding Bounds.Height, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:AppUserControl}}, Converter={StaticResource ApprovalAvailableExtent}}" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Bottom" />
+    <Setter Property="Margin" Value="20,0,20,20" />
+  </Style>
+  <Style Selector=".app-scroll-viewer.approval-body-scroll" x:SetterTargetType="ui:AppScrollViewer">
+    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+  </Style>
+  <Style Selector=".app-scroll-viewer.approval-details-scroll" x:SetterTargetType="ui:AppScrollViewer">
+    <Setter Property="MaxHeight" Value="150" />
+    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+  </Style>
+  <Style Selector="ui|AppIconLabel.approval-title ui|AppText">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector=".app-scroll-viewer.approval-content-scroll" x:SetterTargetType="ui:AppScrollViewer">
+    <Setter Property="MaxHeight" Value="160" />
+    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+  </Style>
+</Styles>

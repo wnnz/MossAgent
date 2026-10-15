@@ -5,5 +5,8 @@ public sealed record ToolDescriptor(
     string Description,
     string InputSchemaJson,
     ToolRiskLevel RiskLevel,
-    ToolCapability RequiredCapabilities);
+    ToolCapability RequiredCapabilities)
+{
+    public bool IsModelVisible { get; init; } = true;
+}
 
