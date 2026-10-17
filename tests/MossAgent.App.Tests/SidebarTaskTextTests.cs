@@ -127,7 +127,7 @@ public sealed class SidebarTaskTextTests : IAsyncLifetime
                 Assert.Equal(window.FontFamily, section.FontFamily);
                 Assert.Null(ordinary.OpacityMask);
                 Assert.Equal(13, ordinary.FontSize);
-                Assert.Equal(Color.Parse(dark ? "#8E8E8E" : "#8B8D8F"),
+                Assert.Equal(Color.Parse(dark ? "#A0A0A0" : "#6B7075"),
                     Assert.IsType<SolidColorBrush>(section.Foreground).Color);
             }
             finally { window.Close(); }

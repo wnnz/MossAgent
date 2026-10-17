@@ -155,3 +155,32 @@ Evidence is outside the repository at
 `whitespace.log`, `diff-check.log`, `source-audit.log`, `app-full.trx`,
 `app-full-repeat.trx`, `final-replay.trx`, `allocation-replay.trx`,
 `solution-final-build.log` and the pre-change source/document snapshots.
+
+## Intermittent-allocation diagnostic follow-up (2026-10-16)
+
+The historical nonzero allocation assertions remain unexplained. This follow-up
+does not change production filtering, the measured loop, warm-up count, test
+parallelism or the strict zero-byte assertions.
+
+- The unchanged six sidebar allocation cases pass in `sidebar-baseline.trx`.
+- An external probe reuses the actual pinned/recent/project view models, 32
+  synthetic tasks, the existing 100-call warm-up and 10,000-call measured loop.
+  Matching/missing filters run both normally and with a separate thread repeatedly
+  collecting garbage: 12 scenarios, 12 batches each, 1,440,000 total filter calls.
+- All 144 measured batches report zero current-thread allocation and zero
+  collection notifications while retaining row identity. The pressure scenarios
+  observe 2,556 generation-zero collections. This experiment does not reproduce
+  the failure or establish that GC, JIT or concurrent activity caused it.
+- A new complete App process then passes 4,794/4,794 in 15 minutes 18 seconds,
+  with no skips or aborts, including all six unchanged sidebar allocation cases.
+  The App and App.Tests DLL hashes remain unchanged for that complete run. Its
+  emitted application predates the subsequent selector-focus UI correction, so
+  it is not complete-suite acceptance of that new appearance revision.
+- Older 1,200/1,304/3,288-byte failures and the incomplete historical run remain
+  preserved. This passing process neither replaces those reports nor proves a
+  causal repair. No additional performance fix is claimed.
+
+Evidence: `%TEMP%\MossAgent-sidebar-allocation-20261016`, including
+`sidebar-baseline.trx`, `gc-pressure.json`, `gc-pressure.log`, external `probe/`,
+`app-full-current.trx` and `app-full-current.log`. The selector review's
+`completed-baseline-app-test-output-identities.json` records the unchanged DLLs.

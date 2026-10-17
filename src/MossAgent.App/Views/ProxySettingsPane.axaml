@@ -5,25 +5,22 @@
              x:Class="MossAgent.App.Views.ProxySettingsPane"
              x:CompileBindings="False">
   <Grid>
-    <Grid Classes="settings-content-column" RowDefinitions="Auto,Auto,*">
-        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,24">
-          <StackPanel Spacing="2">
-            <ui:AppText Text="网络代理" Classes="settings-title" />
-            <ui:AppText Text="管理用于模型连接和网页工具的网络代理。" Classes="settings-description" />
-          </StackPanel>
-          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <ui:AppActionButton Label="刷新" IconData="{StaticResource UiIconRefresh}" Classes="ghost" Command="{Binding RefreshCommand}" />
-            <ui:AppActionButton Label="添加代理" IconData="{StaticResource UiIconPlus}" Classes="primary" Command="{Binding OpenCreateFormCommand}" />
-          </StackPanel>
-        </Grid>
-    <ui:AppCard Grid.Row="1" Classes="card card-inset-list">
-      <StackPanel>
-        <StackPanel Margin="12,16" Spacing="6" IsVisible="{Binding HasNoItems}">
-          <ui:AppText Classes="type-14 weight-semibold" Text="还没有网络代理" />
-          <ui:AppText Text="添加 HTTP 或 SOCKS5 代理后，可为模型和浏览器连接选择使用。"
-                     Classes="muted type-12" />
-        </StackPanel>
-        <ui:AppListBox MaxHeight="560" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}">
+    <Grid Classes="settings-content-column" RowDefinitions="Auto,*">
+        <ui:AppSettingsPageHeader Classes="separated" Title="网络代理" Description="管理用于模型连接和网页工具的网络代理。"
+                                  Status="{Binding Status}" IsStatusError="{Binding HasStatusError}">
+          <ui:AppSettingsPageHeader.Actions>
+            <StackPanel Classes="settings-header-actions">
+              <ui:AppActionButton Label="刷新" IconData="{StaticResource UiIconRefresh}" Classes="ghost" Command="{Binding RefreshCommand}" />
+              <ui:AppActionButton Label="添加代理" IconData="{StaticResource UiIconPlus}" Classes="primary" Command="{Binding OpenCreateFormCommand}" />
+            </StackPanel>
+          </ui:AppSettingsPageHeader.Actions>
+        </ui:AppSettingsPageHeader>
+    <ui:AppCard Grid.Row="1" Classes="card card-inset-list settings-catalog-card">
+      <Grid RowDefinitions="Auto,*">
+        <ui:AppEmptyState Classes="settings-empty" IsVisible="{Binding HasNoItems}"
+                          IconData="{StaticResource UiIconProxy}" Title="还没有网络代理"
+                          Description="添加 HTTP 或 SOCKS5 代理后，可为模型和浏览器连接选择使用。" />
+        <ui:AppListBox Grid.Row="1" Classes="settings-catalog-list" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}">
           <ListBox.ItemTemplate>
             <DataTemplate>
               <ui:AppSettingsItemRow Title="{Binding Name}" Metadata="{Binding Protocol}"
@@ -43,12 +40,8 @@
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ui:AppListBox>
-      </StackPanel>
+      </Grid>
     </ui:AppCard>
-
-    <ui:AppText Grid.Row="2" Text="{Binding Status}" Classes="muted type-12"
-                Classes.status-error="{Binding HasStatusError}"
-                TextWrapping="Wrap" Margin="0,12,0,0" VerticalAlignment="Top" />
     </Grid>
 
     <ui:AppSettingsDialog IsOpen="{Binding IsFormOpen}"

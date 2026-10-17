@@ -1,6 +1,7 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <StyleInclude Source="avares://MossAgent.App/Styles/ButtonFocusVariants.axaml" />
   <Style Selector="controls|AppButton Grid.action-content">
     <Setter Property="UseLayoutRounding" Value="False" />
   </Style>
@@ -30,10 +31,18 @@
   <Style Selector="controls|AppButton.composer-model-picker">
     <Setter Property="FontSize" Value="12" />
     <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+    <Setter Property="MaxWidth" Value="320" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0,0,7,0" />
+    <Setter Property="Padding" Value="10,5" />
   </Style>
   <Style Selector="controls|AppButton.composer-model-picker controls|AppText.action-badge">
     <Setter Property="FontSize" Value="11" />
     <Setter Property="Margin" Value="5,0,0,0" />
+    <Setter Property="MaxWidth" Value="72" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
   </Style>
   <Style Selector="controls|AppButton.composer-model-picker controls|AppIcon.action-trailing-icon">
     <Setter Property="Size" Value="12" />

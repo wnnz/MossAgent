@@ -9,6 +9,7 @@
     <ui:AppActionButton x:Name="SelectProjectButton" Classes="ghost sidebar-project-row align-leading"
                         HorizontalAlignment="Stretch" Label="{Binding Title}" ToolTip.Tip="{Binding DragHint}"
                         Command="{Binding SelectCommand}" CommandParameter="{Binding ActionTarget}"
+                        ui:AppNavigationPanes.DismissOnClick="{Binding #Root.SummaryContent, Converter={x:Static ObjectConverters.IsNull}}"
                         IsEnabled="{Binding IsSelectAvailable}">
       <Button.Flyout>
         <ui:AppFlyout Placement="RightEdgeAlignedTop" HorizontalOffset="30" DismissOnButtonClick="True"

@@ -34,7 +34,7 @@
                                  IsSubagent="{Binding IsSubagentTool}" CanExpand="{Binding HasToolDetails}"
                                  Command="{Binding ToggleToolCommand}" />
           <ui:AppBorder Grid.Row="1" IsVisible="{Binding IsToolExpanded}" Classes="tool-detail-surface">
-            <ui:AppScrollViewer Classes="tool-details-scroll">
+            <ui:AppScrollViewer Classes="tool-details-scroll" AutomationProperties.Name="{Binding ToolSummary}">
               <StackPanel Spacing="8">
                 <ui:AppSelectableText Classes="type-11-5 code-font" Text="{Binding ToolSummaryDetails}"
                                       IsVisible="{Binding HasToolSummaryDetails}" TextWrapping="Wrap" />

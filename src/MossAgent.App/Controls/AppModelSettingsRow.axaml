@@ -6,19 +6,21 @@
   <ui:AppBorder Classes="divider-bottom model-settings-row-surface">
     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
       <StackPanel Spacing="3">
-        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+        <Grid x:Name="IdentityLayout" Classes="model-settings-details" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
           <ui:AppText x:Name="ModelNameText" Classes="type-12 weight-semibold provider-settings-label"
                       Text="{Binding Model.DisplayName, ElementName=Row}" TextTrimming="CharacterEllipsis"
                       ToolTip.Tip="{Binding Model.DisplayName, ElementName=Row}" />
-          <ui:AppText Grid.Column="1" x:Name="ModelIdText" Classes="subtle type-11 provider-settings-label"
+          <ui:AppText Grid.Column="1" x:Name="ModelIdText" Classes="muted type-11 provider-settings-label"
                       Text="{Binding Model.ModelId, ElementName=Row}" TextTrimming="CharacterEllipsis"
                       ToolTip.Tip="{Binding Model.ModelId, ElementName=Row}" />
         </Grid>
-        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-          <ui:AppText x:Name="ContextText" Classes="subtle type-11 provider-settings-label"
-                      Text="{Binding ContextLabel, ElementName=Row}" TextTrimming="CharacterEllipsis" />
-          <ui:AppText Grid.Column="1" x:Name="ReasoningText" Classes="subtle type-11 provider-settings-label"
-                      Text="{Binding ReasoningLabel, ElementName=Row}" TextTrimming="CharacterEllipsis" />
+        <Grid x:Name="CapabilitiesLayout" Classes="model-settings-details" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+          <ui:AppText x:Name="ContextText" Classes="muted type-11 provider-settings-label"
+                      Text="{Binding ContextLabel, ElementName=Row}" TextTrimming="CharacterEllipsis"
+                      ToolTip.Tip="{Binding ContextLabel, ElementName=Row}" />
+          <ui:AppText Grid.Column="1" x:Name="ReasoningText" Classes="muted type-11 provider-settings-label"
+                      Text="{Binding ReasoningLabel, ElementName=Row}" TextTrimming="CharacterEllipsis"
+                      ToolTip.Tip="{Binding ReasoningLabel, ElementName=Row}" />
         </Grid>
       </StackPanel>
       <ui:AppButton Grid.Column="1" x:Name="EditModelButton" Classes="ghost button-xs provider-settings-action"

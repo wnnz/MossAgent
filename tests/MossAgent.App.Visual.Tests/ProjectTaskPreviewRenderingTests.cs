@@ -48,7 +48,7 @@ public sealed class ProjectTaskPreviewRenderingTests : IAsyncLifetime
             Assert.Equal(30, button.Bounds.Height);
             Assert.Equal(new Thickness(32, 0, 8, 0), button.Padding);
             Assert.Equal(default, button.Margin);
-            var expected = dark ? Color.Parse("#8E8E8E") : Color.Parse("#8B8D8F");
+            var expected = dark ? Color.Parse("#A0A0A0") : Color.Parse("#6B7075");
             Assert.Equal(expected, Assert.IsAssignableFrom<ISolidColorBrush>(button.Foreground).Color);
             using var bitmap = new RenderTargetBitmap(new PixelSize((int)Math.Ceiling(238 * scale), (int)Math.Ceiling(30 * scale)),
                 new Vector(96 * scale, 96 * scale));

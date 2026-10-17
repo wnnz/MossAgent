@@ -99,51 +99,12 @@
           </Button.Flyout>
         </ui:AppIconButton>
         <ui:AppIconButton Grid.Column="4" Classes="icon-compact project-header-action"
-                          Label="添加项目" IconData="{StaticResource UiIconPlus}">
+                          Label="添加项目" IconData="{StaticResource UiIconPlus}"
+                          Command="{Binding ProjectEditor.OpenCommand}">
           <Button.Flyout>
             <ui:AppFlyout Placement="BottomEdgeAlignedLeft"
                     IsOpen="{Binding ProjectEditor.IsOpen, Mode=TwoWay}">
-              <ui:AppCard Classes="flyout-surface card-inset-editor" Width="420">
-                <StackPanel Spacing="8">
-                  <ui:AppText Classes="type-18 weight-semibold" Text="{Binding ProjectEditor.EditorTitle}" Margin="2,0,0,4" />
-                  <ui:AppInput Text="{Binding ProjectEditor.Name}" PlaceholderText="项目名称" />
-                  <ui:AppText Text="源文件夹" Classes="muted type-11-5" Margin="2,4,0,0" />
-                  <ui:AppItemsControl ItemsSource="{Binding ProjectEditor.Directories}"
-                                      IsEnabled="{Binding !ProjectEditor.IsBusy}">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate>
-                        <ui:AppBorder Classes="directory-row" Padding="10,8">
-                          <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
-                            <ui:AppIcon Classes="ui-icon" Data="{StaticResource UiIconFolder}" VerticalAlignment="Center" />
-                            <ui:AppText Grid.Column="1" Text="{Binding DisplayName}"
-                                       ToolTip.Tip="{Binding Path}" TextTrimming="CharacterEllipsis"
-                                       VerticalAlignment="Center" />
-                            <ui:AppBorder Grid.Column="2" IsVisible="{Binding IsPrimary}"
-                                    Classes="directory-primary-badge" Padding="8,3">
-                              <ui:AppText Text="主要" Classes="muted type-10-5" />
-                            </ui:AppBorder>
-                            <ui:AppButton Grid.Column="2" Classes="ghost set-primary button-xxs"
-                                    IsVisible="{Binding IsSecondary}" Content="设为主要"
-                                    Command="{Binding SetPrimaryCommand}" />
-                            <ui:AppIconButton Grid.Column="3" Command="{Binding RemoveCommand}"
-                                              Label="移除目录" IconData="{StaticResource UiIconClose}" />
-                          </Grid>
-                        </ui:AppBorder>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ui:AppItemsControl>
-<ui:AppActionButton Label="添加文件夹" IconData="{StaticResource UiIconPlus}" Classes="ghost align-leading"
-                          HorizontalAlignment="Stretch"
-                          Command="{Binding ProjectEditor.AddDirectoryCommand}" />
-<ui:AppButton Content="{Binding ProjectEditor.SubmitLabel}" Classes="primary"
-                          Command="{Binding ProjectEditor.AddCommand}"
-                          HorizontalAlignment="Stretch"
-                          />
-                  <ui:AppText Text="{Binding ProjectEditor.Status}" Classes="muted type-11"
-                             Classes.status-error="{Binding ProjectEditor.HasStatusError}"
-                             TextWrapping="Wrap" />
-                </StackPanel>
-              </ui:AppCard>
+              <views:WorkspaceProjectEditorView DataContext="{Binding ProjectEditor}" />
             </ui:AppFlyout>
           </Button.Flyout>
         </ui:AppIconButton>

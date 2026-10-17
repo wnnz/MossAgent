@@ -820,6 +820,14 @@ Avalonia UI
   cannot submit. No tool, approval, provider or persistence contract changes; see
   `COMPOSER_KEYBOARD_ACCEPTANCE.md` for loopback, native and IME validation limits.
 
+- Project editing uses a dedicated bounded flyout view with a scrolling directory
+  body and fixed field/action regions. Shared variants own its appearance;
+  keyboard focus reveals row actions and remains inside the editor. The sidebar
+  create trigger explicitly resets edit identity. Busy/disposed command guards
+  preserve an in-flight draft, while close retains unsaved input. Composition
+  exposes the existing service registrations for deterministic port substitution
+  without changing production defaults. See `PROJECT_EDITOR_VIEWPORT_ACCEPTANCE.md`.
+
 - Project editor mutations capture the project identity and draft revision before
   storage. A completed older snapshot still refreshes the catalog, but cannot clear
   a newer draft or another editor context. App-owned `GuardedAsyncRelayCommand`
@@ -1279,6 +1287,12 @@ Avalonia UI
   Remote calls preserve original case and punctuation. Legacy ambiguous names
   are not aliased or rebound, and historical records are not rewritten. See
   `MCP_TOOL_IDENTITY_ACCEPTANCE.md` for compatibility and end-to-end evidence.
+- MCP settings expose persistent localized names for transport-specific inputs
+  and typed error severity through the shared header/footer appearance variants.
+  Explicit reconnect refreshes registration without replaying failed tool calls.
+  Production Headless UI recovery, real HTTP/approval/audit, cancellation, denied
+  calls and operable restored history are recorded in `MCP_UI_RECOVERY_ACCEPTANCE.md`;
+  this does not establish automatic transport resumption or native pixel parity.
 - stdio MCP connections use the portable process launcher with owned standard
   input and per-server environment snapshots. Each connection owns a Windows
   kill-on-close Job independently of shell commands. Failed or cancelled startup,
@@ -1399,6 +1413,16 @@ Avalonia UI
   actual settings-to-HTTP requests, persisted replies, native input and limits.
 - Browser implementations expose one task-bound `IBrowserSession` contract;
   tab identifiers are stable only for the lifetime of that session.
+  CDP attachment creates a task-owned page; borrowed contexts expose only that
+  task's attached/created pages and their descendant popups. Disposal waits for
+  in-flight creation and closes owned pages/runtime state once, never the attached
+  browser, borrowed context or unrelated pre-existing pages. A shared CDP context
+  still shares cookies/login/storage; page isolation does not imply storage
+  isolation. See `CDP_TASK_ISOLATION_ACCEPTANCE.md` for deterministic and real
+  settings-to-standard-tool-pipeline evidence and remaining native limits.
+  `CDP_AGENT_WORKFLOW_ACCEPTANCE.md` extends the same production ports through
+  Agent/Responses conversation, targeted cancellation and restored operable UI
+  history using a local scripted provider and test-owned headless Chrome.
 - CDP endpoint policy lives in Domain and is enforced again by the browser
   factory before Playwright starts. HTTP discovery bypasses system proxies,
   rejects redirects and oversized responses, and validates the discovered
@@ -1601,6 +1625,13 @@ Avalonia UI
   `MOSSUI002` also rejects direct C# mutations of a control's local `Styles`
   collection, including index replacement and collection-interface casts;
   application-level shared style composition and wrapper internals remain valid.
+- Shared metadata and tool activity status use theme-aware foreground roles and
+  bounded header geometry. Approval's task-control adapter exposes the existing
+  stop command only for a live request belonging to the selected running task;
+  queue identity and disposal guards prevent stale gestures from becoming a
+  different task action. It changes no execution or approval policy. See
+  `UI_METADATA_POLISH_ACCEPTANCE.md` for contrast, compact stop and Headless
+  production-workflow evidence and its native/pixel-equivalence limits.
 - Local component resources cannot shadow shared appearance tokens.
   `ValidateSharedComponentResources` rejects visual-resource declarations,
   resource imports and resource-dictionary replacement in business AXAML;
@@ -1788,6 +1819,10 @@ Avalonia UI
   preserving its centered glyph, native keyboard/three-state behavior and disabled
   state. See `INPUT_HIT_TARGET_ACCEPTANCE.md` for reproduced failures and native
   light/dark, narrow/wide and unsent-draft verification.
+  Its theme-default keyboard adorner uses a non-interactive rounded AppBorder and
+  semantic focus brush. Focus does not change the check-surface border thickness,
+  avoiding glyph shifts from layout rounding at fractional DPI. Local focus
+  ownership remains respected; see `CHECKBOX_FOCUS_APPEARANCE_ACCEPTANCE.md`.
   Full settings pages use the shared `settings-page-scroll` variant so their
   inner scrollbar is hidden without disabling wheel or keyboard scrolling;
   modal and conversation scroll surfaces retain their own behavior.
@@ -1929,5 +1964,19 @@ or repository data. Shared button typography and localized labels remain in thei
 existing owners. `PROJECT_TASK_PREVIEW_ACCEPTANCE.md` records native replay,
 component measurements, regression status and remaining reference/DPI limits.
 
+Project rows with summary flyouts retain the compact navigation drawer while
+opening their contextual actions; summary-free selections retain normal dismissal.
+Global approval presentation temporarily yields to either compact drawer without
+changing request identity, queue, cancellation, browser blocking or execution policy.
+UI-to-tool authorization and snapshot/recovery checks are recorded in
+`PROJECT_AUTHORIZATION_UI_ACCEPTANCE.md`; native picker and same-state reference
+validation remain separate.
+
 When a feature does not fit these boundaries, update the architecture first;
 do not work around it with cross-project references or global state.
+
+Settings form rows share AppSettingsRow's adaptive two-column/stacked layout,
+retaining controls and drafts across resizing. Catalog empty states and compact
+page headings use existing shared components; scrolling and feedback wrapping
+remain shared style decisions. `ALL_PAGES_UI_POLISH_ACCEPTANCE.md` records the
+cross-page theme/viewport review and its native/reference acceptance limits.

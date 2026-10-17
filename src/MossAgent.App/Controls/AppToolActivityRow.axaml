@@ -23,7 +23,8 @@
         </StackPanel>
         <ui:AppText Grid.Column="1" Text="{Binding Summary}" Classes="muted type-13"
                     TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-        <ui:AppText Grid.Column="2" Text="{Binding Status}" Classes="subtle type-10"
+        <ui:AppText Grid.Column="2" Text="{Binding Status}" Classes="tool-activity-status"
+                    TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Status}"
                     VerticalAlignment="Center" />
       </Grid>
     </DataTemplate>

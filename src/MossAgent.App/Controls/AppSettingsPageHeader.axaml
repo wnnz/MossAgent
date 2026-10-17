@@ -1,0 +1,22 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppSettingsPageHeader"
+                   x:Name="Header" x:CompileBindings="False">
+  <Grid x:Name="HeaderLayout" Classes="settings-page-header-layout" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+    <StackPanel x:Name="HeadingContent" Classes="settings-page-header-heading">
+      <ui:AppText Classes="settings-title" Text="{Binding Title, ElementName=Header}" TextWrapping="Wrap" />
+      <ui:AppText Classes="settings-description" Text="{Binding Description, ElementName=Header}"
+                  TextWrapping="Wrap" IsVisible="{Binding HasDescription, ElementName=Header}" />
+      <ui:AppScrollViewer x:Name="StatusScroll" Classes="settings-page-status-scroll"
+                          IsVisible="{Binding HasStatus, ElementName=Header}"
+                          AutomationProperties.Name="{Binding Status, ElementName=Header}">
+        <ui:AppText Classes="muted type-12" Classes.status-error="{Binding IsStatusError, ElementName=Header}"
+                    Text="{Binding Status, ElementName=Header}" TextWrapping="Wrap"
+                    IsVisible="{Binding HasStatus, ElementName=Header}" />
+      </ui:AppScrollViewer>
+    </StackPanel>
+    <ui:AppContentControl x:Name="ActionsPresenter" Grid.Column="1" Classes="settings-page-header-actions"
+                          Content="{Binding Actions, ElementName=Header}" />
+  </Grid>
+</ui:AppUserControl>

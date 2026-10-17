@@ -1,0 +1,62 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Views.WorkspaceProjectEditorView"
+                   x:CompileBindings="False" Classes="project-editor"
+                   KeyboardNavigation.TabNavigation="Cycle">
+  <ui:AppCard Classes="flyout-surface card-inset-editor">
+    <Grid RowDefinitions="Auto,*,Auto" RowSpacing="12">
+      <StackPanel Spacing="8">
+        <ui:AppText Text="{Binding EditorTitle}" Classes="type-16 weight-semibold" />
+        <StackPanel Spacing="4">
+          <ui:AppText Text="{x:Static text:ProjectEditorText.Name}" Classes="subtle type-12" />
+          <ui:AppInput x:Name="ProjectNameInput" Text="{Binding Name}"
+                       AutomationProperties.Name="{x:Static text:ProjectEditorText.Name}"
+                       IsEnabled="{Binding !IsBusy}" />
+        </StackPanel>
+        <ui:AppText Text="{x:Static text:ProjectEditorText.Directories}" Classes="subtle type-12" />
+      </StackPanel>
+      <ui:AppScrollViewer x:Name="DirectoryScroll" Grid.Row="1" Classes="project-directory-scroll"
+                          HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="2">
+          <ui:AppText Text="{x:Static text:ProjectEditorText.EmptyDirectories}" Classes="subtle type-12"
+                       TextWrapping="Wrap" IsVisible="{Binding !HasDirectories}" />
+          <ui:AppItemsControl ItemsSource="{Binding Directories}" IsEnabled="{Binding !IsBusy}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <ui:AppBorder Classes="directory-row project-directory-row">
+                  <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+                    <ui:AppIcon Classes="ui-icon" Data="{StaticResource UiIconFolder}" VerticalAlignment="Center" />
+                    <ui:AppText Grid.Column="1" Text="{Binding DisplayName}" ToolTip.Tip="{Binding Path}"
+                                 TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                    <ui:AppBorder Grid.Column="2" IsVisible="{Binding IsPrimary}"
+                                   Classes="directory-primary-badge project-directory-badge">
+                      <ui:AppText Text="{x:Static text:ProjectEditorText.Primary}" Classes="subtle type-11" />
+                    </ui:AppBorder>
+                    <ui:AppButton Grid.Column="2" Classes="ghost set-primary button-xxs"
+                                   IsVisible="{Binding IsSecondary}" Content="{x:Static text:ProjectEditorText.SetPrimary}"
+                                   Command="{Binding SetPrimaryCommand}" />
+                    <ui:AppIconButton Grid.Column="3" Classes="icon-compact" Command="{Binding RemoveCommand}"
+                                       Label="{x:Static text:ProjectEditorText.RemoveDirectory}"
+                                       ToolTip.Tip="{Binding Path}" IconData="{StaticResource UiIconClose}" />
+                  </Grid>
+                </ui:AppBorder>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ui:AppItemsControl>
+        </StackPanel>
+      </ui:AppScrollViewer>
+      <StackPanel Grid.Row="2" Spacing="8">
+        <ui:AppActionButton Label="{x:Static text:ProjectEditorText.AddDirectory}" IconData="{StaticResource UiIconPlus}"
+                            Classes="ghost align-leading" HorizontalAlignment="Stretch" Command="{Binding AddDirectoryCommand}" />
+        <ui:AppText Text="{Binding Status}" Classes="subtle type-11" IsVisible="{Binding HasStatus}"
+                     Classes.status-error="{Binding HasStatusError}" TextWrapping="Wrap" />
+        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+          <ui:AppButton Grid.Column="1" Content="{x:Static text:ProjectEditorText.Cancel}" Command="{Binding CloseCommand}" />
+          <ui:AppButton Grid.Column="2" Content="{Binding SubmitLabel}" Classes="primary" Command="{Binding AddCommand}" />
+        </Grid>
+      </StackPanel>
+    </Grid>
+  </ui:AppCard>
+</ui:AppUserControl>

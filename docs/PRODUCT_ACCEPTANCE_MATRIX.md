@@ -1,5 +1,215 @@
 # Product acceptance matrix
 
+`PROJECT_EDITOR_VIEWPORT_ACCEPTANCE.md` records the bounded project-editor slice:
+long directory lists no longer push Save outside the owner viewport, keyboard
+focus reveals primary-directory actions, and Add Project starts a new draft after
+an edit is dismissed. Production MainWindow/SQLite tests cover ordered directory
+updates, actual create/save input, canceled selection, validation recovery and
+locked/busy state boundaries. Headless/Skia theme and DPI evidence does not replace
+native picker, same-state Codex comparison or updated-root-to-tool execution checks.
+
+`CDP_AGENT_WORKFLOW_ACCEPTANCE.md` extends direct-tool isolation evidence through
+the real production Agent/provider/App composition. Actual browser-settings Save,
+composer Send and targeted Stop operate against a test-owned headless Chrome.
+Two final runs independently make 12 model requests and ten complete browser
+audits: A/popup release cannot disturb B, a foreign tab is rejected and B completes
+with its actual snapshot/PNG and rendered Markdown. Fresh composition restores
+Cancelled/Completed state and keyboard-operable history at compact Dark size
+without model/browser replay. Controls/reply receive real input-hit checks.
+Current Browser 88, Agent 123 and related App 195 cases pass, with matching App
+discovery and no skips/aborts. Build, driver format/source and assembly identities
+pass. This 406-case regression scope and scripted-model workflow are not native
+Codex parity, paid-model reasoning, a complete current all-suite checkpoint or
+whole-product completion.
+
+`CHECKBOX_FOCUS_APPEARANCE_ACCEPTANCE.md` completes the shared rounded keyboard
+focus language for checkboxes. Eighteen unchanged shape baselines fail on the
+native square frame; two more fail on missing shared feedback, while two explicit
+ownership cases already pass. A first candidate reveals four fractional-DPI glyph
+shifts; preserving check-surface thickness fixes them without changing hit areas
+or native three-state/disabled behavior. Final complete pixels pass 282, related
+App passes 424 with matching discovery, and architecture passes seven. This
+713-case scope has no failures/skips/aborts. Build, scoped format/source/hygiene
+and assembly identities pass. Headless before/after evidence does not replace
+postponed native/Codex comparison, a complete current App/all-suite checkpoint,
+the earlier allocation investigation or whole-product acceptance.
+
+`CDP_TASK_ISOLATION_ACCEPTANCE.md` records the preceding browser checkpoint:
+explicit CDP attachment creates a task-owned page instead of taking the user's
+first page, and borrowed contexts expose only task-owned/attached pages and their
+descendant popups. Cancellation cleans up late pages; disposal waits and releases
+only owned pages/runtime state once. Context-level cookies/login/storage still
+remain shared. Six original isolation cases fail before the correction. Final
+Browser 88, Tools 494, Agent 123 and related App 195 cases pass without skips or
+aborts; the 195-case discovery matches. Nine source/assembly identities and build
+checks pass. A test-owned headless Chrome and production settings-to-standard-tool
+pipeline verify independent navigation, foreign-ID/ReadOnly refusal, real PNG,
+surviving-task operations and sentinel preservation through 12 complete audits.
+This separate 900-case checkpoint precedes the checkbox appearance revision;
+overlapping suites and old full-App/pixel runs are not summed into current
+coverage. Native embedded concurrency, paid-model invocation and whole-product
+or Codex parity remain open.
+
+`SELECTOR_FOCUS_APPEARANCE_ACCEPTANCE.md` corrects reproduced square keyboard-focus
+frames in ordinary/compact dropdown items using a native-based shared container
+theme. Existing pill/local focus ownership remains intact: a first global-style
+candidate breaks two unchanged theme tests, and the corrected theme default
+passes them without weakening assertions. The final baseline passes eight
+preservation cases and fails all sixteen new defect/adorner cases. Complete
+pixels pass 260; related App passes 198 with matching discovery; architecture
+passes seven. This 465-case scope has no failures/skips/aborts. Build, scoped
+format/source and assembly-identity checks pass. A separately completed 4,794-case
+App process retains the preceding App DLL and does not establish a full run of
+this new appearance revision. Its unchanged filtering/GC-pressure investigation
+does not reproduce or causally fix historical allocation failures. Native/Codex
+and whole-product acceptance remain open.
+
+`BUTTON_FOCUS_APPEARANCE_ACCEPTANCE.md` fixes reproduced square keyboard-focus
+frames on shared rounded buttons. All 24 unchanged-appearance shape baselines
+fail; the final shared adorner follows the native target radius without moving
+content or intercepting input. Explicit component focus ownership stays intact.
+The nonvisual Template factory is recognized without permitting native visual
+children or page-owned focus templates. Final complete pixels pass 236; related
+App passes 1,649 with matching discovery; architecture passes seven. This 1,892-
+case scope has no failures/skips/aborts. Build has zero warnings/errors, scoped
+format/source checks pass and six DLL identities remain unchanged. It is not a
+complete App/eight-suite checkpoint, allocation-failure repair, native/Codex parity
+or product completion.
+
+`AUTOMATION_UI_WORKFLOW_ACCEPTANCE.md` adds eight connected production-UI cases
+across Light/Dark and compact/wide windows. Actual editor/dropdown/numeric input,
+save, enable/pause, run/stop, visible history, invalid drafts and confirmed/canceled
+deletion reach the real SQLite/scheduler/provider composition. Saved model, effort
+and prompt reach the recorded request; background runs preserve foreground drafts,
+and deletion preserves run/task history. All 152 App automation, 41 Infrastructure
+automation and seven architecture cases pass. Build has zero warnings/errors;
+scoped format, source limits and eleven DLL identities pass. This slice adds tests,
+not a production fix. It does not replace the earlier allocation failure, repeat
+the full pixel/eight-suite checkpoint, or establish native/Codex/product parity.
+
+`SHARED_INTERACTION_STATES_ACCEPTANCE.md` fixes two reproduced shared-appearance
+defects: pointer hover erased focused input borders, and Dark-mode disabled
+primary/send buttons used hardcoded Light colors. Twelve focus and eight button
+baseline cases fail before the correction and pass afterward. Final complete
+pixels pass 208 cases (including the 20 new cases); focused App passes 437.
+The build has zero warnings/errors; scoped format/hygiene and assembly identities
+pass. This 645-case scope is not a complete App/eight-suite checkpoint, a repair
+of the previous allocation assertion, native/Codex parity or product completion.
+
+`SETTINGS_CATALOG_VIEWPORT_ACCEPTANCE.md` fixes reproduced proxy/MCP catalog
+clipping in all eight compact/wide Light/Dark baselines. Finite remaining-height
+lists retain native scrolling and natural empty/single-row height; status uses
+the shared bounded header. Thirty-item production MainWindow/SQLite cases verify
+visible last-row hit targets and actual edit/save identity. All 36 new cases pass
+within 4,784 App cases across six disjoint partitions, with exact discovery/class
+counts and unique TRX IDs. Complete pixels 188, Providers 542, Infrastructure
+proxy/HTTP subset 20 and architecture subset seven also pass. Build has zero
+warnings/errors; scoped format/hygiene and eight assembly identities pass. The
+earlier same-process App attempt is interrupted without a final report after an
+untouched sidebar allocation assertion observes 1,200 bytes instead of zero;
+batched success does not erase or explain that failure. This is not an all-green
+same-process/eight-suite checkpoint, native/Codex parity or product completion.
+
+`SETTINGS_STATUS_OVERFLOW_ACCEPTANCE.md` records a production shared-header fix:
+long discovery feedback previously reduced the provider-list viewport to zero
+in all four Light/Dark and compact/wide baselines. A shared 96-DIP scroll bound
+now preserves actions and the list while retaining complete keyboard-readable
+text. All 232 related App cases (including 16 new overflow/loading/keyboard/short
+status cases), 188 pixel cases and seven architecture cases pass without skips
+or aborts. Build has zero warnings/errors; scoped format and assembly-identity
+checks pass. Off-screen before/after evidence does not replace postponed native
+screenshots, same-state Codex comparison or full-product acceptance. The earlier
+6,495 complete checkpoint remains historical, not increased by adding subsets.
+
+`PROVIDER_UI_WORKFLOW_ACCEPTANCE.md` extends the entry audit with six connected
+production-UI/loopback workflows across Responses, compatible Chat and Gemini,
+each in actual Light/wide and Dark/compact states. Real actions exercise discovery
+503 recovery, model validation/save/reopen, repeated-fetch customization retention,
+provider disable/re-enable and plain-chat submission. Stored settings reach the
+actual adapter request; the completed Markdown answer is hit-tested on-screen.
+All 217 related App cases and seven architecture cases pass; scoped whitespace,
+source-size, assembly-identity checks and the zero-warning/error solution build
+pass. This adds tests, not a production correction. The previous 6,495 complete
+checkpoint is not increased by adding subsets or these six new cases. Native
+screenshots, same-state references and broader product gates remain open.
+
+`PRODUCT_INTERACTION_AUDIT.md` records the latest complete regression and bounded
+cross-page entry review. All eight complete suites pass 6,495/6,495 with no
+failures/skips/aborts (App 4,726; pixels 188; other suites 1,581), including all
+28 new manual-approval/keyboard/focus cases. After all test processes finish,
+the solution build has zero warnings/errors; eight tested assembly hashes and
+four matching App copies stay unchanged. A separate synthetic Headless driver
+reviews 4,038 button occurrences across 160 page/state combinations, including
+40 new-editor states, with no unresolved enabled wiring. Search/dialog keyboard
+paths and numeric pointer actions also pass, while most commands are not invoked.
+These are repeated occurrences, not distinct controls or additional xUnit cases.
+This audit changes no production code and does not replace postponed native
+screenshots, same-state Codex comparison or full-product acceptance.
+
+`SUBAGENT_MANUAL_APPROVAL_ACCEPTANCE.md` records deterministic production-UI
+approval-to-child execution, rejection/cancellation, dialogue visibility and
+restart-without-replay coverage. It also fixes keyboard-inaccessible expanded
+tool output using shared rounded focus appearance and native paging. Native
+captures remain postponed; this slice is not native manual-approval success,
+same-state Codex visual acceptance or a new complete eight-suite checkpoint.
+That slice's targeted checks pass 317 related App cases and all 188 pixel cases with
+no skips/aborts; the solution build has zero warnings/errors.
+
+`SIDEBAR_SHUTDOWN_ACCEPTANCE.md` records the preceding lifetime correction and
+complete checkpoint. Graceful shutdown/async disposal cancel and drain sidebar
+loads and all sort/move/reorder commands before reporting storage release.
+Eighteen new cases include real synthetic file locks, repeated stop identity,
+canceled waiters and late-result/notification rejection. All eight complete
+suites pass 6,467/6,467 with no skips/aborts (App 4,706; pixels 180; other suites
+1,581). Build has zero warnings/errors, and tested assembly hashes remain stable.
+The earlier allocation and directory-cleanup failures do not recur in this full
+run; their original evidence is retained and their historical causes are not
+claimed fixed. Native/Codex visual and full-product acceptance remain open.
+
+The shared-alignment follow-up in `UI_COMPACT_LAYOUT_ACCEPTANCE.md` corrects
+render-confirmed inactive selectors on provider headers and task failure notices.
+Fresh checks pass all 180 pixel cases plus 93 related App cases, including fourteen
+new theme/width/scaling/resize/scope cases. Build has zero warnings/errors; scoped
+format, whitespace and App assembly-copy identity checks pass. This targeted
+checkpoint does not replace the complete-run evidence or explain its failures.
+
+`SETTINGS_PAGE_HEADER_ACCEPTANCE.md` records the preceding shared-header and complete
+validation checkpoint. Five settings pages reuse responsive title/description/
+status/action composition, while existing commands and sanitized errors remain
+functional. All 48 new page/policy/rendering cases pass. That eight-suite
+run passes 6,433/6,435 with no skips/aborts: an untouched sidebar zero-allocation
+assertion reports 3,288 bytes, and an untouched restart test fails during owned
+temporary-directory cleanup. Three isolated nine-case reruns pass without
+replacing either complete failure. The earlier complete run's two inline-markup
+guards are updated to the shared component and pass in the final run. Build has
+zero warnings/errors; format, whitespace and tested-assembly identity checks pass.
+Native captures remain postponed and the whole product goal stays open.
+
+`MCP_RECONNECT_RECOVERY_ACCEPTANCE.md` records the current settings recovery and
+mutation-lifetime follow-up. Reconnect refreshes both catalogs; guarded mutations
+share cancellation, reject missing targets and preserve newer editor input.
+Closing the editor resets delete confirmation. A real hanging stdio server and
+child exit on settings disposal before container shutdown, while committed data
+remains inspectable. Original HTTP recovery/approval/audit coverage is retained.
+Final related App/component/pixel/MCP/architecture checks pass 321 distinct cases;
+the original three reconnect failures, later eight mutation failures and earlier
+HTTP timeout evidence remain recorded. Build/format/whitespace pass. This is a
+targeted checkpoint, not a new complete eight-assembly or native/Codex gate.
+
+`UI_COMPACT_LAYOUT_ACCEPTANCE.md` records the preceding uncommitted composer and
+settings-row follow-up. Fresh complete non-UI suites pass 1,581 cases and complete
+pixels pass 136. The first complete App run finishes normally at 4,611/4,615:
+four old shared-style assertions fail, with no skips/aborts. After correcting
+those assertions, the complete App rerun passes 4,614/4,615; the one failure is
+an untouched catalog lookup zero-allocation assertion (5,104 bytes, cause
+unproven). Its five-case class passes three isolated no-build reruns, without
+replacing the full-run failure. All eight complete suites total 6,331/6,332,
+with no skips/aborts; focused and isolated results are not double-counted.
+Build/format/whitespace and eight tested-assembly identity checks pass, but this
+is not an all-green checkpoint. Native screenshots remain user-postponed;
+no whole-product or same-state Codex acceptance is claimed. Older complete-run
+records below are historical rather than results for this current UI revision.
+
 `AUTOMATION_PAGE_LAYOUT_ACCEPTANCE.md` records the scoped layout follow-up:
 automations now occupy the full content frame beside the navigation rail, outside
 the conversation sidebar/inspector layout. Conversation sidebar preferences and
@@ -98,18 +308,18 @@ evidence and remaining completion gates; it does not mark the product complete.
 
 | Requirement | Existing independent evidence | Current combined evidence / remaining scope |
 | --- | --- | --- |
-| Multiple proxies, endpoint/port/default and explicit provider direct routing | `AUTHENTICATED_PROVIDER_PROXY_ACCEPTANCE.md`, `PROXY_EDITOR_SELECTION_ACCEPTANCE.md` | Current combined run uses direct loopback providers; it does not repeat proxy editing, authenticated routing or every native protocol recovery branch. |
+| Multiple proxies, endpoint/port/default and explicit provider direct routing | `AUTHENTICATED_PROVIDER_PROXY_ACCEPTANCE.md`, `PROXY_EDITOR_SELECTION_ACCEPTANCE.md`, `SETTINGS_CATALOG_VIEWPORT_ACCEPTANCE.md` | The latest App partitions rerun deterministic proxy regressions. New production MainWindow/SQLite cases preserve a 30-proxy catalog while editing/saving its visible last row in both themes and widths. Earlier native authenticated routing remains separate; this does not repeat every native protocol recovery branch. |
 | Multiple providers and OpenAI/Gemini/compatible protocols | `MODEL_CONFIGURATION_NATIVE_ACCEPTANCE.md`, `COMPATIBLE_STREAM_ACCEPTANCE.md`, `GEMINI_CONTINUATION_ACCEPTANCE.md` | Production Responses parent and Gemini child both execute; all protocols retain deterministic regressions. Remote credentials and paid services are not needed by ordinary tests. |
 | Discover/manual models, context/reasoning and model parameters | `MODEL_CONFIGURATION_NATIVE_ACCEPTANCE.md`, `PROVIDER_DIALOG_NATIVE_ACCEPTANCE.md`, `MODEL_REASONING_CAPABILITY_ACCEPTANCE.md` | Positive combined requests verify actual saved model/effort/temperature/Top-P. This scenario seeds settings and does not replace the prior real editor-save/discovery checks. |
 | Provider page, expandable groups and individual model editors | `PROVIDER_CATALOG_ACCEPTANCE.md`, `PROVIDER_DIALOG_NATIVE_ACCEPTANCE.md`, `PROVIDER_ROW_COMPONENT_ACCEPTANCE.md` | Existing native editor cases cover save/reopen/errors, with deterministic late-result and ownership guards. Full current-state PI-Desktop visual equivalence remains unproven. |
 | Child name/trigger/prompt/model/effort/sharing | `SUBAGENT_RUNTIME_CONFIGURATION_ACCEPTANCE.md`, `SUBAGENT_LIFECYCLE_NATIVE_ACCEPTANCE.md`, `SUBAGENT_SETTINGS_TO_RUNTIME_ACCEPTANCE.md` | Latest native run edits and saves name/trigger/prompt/model/high effort through the actual editor, then executes with sharing off and on. Four child requests verify the selected Gemini model/HIGH effort, new prompt and context distinction. Invalid settings/Stop retain independent coverage. |
-| Child tools, progress, completion and visible dialogue | `SUBAGENT_EXECUTION_ACCEPTANCE.md`, `SUBAGENT_DIALOGUE_PROJECTION_ACCEPTANCE.md`, `SUBAGENT_SETTINGS_TO_RUNTIME_ACCEPTANCE.md` | Latest production live/completed/restored captures show both actual authorized child reads, Markdown answers and parent results. Four successful audits, two final payloads and stable nineteen-table/no-request-replay restore are verified. Separate cross-project denial and manual-approval limitations are not described as success. |
+| Child tools, progress, completion and visible dialogue | `SUBAGENT_EXECUTION_ACCEPTANCE.md`, `SUBAGENT_DIALOGUE_PROJECTION_ACCEPTANCE.md`, `SUBAGENT_SETTINGS_TO_RUNTIME_ACCEPTANCE.md`, `SUBAGENT_MANUAL_APPROVAL_ACCEPTANCE.md` | Prior native live/completed/restored captures show authorized child reads, Markdown answers and parent results. New deterministic production-UI cases verify manual approval, saved child routing, visible restored results and denial/cancellation without replay. Native manual-approval success remains open; deterministic coverage does not replace it. |
 | Projects and authorized roots | `PROJECT_MANAGEMENT_ACCEPTANCE.md`, `FILE_EDITING_ACCEPTANCE.md` | Positive operations stay inside the selected task root; foreign synthetic file and request-leak flags remain unchanged. Link/reparse/concurrent-write negatives retain dedicated tests. |
 | Conversation, streaming and restored state | `MESSAGE_SEND_ACCEPTANCE.md`, `HISTORY_CONTEXT_ACCEPTANCE.md`, `CONVERSATION_TIMELINE_ACCEPTANCE.md` | Production send, final Markdown, child dialogue and completed history restore without model calls or mutating-tool replay; file statistics refresh read-only. Fixed-length/TLS native streaming limits remain described in `FIXED_LENGTH_STREAM_ACCEPTANCE.md`. |
 | File read/edit/write and review | `FILE_CHANGE_SNAPSHOT_ACCEPTANCE.md`, `TASK_SNAPSHOT_REVIEW_ACCEPTANCE.md`, `FILE_CHANGE_UNDO_ACCEPTANCE.md` | Real writes, replacement, +2/-0 card and immutable snapshot diff; hashes verified. Undo/removal and storage-recovery acceptance remain separate, not exercised by this read-only review. |
 | Shell execution, policy, cancellation and limits | `COMMAND_EXECUTION_ACCEPTANCE.md`, `TOOL_APPROVAL_LAYOUT_ACCEPTANCE.md`, `TOOL_PROGRESS_ACCEPTANCE.md` | Both parent/child commands use production execution/audit. Prior negative child read is denied before approval. This positive run deliberately does not automate permission prompts or exercise a manual approval click. |
-| Embedded/external browser selection and task isolation | `BROWSER_EXECUTION_ACCEPTANCE.md`, `BROWSER_CONCURRENCY_ACCEPTANCE.md`, `BROWSER_TOOLBAR_ACCEPTANCE.md` | Production embedded managed page, actual DOM result and verified PNG. The latest production App now also runs two external managed Chrome tasks; cancelling A releases only A while B keeps its process/profile identities, performs five more tools and completes. Three artifacts, 15 audits and reopen without replay are verified. Daily-profile/CDP combinations and arbitrary sites remain outside this native scope. |
-| MCP and session management | `MCP_EXECUTION_ACCEPTANCE.md`, `MCP_TOOL_IDENTITY_ACCEPTANCE.md`, `WINDOW_SHUTDOWN_ACCEPTANCE.md`, `ASYNC_PROCESS_PIPE_ACCEPTANCE.md` | HTTP MCP echo retains earlier evidence. Latest production composition also discovers and executes stdio echo through the real owned-process launcher and audit pipeline; two native App openings restore its exact output without another tools/call. Startup handshakes are counted separately from replay. Native composer Send, disconnected recovery and every configuration race are not established by this bounded scenario. |
+| Embedded/external browser selection and task isolation | `BROWSER_EXECUTION_ACCEPTANCE.md`, `BROWSER_CONCURRENCY_ACCEPTANCE.md`, `BROWSER_TOOLBAR_ACCEPTANCE.md`, `CDP_TASK_ISOLATION_ACCEPTANCE.md`, `CDP_AGENT_WORKFLOW_ACCEPTANCE.md` | Earlier native managed Chrome evidence retains independent processes/profiles, targeted cancellation and restoration. New Headless production-UI settings/Agent evidence attaches two tasks to one explicit test-owned CDP context: foreign tabs are rejected, cancelling A closes its initial/popup pages only, B continues through real snapshot/PNG to completion, and fresh composition restores operable history without another model call. The latest workflow has 12 scripted model requests and ten complete audits; it does not replace native daily-profile/CDP or arbitrary-site acceptance. Context storage remains shared. |
+| MCP and session management | `MCP_EXECUTION_ACCEPTANCE.md`, `MCP_TOOL_IDENTITY_ACCEPTANCE.md`, `MCP_UI_RECOVERY_ACCEPTANCE.md`, `WINDOW_SHUTDOWN_ACCEPTANCE.md`, `ASYNC_PROCESS_PIPE_ACCEPTANCE.md` | Earlier native stdio discovery/echo/restoration evidence remains. New production Headless MainWindow cases cover real editor/Send/approval, offline HTTP failure, explicit reconnect, safe error styling, late initialization cancellation and operable restored tool output/Markdown without tool/model replay. Both themes cover 1280×820 and 526×601; rejection branches retain zero tool HTTP calls. This does not establish native disconnected recovery, automatic transport resumption or every configuration race. |
 
 ## UI and engineering gates
 
@@ -117,13 +327,13 @@ evidence and remaining completion gates; it does not mark the product complete.
 | --- | --- |
 | Layout, navigation/sidebar, conversation, composer, inspector and settings | Shared-control component tests and individual native acceptance files exist. Fresh production screenshots verify the child/file/browser/history combination. This is not a complete same-state visual sweep. |
 | Geometry, icons/text alignment, colors and shadows | Component-specific measurements remain in sidebar/header/composer/settings/file-card acceptance records. Current passive samples exactly match title/rail/sidebar/main light-theme colors; complete pixel equality is not proven. |
-| Hover/focus/disabled/loading/empty/error/expanded states | Independent rendered and interactive checks exist, including invalid settings and child/runtime errors. The latest timeline run adds running/cancelled/completed and restored disclosure states. No single current-version matrix proves every key surface/state; complete that sweep before visual sign-off. |
+| Hover/focus/disabled/loading/empty/error/expanded states | Independent rendered and interactive checks exist, including invalid settings and child/runtime errors. Timeline checks add running/cancelled/completed and restored disclosure states. `SETTINGS_STATUS_OVERFLOW_ACCEPTANCE.md` covers bounded long/loading/keyboard/short feedback. `SETTINGS_CATALOG_VIEWPORT_ACCEPTANCE.md` adds long/empty/single-row proxy/MCP catalogs, repeated resizing, native End navigation, actual last-row actions and visible feedback. `BUTTON_FOCUS_APPEARANCE_ACCEPTANCE.md` adds rounded shared keyboard-focus rings across action, send, history, selected rail, conversation and settings variants, preserving pointer/disabled behavior and explicit focus ownership. No single current-version matrix proves every key surface/state; complete that sweep before visual sign-off. |
 | Different window sizes and light/dark themes | Native component evidence covers narrow/normal/maximized and both themes. The integrated scenario covers light 1280x820; production browser concurrency/restoration adds light 1920x1032. `SUBAGENT_CONCURRENCY_NATIVE_ACCEPTANCE.md` adds Dark/96-DPI child history at 1920x1032, 1280x820 and 526x601, including actual compact scrolling/context toggle. These bounded branches do not prove a complete current-version responsive/theme/DPI matrix. |
-| Visible controls have behavior | The combined scenario verifies send, inspector/browser selection, timeline/dialogue disclosure/scroll, context toggle and snapshot review. The latest production concurrency run also verifies task switching, simultaneous sends, targeted stop and restored disclosure. Prior feature records cover other entries; a whole-product interactive-control audit is still required. |
+| Visible controls have behavior | Prior combined/concurrency scenarios exercise send, inspectors, dialogue, snapshot review, task switching and targeted stop. `PRODUCT_INTERACTION_AUDIT.md` adds 4,038 wiring occurrences across 160 synthetic page/state combinations plus search/dialog/numeric input paths. `PROVIDER_UI_WORKFLOW_ACCEPTANCE.md` connects actual provider/model actions to discovery recovery, saved configuration, disabled submission rejection and one real protocol request/visible answer. `AUTOMATION_UI_WORKFLOW_ACCEPTANCE.md` adds real editor/save/enable/pause/run/stop/history/delete controls, exact saved-request routing, retained foreground drafts and invalid/canceled/deleted-history boundaries in both themes and sizes. Remaining commands, menus and save/delete branches still require a complete whole-product behavior audit. |
 | Dependency direction and shared tool pipeline | Current App composition and `SubagentToolGateway` use existing ports and executor. The combined audits independently show parent/child/MCP requests, including denial/cancellation records. |
 | Secrets, approval, bounds, persistence and interrupted work | Loopback logs record only whitelisted flags/parameters. Artifact hashes, denied foreign read and no-replay restore are checked. Dedicated schema/output/path/timeout/cancellation/storage tests remain necessary and do not become native evidence automatically. |
 | Modular files, shared controls and JIT/Windows x64 single-file output | Repository constraints remain binding; no changes to architecture boundaries, native wrappers, JSON or packaging in the combined acceptance work. Build/analyzer/component gates remain in place. |
-| Build/tests/format | Latest complete run: 6,210/6,211 across eight assemblies, one untouched model-picker allocation failure, no skips/aborts; all 18 new thumbnail-shadow cases pass. Three isolated five-case reruns do not replace that failure. Solution build has zero warnings/errors; scoped format, source and independent report/binary/native checks pass. `THEME_THUMBNAIL_SHADOW_ACCEPTANCE.md` preserves the current App identity, postponed native work and non-all-green result. Earlier approval and all-green keyboard runs remain historical evidence, not this run's result. Focused subsets are not double-counted. |
+| Build/tests/format | Latest case-set validation: all 4,784 discovered App cases pass across six disjoint class partitions; 581 class/count matches and unique TRX IDs verify coverage. Complete pixels 188 and Providers 542 plus Infrastructure proxy/HTTP subset 20 and architecture subset seven pass. Build has zero warnings/errors; scoped format/hygiene and eight test/runtime hashes pass. The same-process App attempt is interrupted without final TRX after an untouched sidebar allocation failure (0 expected, 1,200 measured); partitions do not replace that observation or prove a causal fix. The latest complete eight-assembly checkpoint remains historical 6,495/6,495 in `PRODUCT_INTERACTION_AUDIT.md`, predating subsequent changes. This is not a current all-green same-process/eight-suite checkpoint. Subsets and external audit occurrences are not added to historical totals. Native/Codex and full-product acceptance remain open. |
 
 ## Next completion work
 
@@ -732,3 +942,69 @@ another zero-warning/error solution build and whitespace/identity checks. These
 6,111/6,115 full run. Current same-state Codex fidelity, complete responsive/DPI
 coverage, manual-approval success and complete-product acceptance remain open.
 No production code, policy, user data, JIT/JSON or packaging changes are made.
+
+## Shared metadata and compact approval checkpoint
+
+`UI_METADATA_POLISH_ACCEPTANCE.md` records a pre-change full checkpoint of
+6,690/6,690 across eight assemblies, with no failures/skips and unchanged test
+DLL hashes. This does not replace the historical failed runs or establish a
+full regression of the subsequent UI changes.
+
+The later candidate improves shared secondary-text contrast, tool status insets
+and bounded overflow, and adds a request-identity/selected-task guarded stop
+action inside the approval footer. The complete Visual assembly passes 300/300.
+The final candidate also passes all 275 focused App cases, including approval
+queue identity, cancellation, disposal and the new footer's structural guard.
+An external production MainWindow driver first reproduces two compact stop-hit
+failures in 24 attempts, then passes all 24 after the footer fix. Both themes and
+1280x820/526x601 cover actual send, approve/deny/stop, external edit conflict,
+read-only/path denial, snapshot review, undo and operable no-replay restoration.
+Five successful review/undo audits retain statistics/review calls rather than
+suppressing them to match an incorrect helper count.
+
+These are independent Headless/Skia and loopback-runtime results, not native
+desktop input, project/provider-editor acceptance, current all-assembly
+regression or same-state Codex pixel parity. Current user windows, data and
+approval settings are untouched; JIT, JSON and packaging decisions are retained.
+
+## Project authorization and compact-drawer checkpoint
+
+`PROJECT_AUTHORIZATION_UI_ACCEPTANCE.md` records real MainWindow-to-SQLite-to-tool
+checks using an isolated picker port and loopback model. It reproduces compact
+approval obstruction and immediately dismissed project summaries, then adjusts
+App-only presentation and shared project-row dismissal. Permission policy, active
+task snapshots and persistence remain unchanged. New and removed roots, resumed
+tasks, cross-project rejection and no-replay restoration are verified separately
+from native desktop/picker and current Codex pixel-equivalence acceptance.
+
+The final ordinary-mode expanded App run passes 1,726/1,726; the 28 focused
+cases are a subset, not additional coverage. Complete Visual, Agent and Tools
+assemblies pass 300/300, 123/123 and 494/494 respectively, all without skips or
+aborts. The solution build has zero warnings/errors; scoped whitespace and
+eight-file source audits pass. Production/test App DLL hashes match the focused
+capture candidate, and forty independent Headless frames are retained.
+
+Earlier Blame-enabled expanded runs remain recorded as 1,718/1,720 and
+1,725/1,726. The old approval structure guard is synchronized; the unchanged
+zero-allocation guard passes three isolated six-case runs on each of the old
+and current candidates, as well as the final ordinary run. This does not prove
+the diagnostic collector caused the earlier allocation failures. These results
+are not a complete App/eight-assembly regression or native/current-Codex visual
+acceptance. No staging, commit, push, release or packaging changes occur.
+
+## All-pages UI consistency checkpoint
+
+`ALL_PAGES_UI_POLISH_ACCEPTANCE.md` records the adaptive settings rows, shared
+catalog empty states, readable feedback, page headings and compact list corners.
+Fourteen page categories, five create dialogs and advanced appearance are reviewed
+in light/dark themes at three viewport sizes; browser profile modes are checked
+separately. There are 126 explicitly named independent Headless frames, not native
+desktop or current-Codex pixel-equivalence evidence.
+
+The solution build has zero warnings/errors; the complete Visual assembly passes
+300/300. The initial complete App run is 4,893/4,898 with no skips or aborts.
+Three stale structure checks are synchronized with the adaptive design and pass
+in the final 44/44 focused run; two unrelated source guards remain recorded.
+The focused result is a subset, not a new complete-App pass. App DLL identities,
+scoped whitespace, seven-file type/size and relevant markup-size audits agree.
+Current user windows, data, permissions and packaging policy are untouched.

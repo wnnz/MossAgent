@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.App.Controls;
+using MossAgent.Domain;
 using Xunit;
 
 namespace MossAgent.App.Tests;
@@ -86,12 +87,60 @@ public sealed class ProviderSettingsRowLayoutTests : IAsyncLifetime
                 Assert.Equal(TextTrimming.CharacterEllipsis, text.TextTrimming);
                 Before(text, edit, row);
             }
-            Before(name, identity, row);
-            Before(context, reasoning, row);
-            Assert.InRange(Math.Abs(Center(name, row) - Center(identity, row)), 0, 0.5);
+            if (width < 480)
+            {
+                Assert.True(name.Bounds.Width >= 180);
+                Assert.True(Origin(identity, row).Y >= Origin(name, row).Y + name.Bounds.Height);
+                Assert.True(Origin(reasoning, row).Y >= Origin(context, row).Y + context.Bounds.Height);
+            }
+            else
+            {
+                Before(name, identity, row);
+                Before(context, reasoning, row);
+                Assert.InRange(Math.Abs(Center(name, row) - Center(identity, row)), 0, 0.5);
+            }
             Assert.InRange(Math.Abs(Center(edit, row) - Center(delete, row)), 0, 0.5);
             Assert.InRange(Origin(delete, row).X + delete.Bounds.Width, 0, row.Bounds.Width);
             Assert.Equal(model.ModelId, ToolTip.GetTip(identity));
+        }
+        finally { window.Close(); }
+    }, TestContext.Current.CancellationToken);
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task ModelRow_ResizesRepeatedlyWithoutLosingSelectionOrCommands(bool dark) => _session.Dispatch(() =>
+    {
+        var model = ProviderSettingsRowTestData.Model(Guid.NewGuid());
+        var edited = new List<ModelProfile>();
+        var row = new AppModelSettingsRow
+        {
+            Model = model,
+            EditCommand = new RelayCommand<ModelProfile>(value => edited.Add(value!)),
+            DeleteCommand = new RelayCommand(() => { })
+        };
+        var window = Window(row, dark, 640);
+        try
+        {
+            var name = row.FindControl<AppText>("ModelNameText")!;
+            var identity = row.FindControl<AppText>("ModelIdText")!;
+            var edit = row.FindControl<AppButton>("EditModelButton")!;
+            foreach (var width in new[] { 320, 479, 480, 640, 320, 640 })
+            {
+                window.Width = width;
+                window.UpdateLayout();
+                Assert.Equal(width < 480 ? 1 : 0, Grid.GetRow(identity));
+                Assert.True(name.Bounds.Width >= 180);
+                Assert.Same(model, edit.CommandParameter);
+                Assert.True(edit.IsEffectivelyEnabled);
+            }
+            row.Model = model with { ModelId = "new-model-id", ReasoningEffort = "high" };
+            window.UpdateLayout();
+            Assert.Equal("new-model-id", identity.Text);
+            Assert.Equal(identity.Text, ToolTip.GetTip(identity));
+            Assert.Same(row.Model, edit.CommandParameter);
+            edit.Command!.Execute(edit.CommandParameter);
+            Assert.Same(row.Model, Assert.Single(edited));
         }
         finally { window.Close(); }
     }, TestContext.Current.CancellationToken);

@@ -5,24 +5,22 @@
              x:CompileBindings="False">
   <StackPanel>
     <ui:AppBorder Classes="divider-bottom" Padding="0,7">
-      <Grid ColumnDefinitions="*,190" ColumnSpacing="16">
+      <ui:AppSettingsRow Classes="font-control">
         <ui:AppText Text="内容字体" Classes="type-13" />
-        <ui:AppComboBox Grid.Column="1" ItemsSource="{Binding ContentFontOptions}"
+        <ui:AppComboBox ItemsSource="{Binding ContentFontOptions}"
                         SelectedItem="{Binding SelectedContentFontOption}"
                         DisplayMemberBinding="{Binding Label}"
-                        AutomationProperties.Name="主题内容字体"
-                        HorizontalAlignment="Right" />
-      </Grid>
+                        AutomationProperties.Name="主题内容字体" />
+      </ui:AppSettingsRow>
     </ui:AppBorder>
     <ui:AppBorder Padding="0,7">
-      <Grid ColumnDefinitions="*,190" ColumnSpacing="16">
+      <ui:AppSettingsRow Classes="font-control">
         <ui:AppText Text="代码字体" Classes="type-13" />
-        <ui:AppComboBox Grid.Column="1" ItemsSource="{Binding CodeFontOptions}"
+        <ui:AppComboBox ItemsSource="{Binding CodeFontOptions}"
                         SelectedItem="{Binding SelectedCodeFontOption}"
                         DisplayMemberBinding="{Binding Label}"
-                        AutomationProperties.Name="主题代码字体"
-                        HorizontalAlignment="Right" />
-      </Grid>
+                        AutomationProperties.Name="主题代码字体" />
+      </ui:AppSettingsRow>
     </ui:AppBorder>
   </StackPanel>
 </ui:AppUserControl>

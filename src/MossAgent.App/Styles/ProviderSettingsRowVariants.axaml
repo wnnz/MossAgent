@@ -3,7 +3,7 @@
   <Style Selector="Grid.provider-settings-header-layout">
     <Setter Property="MinHeight" Value="44" />
   </Style>
-  <Style Selector="controls|AppProviderSettingsHeader StackPanel">
+  <Style Selector=".app-provider-settings-header StackPanel">
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
   <Style Selector="controls|AppModelSettingsRow StackPanel">
@@ -11,6 +11,14 @@
   </Style>
   <Style Selector="controls|AppText.provider-settings-label">
     <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="MinHeight" Value="18" />
+  </Style>
+  <Style Selector="Grid.model-settings-details">
+    <Setter Property="ColumnSpacing" Value="8" />
+  </Style>
+  <Style Selector="Grid.model-settings-details.stacked">
+    <Setter Property="ColumnSpacing" Value="0" />
+    <Setter Property="RowSpacing" Value="3" />
   </Style>
   <Style Selector="controls|AppButton.provider-settings-action, controls|AppButton.settings-item-action">
     <Setter Property="VerticalAlignment" Value="Center" />

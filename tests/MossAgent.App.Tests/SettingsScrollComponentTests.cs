@@ -34,7 +34,7 @@ public sealed class SettingsScrollComponentTests
                 element => element.Attribute("Value")!.Value);
 
         Assert.Equal("Disabled", setters["HorizontalScrollBarVisibility"]);
-        Assert.Equal("Hidden", setters["VerticalScrollBarVisibility"]);
+        Assert.Equal("Auto", setters["VerticalScrollBarVisibility"]);
     }
 
     private static string RepositoryRoot()

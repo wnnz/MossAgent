@@ -8,25 +8,26 @@
     <ui:McpServerSummaryConverter x:Key="McpServerSummaryConverter" />
   </ui:AppUserControl.Resources>
   <Grid>
-    <Grid Classes="settings-content-column" RowDefinitions="Auto,Auto,Auto,*">
-        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,24">
-          <StackPanel Spacing="2">
-            <ui:AppText Text="插件" Classes="settings-title" />
-            <ui:AppText Text="通过 MCP 连接外部工具和服务。" Classes="settings-description" />
-          </StackPanel>
-          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <ui:AppButton Content="重新连接" Classes="ghost" Command="{Binding ReloadCommand}" />
-            <ui:AppActionButton Label="添加 MCP 服务" IconData="{StaticResource UiIconPlus}" Classes="primary" Command="{Binding OpenCreateFormCommand}" />
-          </StackPanel>
-        </Grid>
-    <ui:AppCard Grid.Row="1" Classes="card card-inset-list">
-      <StackPanel>
-        <StackPanel Margin="12,16" Spacing="6" IsVisible="{Binding HasNoItems}">
-          <ui:AppText Classes="type-14 weight-semibold" Text="还没有 MCP 服务" />
-          <ui:AppText Text="添加服务后，它提供的工具会在允许的任务中可用。"
-                     Classes="muted type-12" />
-        </StackPanel>
-        <ui:AppListBox MaxHeight="560" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
+    <Grid Classes="settings-content-column" RowDefinitions="Auto,*">
+        <ui:AppSettingsPageHeader Classes="separated" Title="插件" Description="通过 MCP 连接外部工具和服务。"
+                                  Status="{Binding Status}" IsStatusError="{Binding HasStatusError}">
+          <ui:AppSettingsPageHeader.Actions>
+            <StackPanel Classes="settings-header-actions">
+              <ui:AppButton Content="{x:Static labels:McpSettingsLabels.Reconnect}" Classes="ghost"
+                            Command="{Binding ReloadCommand}" IsVisible="{Binding !ReloadCommand.IsRunning}" />
+              <ui:AppButton Content="{x:Static labels:McpSettingsLabels.CancelReconnect}" Classes="ghost"
+                            Command="{Binding CancelReloadCommand}" IsVisible="{Binding ReloadCommand.IsRunning}" />
+              <ui:AppActionButton Label="添加 MCP 服务" IconData="{StaticResource UiIconPlus}" Classes="primary" Command="{Binding OpenCreateFormCommand}" />
+            </StackPanel>
+          </ui:AppSettingsPageHeader.Actions>
+        </ui:AppSettingsPageHeader>
+    <ui:AppCard Grid.Row="1" Classes="card card-inset-list settings-catalog-card">
+      <Grid RowDefinitions="Auto,*">
+        <ui:AppEmptyState Classes="settings-empty" IsVisible="{Binding HasNoItems}"
+                          IconData="{StaticResource UiIconPlug}" Title="还没有 MCP 服务"
+                          Description="添加服务后，它提供的工具会在允许的任务中可用。" />
+        <ui:AppListBox Grid.Row="1" Classes="settings-catalog-list" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}"
+                       IsEnabled="{Binding CanEdit}">
           <ListBox.ItemTemplate>
             <DataTemplate>
               <ui:AppSettingsItemRow Title="{Binding Name}"
@@ -40,38 +41,44 @@
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ui:AppListBox>
-      </StackPanel>
+      </Grid>
     </ui:AppCard>
-
-    <ui:AppText Grid.Row="2" Text="{Binding Status}" Classes="muted type-12"
-                TextWrapping="Wrap" Margin="0,12,0,0" IsVisible="{Binding HasStatus}" />
     </Grid>
 
     <ui:AppSettingsDialog Classes="wide" IsOpen="{Binding IsFormOpen}"
                           Title="{Binding EditorTitle}" CloseCommand="{Binding CloseFormCommand}">
             <StackPanel Spacing="9">
-            <ui:AppText Text="Server 名称" Classes="muted type-12" />
-            <ui:AppInput Text="{Binding Name}" PlaceholderText="例如 filesystem" />
-            <ui:AppText Text="传输协议" Classes="muted type-12" />
+            <ui:AppText Text="{x:Static labels:McpSettingsLabels.ServerName}" Classes="muted type-12" />
+            <ui:AppInput Text="{Binding Name}" PlaceholderText="例如 filesystem"
+                         AutomationProperties.Name="{x:Static labels:McpSettingsLabels.ServerName}" />
+            <ui:AppText Text="{x:Static labels:McpSettingsLabels.Transport}" Classes="muted type-12" />
             <ui:AppComboBox ItemsSource="{Binding TransportOptions}" SelectedItem="{Binding SelectedTransportOption}"
+                            AutomationProperties.Name="{x:Static labels:McpSettingsLabels.Transport}"
                             DisplayMemberBinding="{Binding DisplayName}" HorizontalAlignment="Stretch" />
             <StackPanel Spacing="9" IsVisible="{Binding IsStdioTransport}">
-              <ui:AppText Text="stdio 命令" Classes="muted type-12" />
-              <ui:AppInput Text="{Binding Command}" PlaceholderText="例如 npx" />
-              <ui:AppText Text="参数 JSON 数组" Classes="muted type-12" />
-              <ui:AppInput Text="{Binding ArgumentsJson}" AcceptsReturn="True" Classes="code-font json-editor" />
-              <ui:AppText Text="工作目录" Classes="muted type-12" />
-              <ui:AppInput Text="{Binding WorkingDirectory}" />
-              <ui:AppText Text="环境变量 JSON 对象" Classes="muted type-12" />
-              <ui:AppInput Text="{Binding EnvironmentJson}" AcceptsReturn="True" Classes="code-font json-editor" />
+              <ui:AppText Text="{x:Static labels:McpSettingsLabels.Command}" Classes="muted type-12" />
+              <ui:AppInput Text="{Binding Command}" PlaceholderText="例如 npx"
+                           AutomationProperties.Name="{x:Static labels:McpSettingsLabels.Command}" />
+              <ui:AppText Text="{x:Static labels:McpSettingsLabels.Arguments}" Classes="muted type-12" />
+              <ui:AppInput Text="{Binding ArgumentsJson}" AcceptsReturn="True" Classes="code-font json-editor"
+                           AutomationProperties.Name="{x:Static labels:McpSettingsLabels.Arguments}" />
+              <ui:AppText Text="{x:Static labels:McpSettingsLabels.WorkingDirectory}" Classes="muted type-12" />
+              <ui:AppInput Text="{Binding WorkingDirectory}"
+                           AutomationProperties.Name="{x:Static labels:McpSettingsLabels.WorkingDirectory}" />
+              <ui:AppText Text="{x:Static labels:McpSettingsLabels.Environment}" Classes="muted type-12" />
+              <ui:AppInput Text="{Binding EnvironmentJson}" AcceptsReturn="True" Classes="code-font json-editor"
+                           AutomationProperties.Name="{x:Static labels:McpSettingsLabels.Environment}" />
             </StackPanel>
             <StackPanel Spacing="9" IsVisible="{Binding IsHttpTransport}">
-              <ui:AppText Text="Streamable HTTP URL" Classes="muted type-12" />
-              <ui:AppInput Text="{Binding Url}" PlaceholderText="http://localhost:8000/sse" />
-              <ui:AppText Text="HTTP 请求头 JSON 对象" Classes="muted type-12" />
-              <ui:AppInput Text="{Binding HeadersJson}" AcceptsReturn="True" Classes="code-font json-editor" />
-              <ui:AppText Text="HTTP 网络代理" Classes="muted type-12" />
+              <ui:AppText Text="{x:Static labels:McpSettingsLabels.Url}" Classes="muted type-12" />
+              <ui:AppInput Text="{Binding Url}" PlaceholderText="http://localhost:8000/sse"
+                           AutomationProperties.Name="{x:Static labels:McpSettingsLabels.Url}" />
+              <ui:AppText Text="{x:Static labels:McpSettingsLabels.Headers}" Classes="muted type-12" />
+              <ui:AppInput Text="{Binding HeadersJson}" AcceptsReturn="True" Classes="code-font json-editor"
+                           AutomationProperties.Name="{x:Static labels:McpSettingsLabels.Headers}" />
+              <ui:AppText Text="{x:Static labels:McpSettingsLabels.Proxy}" Classes="muted type-12" />
               <ui:AppComboBox ItemsSource="{Binding ProxyOptions}" SelectedItem="{Binding SelectedProxy}"
+                              AutomationProperties.Name="{x:Static labels:McpSettingsLabels.Proxy}"
                               DisplayMemberBinding="{Binding Name}" HorizontalAlignment="Stretch" />
             </StackPanel>
             <ui:AppCheckBox Content="启用此 MCP Server" IsChecked="{Binding IsEnabled}" Margin="0,4" />
@@ -84,7 +91,8 @@
                             Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}" />
               <ui:AppButton Grid.Column="2" Content="取消" Command="{Binding CloseFormCommand}" />
             </Grid>
-            <ui:AppText Text="{Binding Status}" Classes="subtle type-11" TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />
+            <ui:AppText Text="{Binding Status}" Classes="subtle type-11" Classes.status-error="{Binding HasStatusError}"
+                        TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />
           </StackPanel>
           </ui:AppSettingsDialog.Footer>
     </ui:AppSettingsDialog>

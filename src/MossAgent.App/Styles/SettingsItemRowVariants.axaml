@@ -14,6 +14,9 @@
   <Style Selector="Grid.settings-item-heading">
     <Setter Property="ColumnSpacing" Value="8" />
   </Style>
+  <Style Selector="Grid.settings-item-heading.stacked">
+    <Setter Property="RowSpacing" Value="4" />
+  </Style>
   <Style Selector="controls|AppText.settings-item-label">
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="MinHeight" Value="18" />

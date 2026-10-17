@@ -191,7 +191,7 @@ public sealed class SharedControlStyleTests
                 "controls|AppButton.menu-trigger", "6,3", "menu-trigger"),
             (Path.Combine("Styles", "SurfaceVariants.axaml"),
                 "controls|AppButton.composer-send", "0", "composer-send"),
-            (Path.Combine("Styles", "SurfaceVariants.axaml"),
+            (Path.Combine("Styles", "ActionButtonVariants.axaml"),
                 "controls|AppButton.composer-model-picker", "10,5", "composer-model-picker"),
             (Path.Combine("Styles", "ThemeModePickerVariants.axaml"),
                 ".app-theme-mode-picker controls|AppButton.theme-mode-button", "0", "theme-mode-button")
@@ -308,11 +308,18 @@ public sealed class SharedControlStyleTests
             "ProxySettingsPane", "SubagentSettingsPane" })
         {
             var document = XDocument.Load(Path.Combine(appPath, "Views", $"{page}.axaml"));
+            var header = document.Descendants().SingleOrDefault(element => element.Name.LocalName == "AppSettingsPageHeader");
+            if (header is not null)
+            {
+                Assert.NotNull(header.Attribute("Title"));
+                Assert.NotNull(header.Attribute("Description"));
+            }
+            var typography = header is null ? document : XDocument.Load(Path.Combine(appPath, "Controls", "AppSettingsPageHeader.axaml"));
             foreach (var variant in page == "AppearanceSettingsPane"
                 ? new[] { "settings-title" }
                 : new[] { "settings-title", "settings-description" })
             {
-                var headings = document.Descendants().Where(element =>
+                var headings = typography.Descendants().Where(element =>
                     element.Name.LocalName == "AppText"
                     && element.Attribute("Classes")?.Value.Split(' ').Contains(variant) == true)
                     .ToArray();
@@ -379,8 +386,10 @@ public sealed class SharedControlStyleTests
         Assert.Equal(3, fontSelectors.Length);
         Assert.All(fontSelectors, comboBox =>
         {
-            if (comboBox.Name.LocalName == "AppPillComboBox") Assert.Null(comboBox.Attribute("HorizontalAlignment"));
-            else Assert.Equal("Right", comboBox.Attribute("HorizontalAlignment")?.Value);
+            Assert.Null(comboBox.Attribute("HorizontalAlignment"));
+            if (comboBox.Name.LocalName == "AppPillComboBox") return;
+            Assert.Equal("AppSettingsRow", comboBox.Parent?.Name.LocalName);
+            Assert.Contains("font-control", comboBox.Parent?.Attribute("Classes")?.Value.Split(' ') ?? []);
         });
         var pillStyles = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App",
             "Styles", "PillSelectorVariants.axaml"));

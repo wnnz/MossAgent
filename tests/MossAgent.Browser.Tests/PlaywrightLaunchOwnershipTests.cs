@@ -140,6 +140,8 @@ public sealed class PlaywrightLaunchOwnershipTests
     {
         using var probe = new PlaywrightOwnershipProbe();
         probe.Connection.SetResult(probe.Browser);
+        var owned = new PlaywrightCdpPageProbe("owned-cdp-page");
+        probe.PageCreation.SetResult(owned.Page);
         var session = await probe.Factory.CreateAsync(probe.Options(BrowserProfileMode.ExistingCdp), TestContext.Current.CancellationToken);
         Assert.Equal(0, probe.RuntimeDisposeCount);
 
@@ -148,6 +150,7 @@ public sealed class PlaywrightLaunchOwnershipTests
         Assert.Equal(1, probe.RuntimeDisposeCount);
         Assert.Equal(0, probe.ContextCloseCount);
         Assert.Equal(0, probe.PageCloseCount);
+        Assert.Equal(1, owned.CloseCount);
         Assert.Equal(0, probe.BrowserCloseCount);
     }
 

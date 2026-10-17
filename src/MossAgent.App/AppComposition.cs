@@ -42,7 +42,10 @@ namespace MossAgent.App;
 
 internal static class AppComposition
 {
-    public static ServiceProvider CreateServices(string? dataRoot = null)
+    public static ServiceProvider CreateServices(string? dataRoot = null) =>
+        CreateServiceCollection(dataRoot).BuildServiceProvider(validateScopes: true);
+
+    internal static IServiceCollection CreateServiceCollection(string? dataRoot = null)
     {
         var services = new ServiceCollection();
         var resolvedDataRoot = string.IsNullOrWhiteSpace(dataRoot)
@@ -53,7 +56,7 @@ internal static class AppComposition
         RegisterBrowserAndDesktopTools(services);
         RegisterAgentRuntime(services);
         RegisterWorkspace(services);
-        return services.BuildServiceProvider(validateScopes: true);
+        return services;
     }
 
     private static void RegisterInfrastructure(IServiceCollection services, string? dataRoot)

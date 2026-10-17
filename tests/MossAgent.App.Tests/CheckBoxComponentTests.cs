@@ -49,7 +49,7 @@ public sealed class CheckBoxComponentTests
     [InlineData(":indeterminate", "AppIcon#PART_CheckGlyph", "IsVisible", "True")]
     [InlineData(":pointerover", "AppBorder#PART_CheckSurface", "Opacity", "0.8")]
     [InlineData(":pressed", "AppBorder#PART_CheckSurface", "Opacity", "0.65")]
-    [InlineData(":focus-visible", "AppBorder#PART_CheckSurface", "BorderThickness", "2")]
+    [InlineData(":focus-visible", "AppBorder#PART_CheckSurface", "BorderBrush", "{DynamicResource TextPrimaryBrush}")]
     [InlineData(":disabled", "", "Opacity", "0.45")]
     public void SharedCheckBoxTemplateOwnsInteractionStates(string state, string part, string property, string value)
     {

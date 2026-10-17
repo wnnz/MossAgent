@@ -13,6 +13,10 @@ internal sealed class WorkspaceMcpHttpServer : IAsyncDisposable
     private readonly ConcurrentBag<Task> _handlers = [];
     private readonly Task _loop;
     private readonly JsonElement _schema;
+    private int _offline;
+    private int _calls;
+    private int _initializations;
+    private int _holdInitialization;
 
     public WorkspaceMcpHttpServer(JsonElement? schema = null)
     {
@@ -39,6 +43,13 @@ internal sealed class WorkspaceMcpHttpServer : IAsyncDisposable
     public bool CustomHeaderObserved { get; private set; }
     public bool SessionHeaderObserved { get; private set; }
     public bool DeleteObserved { get; private set; }
+    public bool Offline { get => Volatile.Read(ref _offline) != 0; set => Volatile.Write(ref _offline, value ? 1 : 0); }
+    public int Calls => Volatile.Read(ref _calls);
+    public int Initializations => Volatile.Read(ref _initializations);
+    public bool HoldInitialization { get => Volatile.Read(ref _holdInitialization) != 0; set => Volatile.Write(ref _holdInitialization, value ? 1 : 0); }
+    public TaskCompletionSource InitializationStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public TaskCompletionSource ReleaseInitialization { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public TaskCompletionSource HeldInitializationFinished { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     public async ValueTask DisposeAsync()
     {
@@ -61,6 +72,7 @@ internal sealed class WorkspaceMcpHttpServer : IAsyncDisposable
 
     private async Task HandleAsync(HttpListenerContext context)
     {
+        var heldInitialization = false;
         try
         {
             CustomHeaderObserved |= context.Request.Headers["X-Moss-Fixture"] == "workflow-header";
@@ -74,6 +86,25 @@ internal sealed class WorkspaceMcpHttpServer : IAsyncDisposable
             using var document = await JsonDocument.ParseAsync(context.Request.InputStream, cancellationToken: _shutdown.Token).ConfigureAwait(false);
             var request = document.RootElement;
             var method = request.GetProperty("method").GetString();
+            if (method == "tools/call") Interlocked.Increment(ref _calls);
+            if (method == "initialize")
+            {
+                Interlocked.Increment(ref _initializations);
+                if (HoldInitialization)
+                {
+                    heldInitialization = true;
+                    InitializationStarted.TrySetResult();
+                    await ReleaseInitialization.Task.WaitAsync(_shutdown.Token).ConfigureAwait(false);
+                }
+            }
+            if (Offline)
+            {
+                context.Response.StatusCode = 503;
+                var bytes = Encoding.UTF8.GetBytes("fixture-secret-marker");
+                context.Response.ContentLength64 = bytes.Length;
+                await context.Response.OutputStream.WriteAsync(bytes, _shutdown.Token).ConfigureAwait(false);
+                return;
+            }
             if (method?.StartsWith("notifications/", StringComparison.Ordinal) == true)
             {
                 if (method == "notifications/cancelled")
@@ -89,7 +120,11 @@ internal sealed class WorkspaceMcpHttpServer : IAsyncDisposable
         catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { }
         catch (HttpListenerException) { }
         catch (IOException) { }
-        finally { context.Response.Close(); }
+        finally
+        {
+            context.Response.Close();
+            if (heldInitialization) HeldInitializationFinished.TrySetResult();
+        }
     }
 
     private Task WriteDiscoveryAsync(HttpListenerResponse response, string? method, long id)

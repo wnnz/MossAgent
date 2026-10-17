@@ -6,22 +6,21 @@ namespace MossAgent.Browser;
 public sealed class PlaywrightBrowserSession : IBrowserSession
 {
     private readonly IPlaywright _playwright;
-    private readonly IBrowserContext _context;
-    private readonly bool _closeContext;
-    private readonly Dictionary<IPage, string> _tabIds = [];
+    private readonly PlaywrightBrowserTabSet _tabs;
+    private readonly object _lifetimeSync = new();
+    private Task? _disposeTask;
     private IPage _page;
 
     public PlaywrightBrowserSession(
         IPlaywright playwright,
         IBrowserContext context,
         IPage page,
-        bool closeContext)
+        bool closeContext,
+        bool ownsInitialPage = false)
     {
         _playwright = playwright;
-        _context = context;
         _page = page;
-        _closeContext = closeContext;
-        SynchronizeTabs();
+        _tabs = new PlaywrightBrowserTabSet(context, page, closeContext, ownsInitialPage);
     }
 
     public string Id { get; } = Guid.NewGuid().ToString("N");
@@ -31,9 +30,8 @@ public sealed class PlaywrightBrowserSession : IBrowserSession
     public async Task<IReadOnlyList<BrowserTabInfo>> ListTabsAsync(
         CancellationToken cancellationToken)
     {
-        SynchronizeTabs();
         var tabs = new List<BrowserTabInfo>();
-        foreach (var pair in _tabIds)
+        foreach (var pair in _tabs.Snapshot())
         {
             var title = await pair.Key.TitleAsync().WaitAsync(cancellationToken);
             var uri = Uri.TryCreate(pair.Key.Url, UriKind.Absolute, out var value) ? value : null;
@@ -45,40 +43,35 @@ public sealed class PlaywrightBrowserSession : IBrowserSession
 
     public async Task<string> NewTabAsync(Uri? uri, CancellationToken cancellationToken)
     {
-        var page = await _context.NewPageAsync().WaitAsync(cancellationToken);
-        var id = AddTab(page);
-        _page = page;
+        var created = await _tabs.CreateAsync(cancellationToken);
+        _page = created.Page;
         if (uri is not null)
         {
             await NavigateAsync(uri, cancellationToken);
         }
 
-        return id;
+        return created.Id;
     }
 
     public Task SwitchTabAsync(string tabId, CancellationToken cancellationToken)
     {
-        SynchronizeTabs();
-        _page = _tabIds.FirstOrDefault(pair => pair.Value == tabId).Key
-            ?? throw new InvalidOperationException($"浏览器标签不存在：{tabId}");
+        _page = _tabs.Find(tabId);
         return _page.BringToFrontAsync().WaitAsync(cancellationToken);
     }
 
     public async Task CloseTabAsync(string tabId, CancellationToken cancellationToken)
     {
-        SynchronizeTabs();
-        if (_tabIds.Count <= 1)
+        if (_tabs.Snapshot().Length <= 1)
         {
             throw new InvalidOperationException("不能关闭浏览器会话的最后一个标签页。");
         }
 
-        var page = _tabIds.FirstOrDefault(pair => pair.Value == tabId).Key
-            ?? throw new InvalidOperationException($"浏览器标签不存在：{tabId}");
+        var page = _tabs.Find(tabId);
         await page.CloseAsync().WaitAsync(cancellationToken);
-        _tabIds.Remove(page);
+        _tabs.Remove(page);
         if (ReferenceEquals(page, _page))
         {
-            _page = _tabIds.Keys.First();
+            _page = _tabs.Snapshot().First().Key;
             await _page.BringToFrontAsync().WaitAsync(cancellationToken);
         }
     }
@@ -196,12 +189,16 @@ public sealed class PlaywrightBrowserSession : IBrowserSession
         return new BrowserDownloadInfo(download.SuggestedFilename);
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
+    {
+        lock (_lifetimeSync) return new ValueTask(_disposeTask ??= DisposeCoreAsync());
+    }
+
+    private async Task DisposeCoreAsync()
     {
         try
         {
-            if (_closeContext)
-                await _context.CloseAsync().ConfigureAwait(false);
+            await _tabs.DisposeAsync().ConfigureAwait(false);
         }
         finally
         {
@@ -209,28 +206,4 @@ public sealed class PlaywrightBrowserSession : IBrowserSession
         }
     }
 
-    private void SynchronizeTabs()
-    {
-        foreach (var page in _context.Pages.Where(static page => !page.IsClosed))
-        {
-            AddTab(page);
-        }
-
-        foreach (var page in _tabIds.Keys.Where(static page => page.IsClosed).ToArray())
-        {
-            _tabIds.Remove(page);
-        }
-    }
-
-    private string AddTab(IPage page)
-    {
-        if (_tabIds.TryGetValue(page, out var existing))
-        {
-            return existing;
-        }
-
-        var id = Guid.NewGuid().ToString("N");
-        _tabIds[page] = id;
-        return id;
-    }
 }

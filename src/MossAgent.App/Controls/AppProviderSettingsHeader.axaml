@@ -2,7 +2,7 @@
                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                    xmlns:ui="clr-namespace:MossAgent.App.Controls"
                    x:Class="MossAgent.App.Controls.AppProviderSettingsHeader"
-                   x:Name="Header" x:CompileBindings="False">
+                   x:Name="Header" Classes="app-provider-settings-header" x:CompileBindings="False">
   <Grid Classes="provider-settings-header-layout" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
     <ui:AppIconButton x:Name="ToggleModelsButton" Classes="expand-icon provider-settings-action"
                       Label="{Binding ExpansionLabel, ElementName=Header}"

@@ -8,13 +8,14 @@ using MossAgent.App.Controls;
 
 namespace MossAgent.App.ViewModels;
 
-public sealed class WorkspaceSidebarProjectsViewModel : ObservableObject, IDisposable
+public sealed class WorkspaceSidebarProjectsViewModel : ObservableObject, IDisposable, IAsyncDisposable
 {
     private readonly ISidebarPreferenceStore? _store;
     private readonly WorkspaceSidebarProjectList _list;
     private readonly CancellationTokenSource _lifetime = new();
     private SidebarPreference _preference = new(SidebarProjectSortOrder.UpdatedAt, []);
     private Task? _loadTask;
+    private Task? _stopTask;
     private bool _loaded;
     private bool _busy;
     private bool _disposed;
@@ -188,6 +189,37 @@ public sealed class WorkspaceSidebarProjectsViewModel : ObservableObject, IDispo
         ReorderCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(IsReorderAvailable));
     }
+
+    public Task StopAsync()
+    {
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var existing = Interlocked.CompareExchange(ref _stopTask, completion.Task, null);
+        if (existing is not null) return existing;
+        _ = StopOwnedAsync(completion);
+        return completion.Task;
+    }
+
+    private async Task StopOwnedAsync(TaskCompletionSource completion)
+    {
+        try
+        {
+            try { Dispose(); }
+            finally
+            {
+                await Task.WhenAll(_loadTask ?? Task.CompletedTask,
+                    RetryLoadCommand.ExecutionTask ?? Task.CompletedTask,
+                    SortByActivityCommand.ExecutionTask ?? Task.CompletedTask,
+                    SortManuallyCommand.ExecutionTask ?? Task.CompletedTask,
+                    MoveUpCommand.ExecutionTask ?? Task.CompletedTask,
+                    MoveDownCommand.ExecutionTask ?? Task.CompletedTask,
+                    ReorderCommand.ExecutionTask ?? Task.CompletedTask).ConfigureAwait(false);
+            }
+            completion.TrySetResult();
+        }
+        catch (Exception exception) { completion.TrySetException(exception); }
+    }
+
+    public ValueTask DisposeAsync() => new(StopAsync());
 
     public void Dispose()
     {

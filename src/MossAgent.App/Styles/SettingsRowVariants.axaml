@@ -1,0 +1,23 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:MossAgent.App.Controls">
+  <Style Selector="ui|AppSettingsRow.short-control">
+    <Setter Property="ControlWidth" Value="160" />
+  </Style>
+  <Style Selector="ui|AppSettingsRow.font-control">
+    <Setter Property="ControlWidth" Value="190" />
+    <Setter Property="MinimumLabelWidth" Value="130" />
+  </Style>
+  <Style Selector="ui|AppSettingsRow > ui|AppText">
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="ui|AppSettingsRow ui|AppText.settings-row-description">
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="LineHeight" Value="18" />
+  </Style>
+  <Style Selector="ui|AppSettingsRow > .app-combo-box, ui|AppSettingsRow > .app-input" x:SetterTargetType="Control">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+</Styles>

@@ -43,8 +43,15 @@
         </StackPanel>
       </ui:AppScrollViewer>
       <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,10,0,0">
-        <ui:AppApprovalButton Content="{x:Static resources:ApprovalText.Deny}" Classes="ghost"
-                      Command="{Binding DenyCommand}" CommandParameter="{Binding CurrentRequestId}" HorizontalAlignment="Stretch" />
+        <Grid ColumnDefinitions="Auto,*">
+          <ui:AppApprovalButton x:Name="StopApprovalTaskButton" Content="{x:Static resources:ApprovalText.StopTask}"
+                                Classes="ghost approval-stop-action"
+                                IsVisible="{Binding $parent[Window].DataContext.ApprovalTaskControl.CanStop, FallbackValue=False, TargetNullValue=False}"
+                                Command="{Binding $parent[Window].DataContext.ApprovalTaskControl.StopCommand}"
+                                CommandParameter="{Binding CurrentRequestId}" />
+          <ui:AppApprovalButton Grid.Column="1" Content="{x:Static resources:ApprovalText.Deny}" Classes="ghost"
+                                Command="{Binding DenyCommand}" CommandParameter="{Binding CurrentRequestId}" HorizontalAlignment="Stretch" />
+        </Grid>
         <ui:AppApprovalButton Grid.Column="1" Content="{x:Static resources:ApprovalText.Approve}" Classes="primary"
                       Command="{Binding ApproveCommand}" CommandParameter="{Binding CurrentRequestId}" HorizontalAlignment="Stretch" />
       </Grid>

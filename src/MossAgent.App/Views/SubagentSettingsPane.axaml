@@ -8,24 +8,22 @@
     <Grid Classes="settings-content-column">
     <ui:AppScrollViewer Classes="settings-page-scroll">
       <StackPanel Spacing="24" Margin="0,0,0,32">
-        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-          <StackPanel Spacing="5">
-            <ui:AppText Text="{x:Static labels:AgentSettingsLabels.SubagentTitle}" Classes="settings-title" />
-            <ui:AppText Text="{x:Static labels:AgentSettingsLabels.SubagentDescription}" Classes="settings-description" />
-          </StackPanel>
-          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <ui:AppActionButton Label="{x:Static labels:AgentSettingsLabels.Refresh}" IconData="{StaticResource UiIconRefresh}"
-                                Classes="ghost" Command="{Binding RefreshCommand}" />
-            <ui:AppActionButton Label="{x:Static labels:AgentSettingsLabels.SubagentCreate}" IconData="{StaticResource UiIconPlus}"
-                                Classes="primary" Command="{Binding OpenCreateFormCommand}" />
-          </StackPanel>
-        </Grid>
+        <ui:AppSettingsPageHeader Title="{x:Static labels:AgentSettingsLabels.SubagentTitle}"
+                                  Description="{x:Static labels:AgentSettingsLabels.SubagentDescription}">
+          <ui:AppSettingsPageHeader.Actions>
+            <StackPanel Classes="settings-header-actions">
+              <ui:AppActionButton Label="{x:Static labels:AgentSettingsLabels.Refresh}" IconData="{StaticResource UiIconRefresh}"
+                                  Classes="ghost" Command="{Binding RefreshCommand}" />
+              <ui:AppActionButton Label="{x:Static labels:AgentSettingsLabels.SubagentCreate}" IconData="{StaticResource UiIconPlus}"
+                                  Classes="primary" Command="{Binding OpenCreateFormCommand}" />
+            </StackPanel>
+          </ui:AppSettingsPageHeader.Actions>
+        </ui:AppSettingsPageHeader>
         <ui:AppCard Classes="card card-inset-list">
           <StackPanel>
-            <StackPanel Margin="12,16" Spacing="6" IsVisible="{Binding HasNoItems}">
-              <ui:AppText Text="{x:Static labels:AgentSettingsLabels.SubagentEmpty}" Classes="type-14 weight-semibold" />
-              <ui:AppText Text="{x:Static labels:AgentSettingsLabels.SubagentEmptyHint}" Classes="muted type-12" TextWrapping="Wrap" />
-            </StackPanel>
+            <ui:AppEmptyState Classes="settings-empty" IsVisible="{Binding HasNoItems}"
+                              IconData="{StaticResource UiIconAssistant}" Title="{x:Static labels:AgentSettingsLabels.SubagentEmpty}"
+                              Description="{x:Static labels:AgentSettingsLabels.SubagentEmptyHint}" />
             <ui:AppListBox MaxHeight="560" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedProfile, Mode=TwoWay}">
               <ListBox.ItemTemplate>
                 <DataTemplate>

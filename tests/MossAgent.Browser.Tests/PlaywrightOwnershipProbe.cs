@@ -11,6 +11,7 @@ internal sealed class PlaywrightOwnershipProbe : IDisposable
         {
             "get_IsClosed" => false,
             "CloseAsync" => ClosePage(),
+            "add_Popup" or "remove_Popup" => null,
             _ => throw new NotSupportedException(method.Name)
         });
         Context = PlaywrightApiProxy.Create<IBrowserContext>((method, _) => method.Name switch

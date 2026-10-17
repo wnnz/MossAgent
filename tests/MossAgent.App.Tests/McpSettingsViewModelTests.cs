@@ -23,7 +23,7 @@ public sealed class McpSettingsViewModelTests
         Assert.NotNull(directory);
         var view = XDocument.Load(Path.Combine(directory.FullName, "src", "MossAgent.App",
             "Views", "McpSettingsPane.axaml"));
-        Assert.Equal("Auto,Auto,Auto,*", view.Descendants()
+        Assert.Equal("Auto,*", view.Descendants()
             .Single(element => element.Attribute("Classes")?.Value == "settings-content-column")
             .Attribute("RowDefinitions")?.Value);
         var row = Assert.Single(view.Descendants(), element => element.Name.LocalName == "AppSettingsItemRow");
@@ -41,10 +41,8 @@ public sealed class McpSettingsViewModelTests
             && element.Attribute("Command")?.Value == "{Binding DeleteCommand}");
         Assert.Equal("{Binding CanDelete}", delete.Attribute("IsVisible")?.Value);
         Assert.Contains(view.Descendants(), element =>
-            element.Name.LocalName == "AppText"
-            && element.Attribute("Grid.Row")?.Value == "2"
-            && element.Attribute("Text")?.Value == "{Binding Status}"
-            && element.Attribute("IsVisible")?.Value == "{Binding HasStatus}");
+            element.Name.LocalName == "AppSettingsPageHeader"
+            && element.Attribute("Status")?.Value == "{Binding Status}");
     }
 
     [Fact]

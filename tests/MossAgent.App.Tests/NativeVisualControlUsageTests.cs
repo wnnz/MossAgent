@@ -14,7 +14,7 @@ public sealed class NativeVisualControlUsageTests
         "Application", "ResourceDictionary", "ResourceInclude", "StyleInclude",
         "Styles", "FluentTheme", "SolidColorBrush", "BoxShadows", "StreamGeometry", "FontFamily",
         "LinearGradientBrush", "GradientStop", "RotateTransform", "TranslateTransform", "Animation", "KeyFrame",
-        "Grid", "StackPanel", "WrapPanel", "Panel", "ContentPresenter", "DataTemplate",
+        "Grid", "StackPanel", "WrapPanel", "Panel", "ContentPresenter", "Template", "DataTemplate",
         "ItemsPanelTemplate", "ColumnDefinition", "ControlTemplate", "ControlTheme",
         "Style", "Setter", "KeyBinding", "Binding", "MultiBinding", "TextDecorationCollection", "TextDecoration"
     ];
@@ -73,6 +73,25 @@ public sealed class NativeVisualControlUsageTests
         Assert.Equal(["Button", "DrawingGroup", "GeometryDrawing"], document.XPathSelectElements(query).Select(element => element.Name.LocalName));
         Assert.False(typeof(Control).IsAssignableFrom(typeof(Avalonia.Media.DrawingGroup)));
         Assert.False(typeof(Control).IsAssignableFrom(typeof(Avalonia.Media.GeometryDrawing)));
+    }
+
+    [Fact]
+    public void FocusTemplates_AllowMarkupFactoriesButStillRejectNativeVisualChildren()
+    {
+        Assert.False(typeof(Control).IsAssignableFrom(typeof(Avalonia.Markup.Xaml.Templates.Template)));
+        var document = XDocument.Parse("""
+            <Styles xmlns="https://github.com/avaloniaui" xmlns:ui="clr-namespace:MossAgent.App.Controls">
+              <Style Selector="ui|AppButton"><Setter Property="FocusAdorner">
+                <Template><ui:AppBorder /><Border /><Button /></Template>
+              </Setter></Style>
+            </Styles>
+            """);
+        var project = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App", "MossAgent.App.csproj"));
+        var query = Assert.Single(project.Descendants(), element => element.Name.LocalName == "Target"
+            && element.Attribute("Name")?.Value == "ValidateSharedVisualControls")
+            .Elements().Single(element => element.Name.LocalName == "XmlPeek").Attribute("Query")!.Value;
+        Assert.Equal(["Border", "Button"], FindUnapprovedNativeElements(document));
+        Assert.Equal(["Border", "Button"], document.XPathSelectElements(query).Select(element => element.Name.LocalName));
     }
 
     [Fact]

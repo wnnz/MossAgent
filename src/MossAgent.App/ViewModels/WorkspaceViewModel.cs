@@ -293,8 +293,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
 
     public async ValueTask DisposeAsync()
     {
-        await RepositoryStatus.StopAsync();
-        await FileChanges.Statistics.StopAsync();
+        await Task.WhenAll(RepositoryStatus.StopAsync(), FileChanges.Statistics.StopAsync(), SidebarProjects.StopAsync());
         if (ConversationPreferences is not null) await ConversationPreferences.StopAsync();
         Dispose();
     }
@@ -308,14 +307,14 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         try { if (_startingTask is not null) await _startingTask; }
         finally
         {
-            var repositoryStop = RepositoryStatus.StopAsync();
+            var navigationStop = Task.WhenAll(RepositoryStatus.StopAsync(), SidebarProjects.StopAsync());
             try
             {
                 await _runs.StopAsync();
                 await FileChanges.StopAsync();
                 if (ConversationPreferences is not null) await ConversationPreferences.StopAsync();
             }
-            finally { await repositoryStop; }
+            finally { await navigationStop; }
         }
     }
 

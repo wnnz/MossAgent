@@ -6,16 +6,16 @@
                    x:Class="MossAgent.App.Views.AutomationsView" x:CompileBindings="False">
   <Grid>
     <Grid Classes="automation-page-content" RowDefinitions="Auto,Auto,*" RowSpacing="20">
-      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-        <StackPanel Spacing="8">
-          <ui:AppText Text="{x:Static text:AutomationText.Title}" Classes="type-20 weight-semibold" />
-          <ui:AppText Text="{Binding RuntimeHint}" Classes="type-12 subtle line-18" TextWrapping="Wrap" />
-        </StackPanel>
-        <ui:AppIconButton Grid.Column="1" Label="{x:Static text:AutomationText.Refresh}" VerticalAlignment="Top"
+      <ui:AppSettingsPageHeader Classes="compact" Title="{x:Static text:AutomationText.Title}" Description="{Binding RuntimeHint}">
+        <ui:AppSettingsPageHeader.Actions>
+        <StackPanel Classes="settings-header-actions">
+        <ui:AppIconButton Label="{x:Static text:AutomationText.Refresh}"
                           Command="{Binding RefreshCommand}" IconData="{StaticResource UiIconRefresh}" />
-        <ui:AppActionButton Grid.Column="2" Label="{x:Static text:AutomationText.Create}" VerticalAlignment="Top"
+        <ui:AppActionButton Label="{x:Static text:AutomationText.Create}"
                             Command="{Binding CreateCommand}" IconData="{StaticResource UiIconPlus}" Classes="primary button-sm" />
-      </Grid>
+        </StackPanel>
+        </ui:AppSettingsPageHeader.Actions>
+      </ui:AppSettingsPageHeader>
       <StackPanel Grid.Row="1">
         <ui:AppText Text="{Binding Error}" IsVisible="{Binding HasError}" Classes="type-12 status-error" TextWrapping="Wrap" />
         <views:AutomationOperationNoticeView IsVisible="{Binding HasOperationNotice}" />

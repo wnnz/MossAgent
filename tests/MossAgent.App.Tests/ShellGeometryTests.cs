@@ -101,7 +101,12 @@ public sealed class ShellGeometryTests
         var window = XDocument.Load(Path.Combine(viewsPath, "MainWindow.axaml"));
         var host = Assert.Single(window.Descendants(), element => element.Name.LocalName == "ToolApprovalView");
         Assert.Equal("{Binding Approval}", host.Attribute("DataContext")?.Value);
-        Assert.Equal("{Binding Approval.IsPending}", host.Parent?.Attribute("IsVisible")?.Value);
+        var visibility = Assert.Single(host.Parent!.Elements(), element => element.Name.LocalName == "AppBorder.IsVisible");
+        var conditions = Assert.Single(visibility.Elements());
+        Assert.Equal("MultiBinding", conditions.Name.LocalName);
+        Assert.Equal("{x:Static BoolConverters.And}", conditions.Attribute("Converter")?.Value);
+        Assert.Equal(new[] { "Approval.IsPending", "!#WorkspaceNavigation.IsOverlayOpen", "!#SettingsView.Navigation.IsOverlayOpen" },
+            conditions.Elements().Select(binding => binding.Attribute("Path")?.Value));
         var approval = XDocument.Load(Path.Combine(viewsPath, "ToolApprovalView.axaml"));
         var deny = Assert.Single(approval.Descendants(), element =>
             element.Name.LocalName == "AppApprovalButton"
@@ -110,10 +115,17 @@ public sealed class ShellGeometryTests
             element.Name.LocalName == "AppApprovalButton"
             && element.Attribute("Command")?.Value == "{Binding ApproveCommand}");
 
-        Assert.Same(deny.Parent, approve.Parent);
-        Assert.Equal("*,*", deny.Parent?.Attribute("ColumnDefinitions")?.Value);
-        Assert.Null(deny.Attribute("Grid.Column"));
+        var stop = Assert.Single(approval.Descendants(), element => element.Name.LocalName == "AppApprovalButton"
+            && element.Attribute("Content")?.Value == "{x:Static resources:ApprovalText.StopTask}");
+        Assert.Same(stop.Parent, deny.Parent);
+        Assert.Same(deny.Parent?.Parent, approve.Parent);
+        Assert.Equal("Auto,*", deny.Parent?.Attribute("ColumnDefinitions")?.Value);
+        Assert.Equal("*,*", approve.Parent?.Attribute("ColumnDefinitions")?.Value);
+        Assert.Null(stop.Attribute("Grid.Column"));
+        Assert.Equal("1", deny.Attribute("Grid.Column")?.Value);
         Assert.Equal("1", approve.Attribute("Grid.Column")?.Value);
+        Assert.Equal("{Binding $parent[Window].DataContext.ApprovalTaskControl.StopCommand}", stop.Attribute("Command")?.Value);
+        Assert.Equal("{Binding CurrentRequestId}", stop.Attribute("CommandParameter")?.Value);
         Assert.Equal("{Binding CurrentRequestId}", deny.Attribute("CommandParameter")?.Value);
         Assert.Equal("{Binding CurrentRequestId}", approve.Attribute("CommandParameter")?.Value);
     }
@@ -168,13 +180,13 @@ public sealed class ShellGeometryTests
             element.Name.LocalName == "AppActionButton"
             && element.Attribute("Classes")?.Value.Split(' ').Contains("composer-model-picker") == true);
         var variants = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App",
-            "Styles", "SurfaceVariants.axaml"));
+            "Styles", "ActionButtonVariants.axaml"));
 
         Assert.Equal("{Binding ModelPicker.ComposerDisplayName}", picker.Attribute("Label")?.Value);
         Assert.DoesNotContain(picker.Elements(), element => element.Name.LocalName == "Grid");
         Assert.Equal("Auto,Auto,*,Auto", picker.Parent?.Attribute("ColumnDefinitions")?.Value);
         Assert.Equal("2", picker.Attribute("Grid.Column")?.Value);
-        Assert.Equal("Right", picker.Attribute("HorizontalAlignment")?.Value);
+        Assert.Null(picker.Attribute("HorizontalAlignment"));
         Assert.Contains(picker.Parent!.Elements(), element => element.Name.LocalName == "AppIconButton"
             && element.Attribute("Classes")?.Value.Contains("composer-send", StringComparison.Ordinal) == true
             && element.Attribute("Grid.Column")?.Value == "3");
@@ -183,7 +195,10 @@ public sealed class ShellGeometryTests
             && element.Attribute("Selector")?.Value == "controls|AppButton.composer-model-picker");
         Assert.Contains(pickerStyle.Elements(), element => element.Name.LocalName == "Setter"
             && element.Attribute("Property")?.Value == "MaxWidth"
-            && element.Attribute("Value")?.Value == "180");
+            && element.Attribute("Value")?.Value == "320");
+        Assert.Contains(pickerStyle.Elements(), element => element.Name.LocalName == "Setter"
+            && element.Attribute("Property")?.Value == "HorizontalAlignment"
+            && element.Attribute("Value")?.Value == "Right");
     }
 
     [Fact]
@@ -343,7 +358,14 @@ public sealed class ShellGeometryTests
         var proxySelector = Assert.Single(general.Descendants(), element =>
             element.Name.LocalName == "AppComboBox"
             && element.Attribute("SelectedItem")?.Value == "{Binding SelectedProxy}");
-        Assert.Equal("Right", proxySelector.Attribute("HorizontalAlignment")?.Value);
+        Assert.Null(proxySelector.Attribute("HorizontalAlignment"));
+        Assert.Equal("AppSettingsRow", proxySelector.Parent?.Name.LocalName);
+        var rows = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App",
+            "Styles", "SettingsRowVariants.axaml"));
+        var rowStyle = Assert.Single(rows.Descendants(), element =>
+            element.Attribute("Selector")?.Value == "ui|AppSettingsRow > .app-combo-box, ui|AppSettingsRow > .app-input");
+        Assert.Contains(rowStyle.Elements(), element => element.Attribute("Property")?.Value == "HorizontalAlignment"
+            && element.Attribute("Value")?.Value == "Stretch");
     }
 
     [Fact]

@@ -6,19 +6,15 @@
   <Grid x:Name="ProviderSettingsRoot">
     <Grid Classes="settings-content-column"
           RowDefinitions="Auto,*">
-    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,24">
-      <StackPanel Spacing="5">
-        <ui:AppText Text="AI 提供商" Classes="settings-title" />
-        <ui:AppText Text="管理连接、模型列表与模型参数。" Classes="settings-description" />
-        <ui:AppText Text="{Binding Models.Status}" Classes="muted type-12"
-                   Classes.status-error="{Binding Models.HasStatusError}"
-                   TextWrapping="Wrap" IsVisible="{Binding Models.HasStatus}" />
-      </StackPanel>
-      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-        <ui:AppActionButton Label="刷新" IconData="{StaticResource UiIconRefresh}" Classes="ghost" Command="{Binding Providers.RefreshCommand}" />
-        <ui:AppActionButton Label="添加提供商" IconData="{StaticResource UiIconPlus}" Classes="primary" Command="{Binding Providers.OpenCreateFormCommand}" />
-      </StackPanel>
-    </Grid>
+    <ui:AppSettingsPageHeader Classes="separated" Title="AI 提供商" Description="管理连接、模型列表与模型参数。"
+                              Status="{Binding Models.Status}" IsStatusError="{Binding Models.HasStatusError}">
+      <ui:AppSettingsPageHeader.Actions>
+        <StackPanel Classes="settings-header-actions">
+          <ui:AppActionButton Label="刷新" IconData="{StaticResource UiIconRefresh}" Classes="ghost" Command="{Binding Providers.RefreshCommand}" />
+          <ui:AppActionButton Label="添加提供商" IconData="{StaticResource UiIconPlus}" Classes="primary" Command="{Binding Providers.OpenCreateFormCommand}" />
+        </StackPanel>
+      </ui:AppSettingsPageHeader.Actions>
+    </ui:AppSettingsPageHeader>
 
     <ui:AppScrollViewer Grid.Row="1" Classes="settings-page-scroll">
       <StackPanel Spacing="12">
@@ -26,14 +22,9 @@
         <ui:AppText Text="{Binding Models.Catalog.Notice}" Classes="muted type-12"
                     Classes.status-error="{Binding Models.Catalog.HasLoadError}" TextWrapping="Wrap" />
       </ui:AppCard>
-      <ui:AppCard x:Name="EmptyCatalog" Classes="card card-inset-emphasis" IsVisible="{Binding Models.Catalog.IsEmpty}">
-        <StackPanel Spacing="6">
-          <ui:AppText Classes="type-14 weight-semibold" Text="还没有 AI 提供商" />
-          <ui:AppText Text="添加提供商后，可以获取模型列表或手动配置模型。"
-                     Classes="muted type-12" />
-          <ui:AppButton Content="添加提供商" Classes="ghost" HorizontalAlignment="Left"
-                  Command="{Binding Providers.OpenCreateFormCommand}" />
-        </StackPanel>
+      <ui:AppCard x:Name="EmptyCatalog" Classes="card card-inset-list" IsVisible="{Binding Models.Catalog.IsEmpty}">
+        <ui:AppEmptyState Classes="settings-empty" IconData="{StaticResource UiIconProvider}"
+                          Title="还没有 AI 提供商" Description="添加提供商后，可以获取模型列表或手动配置模型。" />
       </ui:AppCard>
       <ui:AppItemsControl x:Name="ProviderRows" ItemsSource="{Binding Models.ProviderGroups}"
                           IsEnabled="{Binding Models.Catalog.CanMutate}">

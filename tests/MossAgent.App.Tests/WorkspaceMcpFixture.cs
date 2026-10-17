@@ -40,6 +40,9 @@ internal sealed class WorkspaceMcpFixture : IAsyncDisposable
     public WorkspaceToolCallModelServer Model => _model!;
     public WorkspaceMcpHttpServer HttpServer => _httpServer!;
     public McpSettingsViewModel McpSettings => _services!.GetRequiredService<McpSettingsViewModel>();
+    public IMcpConfigurationRepository McpConfigurations => _services!.GetRequiredService<IMcpConfigurationRepository>();
+    public IMcpManager McpManager => _services!.GetRequiredService<IMcpManager>();
+    public IToolCatalog Tools => _services!.GetRequiredService<IToolCatalog>();
     public ApprovalViewModel Approval => _services!.GetRequiredService<ApprovalViewModel>();
     public Guid TaskId => Workspace.Catalog.SelectedTask!.Id;
     public string ToolName { get; private set; } = string.Empty;

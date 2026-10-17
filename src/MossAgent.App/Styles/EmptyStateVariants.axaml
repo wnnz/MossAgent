@@ -25,4 +25,20 @@
   <Style Selector=".app-empty-state.compact ui|AppIcon.empty-state-icon">
     <Setter Property="Size" Value="20" />
   </Style>
+  <Style Selector=".app-empty-state ui|AppText.empty-state-title, .app-empty-state ui|AppText.empty-state-description">
+    <Setter Property="TextAlignment" Value="Center" />
+  </Style>
+  <Style Selector=".app-empty-state.settings-empty" x:SetterTargetType="ui:AppEmptyState">
+    <Setter Property="Margin" Value="16" />
+  </Style>
+  <Style Selector=".app-empty-state.settings-empty StackPanel.empty-state-content">
+    <Setter Property="Spacing" Value="8" />
+    <Setter Property="MaxWidth" Value="Infinity" />
+  </Style>
+  <Style Selector=".app-empty-state.settings-empty ui|AppIcon.empty-state-icon">
+    <Setter Property="HorizontalAlignment" Value="Left" />
+  </Style>
+  <Style Selector=".app-empty-state.settings-empty ui|AppText.empty-state-title, .app-empty-state.settings-empty ui|AppText.empty-state-description">
+    <Setter Property="TextAlignment" Value="Left" />
+  </Style>
 </Styles>

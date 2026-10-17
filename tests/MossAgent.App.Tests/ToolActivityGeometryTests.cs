@@ -81,11 +81,12 @@ public sealed class ToolActivityGeometryTests : IAsyncLifetime
         Assert.Equal(32, row.Bounds.Height);
         Assert.InRange(row.Bounds.Width, 1, width);
         Assert.Equal(13, summary.FontSize);
-        Assert.Equal(10, status.FontSize);
+        Assert.Equal(11, status.FontSize);
         var glyphOrigin = glyph.TranslatePoint(default, row)!.Value;
         var summaryOrigin = summary.TranslatePoint(default, row)!.Value;
         var statusOrigin = status.TranslatePoint(default, row)!.Value;
-        Assert.Equal(canExpand ? 43 : 21, summaryOrigin.X);
+        Assert.Equal(canExpand ? 49 : 27, summaryOrigin.X);
+        Assert.Equal(6, row.Bounds.Width - statusOrigin.X - status.Bounds.Width);
         Assert.InRange(Math.Abs(glyphOrigin.Y + glyph.Bounds.Height / 2
             - summaryOrigin.Y - summary.Bounds.Height / 2), 0, 0.5);
         Assert.InRange(Math.Abs(glyphOrigin.Y + glyph.Bounds.Height / 2

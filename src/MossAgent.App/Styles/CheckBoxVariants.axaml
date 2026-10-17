@@ -5,6 +5,14 @@
     <ControlTheme x:Key="SharedCheckBoxTheme" TargetType="CheckBox">
       <Setter Property="MinHeight" Value="28" />
       <Setter Property="Padding" Value="0" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="FocusAdorner">
+        <Template>
+          <ui:AppBorder Classes="check-box-focus-ring" IsHitTestVisible="False"
+                        BorderBrush="{DynamicResource BorderFocusBrush}" BorderThickness="2"
+                        CornerRadius="{ReflectionBinding (AdornerLayer.AdornedElement).CornerRadius, RelativeSource={RelativeSource Self}}" />
+        </Template>
+      </Setter>
       <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -53,7 +61,6 @@
       </Style>
       <Style Selector="^:focus-visible /template/ ui|AppBorder#PART_CheckSurface">
         <Setter Property="BorderBrush" Value="{DynamicResource TextPrimaryBrush}" />
-        <Setter Property="BorderThickness" Value="2" />
       </Style>
       <Style Selector="^:disabled">
         <Setter Property="Opacity" Value="0.45" />

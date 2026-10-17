@@ -4,10 +4,10 @@
                    x:Class="MossAgent.App.Controls.AppEmptyState" x:Name="Root" x:CompileBindings="False">
   <StackPanel Classes="empty-state-content">
     <ui:AppIcon Classes="empty-state-icon" Data="{Binding #Root.IconData}" />
-    <ui:AppText Classes="type-14 weight-semibold" Text="{Binding #Root.Title}"
-                TextAlignment="Center" TextWrapping="Wrap" />
-    <ui:AppText Classes="type-12 subtle line-18" Text="{Binding #Root.Description}"
+    <ui:AppText Classes="type-14 weight-semibold empty-state-title" Text="{Binding #Root.Title}"
+                TextWrapping="Wrap" />
+    <ui:AppText Classes="type-12 subtle line-18 empty-state-description" Text="{Binding #Root.Description}"
                 IsVisible="{Binding #Root.HasDescription}"
-                TextAlignment="Center" TextWrapping="Wrap" />
+                TextWrapping="Wrap" />
   </StackPanel>
 </ui:AppUserControl>

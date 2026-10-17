@@ -10,6 +10,7 @@ public sealed partial class WorkspaceComposerView : AppUserControl
 {
     private const double CompactWindowHeight = 720;
     private Window? _hostWindow;
+    private bool _isToolbarStacked;
 
     public WorkspaceComposerView() => InitializeComponent();
 
@@ -34,6 +35,19 @@ public sealed partial class WorkspaceComposerView : AppUserControl
     }
 
     private void HandleWindowSizeChanged(object? sender, SizeChangedEventArgs sizeEvent) => UpdateComposerMode();
+
+    private void HandleToolbarSizeChanged(object? sender, SizeChangedEventArgs sizeEvent)
+    {
+        var stacked = sizeEvent.NewSize.Width < 360 && ApprovalPolicyButton.IsVisible;
+        if (_isToolbarStacked == stacked) return;
+
+        _isToolbarStacked = stacked;
+        ComposerToolbar.Classes.Set("stacked", stacked);
+        Grid.SetRow(ModelPickerButton, stacked ? 1 : 0);
+        Grid.SetColumn(ModelPickerButton, stacked ? 0 : 2);
+        Grid.SetColumnSpan(ModelPickerButton, stacked ? 3 : 1);
+        Grid.SetRow(SendButton, stacked ? 1 : 0);
+    }
 
     private void UpdateComposerMode()
     {

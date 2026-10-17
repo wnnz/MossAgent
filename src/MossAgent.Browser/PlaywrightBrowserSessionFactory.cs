@@ -122,10 +122,9 @@ public sealed class PlaywrightBrowserSessionFactory : IBrowserSessionFactory
         {
             var context = browser.Contexts.FirstOrDefault()
                 ?? throw new InvalidOperationException("CDP 浏览器没有可用上下文。");
-            var page = context.Pages.FirstOrDefault()
-                ?? (createdPage = await context.NewPageAsync().ConfigureAwait(false));
+            var page = createdPage = await context.NewPageAsync().ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
-            return new PlaywrightBrowserSession(playwright, context, page, closeContext: false);
+            return new PlaywrightBrowserSession(playwright, context, page, closeContext: false, ownsInitialPage: true);
         }
         catch
         {

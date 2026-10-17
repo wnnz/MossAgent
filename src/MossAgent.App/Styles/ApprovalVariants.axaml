@@ -25,6 +25,9 @@
     <Setter Property="FontSize" Value="14" />
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
+  <Style Selector="ui|AppButton.approval-stop-action">
+    <Setter Property="Margin" Value="0,0,6,0" />
+  </Style>
   <Style Selector=".app-scroll-viewer.approval-content-scroll" x:SetterTargetType="ui:AppScrollViewer">
     <Setter Property="MaxHeight" Value="160" />
     <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />

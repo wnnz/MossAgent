@@ -16,6 +16,18 @@
   <Style Selector="Grid.composer-root">
     <Setter Property="Margin" Value="24,0,28,16" />
   </Style>
+  <Style Selector="Grid.composer-toolbar">
+    <Setter Property="Margin" Value="0,8,0,0" />
+  </Style>
+  <Style Selector="Grid.composer-toolbar.stacked">
+    <Setter Property="RowSpacing" Value="4" />
+  </Style>
+  <Style Selector="Grid.composer-toolbar.stacked controls|AppText.action-badge">
+    <Setter Property="MaxWidth" Value="56" />
+  </Style>
+  <Style Selector="Grid.composer-root:focus-within controls|AppCard.composer-surface">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
+  </Style>
   <Style Selector="Grid.composer-root.compact-composer">
     <Setter Property="Margin" Value="15,0,19,20" />
   </Style>

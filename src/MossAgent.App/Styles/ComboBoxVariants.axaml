@@ -1,6 +1,17 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Styles.Resources>
+    <ControlTheme x:Key="SelectorItemTheme" TargetType="ComboBoxItem" BasedOn="{StaticResource {x:Type ComboBoxItem}}">
+      <Setter Property="FocusAdorner">
+        <Template>
+          <controls:AppBorder Classes="selector-focus-ring" IsHitTestVisible="False"
+                              BorderBrush="{DynamicResource BorderFocusBrush}" BorderThickness="2"
+                              CornerRadius="{ReflectionBinding (AdornerLayer.AdornedElement).CornerRadius, RelativeSource={RelativeSource Self}}" />
+        </Template>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
   <Style Selector=".app-combo-box" x:SetterTargetType="controls:AppComboBox">
     <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
@@ -9,6 +20,7 @@
     <Setter Property="CornerRadius" Value="8" />
     <Setter Property="FontSize" Value="13" />
     <Setter Property="Padding" Value="9,5" />
+    <Setter Property="ItemContainerTheme" Value="{StaticResource SelectorItemTheme}" />
   </Style>
   <Style Selector=".app-combo-box:focus /template/ Border#Background">
     <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />

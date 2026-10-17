@@ -1,0 +1,13 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Style Selector="controls|AppButton, .app-toggle-button" x:SetterTargetType="Control">
+    <Setter Property="FocusAdorner">
+      <Template>
+        <controls:AppBorder Classes="button-focus-ring" IsHitTestVisible="False"
+                            BorderBrush="{DynamicResource BorderFocusBrush}" BorderThickness="2"
+                            CornerRadius="{ReflectionBinding (AdornerLayer.AdornedElement).CornerRadius, RelativeSource={RelativeSource Self}}" />
+      </Template>
+    </Setter>
+  </Style>
+</Styles>

@@ -156,4 +156,37 @@
   <data name="AgentSettingsRefresh" xml:space="preserve"><value>刷新</value></data>
   <data name="AgentSettingsDelete" xml:space="preserve"><value>删除</value></data>
   <data name="AgentSettingsCancel" xml:space="preserve"><value>取消</value></data>
+  <data name="McpReconnect" xml:space="preserve"><value>重新连接</value></data>
+  <data name="McpServerName" xml:space="preserve"><value>Server 名称</value></data>
+  <data name="McpTransport" xml:space="preserve"><value>传输协议</value></data>
+  <data name="McpCommand" xml:space="preserve"><value>stdio 命令</value></data>
+  <data name="McpArguments" xml:space="preserve"><value>参数 JSON 数组</value></data>
+  <data name="McpWorkingDirectory" xml:space="preserve"><value>工作目录</value></data>
+  <data name="McpEnvironment" xml:space="preserve"><value>环境变量 JSON 对象</value></data>
+  <data name="McpUrl" xml:space="preserve"><value>Streamable HTTP URL</value></data>
+  <data name="McpHeaders" xml:space="preserve"><value>HTTP 请求头 JSON 对象</value></data>
+  <data name="McpProxy" xml:space="preserve"><value>HTTP 网络代理</value></data>
+  <data name="McpCancelReconnect" xml:space="preserve"><value>取消重连</value></data>
+  <data name="McpReconnectStarted" xml:space="preserve"><value>正在重新连接 MCP 服务并刷新列表…</value></data>
+  <data name="McpReconnectCancelled" xml:space="preserve"><value>已取消 MCP 重连；保留原列表，可重新连接。</value></data>
+  <data name="McpReconnectFailed" xml:space="preserve"><value>无法重新连接或刷新 MCP 服务，请检查配置和数据目录后重新连接。</value></data>
+  <data name="McpDirect" xml:space="preserve"><value>直连</value></data>
+  <data name="McpTargetUnavailable" xml:space="preserve"><value>MCP 服务已不存在，请重新连接后重新选择。</value></data>
+  <data name="McpDuplicateName" xml:space="preserve"><value>已有同名 MCP 服务，请使用其他名称。</value></data>
+  <data name="McpSaveFailed" xml:space="preserve"><value>无法保存 MCP 服务，请检查名称是否重复、数据目录是否可写。</value></data>
+  <data name="McpToggleFailed" xml:space="preserve"><value>无法切换 MCP 服务状态，请检查数据目录并重试。</value></data>
+  <data name="McpDeleteFailed" xml:space="preserve"><value>无法删除 MCP 服务，请检查数据目录并重试。</value></data>
+  <data name="McpSavedRefreshFailed" xml:space="preserve"><value>已保存 MCP 服务，但无法刷新连接状态，请重新连接。</value></data>
+  <data name="McpToggleRefreshFailed" xml:space="preserve"><value>状态已保存，但无法刷新 MCP 连接，请重新连接。</value></data>
+  <data name="McpDeletedRefreshFailed" xml:space="preserve"><value>服务已删除，但无法刷新 MCP 列表，请重新连接。</value></data>
+  <data name="McpPreviousDraftSaved" xml:space="preserve"><value>先前提交的内容已保存；当前输入尚未保存。</value></data>
+  <data name="McpOperationCancelled" xml:space="preserve"><value>已取消 MCP 操作；已开始的写入可能已完成，请重新连接核实。</value></data>
+  <data name="ProjectName" xml:space="preserve"><value>项目名称</value></data>
+  <data name="ProjectSourceDirectories" xml:space="preserve"><value>源文件夹</value></data>
+  <data name="ProjectEmptyDirectories" xml:space="preserve"><value>添加项目使用的文件夹。第一个文件夹将作为主要目录。</value></data>
+  <data name="ProjectPrimaryDirectory" xml:space="preserve"><value>主要</value></data>
+  <data name="ProjectSetPrimaryDirectory" xml:space="preserve"><value>设为主要</value></data>
+  <data name="ProjectRemoveDirectory" xml:space="preserve"><value>移除目录</value></data>
+  <data name="ProjectAddDirectory" xml:space="preserve"><value>添加文件夹</value></data>
+  <data name="ProjectCancelEditing" xml:space="preserve"><value>取消</value></data>
 </root>

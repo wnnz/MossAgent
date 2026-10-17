@@ -95,6 +95,7 @@ internal static class SharedAppearancePropertyPolicy
         || Inherits(type, "MossAgent.App.Controls.AppProviderSettingsHeader")
         || Inherits(type, "MossAgent.App.Controls.AppModelSettingsRow")
         || Inherits(type, "MossAgent.App.Controls.AppSettingsItemRow")
+        || Inherits(type, "MossAgent.App.Controls.AppSettingsPageHeader")
         || Inherits(type, "MossAgent.App.Controls.AppTaskNavigationRow")
         || Inherits(type, "MossAgent.App.Controls.AppConversationTab")
         || Inherits(type, "MossAgent.App.Controls.AppProjectNavigationRow")

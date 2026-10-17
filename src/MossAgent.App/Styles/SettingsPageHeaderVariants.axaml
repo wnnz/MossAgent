@@ -1,0 +1,35 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:MossAgent.App.Controls">
+  <Style Selector=".app-settings-page-header.separated" x:SetterTargetType="ui:AppSettingsPageHeader">
+    <Setter Property="Margin" Value="0,0,0,24" />
+  </Style>
+  <Style Selector="Grid.settings-page-header-layout.has-actions">
+    <Setter Property="ColumnSpacing" Value="16" />
+  </Style>
+  <Style Selector="Grid.settings-page-header-layout.stacked">
+    <Setter Property="ColumnSpacing" Value="0" />
+    <Setter Property="RowSpacing" Value="12" />
+  </Style>
+  <Style Selector="StackPanel.settings-page-header-heading">
+    <Setter Property="Spacing" Value="5" />
+  </Style>
+  <Style Selector=".app-scroll-viewer.settings-page-status-scroll" x:SetterTargetType="ui:AppScrollViewer">
+    <Setter Property="MaxHeight" Value="96" />
+    <Setter Property="Focusable" Value="True" />
+    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+  </Style>
+  <Style Selector="StackPanel.settings-header-actions">
+    <Setter Property="Orientation" Value="Horizontal" />
+    <Setter Property="Spacing" Value="8" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector=".settings-page-header-actions" x:SetterTargetType="ui:AppContentControl">
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Grid.settings-page-header-layout.stacked .settings-page-header-actions" x:SetterTargetType="ui:AppContentControl">
+    <Setter Property="HorizontalAlignment" Value="Left" />
+  </Style>
+</Styles>

@@ -42,8 +42,8 @@ public sealed class ModelSelectorComponentTests : IAsyncLifetime
             var action = Assert.Single(view.GetVisualDescendants().OfType<AppActionButton>(),
                 button => button.Classes.Contains("composer-model-picker"));
             Assert.Equal(workspace.ModelPicker.ComposerDisplayName, action.Label);
-            Assert.Equal(180, action.MaxWidth);
-            Assert.InRange(action.Bounds.Width, 1, 180);
+            Assert.Equal(320, action.MaxWidth);
+            Assert.InRange(action.Bounds.Width, 1, 320);
             Assert.Equal(12, action.FontSize);
             var icon = Assert.Single(action.GetVisualDescendants().OfType<AppIcon>(), icon => icon.IsVisible);
             Assert.Equal(12, icon.Size);

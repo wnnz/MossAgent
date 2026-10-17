@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using Avalonia;
+using Avalonia.Controls;
 using MossAgent.App.Resources;
 
 namespace MossAgent.App.Controls;
@@ -62,6 +63,9 @@ public sealed partial class AppSettingsItemRow : AppUserControl
     private bool _hasSecondaryAction;
     private bool _isPrimaryAvailable;
     private bool _isSecondaryAvailable;
+    private bool _isHeadingStacked;
+
+    static AppSettingsItemRow() => AffectsMeasure<AppSettingsItemRow>(MetadataProperty, BadgeTextProperty, IsBadgeVisibleProperty);
 
     public AppSettingsItemRow()
     {
@@ -92,9 +96,30 @@ public sealed partial class AppSettingsItemRow : AppUserControl
     public bool IsPrimaryAvailable => _isPrimaryAvailable;
     public bool IsSecondaryAvailable => _isSecondaryAvailable;
 
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var width = Bounds.Width > 0 ? Math.Min(Bounds.Width, availableSize.Width) : availableSize.Width;
+        var stacked = width < 480 && (HasMetadata || HasBadge);
+        if (_isHeadingStacked != stacked)
+        {
+            _isHeadingStacked = stacked;
+            HeadingLayout.Classes.Set("stacked", stacked);
+            HeadingLayout.ColumnDefinitions[0].Width = stacked ? GridLength.Auto : GridLength.Star;
+            HeadingLayout.ColumnDefinitions[2].Width = stacked ? GridLength.Star : GridLength.Auto;
+            Grid.SetRow(MetadataText, stacked ? 1 : 0);
+            Grid.SetColumn(MetadataText, stacked ? 0 : 1);
+            Grid.SetRow(BadgeTextControl, stacked ? 1 : 0);
+        }
+        Grid.SetColumnSpan(TitleText, stacked || !HasMetadata && !HasBadge ? 3 : HasMetadata ? 1 : 2);
+        Grid.SetColumn(BadgeTextControl, stacked ? HasMetadata ? 1 : 0 : 2);
+        return base.MeasureOverride(availableSize);
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == BoundsProperty && change.GetOldValue<Rect>().Width != Bounds.Width)
+            InvalidateMeasure();
         if (change.Property == TitleProperty || change.Property == SubtitleProperty
             || change.Property == MetadataProperty || change.Property == BadgeTextProperty
             || change.Property == IsBadgeVisibleProperty || change.Property == PrimaryLabelProperty

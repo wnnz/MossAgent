@@ -25,7 +25,8 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
     public WorkspaceProjectEditorViewModel(WorkspaceProjectService projectService)
     {
         _projectService = projectService;
-        OpenCommand = new RelayCommand(OpenNew);
+        OpenCommand = new RelayCommand(OpenNew, CanDismiss);
+        CloseCommand = new RelayCommand(Close, CanDismiss);
         AddCommand = new GuardedAsyncRelayCommand(AddAsync, CanMutate);
         AddDirectoryCommand = new GuardedAsyncRelayCommand(AddDirectoryAsync, CanMutate);
         Directories.CollectionChanged += HandleDirectoriesChanged;
@@ -43,7 +44,11 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
 
     public IAsyncRelayCommand AddDirectoryCommand { get; }
 
+    public IRelayCommand CloseCommand { get; }
+
     public ObservableCollection<WorkspaceProjectDirectoryViewModel> Directories { get; } = [];
+    public bool HasDirectories => Directories.Count > 0;
+    public bool HasStatus => !string.IsNullOrWhiteSpace(Status);
 
     public string EditorTitle => SettingsText.Get(_editingProject is null ? "ProjectCreateTitle" : "ProjectEditTitle");
 
@@ -56,7 +61,11 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
         set { if (SetProperty(ref _name, value)) _draftRevision++; }
     }
 
-    public string Status { get => _status; private set => SetProperty(ref _status, value); }
+    public string Status
+    {
+        get => _status;
+        private set { if (SetProperty(ref _status, value)) OnPropertyChanged(nameof(HasStatus)); }
+    }
 
     public bool IsOpen { get => _isOpen; set => SetProperty(ref _isOpen, value); }
     public bool HasStatusError { get => _hasStatusError; private set => SetProperty(ref _hasStatusError, value); }
@@ -88,7 +97,7 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
 
     private void OpenNew()
     {
-        if (_disposed) return;
+        if (!CanDismiss()) return;
         _editorVersion++;
         if (_editingProject is not null)
         {
@@ -100,6 +109,11 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
             NotifyEditorModeChanged();
         }
         IsOpen = true;
+    }
+
+    private void Close()
+    {
+        if (CanDismiss()) IsOpen = false;
     }
 
     private async Task AddAsync(CancellationToken cancellationToken)
@@ -233,6 +247,8 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
         if (!_disposed && IsOpen && !CanSave()) SetStatus("ProjectMutationLocked", true);
         AddCommand.NotifyCanExecuteChanged();
         AddDirectoryCommand.NotifyCanExecuteChanged();
+        OpenCommand.NotifyCanExecuteChanged();
+        CloseCommand.NotifyCanExecuteChanged();
     }
 
     private void NotifyBusyChanged()
@@ -249,8 +265,13 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
     }
 
     private bool CanMutate() => !_disposed && !IsBusy && CanSave();
+    private bool CanDismiss() => !_disposed && !IsBusy;
     private bool IsCurrent(long version) => !_disposed && version == _editorVersion;
-    private void HandleDirectoriesChanged(object? sender, NotifyCollectionChangedEventArgs args) => _draftRevision++;
+    private void HandleDirectoriesChanged(object? sender, NotifyCollectionChangedEventArgs args)
+    {
+        _draftRevision++;
+        OnPropertyChanged(nameof(HasDirectories));
+    }
 
     public void Dispose()
     {

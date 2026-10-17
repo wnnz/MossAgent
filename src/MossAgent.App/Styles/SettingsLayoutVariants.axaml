@@ -3,6 +3,8 @@
         xmlns:controls="clr-namespace:MossAgent.App.Controls">
   <StyleInclude Source="avares://MossAgent.App/Styles/ProviderSettingsRowVariants.axaml" />
   <StyleInclude Source="avares://MossAgent.App/Styles/SettingsItemRowVariants.axaml" />
+  <StyleInclude Source="avares://MossAgent.App/Styles/SettingsPageHeaderVariants.axaml" />
+  <StyleInclude Source="avares://MossAgent.App/Styles/SettingsRowVariants.axaml" />
   <Style Selector=".app-toggle-button.settings-nav" x:SetterTargetType="controls:AppToggleButton">
     <Setter Property="FontSize" Value="14" />
   </Style>
@@ -63,5 +65,11 @@
     <Setter Property="MaxWidth" Value="728" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="Margin" Value="28,74,38,34" />
+  </Style>
+  <Style Selector="controls|AppCard.settings-catalog-card">
+    <Setter Property="VerticalAlignment" Value="Top" />
+  </Style>
+  <Style Selector=".app-list-box.settings-catalog-list" x:SetterTargetType="controls:AppListBox">
+    <Setter Property="MaxHeight" Value="560" />
   </Style>
 </Styles>

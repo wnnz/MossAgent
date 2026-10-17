@@ -144,13 +144,18 @@ internal sealed class SubagentProtocolFixture : IAsyncDisposable
         }
     }
 
-    public async Task SendAsync()
+    public void Start(ApprovalPolicy policy = ApprovalPolicy.FullAccess)
     {
         Assert.Equal(ParentModelId, Workspace.SelectedModel!.ModelId);
-        Workspace.SetApprovalPolicyCommand.Execute(ApprovalPolicy.FullAccess);
+        Workspace.SetApprovalPolicyCommand.Execute(policy);
         Workspace.ComposerText = "审查合成文件 " + SubagentProtocolResponses.ParentMarker;
         Assert.True(Workspace.PrimaryActionCommand.CanExecute(null));
         Workspace.PrimaryActionCommand.Execute(null);
+    }
+
+    public async Task SendAsync()
+    {
+        Start();
         await WaitUntilAsync(() => Workspace.Catalog.SelectedTask is not null && !Workspace.IsRunning);
         Assert.Equal(AgentTaskStatus.Completed, Workspace.Catalog.SelectedTask!.Status);
     }

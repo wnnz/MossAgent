@@ -56,6 +56,19 @@
   <Style Selector="controls|AppText.settings-description">
     <Setter Property="FontSize" Value="13" />
     <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="LineHeight" Value="18" />
+  </Style>
+  <Style Selector="controls|AppText.status-error, controls|AppText.status-warning">
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector=".app-settings-page-header.compact controls|AppText.settings-title">
+    <Setter Property="FontSize" Value="20" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector=".app-settings-page-header.compact controls|AppText.settings-description">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}" />
   </Style>
   <Style Selector="controls|AppText.settings-section-title">
     <Setter Property="FontSize" Value="13" />

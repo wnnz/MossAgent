@@ -93,6 +93,13 @@ public sealed class ApprovalViewModel : ObservableObject
                 && requestId == _current.RequestId;
     }
 
+    internal Guid? GetPendingTaskId(Guid? requestId)
+    {
+        lock (_lock)
+            return _current is { } current && requestId == current.RequestId && !current.Completion.Task.IsCompleted
+                ? current.TaskId : null;
+    }
+
     private void ResolveCurrent(Guid? requestId, bool approved)
     {
         lock (_lock)

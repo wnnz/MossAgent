@@ -6,6 +6,7 @@
   <data name="Title" xml:space="preserve"><value>工具调用需要确认</value></data>
   <data name="Deny" xml:space="preserve"><value>拒绝</value></data>
   <data name="Approve" xml:space="preserve"><value>批准本次调用</value></data>
+  <data name="StopTask" xml:space="preserve"><value>停止任务</value></data>
   <data name="Directory" xml:space="preserve"><value>工作目录</value></data>
   <data name="Details" xml:space="preserve"><value>操作摘要</value></data>
   <data name="PrivacyHint" xml:space="preserve"><value>正文默认隐藏。展开可能显示敏感内容，仅用于本次确认，不写入审批诊断或导出。</value></data>

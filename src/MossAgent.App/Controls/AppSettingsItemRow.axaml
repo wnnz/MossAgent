@@ -6,7 +6,7 @@
   <ui:AppBorder Classes="divider-bottom settings-item-surface">
     <Grid Classes="settings-item-layout" ColumnDefinitions="*,Auto,Auto">
       <StackPanel Classes="settings-item-labels">
-        <Grid Classes="settings-item-heading" ColumnDefinitions="*,Auto,Auto">
+        <Grid x:Name="HeadingLayout" Classes="settings-item-heading" ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto">
           <ui:AppText x:Name="TitleText" Classes="type-13 weight-semibold settings-item-label"
                       Text="{Binding Title, ElementName=Row}" TextTrimming="CharacterEllipsis"
                       ToolTip.Tip="{Binding Title, ElementName=Row}" />

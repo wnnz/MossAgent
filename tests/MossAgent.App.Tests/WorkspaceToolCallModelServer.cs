@@ -14,9 +14,13 @@ internal sealed class WorkspaceToolCallModelServer : IAsyncDisposable
     private readonly string _toolPrefix;
     private readonly JsonElement _arguments;
     private readonly Task _serving;
+    private readonly int _conversations;
 
-    public WorkspaceToolCallModelServer(string toolName, JsonElement arguments, CancellationToken token, bool useNamespacePrefix = false)
+    public WorkspaceToolCallModelServer(string toolName, JsonElement arguments, CancellationToken token,
+        bool useNamespacePrefix = false, int conversations = 1)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(conversations, 1);
+        _conversations = conversations;
         _toolPrefix = toolName.Replace('.', '_') + (useNamespacePrefix ? "_" : "__");
         _arguments = arguments.Clone();
         _stopping = CancellationTokenSource.CreateLinkedTokenSource(token);
@@ -32,14 +36,14 @@ internal sealed class WorkspaceToolCallModelServer : IAsyncDisposable
 
     private async Task ServeAsync(CancellationToken token)
     {
-        for (var turn = 0; turn < 2; turn++)
+        for (var turn = 0; turn < 2 * _conversations; turn++)
         {
             using var client = await _listener.AcceptTcpClientAsync(token).ConfigureAwait(false);
             await using var stream = client.GetStream();
             var body = await ReadBodyAsync(stream, token).ConfigureAwait(false);
             _requests.Enqueue(body);
             using var document = JsonDocument.Parse(body);
-            var response = CreateResponse(document.RootElement, turn);
+            var response = CreateResponse(document.RootElement, turn % 2);
             var bytes = Encoding.UTF8.GetBytes($"data: {response}\n\ndata: [DONE]\n\n");
             var header = Encoding.ASCII.GetBytes($"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n"
                 + $"Content-Length: {bytes.Length}\r\nConnection: close\r\n\r\n");

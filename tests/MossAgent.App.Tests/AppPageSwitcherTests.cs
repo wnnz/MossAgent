@@ -108,7 +108,12 @@ public sealed class AppPageSwitcherTests
         Assert.Equal("Continue", switcher.Attribute("SecondaryTabNavigation")?.Value);
         var approval = Assert.Single(document.Descendants(), element => element.Name.LocalName == "ToolApprovalView");
         Assert.Equal("1", approval.Parent!.Attribute("Grid.Row")?.Value);
-        Assert.Equal("{Binding Approval.IsPending}", approval.Parent.Attribute("IsVisible")?.Value);
+        var visibility = Assert.Single(approval.Parent.Elements(), element => element.Name.LocalName == "AppBorder.IsVisible");
+        var conditions = Assert.Single(visibility.Elements());
+        Assert.Equal("MultiBinding", conditions.Name.LocalName);
+        Assert.Equal("{x:Static BoolConverters.And}", conditions.Attribute("Converter")?.Value);
+        Assert.Equal(new[] { "Approval.IsPending", "!#WorkspaceNavigation.IsOverlayOpen", "!#SettingsView.Navigation.IsOverlayOpen" },
+            conditions.Elements().Select(binding => binding.Attribute("Path")?.Value));
         Assert.Same(switcher.Parent, approval.Parent.Parent);
         var siblings = switcher.Parent!.Elements().ToList();
         var shutdown = Assert.Single(siblings, element => element.Name.LocalName == "AppShutdownOverlay");

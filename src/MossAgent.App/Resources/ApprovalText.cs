@@ -11,6 +11,7 @@ public static class ApprovalText
     public static string Title => Get("Title");
     public static string Deny => Get("Deny");
     public static string Approve => Get("Approve");
+    public static string StopTask => Get("StopTask");
     public static string Directory => Get("Directory");
     public static string Details => Get("Details");
     public static string PrivacyHint => Get("PrivacyHint");

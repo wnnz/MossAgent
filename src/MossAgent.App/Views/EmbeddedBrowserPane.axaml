@@ -26,11 +26,9 @@
     <ui:AppBorder Grid.Row="3" Classes="embedded-browser-surface">
       <Grid>
         <ui:AppBrowserViewport Host="{Binding Host}" View="{Binding Content}" />
-        <ui:AppText Text="内置浏览器尚未启动"
-                   IsVisible="{Binding !HasBrowser}"
-                   Classes="muted"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center" />
+        <ui:AppEmptyState Title="{x:Static resources:InspectorText.NoBrowser}"
+                          Description="{x:Static resources:InspectorText.NoBrowserHint}"
+                          IconData="{StaticResource UiIconBrowser}" IsVisible="{Binding !HasBrowser}" />
       </Grid>
     </ui:AppBorder>
   </Grid>

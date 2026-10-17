@@ -62,6 +62,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         Audit = audit;
         EmbeddedBrowsers = embeddedBrowsers;
         Approval = approval;
+        ApprovalTaskControl = new ApprovalTaskControlViewModel(approval, workspace);
         approval.PropertyChanged += HandleApprovalChanged;
         workspace.PropertyChanged += HandleApprovalChanged;
         embeddedBrowsers.Host.IsPresentationBlocked = approval.IsPending;
@@ -166,6 +167,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         Audit.Dispose();
         Terminal.Dispose();
         Approval.PropertyChanged -= HandleApprovalChanged;
+        ApprovalTaskControl.Dispose();
         Workspace.PropertyChanged -= HandleApprovalChanged;
         Workspace.FilePreview.Opened -= HandlePreviewOpened;
         Workspace.FileChanges.ReviewRequested -= HandleFileChangesReview;
@@ -201,6 +203,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     /// 工具执行审批视图模型。
     /// </summary>
     public ApprovalViewModel Approval { get; }
+    public ApprovalTaskControlViewModel ApprovalTaskControl { get; }
 
     /// <summary>
     /// 是否处于暗黑模式。

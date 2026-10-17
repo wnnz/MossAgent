@@ -13,6 +13,7 @@ public sealed class SharedTemplateBoundaryTests
     [InlineData("<ui:AppButton><Button.Theme>custom</Button.Theme></ui:AppButton>", "Button.Theme")]
     [InlineData("<ui:AppButton><ui:AppButton.Template>custom</ui:AppButton.Template></ui:AppButton>", "AppButton.Template")]
     [InlineData("<ui:AppInput><Control.FocusAdorner>custom</Control.FocusAdorner></ui:AppInput>", "Control.FocusAdorner")]
+    [InlineData("<ui:AppButton><Control.FocusAdorner><Template><ui:AppBorder /></Template></Control.FocusAdorner></ui:AppButton>", "Control.FocusAdorner")]
     [InlineData("<StyleInclude Source='custom.axaml' />", "StyleInclude")]
     [InlineData("<ui:AppUserControl.Styles />", "AppUserControl.Styles")]
     [InlineData("<Style Selector='ui|AppButton' />", "Style")]

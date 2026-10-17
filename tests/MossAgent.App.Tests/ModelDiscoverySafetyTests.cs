@@ -104,11 +104,15 @@ public sealed class ModelDiscoverySafetyTests
         Assert.NotNull(directory);
         var document = XDocument.Load(Path.Combine(directory.FullName, "src", "MossAgent.App",
             "Views", "ProviderAndModelSettingsPane.axaml"));
-        var statuses = document.Descendants().Where(element =>
-            element.Name.LocalName == "AppText"
-            && element.Attribute("Text")?.Value == "{Binding Models.Status}").ToArray();
-        var pageStatus = Assert.Single(statuses);
-        Assert.Equal("{Binding Models.HasStatusError}", pageStatus.Attribute("Classes.status-error")?.Value);
+        var pageStatus = Assert.Single(document.Descendants(), element => element.Name.LocalName == "AppSettingsPageHeader");
+        Assert.Equal("{Binding Models.Status}", pageStatus.Attribute("Status")?.Value);
+        Assert.Equal("{Binding Models.HasStatusError}", pageStatus.Attribute("IsStatusError")?.Value);
+        var header = XDocument.Load(Path.Combine(directory.FullName, "src", "MossAgent.App",
+            "Controls", "AppSettingsPageHeader.axaml"));
+        var status = Assert.Single(header.Descendants(), element => element.Name.LocalName == "AppText"
+            && element.Attribute("Text")?.Value == "{Binding Status, ElementName=Header}");
+        Assert.Equal("{Binding IsStatusError, ElementName=Header}", status.Attribute("Classes.status-error")?.Value);
+        Assert.Equal("{Binding HasStatus, ElementName=Header}", status.Attribute("IsVisible")?.Value);
         var editorStatus = Assert.Single(document.Descendants(), element =>
             element.Name.LocalName == "AppText" && element.Attribute("Text")?.Value == "{Binding Models.EditorStatus}");
         Assert.Contains("status-error", editorStatus.Attribute("Classes")!.Value.Split(' '));

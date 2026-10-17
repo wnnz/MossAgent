@@ -211,7 +211,14 @@
     </ui:AppPageSwitcher.SecondaryPage>
     </ui:AppPageSwitcher>
 
-    <ui:AppBorder Grid.Row="1" IsVisible="{Binding Approval.IsPending}">
+    <ui:AppBorder Grid.Row="1">
+      <ui:AppBorder.IsVisible>
+        <MultiBinding Converter="{x:Static BoolConverters.And}">
+          <Binding Path="Approval.IsPending" />
+          <Binding Path="!#WorkspaceNavigation.IsOverlayOpen" />
+          <Binding Path="!#SettingsView.Navigation.IsOverlayOpen" />
+        </MultiBinding>
+      </ui:AppBorder.IsVisible>
       <views:ToolApprovalView DataContext="{Binding Approval}" />
     </ui:AppBorder>
 

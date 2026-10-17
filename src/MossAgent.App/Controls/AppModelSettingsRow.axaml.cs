@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using Avalonia;
+using Avalonia.Controls;
 using MossAgent.App.Resources;
 using MossAgent.Domain;
 
@@ -28,6 +29,7 @@ public sealed partial class AppModelSettingsRow : AppUserControl
 
     private bool _hasEditAction;
     private bool _hasDeleteAction;
+    private bool _isStacked;
 
     public AppModelSettingsRow() => InitializeComponent();
 
@@ -43,9 +45,32 @@ public sealed partial class AppModelSettingsRow : AppUserControl
     public bool HasEditAction => _hasEditAction;
     public bool HasDeleteAction => _hasDeleteAction;
 
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var width = Bounds.Width > 0 ? Math.Min(Bounds.Width, availableSize.Width) : availableSize.Width;
+        var stacked = width < 480;
+        if (_isStacked != stacked)
+        {
+            _isStacked = stacked;
+            ReflowDetails(IdentityLayout, ModelIdText, stacked);
+            ReflowDetails(CapabilitiesLayout, ReasoningText, stacked);
+        }
+        return base.MeasureOverride(availableSize);
+    }
+
+    private static void ReflowDetails(Grid layout, AppText secondary, bool stacked)
+    {
+        layout.Classes.Set("stacked", stacked);
+        layout.ColumnDefinitions[1].Width = stacked ? new GridLength(0) : GridLength.Star;
+        Grid.SetRow(secondary, stacked ? 1 : 0);
+        Grid.SetColumn(secondary, stacked ? 0 : 1);
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == BoundsProperty && change.GetOldValue<Rect>().Width != Bounds.Width)
+            InvalidateMeasure();
         if (change.Property == ModelProperty)
         {
             var previous = change.GetOldValue<ModelProfile?>();

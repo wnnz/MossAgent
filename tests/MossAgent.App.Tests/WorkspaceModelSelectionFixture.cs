@@ -5,6 +5,7 @@ using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 using MossAgent.Infrastructure.Persistence;
 using MossAgent.Application.Automations;
+using MossAgent.Application.Settings;
 using Xunit;
 
 namespace MossAgent.App.Tests;
@@ -36,7 +37,7 @@ internal sealed class WorkspaceModelSelectionFixture : IAsyncDisposable
 
     public WorkspaceViewModel CreateWorkspace(IWorkspaceRepository repository, WorkspaceRunTracker runs,
         IAgentConfigurationRepository? agents = null, IWorkspaceRepository? catalogRepository = null,
-        IConversationPreferenceRepository? conversationPreferences = null)
+        IConversationPreferenceRepository? conversationPreferences = null, ISidebarPreferenceStore? sidebarPreferences = null)
     {
         var services = _services!;
         var factory = new WorkspaceTaskFactory(repository, services.GetRequiredService<MossAgent.Application.Git.IGitWorktreeService>());
@@ -47,11 +48,10 @@ internal sealed class WorkspaceModelSelectionFixture : IAsyncDisposable
             : ActivatorUtilities.CreateInstance<WorkspaceCatalogViewModel>(services, catalogRepository);
         var attachments = ActivatorUtilities.CreateInstance<WorkspaceAttachmentManagerViewModel>(services);
         var repositoryStatus = ActivatorUtilities.CreateInstance<WorkspaceRepositoryStatusViewModel>(services);
-        return conversationPreferences is null
-            ? ActivatorUtilities.CreateInstance<WorkspaceViewModel>(services, factory, runs, controller, catalog, attachments,
-                repositoryStatus, agents ?? AgentProfiles)
-            : ActivatorUtilities.CreateInstance<WorkspaceViewModel>(services, factory, runs, controller, catalog, attachments,
-                repositoryStatus, agents ?? AgentProfiles, conversationPreferences);
+        var arguments = new List<object> { factory, runs, controller, catalog, attachments, repositoryStatus, agents ?? AgentProfiles };
+        if (conversationPreferences is not null) arguments.Add(conversationPreferences);
+        if (sidebarPreferences is not null) arguments.Add(sidebarPreferences);
+        return ActivatorUtilities.CreateInstance<WorkspaceViewModel>(services, arguments.ToArray());
     }
 
     public static async Task<WorkspaceModelSelectionFixture> CreateAsync(bool pauseResponse = false, bool withProject = true)

@@ -79,12 +79,17 @@
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
   <Style Selector="controls|AppButton.tool-row">
-    <Setter Property="Padding" Value="0,4" />
+    <Setter Property="Padding" Value="6,4" />
     <Setter Property="MinHeight" Value="32" />
   </Style>
   <Style Selector="controls|AppBorder.tool-activity-static">
-    <Setter Property="Padding" Value="0,4" />
+    <Setter Property="Padding" Value="6,4" />
     <Setter Property="MinHeight" Value="32" />
+  </Style>
+  <Style Selector="controls|AppText.tool-activity-status">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="MaxWidth" Value="120" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
   </Style>
   <Style Selector="controls|AppButton.menu-option">
     <Setter Property="Padding" Value="8,6" />
@@ -144,8 +149,8 @@
     <Setter Property="Foreground" Value="{DynamicResource PrimaryButtonForegroundBrush}" />
   </Style>
   <Style Selector="controls|AppButton.primary.ghost.composer-send:disabled">
-    <Setter Property="Background" Value="#D9D9D9" />
-    <Setter Property="Foreground" Value="#7A7A7A" />
+    <Setter Property="Background" Value="{DynamicResource DisabledButtonBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource DisabledButtonForegroundBrush}" />
   </Style>
   <Style Selector="controls|AppButton.composer-send controls|AppIcon.ui-icon">
     <Setter Property="Size" Value="12" />
@@ -318,6 +323,10 @@
     <Setter Property="Opacity" Value="1" />
     <Setter Property="IsHitTestVisible" Value="True" />
   </Style>
+  <Style Selector="controls|AppBorder.directory-row:focus-within controls|AppButton.set-primary">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="IsHitTestVisible" Value="True" />
+  </Style>
   <Style Selector="controls|AppBorder.table-surface">
     <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
     <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
@@ -368,6 +377,9 @@
     <Setter Property="Margin" Value="23,2,0,0" />
     <Setter Property="Padding" Value="10,8" />
   </Style>
+  <Style Selector="controls|AppBorder.tool-detail-surface:focus-within">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderFocusBrush}" />
+  </Style>
   <Style Selector="controls|AppBorder.subagent-event-row">
     <Setter Property="Padding" Value="7,5" />
     <Setter Property="CornerRadius" Value="8" />
@@ -399,11 +411,6 @@
     <Setter Property="CornerRadius" Value="4" />
     <Setter Property="Padding" Value="6,2" />
   </Style>
-  <Style Selector="controls|AppButton.composer-model-picker">
-    <Setter Property="MaxWidth" Value="180" />
-    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-    <Setter Property="Padding" Value="10,5" />
-  </Style>
   <Style Selector=".app-input.compact-input" x:SetterTargetType="controls:AppInput">
     <Setter Property="FontSize" Value="11.5" />
   </Style>
@@ -423,9 +430,11 @@
   </Style>
   <Style Selector=".app-scroll-viewer.settings-page-scroll" x:SetterTargetType="controls:AppScrollViewer">
     <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
-    <Setter Property="VerticalScrollBarVisibility" Value="Hidden" />
+    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
   </Style>
   <Style Selector=".app-scroll-viewer.tool-details-scroll" x:SetterTargetType="controls:AppScrollViewer">
+    <Setter Property="Focusable" Value="True" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
     <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
     <Setter Property="MaxHeight" Value="260" />
@@ -438,11 +447,12 @@
   <Style Selector="controls|AppBrowserHost">
     <Setter Property="ClipToBounds" Value="True" />
   </Style>
-  <Style Selector="controls|AppTaskFailureNotice">
+  <Style Selector=".app-task-failure-notice" x:SetterTargetType="controls:AppTaskFailureNotice">
     <Setter Property="Margin" Value="4,0,4,16" />
   </Style>
-  <Style Selector="controls|AppTaskFailureNotice controls|AppIcon.failure-notice-icon">
+  <Style Selector=".app-task-failure-notice controls|AppIcon.failure-notice-icon">
     <Setter Property="VerticalAlignment" Value="Top" />
     <Setter Property="Margin" Value="0,2,0,0" />
   </Style>
+  <StyleInclude Source="avares://MossAgent.App/Styles/ProjectEditorVariants.axaml" />
 </Styles>
