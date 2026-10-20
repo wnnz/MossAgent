@@ -65,6 +65,34 @@ public sealed class SubagentToolInvocationTests
             item.Role == "工具 · test.read" && item.Content.Contains("拒绝"));
     }
 
+    [Theory]
+    [InlineData(2, false)]
+    [InlineData(3, false)]
+    [InlineData(4, true)]
+    public async Task RunAsync_ChildRetainsWorkspaceGuardBeforeAndAfterItsOwnApproval(int allowedChecks, bool allowed)
+    {
+        var guard = new SubagentWorkspaceGuard(allowedChecks);
+        var fixture = CreateFixture(approveChildTool: true);
+        var request = fixture.Request with { ToolContext = fixture.Request.ToolContext with { WorkspaceGuard = guard } };
+        var events = await CollectEventsAsync(fixture.Runner, request);
+        var result = Assert.Single(events.OfType<AgentToolEvent>()).Result;
+
+        Assert.Equal(allowed, result.IsSuccess);
+        Assert.Equal(allowed ? 1 : 0, fixture.ChildTool.Calls);
+        Assert.Equal(Math.Min(allowedChecks + 1, 4), guard.Contexts.Count);
+        Assert.All(guard.Contexts, context =>
+        {
+            Assert.Same(guard, context.WorkspaceGuard);
+            Assert.Equal(request.ToolContext.TaskId, context.TaskId);
+            Assert.Equal(request.ToolContext.WorkingDirectory, context.WorkingDirectory);
+            Assert.Equal(request.ToolContext.AuthorizedRoots, context.AuthorizedRoots);
+        });
+        Assert.Contains(guard.Contexts, context => context.MaximumOutputCharacters == 4096 && context.SubagentTools is null);
+        Assert.Equal(allowed ? 2 : 1, fixture.Requests.Count(item => item.Model.Id == fixture.ChildModel.Id));
+        if (!allowed) Assert.Equal("workspace_denied", result.ErrorCode);
+        Assert.All(result.Dialogue!, message => Assert.DoesNotContain("synthetic-workspace-secret", message.Content));
+    }
+
     [Fact]
     public async Task RunAsync_ChildCannotRecursivelyDelegate()
     {

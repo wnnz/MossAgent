@@ -8,12 +8,13 @@ internal static class OpenAiCompatibleRequestBuilder
 {
     public static string Build(ModelRequest request, ProviderToolNameMap toolNames)
     {
+        var images = new ModelImageRequestValidation(request.Model.SupportsImages);
         var root = new JsonObject
         {
             ["model"] = request.Model.ModelId,
             ["stream"] = true,
             ["max_tokens"] = request.Model.MaximumOutputTokens,
-            ["messages"] = BuildMessages(request, toolNames)
+            ["messages"] = BuildMessages(request, toolNames, ref images)
         };
 
         if (request.Tools.Count > 0)
@@ -37,20 +38,22 @@ internal static class OpenAiCompatibleRequestBuilder
         }
 
         AdvancedParameterMerger.Merge(root, request.Model.AdvancedParametersJson, request.Provider.Protocol);
-        return root.ToJsonString();
+        return ModelRequestJson.Serialize(root, images.ContainsImages);
     }
 
     private static JsonArray BuildMessages(
         ModelRequest request,
-        ProviderToolNameMap toolNames)
+        ProviderToolNameMap toolNames,
+        ref ModelImageRequestValidation images)
     {
         var messages = new JsonArray();
         foreach (var message in request.Messages)
         {
+            images.Include(message);
             var item = new JsonObject
             {
                 ["role"] = message.Role == ModelRole.ToolObservation ? "user" : message.Role.ToString().ToLowerInvariant(),
-                ["content"] = message.Content
+                ["content"] = ModelImageContentBuilder.Compatible(message)
             };
 
             if (message.Role == ModelRole.Assistant && message.ToolCalls is { Count: > 0 })

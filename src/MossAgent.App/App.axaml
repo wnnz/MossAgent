@@ -494,5 +494,6 @@
     <StyleInclude Source="avares://MossAgent.App/Styles/AutomationVariants.axaml" />
     <StyleInclude Source="avares://MossAgent.App/Styles/ConversationTurnVariants.axaml" />
     <StyleInclude Source="avares://MossAgent.App/Styles/WindowCaptionVariants.axaml" />
+    <StyleInclude Source="avares://MossAgent.App/Styles/EmptySessionResponsiveVariants.axaml" />
   </Application.Styles>
 </Application>

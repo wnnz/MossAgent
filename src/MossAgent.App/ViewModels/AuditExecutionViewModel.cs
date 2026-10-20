@@ -8,7 +8,8 @@ public sealed class AuditExecutionViewModel(ToolExecutionAuditRecord record)
 {
     public ToolExecutionAuditRecord Record { get; } = record;
     public string ToolName => LimitName(Record.ToolName);
-    public string OutcomeKind => Record.CompletedAt is null || Record.IsSuccess is null ? "pending"
+    public string OutcomeKind => Record.CompletedAt is null && Record.InterruptedAt is not null ? "interrupted"
+        : Record.CompletedAt is null || Record.IsSuccess is null ? "pending"
         : Record.IsSuccess is true ? "success"
         : Record.ErrorCode == "tool_cancelled" ? "cancelled"
         : Record.ApprovalGranted is false ? "denied" : "failed";
@@ -16,6 +17,7 @@ public sealed class AuditExecutionViewModel(ToolExecutionAuditRecord record)
     {
         "success" => "Succeeded",
         "pending" => "Pending",
+        "interrupted" => "AuditInterrupted",
         "cancelled" => "AuditCancelled",
         "denied" => "AuditDenied",
         _ => "Failed"
@@ -23,6 +25,7 @@ public sealed class AuditExecutionViewModel(ToolExecutionAuditRecord record)
     public string Detail => OutcomeKind switch
     {
         "success" or "pending" => string.Empty,
+        "interrupted" => InspectorText.Get("AuditInterruptedHint"),
         "cancelled" => InspectorText.Get("AuditCancelledHint"),
         "denied" => InspectorText.Get(Record.ErrorCode == "path_denied" ? "AuditPathHint" : "AuditDeniedHint"),
         _ => InspectorText.Get(Record.ErrorCode switch
@@ -37,7 +40,7 @@ public sealed class AuditExecutionViewModel(ToolExecutionAuditRecord record)
     public bool HasDetail => Detail.Length > 0;
     public string DurationLabel => Record.CompletedAt is { } completed && completed >= Record.StartedAt
         ? InspectorText.Format("AuditDuration", Math.Ceiling((completed - Record.StartedAt).TotalMilliseconds))
-        : InspectorText.Get("AuditNotFinished");
+        : InspectorText.Get(Record.InterruptedAt is null ? "AuditNotFinished" : "AuditUnknownDuration");
     public string Metadata => InspectorText.Format("AuditMetadata", Record.StartedAt.ToLocalTime(), DurationLabel);
 
     private static string LimitName(string value)

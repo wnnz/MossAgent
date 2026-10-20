@@ -30,7 +30,7 @@ public sealed class ProjectAuthorizationUiWorkflowTests : IAsyncLifetime
             await fixture.AssertSentinelsAsync(primaryChanged: false);
             ProjectAuthorizationUiInput.SaveEvidence(fixture, "secondary-root-pending");
             SubagentApprovalInteraction.Decide(fixture.Window, fixture.Main.Approval, approve: true, keyboard: true);
-            await fixture.WaitUntilAsync(() => !fixture.Main.Workspace.HasActiveRun);
+            await fixture.WaitUntilAsync(() => !fixture.Main.Workspace.IsRunning);
             await fixture.AssertResultAsync(taskId, "project-write-0-0", null, true);
             await fixture.AssertSentinelsAsync(primaryChanged: true);
 
@@ -41,7 +41,7 @@ public sealed class ProjectAuthorizationUiWorkflowTests : IAsyncLifetime
             Assert.Equal(fixture.AdditionalRoot, Assert.Single(saved.AuthorizedDirectories));
             await ProjectAuthorizationUiInput.SelectTaskAsync(fixture, taskId);
             ProjectAuthorizationUiInput.Start(fixture, newTask: false);
-            await fixture.WaitUntilAsync(() => !fixture.Main.Workspace.HasActiveRun);
+            await fixture.WaitUntilAsync(() => !fixture.Main.Workspace.IsRunning);
             Assert.Equal(taskId, fixture.Main.Workspace.Catalog.SelectedTask?.Id);
             Assert.False(fixture.Main.Approval.IsPending);
             await fixture.AssertResultAsync(taskId, "project-write-1-0", "path_denied", false);
@@ -57,7 +57,7 @@ public sealed class ProjectAuthorizationUiWorkflowTests : IAsyncLifetime
             await fixture.AssertResultAsync(taskId, "project-write-1-0", "path_denied", false);
             ProjectAuthorizationUiInput.SelectProject(fixture, fixture.OtherProject.Id);
             ProjectAuthorizationUiInput.Start(fixture, newTask: true);
-            await fixture.WaitUntilAsync(() => !fixture.Main.Workspace.HasActiveRun);
+            await fixture.WaitUntilAsync(() => !fixture.Main.Workspace.IsRunning);
             var otherTask = fixture.Main.Workspace.Catalog.SelectedTask!;
             Assert.NotEqual(taskId, otherTask.Id);
             Assert.Equal(fixture.OtherProject.Id, otherTask.ProjectId);
@@ -94,7 +94,7 @@ public sealed class ProjectAuthorizationUiWorkflowTests : IAsyncLifetime
             Assert.Equal(new[] { fixture.PrimaryRoot, fixture.AdditionalRoot }, saved.AuthorizedDirectories);
             await ProjectAuthorizationUiInput.SelectTaskAsync(fixture, taskId);
             SubagentApprovalInteraction.Decide(fixture.Window, fixture.Main.Approval, approve: true, keyboard: true);
-            await fixture.WaitUntilAsync(() => !fixture.Main.Workspace.HasActiveRun);
+            await fixture.WaitUntilAsync(() => !fixture.Main.Workspace.IsRunning);
             await fixture.AssertResultAsync(taskId, "project-write-0-0", null, true);
             await fixture.AssertResultAsync(taskId, "project-write-0-1", "path_denied", false);
             Assert.Equal(2, (await fixture.Audits.GetRecentAsync(taskId, 10, fixture.Token)).Count(
@@ -110,7 +110,7 @@ public sealed class ProjectAuthorizationUiWorkflowTests : IAsyncLifetime
             Assert.Equal(project.Id, nextTask.ProjectId);
             Assert.Equal(fixture.PrimaryRoot, fixture.Main.Approval.WorkingDirectory);
             SubagentApprovalInteraction.Decide(fixture.Window, fixture.Main.Approval, approve: true, keyboard: true);
-            await fixture.WaitUntilAsync(() => !fixture.Main.Workspace.HasActiveRun);
+            await fixture.WaitUntilAsync(() => !fixture.Main.Workspace.IsRunning);
             await fixture.Server.Completion.WaitAsync(fixture.Token);
             await fixture.AssertResultAsync(nextTask.Id, "project-write-1-0", null, true);
             await fixture.AssertSentinelsAsync(primaryChanged: true, additionalChanged: true);

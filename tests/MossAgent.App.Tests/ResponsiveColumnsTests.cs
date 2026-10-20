@@ -55,4 +55,44 @@ public sealed class ResponsiveColumnsTests : IAsyncLifetime
         }
         finally { window.Close(); }
     }, TestContext.Current.CancellationToken);
+    [Theory]
+    [InlineData(470, true)]
+    [InlineData(900, false)]
+    public Task FixedPrimaryLeavesRemainingWidthForReviewContent(double width, bool compact) => _session.Dispatch(() =>
+    {
+        var list = new AppInput { Text = "PR list" };
+        var detail = new AppButton { Content = "Review content" };
+        var columns = new AppResponsiveColumns { PrimaryWidth = 260, Children = { list, detail } };
+        var window = new AppWindow { Content = columns, Width = width, Height = 500 };
+        window.Show();
+        try
+        {
+            window.UpdateLayout();
+            Assert.Equal(compact, columns.IsCompact);
+            Assert.Equal(compact ? width : columns.PrimaryWidth, list.Bounds.Width);
+            Assert.Equal(compact ? width : width - columns.PrimaryWidth - columns.Gap, detail.Bounds.Width);
+            columns.PrimaryWidth = double.NaN;
+            window.UpdateLayout();
+            Assert.Equal(compact ? width : columns.SecondaryWidth, detail.Bounds.Width);
+        }
+        finally { window.Close(); }
+    }, TestContext.Current.CancellationToken);
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public Task CompactHiddenPaneDoesNotReserveHalfTheHeight(bool hidePrimary) => _session.Dispatch(() =>
+    {
+        var primary = new AppButton { Content = "Primary", IsVisible = !hidePrimary };
+        var secondary = new AppButton { Content = "Secondary", IsVisible = hidePrimary };
+        var columns = new AppResponsiveColumns { Children = { primary, secondary } };
+        var window = new AppWindow { Content = columns, Width = 470, Height = 500 };
+        window.Show();
+        try
+        {
+            window.UpdateLayout();
+            Assert.True(columns.IsCompact); Assert.Equal(0, columns.RowSpacing);
+            Assert.Equal(columns.Bounds.Height, columns.RowDefinitions[hidePrimary ? 1 : 0].ActualHeight);
+        }
+        finally { window.Close(); }
+    }, TestContext.Current.CancellationToken);
 }

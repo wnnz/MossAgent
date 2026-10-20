@@ -101,11 +101,8 @@ public sealed class AppSettingsDialog : ContentControl
         }
         else
         {
-            _focusRevision++;
             IsVisible = false;
-            if (_previousFocus is Control { IsEffectivelyVisible: true, IsEffectivelyEnabled: true })
-                _previousFocus.Focus();
-            _previousFocus = null;
+            RestorePreviousFocus();
             _dialogFocus = null;
         }
     }
@@ -148,6 +145,24 @@ public sealed class AppSettingsDialog : ContentControl
     private void HandleHostStateChanged(object? sender, AvaloniaPropertyChangedEventArgs args)
     {
         if (args.Property == IsVisibleProperty || args.Property == IsEnabledProperty) ScheduleFocus();
+    }
+
+    private void RestorePreviousFocus()
+    {
+        var revision = ++_focusRevision;
+        var previous = _previousFocus as Control;
+        var owner = TopLevel.GetTopLevel(this);
+        _previousFocus = null;
+        if (previous is null || owner is null || !ReferenceEquals(TopLevel.GetTopLevel(previous), owner)) return;
+        if (previous.IsEffectivelyVisible && previous.IsEffectivelyEnabled && previous.Focus()) return;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (revision != _focusRevision || IsOpen || !ReferenceEquals(TopLevel.GetTopLevel(this), owner)
+                || !ReferenceEquals(TopLevel.GetTopLevel(previous), owner)
+                || !previous.IsEffectivelyVisible || !previous.IsEffectivelyEnabled
+                || owner.FocusManager?.GetFocusedElement() is not null) return;
+            previous.Focus();
+        }, DispatcherPriority.Loaded);
     }
 
     private void ScheduleFocus()

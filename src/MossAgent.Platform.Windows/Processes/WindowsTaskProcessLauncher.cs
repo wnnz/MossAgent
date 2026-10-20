@@ -16,7 +16,7 @@ public sealed class WindowsTaskProcessLauncher : ITaskProcessLauncher
             throw new ArgumentException("Process working directory must be absolute.", nameof(request));
         request = request with { WorkingDirectory = Path.GetFullPath(request.WorkingDirectory) };
         var executable = WindowsExecutableResolver.Resolve(request.FileName);
-        using var environment = new WindowsProcessEnvironment(request.Environment);
+        using var environment = new WindowsProcessEnvironment(request.Environment, request.RemovedEnvironmentPrefixes);
         using var standardOutput = WindowsProcessPipe.Create();
         using var standardError = WindowsProcessPipe.Create();
         using var standardInput = WindowsProcessPipe.Create(childReads: true);

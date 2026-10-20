@@ -157,7 +157,7 @@ public sealed class TaskNavigationRowTests : IAsyncLifetime
             element.Attribute("Classes")?.Value == "sidebar-selected-surface");
     }
 
-    private Task WithWindow(Func<MainWindow, MainWindowViewModel, Task> action) => _session.Dispatch<Task>(async () =>
+    private Task WithWindow(Func<MainWindow, MainWindowViewModel, Task> action) => _session.DispatchAsync(async () =>
     {
         var root = Directory.CreateTempSubdirectory("MossAgent-task-row-tests-").FullName;
         try
@@ -191,7 +191,7 @@ public sealed class TaskNavigationRowTests : IAsyncLifetime
             finally { window.Close(); }
         }
         finally { SqliteTestPool.Clear(root); Directory.Delete(root, recursive: true); }
-    }, TestContext.Current.CancellationToken).Unwrap();
+    }, TestContext.Current.CancellationToken);
 
     private static void Activate(MainWindow window, AppButton button)
     {

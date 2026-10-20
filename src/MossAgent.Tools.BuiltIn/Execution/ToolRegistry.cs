@@ -17,6 +17,13 @@ public sealed class ToolRegistry(IEnumerable<IAgentTool> tools) : IMutableToolCa
 
     public bool TryGet(string name, out IAgentTool? tool) => _tools.TryGetValue(name, out tool);
 
+    public IReadOnlyCollection<ToolDescriptor> GetModelDescriptors(ToolExecutionContext context) =>
+        context.SourceReviewRevision is null ? Descriptors : context.SourceScope is null ? []
+        : _tools.Values.Select(static tool => tool.Descriptor)
+            .Where(descriptor => SourceReviewToolPolicy.IsAllowed(descriptor.Name) && context.IsToolAllowed(descriptor.Name)
+                && descriptor.RiskLevel == ToolRiskLevel.ReadOnly && descriptor.RequiredCapabilities == ToolCapability.Network)
+            .Select(static descriptor => descriptor with { IsModelVisible = true }).ToArray();
+
     public void RegisterOrReplace(IAgentTool tool) => _tools[tool.Descriptor.Name] = tool;
 
     public void RemoveByPrefix(string prefix)

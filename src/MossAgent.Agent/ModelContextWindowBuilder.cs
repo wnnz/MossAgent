@@ -13,13 +13,24 @@ internal static class ModelContextWindowBuilder
     public static IReadOnlyList<ModelMessage> Build(
         IReadOnlyList<ModelMessage> messages,
         IReadOnlyList<ToolDescriptor> tools,
-        ModelProfile model)
+        ModelProfile model,
+        string? pinnedUserContext = null,
+        IReadOnlyList<ModelMessage>? requiredMessages = null)
     {
         var available = CalculateAvailableCharacters(tools, model);
         var systemMessages = messages.Where(static message => message.Role == ModelRole.System).ToArray();
         var systemBudget = Math.Min(available / 4, Estimate(systemMessages));
         var selected = FitMessages(systemMessages, systemBudget);
         available -= Estimate(selected);
+
+        if (pinnedUserContext is not null)
+        {
+            var pinned = new ModelMessage(ModelRole.User, pinnedUserContext);
+            var cost = Estimate(pinned);
+            if (cost > available - 256) throw new PinnedModelContextException();
+            selected = selected.Append(pinned).ToArray();
+            available -= cost;
+        }
 
         var selectedGroups = new List<IReadOnlyList<ModelMessage>>();
         var end = messages.Count;
@@ -40,13 +51,19 @@ internal static class ModelContextWindowBuilder
                 selectedGroups.Add(FitMessages(group, available));
             }
             else if (selectedGroups.Count == 0)
+            {
+                if (pinnedUserContext is not null) throw new PinnedModelContextException();
                 throw new InvalidOperationException("The latest conversation metadata exceeds the model context budget.");
+            }
 
             break;
         }
 
         selectedGroups.Reverse();
-        return selected.Concat(selectedGroups.SelectMany(static group => group)).ToArray();
+        var result = selected.Concat(selectedGroups.SelectMany(static group => group)).ToArray();
+        if (requiredMessages is not null && requiredMessages.Any(required => !result.Any(message => ReferenceEquals(message, required))))
+            throw new PinnedModelContextException();
+        return result;
     }
 
     internal static int Estimate(IReadOnlyList<ModelMessage> messages) =>
@@ -102,9 +119,10 @@ internal static class ModelContextWindowBuilder
         var fixedCost = messages.Sum(EstimateMetadata);
         var contentBudget = Math.Max(0, budget - fixedCost);
         var share = Math.Max(0, contentBudget / messages.Count);
-        return messages.Select(message => message with
+        return messages.Select(message =>
         {
-            Content = message.Continuation is null ? TrimContent(message.Content, share) : message.Content
+            var content = message.Continuation is null ? TrimContent(message.Content, share) : message.Content;
+            return content == message.Content ? message : message with { Content = content };
         }).ToArray();
     }
 
@@ -114,6 +132,7 @@ internal static class ModelContextWindowBuilder
     private static int EstimateMetadata(ModelMessage message) =>
         32 + (message.ToolCallId?.Length ?? 0) + (message.ToolName?.Length ?? 0)
         + (message.Continuation is { } continuation ? continuation.CharacterCount + message.Content.Length : 0)
+        + (message.Images.IsDefaultOrEmpty ? 0 : message.Images.Sum(static image => image.ContextCharacterCost))
         + (message.ToolCalls?.Sum(static call =>
             call.CallId.Length + call.Name.Length + call.Arguments.GetRawText().Length
             + (call.ProviderCallId?.Length ?? 0) + 32) ?? 0);

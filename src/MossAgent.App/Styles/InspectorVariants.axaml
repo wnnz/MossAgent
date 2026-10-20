@@ -111,7 +111,7 @@
     <Setter Property="Data" Value="{StaticResource UiIconCheck}" />
     <Setter Property="Stroke" Value="{DynamicResource StatusSuccessBrush}" />
   </Style>
-  <Style Selector=".app-audit-execution-row.cancelled ui|AppIcon.audit-outcome-icon, .app-audit-execution-row.denied ui|AppIcon.audit-outcome-icon">
+  <Style Selector=".app-audit-execution-row.cancelled ui|AppIcon.audit-outcome-icon, .app-audit-execution-row.denied ui|AppIcon.audit-outcome-icon, .app-audit-execution-row.interrupted ui|AppIcon.audit-outcome-icon">
     <Setter Property="Stroke" Value="{DynamicResource StatusWarningBrush}" />
   </Style>
   <Style Selector="ListBox.audit-history-list">

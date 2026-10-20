@@ -17,6 +17,7 @@ public sealed class ToolExecutor(
         ToolExecutionContext context,
         CancellationToken cancellationToken)
     {
+        if (context.WorkspaceGuard is not null) context = context with { AuthorizedRoots = context.AuthorizedRoots.ToArray() };
         ReportProgress(request, context, ToolExecutionPhase.Validating);
         registry.TryGet(request.ToolName, out var tool);
         var executionId = await StartAuditAsync(
@@ -46,6 +47,12 @@ public sealed class ToolExecutor(
             var capabilityResult = ToolResult.Failure(
                 context.ToolsEnabled ? "当前审批策略不允许此工具所需的能力。" : ToolExecutionText.Get("ProjectlessToolsDenied"), "capability_denied");
             return await CompleteAuditAsync(executionId, false, capabilityResult, context, request);
+        }
+
+        if (!context.IsToolAllowed(tool.Descriptor.Name))
+        {
+            return await CompleteAuditAsync(executionId, false,
+                ToolResult.Failure(ToolExecutionText.Get("TaskToolScopeDenied"), "tool_scope_denied"), context, request);
         }
 
         var preflightResult = await ValidateBeforeApprovalAsync(
@@ -93,15 +100,18 @@ public sealed class ToolExecutor(
         ToolExecutionContext context,
         CancellationToken cancellationToken)
     {
-        if (tool is not IToolRequestPrevalidator prevalidator)
-        {
-            return null;
-        }
+        var workspaceResult = await ToolWorkspaceValidation.ValidateAsync(context, cancellationToken, _timeProvider);
+        if (workspaceResult is not null)
+            return await CompleteAuditAsync(executionId, false, workspaceResult, context, request);
+
+        var asyncResult = await ToolAsyncRequestValidation.ValidateAsync(tool, request, context, cancellationToken, _timeProvider);
+        if (asyncResult is not null)
+            return await CompleteAuditAsync(executionId, false, asyncResult, context, request);
 
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            prevalidator.ValidateRequest(request, context);
+            if (tool is IToolRequestPrevalidator prevalidator) prevalidator.ValidateRequest(request, context);
             return null;
         }
         catch (OperationCanceledException)
@@ -134,6 +144,15 @@ public sealed class ToolExecutor(
         try
         {
             timeout.Token.ThrowIfCancellationRequested();
+            var workspaceResult = await ToolWorkspaceValidation.ValidateAsync(context, timeout.Token, _timeProvider);
+            if (timeout.IsCancellationRequested) return InterruptedResult(cancellationToken.IsCancellationRequested);
+            if (workspaceResult is not null) return workspaceResult;
+            if (tool is IToolRequestAsyncPrevalidator)
+            {
+                var asyncResult = await ToolAsyncRequestValidation.ValidateAsync(tool, request, context, timeout.Token, _timeProvider);
+                if (timeout.IsCancellationRequested || HasDeadlineElapsed(started, duration)) return InterruptedResult(cancellationToken.IsCancellationRequested);
+                if (asyncResult is not null) return asyncResult;
+            }
             ReportProgress(request, context, ToolExecutionPhase.Executing);
             timeout.Token.ThrowIfCancellationRequested();
             if (HasDeadlineElapsed(started, duration)) return InterruptedResult(false);

@@ -40,8 +40,8 @@ public sealed partial class AppAuditExecutionRow : AppUserControl
 
     private void UpdateState()
     {
-        foreach (var kind in new[] { "success", "pending", "cancelled", "denied", "failed" })
-            Classes.Set(kind, OutcomeKind == kind || kind == "failed" && OutcomeKind is not ("success" or "pending" or "cancelled" or "denied"));
+        foreach (var kind in new[] { "success", "pending", "interrupted", "cancelled", "denied", "failed" })
+            Classes.Set(kind, OutcomeKind == kind || kind == "failed" && OutcomeKind is not ("success" or "pending" or "interrupted" or "cancelled" or "denied"));
         SetAndRaise(HasDetailProperty, ref _hasDetail, !string.IsNullOrWhiteSpace(Detail));
     }
 }

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Title" xml:space="preserve"><value>源代码账号</value></data>
+  <data name="Description" xml:space="preserve"><value>管理独立的 GitHub 令牌连接。验证身份不会授予仓库或本地文件访问权限。</value></data>
+  <data name="Refresh" xml:space="preserve"><value>刷新列表</value></data>
+  <data name="Add" xml:space="preserve"><value>连接账号</value></data>
+  <data name="Edit" xml:space="preserve"><value>编辑</value></data>
+  <data name="Verify" xml:space="preserve"><value>刷新身份</value></data>
+  <data name="Empty" xml:space="preserve"><value>尚未连接源代码账号</value></data>
+  <data name="EmptyDescription" xml:space="preserve"><value>使用 GitHub 个人访问令牌连接，再到 Pull Request 页面明确授权仓库并读取 PR。OAuth 和完整审阅流程尚未实现。</value></data>
+  <data name="DialogTitle" xml:space="preserve"><value>配置 GitHub 账号</value></data>
+  <data name="Close" xml:space="preserve"><value>关闭账号配置</value></data>
+  <data name="Name" xml:space="preserve"><value>连接名称</value></data>
+  <data name="Endpoint" xml:space="preserve"><value>GitHub API 地址</value></data>
+  <data name="EndpointHint" xml:space="preserve"><value>GitHub.com 使用 https://api.github.com/；企业服务器使用 HTTPS 地址及 /api/v3/。仅向此服务器发送令牌，不跟随重定向。</value></data>
+  <data name="Token" xml:space="preserve"><value>个人访问令牌</value></data>
+  <data name="SecretNotice" xml:space="preserve"><value>令牌按当前产品策略以明文保存在本地数据库，请保护数据目录。不会读取已有 Git、CLI 或浏览器账号。</value></data>
+  <data name="Proxy" xml:space="preserve"><value>网络代理</value></data>
+  <data name="Enabled" xml:space="preserve"><value>启用连接</value></data>
+  <data name="Save" xml:space="preserve"><value>保存连接</value></data>
+  <data name="Delete" xml:space="preserve"><value>删除连接</value></data>
+  <data name="Cancel" xml:space="preserve"><value>取消</value></data>
+  <data name="Direct" xml:space="preserve"><value>直连</value></data>
+  <data name="UnavailableProxy" xml:space="preserve"><value>不可用的代理（请重新选择）</value></data>
+  <data name="Unverified" xml:space="preserve"><value>尚未验证身份</value></data>
+  <data name="Disabled" xml:space="preserve"><value>已停用</value></data>
+  <data name="Verified" xml:space="preserve"><value>已验证：@{0}</value></data>
+  <data name="Saved" xml:space="preserve"><value>连接已保存，请刷新身份以验证令牌。尚未授予仓库访问权限。</value></data>
+  <data name="PreviousSaved" xml:space="preserve"><value>上一版连接已保存，当前表单修改尚未保存。</value></data>
+  <data name="Deleted" xml:space="preserve"><value>连接已删除。</value></data>
+  <data name="Loaded" xml:space="preserve"><value>列表已刷新；身份需单独请求服务器验证。</value></data>
+  <data name="Working" xml:space="preserve"><value>正在处理，请稍候…</value></data>
+  <data name="InvalidDraft" xml:space="preserve"><value>请检查名称、HTTPS API 地址和令牌格式；令牌不能为空或包含空白。</value></data>
+  <data name="OperationFailed" xml:space="preserve"><value>操作未完成，请检查数据目录和连接配置，刷新后重试。</value></data>
+  <data name="Cancelled" xml:space="preserve"><value>操作已取消，写入可能已完成；请刷新列表确认。</value></data>
+  <data name="AccountUnavailable" xml:space="preserve"><value>连接已停用或删除，请刷新列表。</value></data>
+  <data name="AccountChanged" xml:space="preserve"><value>连接已被修改，请刷新列表并重新打开配置后重试。</value></data>
+  <data name="ProxyUnavailable" xml:space="preserve"><value>代理不可用；请选择启用的代理或明确改为直连，不会自动回退。</value></data>
+  <data name="InvalidCredential" xml:space="preserve"><value>令牌验证失败，请检查令牌是否有效或已过期。</value></data>
+  <data name="Forbidden" xml:space="preserve"><value>服务器拒绝访问，请检查账号权限或组织 SSO 要求。</value></data>
+  <data name="RateLimited" xml:space="preserve"><value>服务器限制了请求频率，请稍后手动重试。</value></data>
+  <data name="RedirectDenied" xml:space="preserve"><value>服务器返回重定向，已停止请求以保护令牌；请核对 API 地址。</value></data>
+  <data name="InvalidResponse" xml:space="preserve"><value>服务器身份响应无效或超出大小限制，请核对 API 地址。</value></data>
+  <data name="ServiceUnavailable" xml:space="preserve"><value>服务器暂时不可用，请稍后手动重试。</value></data>
+  <data name="TransportFailure" xml:space="preserve"><value>连接失败，请检查网络、代理、HTTPS 证书和 API 地址。</value></data>
+  <data name="TimedOut" xml:space="preserve"><value>操作超时，请检查连接后手动重试。</value></data>
+</root>

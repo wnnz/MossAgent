@@ -17,13 +17,17 @@ public sealed class TaskFailureNoticeLayoutTests : IAsyncLifetime
     public ValueTask DisposeAsync() => _session.DisposeAsync();
 
     [Theory]
-    [InlineData(false, 320)]
-    [InlineData(true, 320)]
-    [InlineData(false, 640)]
-    [InlineData(true, 640)]
-    public Task FailureNotice_WrapsInsideAvailableWidthAndUpdatesHint(bool dark, int width) => _session.Dispatch(() =>
+    [InlineData(false, 320, TaskFailureReason.StreamLineLimit)]
+    [InlineData(true, 320, TaskFailureReason.StreamLineLimit)]
+    [InlineData(false, 640, TaskFailureReason.StreamLineLimit)]
+    [InlineData(true, 640, TaskFailureReason.StreamLineLimit)]
+    [InlineData(false, 320, TaskFailureReason.ModelContextCapacity)]
+    [InlineData(true, 320, TaskFailureReason.ModelContextCapacity)]
+    [InlineData(false, 640, TaskFailureReason.ModelContextCapacity)]
+    [InlineData(true, 640, TaskFailureReason.ModelContextCapacity)]
+    public Task FailureNotice_WrapsInsideAvailableWidthAndUpdatesHint(bool dark, int width, TaskFailureReason reason) => _session.Dispatch(() =>
     {
-        var hint = WorkspaceFailureText.Get(TaskFailureReason.StreamLineLimit);
+        var hint = WorkspaceFailureText.Get(reason);
         var notice = new AppTaskFailureNotice { Hint = hint + " " + hint };
         var window = new AppWindow
         {

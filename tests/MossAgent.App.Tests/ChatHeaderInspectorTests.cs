@@ -180,7 +180,7 @@ public sealed class ChatHeaderInspectorTests : IAsyncLifetime
         Assert.Null(toggle.Attribute("Background"));
     }
 
-    private Task WithWindow(Action<MainWindow, MainWindowViewModel> action, bool running = false) => _session.Dispatch<Task>(async () =>
+    private Task WithWindow(Action<MainWindow, MainWindowViewModel> action, bool running = false) => _session.DispatchAsync(async () =>
     {
         var root = Directory.CreateTempSubdirectory("MossAgent-header-tests-").FullName;
         try
@@ -204,7 +204,7 @@ public sealed class ChatHeaderInspectorTests : IAsyncLifetime
             finally { window.Close(); }
         }
         finally { SqliteTestPool.Clear(root); await DeleteRootAsync(root).ConfigureAwait(false); }
-    }, TestContext.Current.CancellationToken).Unwrap();
+    }, TestContext.Current.CancellationToken);
 
     private static void AddRunningTask(IServiceProvider services, ProjectProfile project, AgentTask task)
     {

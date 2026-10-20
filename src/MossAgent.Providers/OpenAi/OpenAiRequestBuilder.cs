@@ -9,12 +9,13 @@ internal static class OpenAiRequestBuilder
 {
     public static string Build(ModelRequest request, ProviderToolNameMap toolNames)
     {
+        var images = new ModelImageRequestValidation(request.Model.SupportsImages);
         var root = new JsonObject
         {
             ["model"] = request.Model.ModelId,
             ["stream"] = true,
             ["max_output_tokens"] = request.Model.MaximumOutputTokens,
-            ["input"] = BuildMessages(request, toolNames),
+            ["input"] = BuildMessages(request, toolNames, ref images),
             ["tools"] = BuildTools(request, toolNames)
         };
 
@@ -36,16 +37,18 @@ internal static class OpenAiRequestBuilder
         }
 
         AdvancedParameterMerger.Merge(root, request.Model.AdvancedParametersJson, request.Provider.Protocol);
-        return root.ToJsonString();
+        return ModelRequestJson.Serialize(root, images.ContainsImages);
     }
 
     private static JsonArray BuildMessages(
         ModelRequest request,
-        ProviderToolNameMap toolNames)
+        ProviderToolNameMap toolNames,
+        ref ModelImageRequestValidation images)
     {
         var messages = new JsonArray();
         foreach (var message in request.Messages)
         {
+            images.Include(message);
             if (message.Role == ModelRole.Assistant && message.ToolCalls is { Count: > 0 })
             {
                 foreach (var call in message.ToolCalls)
@@ -69,12 +72,12 @@ internal static class OpenAiRequestBuilder
                     ["output"] = message.Content
                 });
             }
-            else if (!string.IsNullOrEmpty(message.Content))
+            else if (!string.IsNullOrEmpty(message.Content) || !message.Images.IsDefaultOrEmpty)
             {
                 messages.Add(new JsonObject
                 {
                     ["role"] = message.Role == ModelRole.ToolObservation ? "user" : message.Role.ToString().ToLowerInvariant(),
-                    ["content"] = message.Content
+                    ["content"] = ModelImageContentBuilder.Responses(message)
                 });
             }
         }

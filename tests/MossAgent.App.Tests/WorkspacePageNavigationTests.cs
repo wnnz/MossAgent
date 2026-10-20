@@ -29,7 +29,10 @@ public sealed class WorkspacePageNavigationTests : IAsyncLifetime
         _session.DispatchAsync(async () =>
         {
             await using var fixture = await WorkspaceModelSelectionFixture.CreateAsync();
+            var newConversationDraft = fixture.Workspace.ComposerText;
             var task = await SelectTaskAsync(fixture);
+            await fixture.Workspace.Drafts.LoadCurrentAsync();
+            fixture.Workspace.ComposerText = "现有对话中尚未发送的独立草稿";
             await OpenAutomationsAsync(fixture);
             var draft = fixture.Workspace.ComposerText;
             var window = new MainWindow
@@ -60,7 +63,12 @@ public sealed class WorkspacePageNavigationTests : IAsyncLifetime
                 Assert.False(fixture.Main.Pages.IsAutomationsOpen);
                 Assert.False(fixture.Main.Pages.Automations!.History.IsVisible);
                 Assert.Equal(action == "new" ? (Guid?)null : task.Id, fixture.Workspace.Catalog.SelectedTask?.Id);
-                Assert.Equal(draft, fixture.Workspace.ComposerText);
+                Assert.Equal(action == "new" ? newConversationDraft : draft, fixture.Workspace.ComposerText);
+                if (action == "new")
+                {
+                    fixture.Workspace.Catalog.SelectTaskCommand.Execute(task);
+                    Assert.Equal(draft, fixture.Workspace.ComposerText);
+                }
                 Assert.Empty(fixture.Server.Requests);
             }
             finally { window.Close(); }

@@ -29,7 +29,8 @@ public sealed class ComposerSendStateComponentTests : IAsyncLifetime
         await workspace.LoadAsync();
         workspace.ComposerText = "保留失败后的草稿。";
         workspace.Attachments.Items.Add(new WorkspaceAttachmentViewModel(new WorkspaceAttachmentContent(
-            Path.Combine(workspace.Catalog.SelectedProject!.PrimaryDirectory, "next.txt"), "next.txt", "fixture text", 12), _ => { }));
+            Path.Combine(workspace.Catalog.SelectedProject!.PrimaryDirectory, "next.txt"), "next.txt", "fixture text", 12), _ => { },
+            authorizationStamp: WorkspaceAttachmentAuthorization.Create(workspace.Catalog.SelectedProject)));
         var composer = new WorkspaceComposerView { DataContext = workspace };
         var window = new AppWindow
         {

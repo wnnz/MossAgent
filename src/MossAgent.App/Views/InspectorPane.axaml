@@ -115,7 +115,7 @@
       <Grid IsVisible="{Binding Workspace.Catalog.SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}">
 
       <!-- 3. 审查 (Diff) 详情全高度视图 -->
-      <Grid RowDefinitions="Auto,150,Auto,*" Classes="inspector-content" IsVisible="{Binding IsInspectorDiff}">
+      <Grid RowDefinitions="Auto,150,Auto,Auto,Auto,*" Classes="inspector-content" IsVisible="{Binding IsInspectorDiff}">
         <Grid ColumnDefinitions="*,Auto,Auto" Margin="2,0,2,8">
           <StackPanel VerticalAlignment="Center">
             <ui:AppText Classes="type-12 weight-semibold" Text="{x:Static text:InspectorText.DiffReviewTitle}" />
@@ -154,9 +154,14 @@
                             CommandParameter="{Binding Diff.SelectedFile.Path}" />
         </Grid>
 
-        <ui:AppEmptyState Grid.Row="3" Title="{Binding Diff.ContentStatus}" IsVisible="{Binding !Diff.HasContent}"
+        <views:GitIndexActionsView Grid.Row="3" DataContext="{Binding Diff.IndexActions}" />
+        <StackPanel Grid.Row="4" Spacing="4">
+          <views:GitCommitActionsView DataContext="{Binding Diff.Commit}" />
+          <views:GitPushActionsView DataContext="{Binding Diff.Push}" />
+        </StackPanel>
+        <ui:AppEmptyState Grid.Row="5" Title="{Binding Diff.ContentStatus}" IsVisible="{Binding !Diff.HasContent}"
                           IconData="{StaticResource UiIconDocument}" />
-        <ui:AppBorder Grid.Row="3" Classes="inspector-output-surface" Padding="6" IsVisible="{Binding Diff.HasContent}">
+        <ui:AppBorder Grid.Row="5" Classes="inspector-output-surface" Padding="6" IsVisible="{Binding Diff.HasContent}">
           <ui:AppCodePreview Code="{Binding Diff.Content}" FilePath="{Binding Diff.SelectedFile.Path}" IsDiff="True" />
         </ui:AppBorder>
       </Grid>
@@ -244,5 +249,9 @@
       </Grid>
     </Grid>
   </ui:AppBorder>
+  <views:GitCommitDialog DataContext="{Binding Diff.Commit}"
+                         IsVisible="{Binding $parent[views:InspectorPane].DataContext.IsRightPanelOpen}" />
+  <views:GitPushDialog DataContext="{Binding Diff.Push}"
+                       IsVisible="{Binding $parent[views:InspectorPane].DataContext.IsRightPanelOpen}" />
   </Grid>
 </ui:AppUserControl>

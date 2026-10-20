@@ -6,7 +6,8 @@ namespace MossAgent.Infrastructure.Persistence;
 
 internal sealed class SqliteWorkspaceWriter(SqliteConnectionFactory connections)
 {
-    public async Task SaveAsync(AgentTask task, IReadOnlyList<ConversationMessage> messages, CancellationToken cancellationToken)
+    public async Task SaveAsync(AgentTask task, IReadOnlyList<ConversationMessage> messages, CancellationToken cancellationToken,
+        Func<SqliteConnection, SqliteTransaction, CancellationToken, Task>? beforeCommit = null)
     {
         ArgumentNullException.ThrowIfNull(task);
         ArgumentNullException.ThrowIfNull(messages);
@@ -20,6 +21,7 @@ internal sealed class SqliteWorkspaceWriter(SqliteConnectionFactory connections)
         await WriteFailureAsync(connection, transaction, task, cancellationToken);
         foreach (var message in batch)
             await WriteMessageAsync(connection, transaction, message, cancellationToken);
+        if (beforeCommit is not null) await beforeCommit(connection, transaction, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
     }
 
@@ -27,10 +29,12 @@ internal sealed class SqliteWorkspaceWriter(SqliteConnectionFactory connections)
     {
         await using var connection = connections.Create();
         await connection.OpenAsync(cancellationToken);
-        await WriteMessageAsync(connection, null, message, cancellationToken);
+        await using var transaction = (SqliteTransaction)await connection.BeginTransactionAsync(cancellationToken);
+        await WriteMessageAsync(connection, transaction, message, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
     }
 
-    private static async Task WriteTaskAsync(SqliteConnection connection, SqliteTransaction transaction,
+    internal static async Task WriteTaskAsync(SqliteConnection connection, SqliteTransaction transaction,
         AgentTask task, CancellationToken cancellationToken)
     {
         await using var command = connection.CreateCommand();
@@ -54,7 +58,7 @@ internal sealed class SqliteWorkspaceWriter(SqliteConnectionFactory connections)
             throw new InvalidOperationException("A task cannot change its project scope.");
     }
 
-    private static async Task WriteFailureAsync(SqliteConnection connection, SqliteTransaction transaction,
+    internal static async Task WriteFailureAsync(SqliteConnection connection, SqliteTransaction transaction,
         AgentTask task, CancellationToken cancellationToken)
     {
         var reason = TaskFailureClassifier.Normalize(task.Status, task.FailureReason);
@@ -71,7 +75,7 @@ internal sealed class SqliteWorkspaceWriter(SqliteConnectionFactory connections)
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static async Task WriteMessageAsync(SqliteConnection connection, SqliteTransaction? transaction,
+    internal static async Task WriteMessageAsync(SqliteConnection connection, SqliteTransaction transaction,
         ConversationMessage message, CancellationToken cancellationToken)
     {
         await using var command = connection.CreateCommand();
@@ -87,5 +91,6 @@ internal sealed class SqliteWorkspaceWriter(SqliteConnectionFactory connections)
         command.Parameters.AddWithValue("$created", message.CreatedAt.ToString("O"));
         command.Parameters.AddWithValue("$tool", (object?)message.ToolCallId ?? DBNull.Value);
         await command.ExecuteNonQueryAsync(cancellationToken);
+        await SqliteConversationAttachments.WriteAsync(connection, transaction, message, cancellationToken);
     }
 }

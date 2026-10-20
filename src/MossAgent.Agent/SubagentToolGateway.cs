@@ -4,11 +4,12 @@ namespace MossAgent.Agent;
 
 internal sealed class SubagentToolGateway(
     IToolCatalog catalog,
-    IToolExecutor executor) : ISubagentToolGateway
+    IToolExecutor executor,
+    ToolExecutionContext? parentScope = null) : ISubagentToolGateway
 {
     public IReadOnlyList<ToolDescriptor> Descriptors =>
         catalog.Descriptors
-            .Where(static descriptor => !descriptor.Name.Equals(
+            .Where(descriptor => parentScope?.IsToolAllowed(descriptor.Name) != false && !descriptor.Name.Equals(
                 SubagentTool.ToolName, StringComparison.OrdinalIgnoreCase))
             .ToArray();
 
@@ -29,8 +30,16 @@ internal sealed class SubagentToolGateway(
         {
             ConversationContext = null,
             SubagentTools = null,
-            SubagentProgress = null
+            SubagentProgress = null,
+            SourceScope = parentScope?.SourceScope ?? context.SourceScope,
+            SourceReviewRevision = parentScope?.SourceReviewRevision ?? context.SourceReviewRevision,
+            ToolsEnabled = context.ToolsEnabled && parentScope?.ToolsEnabled != false,
+            AllowedToolNames = RestrictScope(context)
         };
         return executor.ExecuteAsync(request, childContext, cancellationToken);
     }
+
+    private IReadOnlySet<string>? RestrictScope(ToolExecutionContext context) => parentScope?.AllowedToolNames is { } allowed
+        ? context.AllowedToolNames is null ? allowed : allowed.Where(context.IsToolAllowed).ToHashSet(StringComparer.OrdinalIgnoreCase)
+        : context.AllowedToolNames;
 }

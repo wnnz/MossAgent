@@ -10,6 +10,19 @@
         <ui:AppButton Content="{Binding ForceExitLabel}" Command="{Binding ForceExitCommand}" />
       </StackPanel>
     </ui:AppSettingsDialog.Footer>
-    <ui:AppText Classes="settings-description" Text="{Binding Message}" TextWrapping="Wrap" />
+    <StackPanel Spacing="8">
+      <ui:AppText Classes="settings-description" Text="{Binding Message}" TextWrapping="Wrap" />
+      <StackPanel Spacing="8" IsVisible="{Binding HasError}">
+        <ui:AppText Classes="settings-description" Text="{Binding Drafts.Notice}"
+                    IsVisible="{Binding Drafts.HasNotice}" TextWrapping="Wrap" />
+        <ui:AppButton Content="{Binding Drafts.RetryLabel}" Command="{Binding Drafts.RetryCommand}"
+                      IsVisible="{Binding Drafts.HasNotice}" />
+        <ui:AppButton Content="{Binding Drafts.KeepLocalLabel}" Command="{Binding Drafts.KeepLocalCommand}"
+                      IsVisible="{Binding Drafts.HasConflicts}" />
+        <ui:AppButton Content="{Binding Drafts.RemoveUnavailableAttachmentsLabel}"
+                      Command="{Binding Drafts.RemoveUnavailableAttachmentsCommand}"
+                      IsVisible="{Binding Drafts.HasUnavailableAttachments}" />
+      </StackPanel>
+    </StackPanel>
   </ui:AppSettingsDialog>
 </ui:AppUserControl>

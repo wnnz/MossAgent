@@ -24,7 +24,7 @@ internal sealed class FileChangeDiffRunner(GitCommandRunner git)
                 ["-c", "core.quotepath=false", "-c", "core.safecrlf=false", "-c", "core.autocrlf=false", "--literal-pathspecs", "diff", "--no-index",
                  "--no-ext-diff", "--no-textconv", "--no-color", "--text", statistics ? "--numstat" : "--unified=3", "--",
                  Path.Combine(directory, "before.txt"), Path.Combine(directory, "after.txt")],
-                context with { MaximumOutputCharacters = limit }, cancellationToken, acceptDiffExitCode: true);
+                context with { MaximumOutputCharacters = limit }, cancellationToken, acceptExitCodeOne: true);
             if (!result.IsSuccess) throw new FileEditException("snapshot_review_failed", "ReviewChangeFailed");
             if ((result.Content?.Length ?? 0) >= limit) throw new FileEditException("snapshot_review_too_large", "ReviewChangeTooLarge");
             return result.Content ?? string.Empty;

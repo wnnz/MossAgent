@@ -119,10 +119,5 @@ internal static class ProviderUiWorkflowInput
         Assert.True(ReferenceEquals(answer, hit) || answer.IsVisualAncestorOf(hit));
     }
 
-    public static void Flush(MainWindow window)
-    {
-        Dispatcher.UIThread.RunJobs();
-        window.UpdateLayout();
-        Dispatcher.UIThread.RunJobs();
-    }
+    public static void Flush(MainWindow window) => HeadlessRenderedFrame.Flush(window);
 }

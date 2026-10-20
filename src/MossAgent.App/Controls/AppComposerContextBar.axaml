@@ -4,7 +4,7 @@
                    x:Class="MossAgent.App.Controls.AppComposerContextBar"
                    x:Name="Root" x:CompileBindings="False">
   <ui:AppBorder Classes="composer-context-surface">
-    <Grid x:Name="ContextLayout" Classes="composer-context-layout" ColumnDefinitions="Auto,*,Auto"
+    <Grid x:Name="ContextLayout" Classes="composer-context-layout" ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto"
           DataContext="{Binding #Root}">
       <ui:AppActionButton x:Name="ProjectButton" Classes="composer-context-button composer-project-button"
                           HorizontalAlignment="Stretch" IconData="{StaticResource UiIconFolder}"
@@ -18,10 +18,13 @@
           </ui:AppFlyout>
         </Button.Flyout>
       </ui:AppActionButton>
-      <ui:AppIconLabel Grid.Column="1" Classes="composer-context-label muted"
-                       IsVisible="{Binding Project, Converter={x:Static ObjectConverters.IsNotNull}}"
-                       IconData="{StaticResource UiIconBranch}" Label="{Binding BranchLabel}"
-                       ToolTip.Tip="{Binding BranchLabel}" />
+      <Grid x:Name="ContextDetails" Grid.Column="1" ColumnDefinitions="Auto,*" ColumnSpacing="4">
+        <ui:AppContentControl Content="{Binding #Root.EnvironmentPickerContent}" DataContext="{Binding #Root.DataContext}" />
+        <ui:AppIconLabel Grid.Column="1" Classes="composer-context-label muted"
+                         IsVisible="{Binding Project, Converter={x:Static ObjectConverters.IsNotNull}}"
+                         IconData="{StaticResource UiIconBranch}" Label="{Binding BranchLabel}"
+                         ToolTip.Tip="{Binding BranchLabel}" />
+      </Grid>
       <ui:AppActionButton x:Name="AgentButton" Grid.Column="2"
                           Classes="composer-context-button composer-agent-button"
                           HorizontalAlignment="Stretch" IconData="{StaticResource UiIconAssistant}"

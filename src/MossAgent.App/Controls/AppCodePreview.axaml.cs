@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -14,6 +15,10 @@ public sealed partial class AppCodePreview : AppUserControl
     public static readonly StyledProperty<bool> IsDiffProperty = AvaloniaProperty.Register<AppCodePreview, bool>(nameof(IsDiff));
     public static readonly StyledProperty<string> SearchQueryProperty = AvaloniaProperty.Register<AppCodePreview, string>(nameof(SearchQuery), string.Empty);
     public static readonly StyledProperty<int> SelectedLineProperty = AvaloniaProperty.Register<AppCodePreview, int>(nameof(SelectedLine), -1);
+    public static readonly StyledProperty<IReadOnlyList<CodePreviewAnnotation>> AnnotationsProperty =
+        AvaloniaProperty.Register<AppCodePreview, IReadOnlyList<CodePreviewAnnotation>>(nameof(Annotations), []);
+    public static readonly StyledProperty<CodePreviewAnnotationSelection?> AnnotationSelectionProperty =
+        AvaloniaProperty.Register<AppCodePreview, CodePreviewAnnotationSelection?>(nameof(AnnotationSelection));
     private readonly TranslateTransform _gutterTransform = new();
     private IReadOnlyList<CodePreviewLine> _rows = [];
     public AppCodePreview() { InitializeComponent(); Classes.Add("app-code-preview"); }
@@ -22,6 +27,8 @@ public sealed partial class AppCodePreview : AppUserControl
     public bool IsDiff { get => GetValue(IsDiffProperty); set => SetValue(IsDiffProperty, value); }
     public string SearchQuery { get => GetValue(SearchQueryProperty); set => SetValue(SearchQueryProperty, value); }
     public int SelectedLine { get => GetValue(SelectedLineProperty); set => SetValue(SelectedLineProperty, value); }
+    public IReadOnlyList<CodePreviewAnnotation> Annotations { get => GetValue(AnnotationsProperty); set => SetValue(AnnotationsProperty, value); }
+    public CodePreviewAnnotationSelection? AnnotationSelection { get => GetValue(AnnotationSelectionProperty); set => SetValue(AnnotationSelectionProperty, value); }
     public ITransform GutterTransform => _gutterTransform;
 
     private void HandleScrollChanged(object? sender, ScrollChangedEventArgs args) =>
@@ -38,8 +45,10 @@ public sealed partial class AppCodePreview : AppUserControl
             RowsHost.ItemsSource = _rows;
             Scroller.Offset = default;
             UpdateSearch();
+            UpdateAnnotations();
         }
         else if (change.Property == SearchQueryProperty || change.Property == SelectedLineProperty) UpdateSearch();
+        else if (change.Property == AnnotationsProperty || change.Property == AnnotationSelectionProperty) UpdateAnnotations();
     }
 
     private void UpdateSearch()
@@ -64,5 +73,28 @@ public sealed partial class AppCodePreview : AppUserControl
         RowsHost.GetVisualDescendants().OfType<AppBorder>()
             .FirstOrDefault(row => row.Classes.Contains("file-code-row") && ReferenceEquals(row.DataContext, current))?.BringIntoView();
         Scroller.Offset = new Vector(horizontal, Scroller.Offset.Y);
+    }
+
+    private void UpdateAnnotations()
+    {
+        foreach (var row in _rows)
+        {
+            row.Annotations = !IsDiff || row.IsHeader ? [] : (Annotations ?? []).Where(annotation =>
+                int.TryParse(annotation.Side == "LEFT" ? row.OldNumber : annotation.Side == "RIGHT" ? row.NewNumber : null, out var line)
+                && line == annotation.Line).ToArray();
+            row.IsAnnotationTarget = row.Annotations.Any(annotation => annotation.Id == AnnotationSelection?.Id);
+        }
+        if (AnnotationSelection is not null) Dispatcher.UIThread.Post(BringAnnotationIntoView, DispatcherPriority.Loaded);
+    }
+
+    private void BringAnnotationIntoView()
+    {
+        if (!IsEffectivelyVisible || AnnotationSelection is null) return;
+        var row = _rows.FirstOrDefault(item => item.IsAnnotationTarget);
+        if (row is null) return;
+        var card = RowsHost.GetVisualDescendants().OfType<AppCard>()
+            .FirstOrDefault(item => item.DataContext is CodePreviewAnnotation annotation && annotation.Id == AnnotationSelection.Id);
+        card?.BringIntoView();
+        card?.Focus(NavigationMethod.Tab);
     }
 }

@@ -17,7 +17,7 @@ public sealed class ApprovalTaskControlTests : IAsyncLifetime
     public ValueTask DisposeAsync() => _session.DisposeAsync();
 
     [Fact]
-    public Task Stop_RequiresCurrentRequestAndCancelsWithoutEditing() => _session.Dispatch(async () =>
+    public Task Stop_RequiresCurrentRequestAndCancelsWithoutEditing() => _session.DispatchAsync(async () =>
     {
         await using var fixture = await WorkspaceFileEditingFixture.CreateAsync(true, "beta\n");
         var controls = fixture.Services.GetRequiredService<MainWindowViewModel>().ApprovalTaskControl;
@@ -41,7 +41,7 @@ public sealed class ApprovalTaskControlTests : IAsyncLifetime
     }, TestContext.Current.CancellationToken);
 
     [Fact]
-    public Task OtherTaskApproval_CannotStopSelectedRunOrReuseItsGesture() => _session.Dispatch(async () =>
+    public Task OtherTaskApproval_CannotStopSelectedRunOrReuseItsGesture() => _session.DispatchAsync(async () =>
     {
         await using var fixture = await WorkspaceFileEditingFixture.CreateAsync(true, "beta\n");
         var controls = fixture.Services.GetRequiredService<MainWindowViewModel>().ApprovalTaskControl;
@@ -74,7 +74,7 @@ public sealed class ApprovalTaskControlTests : IAsyncLifetime
     }, TestContext.Current.CancellationToken);
 
     [Fact]
-    public Task Disposal_DetachesUpdatesAndDoesNotResolveApproval() => _session.Dispatch(async () =>
+    public Task Disposal_DetachesUpdatesAndDoesNotResolveApproval() => _session.DispatchAsync(async () =>
     {
         await using var fixture = await WorkspaceFileEditingFixture.CreateAsync(true, "beta\n");
         using var controls = new ApprovalTaskControlViewModel(fixture.Approval, fixture.Workspace);

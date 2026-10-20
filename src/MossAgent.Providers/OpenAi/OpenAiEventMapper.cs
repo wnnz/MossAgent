@@ -17,6 +17,9 @@ internal static class OpenAiEventMapper
             "response.function_call_arguments.done" => ReadToolCall(root, toolNames),
             "response.output_item.done" => ReadCompletedItem(root, toolNames),
             "response.completed" => new ModelCompleted(ReadResponseId(root)),
+            "response.failed" => ReadError(root.TryGetProperty("response", out var response)
+                && response.ValueKind == JsonValueKind.Object ? response : root),
+            "response.incomplete" => new ModelFailed("response_incomplete", ProviderText.Get("ResponseIncomplete")),
             "error" => ReadError(root),
             _ => null
         };
@@ -71,13 +74,13 @@ internal static class OpenAiEventMapper
 
     private static ModelEvent ReadError(JsonElement root)
     {
-        var error = root.TryGetProperty("error", out var value) ? value : root;
+        var error = root.TryGetProperty("error", out var value) && value.ValueKind == JsonValueKind.Object ? value : root;
         var code = error.TryGetProperty("code", out var codeValue)
-            ? codeValue.GetString() ?? "openai_error"
+            && codeValue.ValueKind == JsonValueKind.String ? codeValue.GetString() ?? "openai_error"
             : "openai_error";
         var message = error.TryGetProperty("message", out var messageValue)
-            ? messageValue.GetString() ?? "OpenAI 请求失败。"
-            : "OpenAI 请求失败。";
+            && messageValue.ValueKind == JsonValueKind.String ? messageValue.GetString() ?? ProviderText.Get("ResponseFailed")
+            : ProviderText.Get("ResponseFailed");
         return new ModelFailed(code, message);
     }
 }

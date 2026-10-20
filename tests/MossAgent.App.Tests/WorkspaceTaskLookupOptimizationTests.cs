@@ -4,6 +4,7 @@ using Xunit;
 
 namespace MossAgent.App.Tests;
 
+[Collection(AllocationMeasurementCollection.Name)]
 public sealed class WorkspaceTaskLookupOptimizationTests(ITestOutputHelper output)
 {
     [Fact]
@@ -42,11 +43,10 @@ public sealed class WorkspaceTaskLookupOptimizationTests(ITestOutputHelper outpu
         var taskId = missing ? Guid.NewGuid() : tasks[^1].Id;
         var valid = true;
         for (var index = 0; index < 1_000; index++) valid &= ReferenceEquals(missing ? null : tasks[^1], group.FindTask(taskId));
-        var before = GC.GetAllocatedBytesForCurrentThread();
-
-        for (var index = 0; index < 10_000; index++) valid &= ReferenceEquals(missing ? null : tasks[^1], group.FindTask(taskId));
-
-        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        var allocated = AllocationMeasurement.Measure(() =>
+        {
+            for (var index = 0; index < 10_000; index++) valid &= ReferenceEquals(missing ? null : tasks[^1], group.FindTask(taskId));
+        });
         output.WriteLine($"10,000 task lookups, missing={missing}: {allocated} bytes");
         Assert.True(valid);
         Assert.Equal(0, allocated);

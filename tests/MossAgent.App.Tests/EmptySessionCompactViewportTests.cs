@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
+using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -20,15 +21,19 @@ public sealed class EmptySessionCompactViewportTests : IAsyncLifetime
     public ValueTask DisposeAsync() => _session.DisposeAsync();
 
     [Theory]
-    [InlineData(526, 601, false, false)]
-    [InlineData(526, 601, true, false)]
-    [InlineData(526, 601, false, true)]
-    [InlineData(526, 601, true, true)]
-    [InlineData(980, 640, false, false)]
-    [InlineData(980, 640, true, false)]
-    [InlineData(980, 640, false, true)]
-    [InlineData(980, 640, true, true)]
-    public Task SavedEmptyConversation_HeadingDoesNotOverlapContextOrComposer(int width, int height, bool dark, bool longName) =>
+    [InlineData(526, 601, false, false, false)]
+    [InlineData(526, 601, true, false, false)]
+    [InlineData(526, 601, false, true, false)]
+    [InlineData(526, 601, true, true, false)]
+    [InlineData(980, 640, false, false, false)]
+    [InlineData(980, 640, true, false, false)]
+    [InlineData(980, 640, false, true, false)]
+    [InlineData(980, 640, true, true, false)]
+    [InlineData(526, 601, false, false, true)]
+    [InlineData(526, 601, true, false, true)]
+    [InlineData(526, 601, false, true, true)]
+    [InlineData(526, 601, true, true, true)]
+    public Task SavedEmptyConversation_HeadingDoesNotOverlapContextOrComposer(int width, int height, bool dark, bool longName, bool withAgent) =>
         _session.DispatchAsync(async () =>
         {
             await using var fixture = await WorkspaceModelSelectionFixture.CreateAsync();
@@ -43,6 +48,7 @@ public sealed class EmptySessionCompactViewportTests : IAsyncLifetime
             await fixture.Workspace.Catalog.ReloadAsync();
             fixture.Workspace.Catalog.SelectTaskCommand.Execute(task);
             fixture.Workspace.ComposerText = string.Empty;
+            if (withAgent) await AddAgentAsync(fixture);
             var window = new MainWindow
             {
                 DataContext = fixture.Main,
@@ -76,9 +82,34 @@ public sealed class EmptySessionCompactViewportTests : IAsyncLifetime
                 }
                 Assert.Empty(fixture.Server.Requests);
                 Assert.Equal(task.Id, fixture.Workspace.Catalog.SelectedTask?.Id);
+                SaveEvidence(window, $"empty-dark-{dark}-width-{width}-long-{longName}-agent-{withAgent}");
             }
             finally { window.Close(); }
         }, TestContext.Current.CancellationToken);
+
+    private static async Task AddAgentAsync(WorkspaceModelSelectionFixture fixture)
+    {
+        var agents = fixture.Main.Agents;
+        await agents.RefreshCommand.ExecuteAsync(null);
+        agents.NewCommand.Execute(null);
+        agents.Name = "有代理的窄窗口验收";
+        agents.SystemPrompt = "synthetic prompt";
+        agents.SelectedModel = Assert.Single(agents.Models, option => option.Model.Id == fixture.SelectedModel.Id);
+        await agents.SaveCommand.ExecuteAsync(null);
+        Assert.False(agents.HasStatusError, agents.Status);
+        await fixture.Workspace.ReloadAgentsAsync();
+        fixture.Workspace.SelectAgentCommand.Execute(Assert.Single(fixture.Workspace.Agents));
+    }
+
+    private static void SaveEvidence(AppWindow window, string name)
+    {
+        var directory = Environment.GetEnvironmentVariable("MOSSAGENT_PREPARATION_EVIDENCE_DIRECTORY");
+        if (string.IsNullOrWhiteSpace(directory)) return;
+        Directory.CreateDirectory(directory);
+        using var frame = window.CaptureRenderedFrame();
+        Assert.NotNull(frame);
+        frame.Save(Path.Combine(directory, $"{name}.png"), PngBitmapEncoderOptions.Default);
+    }
 
     private static void Settle(MainWindow window)
     {

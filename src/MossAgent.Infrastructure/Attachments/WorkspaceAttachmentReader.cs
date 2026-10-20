@@ -1,17 +1,35 @@
-using System.Text;
 using MossAgent.Application.Attachments;
 using MossAgent.Domain;
 
 namespace MossAgent.Infrastructure.Attachments;
 
-public sealed class WorkspaceAttachmentReader : IWorkspaceAttachmentReader
+public sealed class WorkspaceAttachmentReader(IAttachmentImageDecoder? images = null, TimeProvider? timeProvider = null)
+    : IWorkspaceAttachmentReader, ISelectedAttachmentReader
 {
-    private static readonly UTF8Encoding StrictUtf8 = new(false, true);
+    private readonly AttachmentContentCodec _codec = new(images);
 
-    public async Task<IReadOnlyList<WorkspaceAttachmentContent>> ReadAsync(
+    public Task<IReadOnlyList<WorkspaceAttachmentContent>> ReadAsync(
         ProjectProfile project,
         IReadOnlyList<string> paths,
         CancellationToken cancellationToken)
+        => ReadBoundedAsync(project with { AuthorizedDirectories = project.AuthorizedDirectories.ToArray() }, paths, cancellationToken);
+
+    public Task<IReadOnlyList<WorkspaceAttachmentContent>> ReadSelectedAsync(
+        IReadOnlyList<string> selectedAbsolutePaths, CancellationToken cancellationToken) =>
+        ReadBoundedAsync(null, selectedAbsolutePaths, cancellationToken);
+
+    private async Task<IReadOnlyList<WorkspaceAttachmentContent>> ReadBoundedAsync(ProjectProfile? project,
+        IReadOnlyList<string> paths, CancellationToken cancellationToken)
+    {
+        var selected = paths.ToArray();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30), timeProvider ?? TimeProvider.System);
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
+        var token = cancellation.Token;
+        return await Task.Run(() => ReadCoreAsync(project, selected, token), token).WaitAsync(token);
+    }
+
+    private async Task<IReadOnlyList<WorkspaceAttachmentContent>> ReadCoreAsync(ProjectProfile? project,
+        IReadOnlyList<string> paths, CancellationToken cancellationToken)
     {
         if (paths.Count > WorkspaceAttachmentLimits.MaximumFiles)
         {
@@ -19,7 +37,7 @@ public sealed class WorkspaceAttachmentReader : IWorkspaceAttachmentReader
                 $"每次最多附加 {WorkspaceAttachmentLimits.MaximumFiles} 个文件。");
         }
 
-        var roots = project.AuthorizedDirectories
+        var roots = project is null ? null : project.AuthorizedDirectories
             .Append(project.PrimaryDirectory)
             .Select(Path.GetFullPath)
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -29,22 +47,29 @@ public sealed class WorkspaceAttachmentReader : IWorkspaceAttachmentReader
         {
             cancellationToken.ThrowIfCancellationRequested();
             results.Add(await ReadOneAsync(path, roots, cancellationToken));
+            if (results.Where(item => item.Image is not null).Sum(item => item.ByteCount) > AttachmentImage.MaximumTotalByteCount)
+                throw new AttachmentImageValidationException(AttachmentImageFailure.SizeLimit);
         }
 
         return results;
     }
 
-    private static async Task<WorkspaceAttachmentContent> ReadOneAsync(
+    private async Task<WorkspaceAttachmentContent> ReadOneAsync(
         string path,
-        IReadOnlyList<string> roots,
+        IReadOnlyList<string>? roots,
         CancellationToken cancellationToken)
     {
+        if (roots is null && (!Path.IsPathFullyQualified(path) || OperatingSystem.IsWindows()
+            && (path.StartsWith(@"\\.\", StringComparison.OrdinalIgnoreCase)
+                || path.StartsWith(@"\\?\GLOBALROOT", StringComparison.OrdinalIgnoreCase)
+                || path[(Path.GetPathRoot(path)?.Length ?? 0)..].Contains(':'))))
+            throw new UnauthorizedAccessException("Selected attachment paths must be absolute.");
         var fullPath = Path.GetFullPath(path);
-        var root = roots
+        var root = roots?
             .Where(candidate => IsWithin(fullPath, candidate))
             .OrderByDescending(static candidate => candidate.Length)
-            .FirstOrDefault()
-            ?? throw new UnauthorizedAccessException("附件必须位于项目授权目录中。");
+            .FirstOrDefault();
+        if (roots is not null && root is null) throw new UnauthorizedAccessException("附件必须位于项目授权目录中。");
         RejectLinkEscape(fullPath, roots);
         if (!File.Exists(fullPath))
         {
@@ -54,31 +79,31 @@ public sealed class WorkspaceAttachmentReader : IWorkspaceAttachmentReader
         await using var stream = new FileStream(
             fullPath, FileMode.Open, FileAccess.Read, FileShare.Read,
             16 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
-        if (stream.Length > WorkspaceAttachmentLimits.MaximumBytesPerFile)
+        var bytes = await ReadBytesAsync(stream, fullPath, cancellationToken);
+        RejectLinkEscape(fullPath, roots);
+        var displayPath = root is null ? Path.GetFileName(fullPath) : BuildDisplayPath(root, fullPath);
+        try { return await _codec.DecodeAsync(fullPath, displayPath, bytes, null, cancellationToken); }
+        catch (InvalidDataException exception) { throw new InvalidOperationException("不支持二进制文本附件。", exception); }
+        catch (System.Text.DecoderFallbackException exception) { throw new InvalidOperationException("附件不是有效的 UTF-8 文本文件。", exception); }
+    }
+
+    private static async Task<byte[]> ReadBytesAsync(FileStream stream, string path, CancellationToken cancellationToken)
+    {
+        var prefix = new byte[(int)Math.Min(12, stream.Length)];
+        await stream.ReadExactlyAsync(prefix, cancellationToken);
+        var image = AttachmentImage.DetectMediaType(prefix) is not null || AttachmentContentCodec.IsImagePath(path);
+        var limit = image ? AttachmentImage.MaximumByteCount : WorkspaceAttachmentLimits.MaximumBytesPerFile;
+        if (stream.Length > limit)
         {
+            if (image) throw new AttachmentImageValidationException(AttachmentImageFailure.SizeLimit);
             throw new InvalidOperationException(
                 $"附件不能超过 {WorkspaceAttachmentLimits.MaximumBytesPerFile / 1024} KiB。");
         }
-
-        var bytes = new byte[stream.Length];
-        await stream.ReadExactlyAsync(bytes, cancellationToken);
-        if (bytes.Contains((byte)0))
-        {
-            throw new InvalidOperationException("不支持二进制附件。");
-        }
-
-        string content;
-        try
-        {
-            content = StrictUtf8.GetString(bytes);
-        }
-        catch (DecoderFallbackException exception)
-        {
-            throw new InvalidOperationException("附件不是有效的 UTF-8 文本文件。", exception);
-        }
-
-        return new WorkspaceAttachmentContent(
-            fullPath, BuildDisplayPath(root, fullPath), content, bytes.LongLength);
+        var bytes = new byte[checked((int)stream.Length)];
+        prefix.CopyTo(bytes, 0);
+        await stream.ReadExactlyAsync(bytes.AsMemory(prefix.Length), cancellationToken);
+        if (stream.Length != bytes.Length) throw new IOException("Attachment changed while reading.");
+        return bytes;
     }
 
     private static string BuildDisplayPath(string root, string path)
@@ -99,7 +124,7 @@ public sealed class WorkspaceAttachmentReader : IWorkspaceAttachmentReader
                 StringComparison.OrdinalIgnoreCase);
     }
 
-    private static void RejectLinkEscape(string candidate, IReadOnlyList<string> roots)
+    private static void RejectLinkEscape(string candidate, IReadOnlyList<string>? roots)
     {
         var current = candidate;
         while (!string.IsNullOrWhiteSpace(current))
@@ -107,10 +132,12 @@ public sealed class WorkspaceAttachmentReader : IWorkspaceAttachmentReader
             FileSystemInfo? info = File.Exists(current)
                 ? new FileInfo(current)
                 : Directory.Exists(current) ? new DirectoryInfo(current) : null;
+            if (roots is null && info is not null && (info.LinkTarget is not null || (info.Attributes & FileAttributes.ReparsePoint) != 0))
+                throw new UnauthorizedAccessException("Selected attachments cannot traverse links or reparse points.");
             if (info?.LinkTarget is not null)
             {
                 var target = info.ResolveLinkTarget(true)?.FullName;
-                if (target is not null && !roots.Any(root => IsWithin(target, root)))
+                if (target is not null && (roots is null || !roots.Any(root => IsWithin(target, root))))
                 {
                     throw new UnauthorizedAccessException("附件路径中的链接指向授权目录之外。");
                 }

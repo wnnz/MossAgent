@@ -47,11 +47,14 @@ public sealed class ComposerPreparationKeyboardTests : IAsyncLifetime
                 Assert.True(workspace.IsRunning);
                 Assert.False(workspace.HasActiveRun);
                 Assert.False(input.IsSubmissionEnabled);
-                Assert.False(workspace.PrimaryActionCommand.CanExecute(null));
+                Assert.True(workspace.PrimaryActionCommand.CanExecute(null));
+                Assert.Equal("取消发送准备", workspace.PrimaryActionLabel);
                 workspace.ComposerText = "下一条尚未发送的草稿。";
                 Flush(window);
                 Press(window, modifiers);
                 Assert.Equal("下一条尚未发送的草稿。", workspace.ComposerText);
+                Assert.True(workspace.IsRunning);
+                Assert.Equal("取消发送准备", workspace.PrimaryActionLabel);
                 Assert.Empty(fixture.Server.Requests);
                 release.TrySetResult();
                 await fixture.WaitUntilAsync(() => fixture.Server.Requests.Count == 1 && !workspace.IsRunning);

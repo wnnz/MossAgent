@@ -74,11 +74,5 @@ public sealed class ApprovalDecisionExecutionTests : IAsyncLifetime
         finally { window.Close(); }
     }, TestContext.Current.CancellationToken);
 
-    private static void Flush(MainWindow window)
-    {
-        Dispatcher.UIThread.RunJobs();
-        window.UpdateLayout();
-        Dispatcher.UIThread.RunJobs();
-        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
-    }
+    private static void Flush(MainWindow window) => HeadlessRenderedFrame.Flush(window);
 }

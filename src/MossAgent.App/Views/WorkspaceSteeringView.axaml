@@ -1,0 +1,42 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Views.WorkspaceSteeringView" x:CompileBindings="False">
+  <ui:AppCard Classes="card-inset-composer" IsVisible="{Binding IsVisible}">
+    <StackPanel Spacing="6">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6" IsVisible="{Binding HasActiveRun}">
+        <ui:AppText Classes="type-11 text-muted" Text="{Binding Hint}" TextWrapping="Wrap" VerticalAlignment="Center" />
+        <ui:AppButton x:Name="SteerButton" Grid.Column="1" Classes="ghost menu-option" Content="{Binding SubmitLabel}"
+                      Command="{Binding SubmitCommand}" VerticalAlignment="Top" />
+      </Grid>
+      <ui:AppText Classes="type-11 status-warning" Text="{Binding Notice}" IsVisible="{Binding HasNotice}" TextWrapping="Wrap" />
+      <StackPanel DataContext="{Binding History}" Spacing="4" IsVisible="{Binding IsVisible}">
+        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+          <ui:AppText Classes="type-11" Text="{Binding Title}" VerticalAlignment="Center" />
+          <ui:AppButton Grid.Column="1" Classes="ghost menu-option" Content="{Binding RefreshLabel}" Command="{Binding RefreshCommand}" />
+          <ui:AppButton Grid.Column="2" Classes="ghost menu-option" Content="{Binding EarlierLabel}" Command="{Binding EarlierCommand}"
+                        IsVisible="{Binding HasEarlier}" />
+        </Grid>
+        <ui:AppText Classes="type-11 status-warning" Text="{Binding Notice}" IsVisible="{Binding HasNotice}" TextWrapping="Wrap" />
+        <ui:AppScrollViewer Classes="steering-history" HorizontalScrollBarVisibility="Disabled">
+          <ui:AppItemsControl ItemsSource="{Binding Items}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <ui:AppExpander IsExpanded="{Binding IsExpanded, Mode=TwoWay}" HorizontalContentAlignment="Stretch">
+                  <ui:AppExpander.Header>
+                    <StackPanel Spacing="3">
+                      <ui:AppText Classes="type-10-5 text-muted" Text="{Binding Status}" TextWrapping="Wrap" />
+                      <ui:AppText Classes="type-11" Text="{Binding Preview}" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
+                      <ui:AppText Classes="type-10-5 text-muted" Text="{Binding AcceptedAt}" />
+                    </StackPanel>
+                  </ui:AppExpander.Header>
+                  <ui:AppSelectableText Classes="type-11" Text="{Binding Text}" TextWrapping="Wrap" />
+                </ui:AppExpander>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ui:AppItemsControl>
+        </ui:AppScrollViewer>
+      </StackPanel>
+    </StackPanel>
+  </ui:AppCard>
+</ui:AppUserControl>

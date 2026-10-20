@@ -41,7 +41,7 @@
                 </MultiBinding>
                 <MultiBinding Converter="{x:Static BoolConverters.And}">
                   <Binding Path="!IsSettingsOpen" />
-                  <Binding Path="!Pages.IsAutomationsOpen" />
+                  <Binding Path="Pages.IsConversationOpen" />
                   <Binding Path="#WorkspaceNavigation.IsNavigationVisible" />
                 </MultiBinding>
               </MultiBinding>
@@ -62,7 +62,7 @@
             <ui:AppIconButton.IsVisible>
               <MultiBinding Converter="{x:Static BoolConverters.And}">
                 <MultiBinding Converter="{x:Static BoolConverters.Or}">
-                  <Binding Path="!Pages.IsAutomationsOpen" />
+                  <Binding Path="Pages.IsConversationOpen" />
                   <Binding Path="IsSettingsOpen" />
                 </MultiBinding>
                 <MultiBinding Converter="{x:Static BoolConverters.Or}">
@@ -163,6 +163,8 @@
       <ui:AppNavigationRail Grid.Column="0"
                             NewConversationCommand="{Binding Pages.NewConversationCommand}"
                             AutomationsCommand="{Binding Pages.OpenAutomationsCommand}"
+                            PullRequestsCommand="{Binding Pages.PullRequestsNavigationCommand}"
+                            IsPullRequestsSelected="{Binding Pages.IsPullRequestsOpen}"
                             IsAutomationsSelected="{Binding Pages.IsAutomationsOpen}"
                             InspectorCommand="{Binding SelectInspectorTabCommand}"
                             ToggleInspectorCommand="{Binding ToggleRightPanelCommand}"
@@ -176,6 +178,8 @@
                     Classes="window-content-frame">
       <ui:AppBorder Classes="window-content-clip">
       <ui:AppBorder Margin="0" Classes="workspace-main-surface" ClipToBounds="True">
+      <ui:AppPageSwitcher IsSecondaryActive="{Binding Pages.IsPullRequestsOpen}">
+      <ui:AppPageSwitcher.PrimaryPage>
       <ui:AppPageSwitcher IsSecondaryActive="{Binding Pages.IsAutomationsOpen}">
       <ui:AppPageSwitcher.PrimaryPage>
       <ui:AppNavigationPanes x:Name="WorkspaceNavigation" IsNavigationOpen="{Binding IsLeftPanelOpen, Mode=TwoWay}">
@@ -196,6 +200,11 @@
       </ui:AppPageSwitcher.PrimaryPage>
       <ui:AppPageSwitcher.SecondaryPage>
         <views:AutomationsView DataContext="{Binding Pages.Automations}" />
+      </ui:AppPageSwitcher.SecondaryPage>
+      </ui:AppPageSwitcher>
+      </ui:AppPageSwitcher.PrimaryPage>
+      <ui:AppPageSwitcher.SecondaryPage>
+        <views:PullRequestsView DataContext="{Binding Pages.PullRequests}" />
       </ui:AppPageSwitcher.SecondaryPage>
       </ui:AppPageSwitcher>
       </ui:AppBorder>

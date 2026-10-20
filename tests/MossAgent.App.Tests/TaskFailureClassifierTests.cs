@@ -1,6 +1,7 @@
 using System.Net.Http;
 using MossAgent.App.ViewModels;
 using MossAgent.Application.Agent;
+using MossAgent.Application.Models;
 using MossAgent.Domain;
 using Xunit;
 
@@ -22,6 +23,8 @@ public sealed class TaskFailureClassifierTests
     [InlineData("provider_blocked", TaskFailureReason.ProviderBlocked)]
     [InlineData("output_limit", TaskFailureReason.ProviderOutputLimit)]
     [InlineData("unsupported_reasoning_effort", TaskFailureReason.UnsupportedReasoningEffort)]
+    [InlineData("attachment_history_unavailable", TaskFailureReason.AttachmentHistory)]
+    [InlineData("model_context_capacity", TaskFailureReason.ModelContextCapacity)]
     [InlineData("turn_limit", TaskFailureReason.TurnLimit)]
     [InlineData("provider_connection", TaskFailureReason.ProviderConnection)]
     [InlineData("provider_timeout", TaskFailureReason.ProviderTimeout)]
@@ -51,6 +54,8 @@ public sealed class TaskFailureClassifierTests
     [InlineData("proxy_authentication_failed: fixture-secret")]
     [InlineData("PROXY_AUTHENTICATION_FAILED")]
     [InlineData(" proxy_authentication_failed ")]
+    [InlineData("attachment_history_unavailable: synthetic-secret")]
+    [InlineData("model_context_capacity: synthetic-secret")]
     public void UnknownOrSpoofedCodes_NeverBecomeUserTextOrPersistedCodes(string? code)
     {
         Assert.Equal(TaskFailureReason.Unknown, TaskFailureClassifier.FromCode(code));
@@ -72,6 +77,7 @@ public sealed class TaskFailureClassifierTests
         Assert.Equal("provider_timeout", TaskFailureClassifier.CodeFromException(new TimeoutException("Bearer synthetic-secret")));
         Assert.Equal("provider_timeout", TaskFailureClassifier.CodeFromException(new OperationCanceledException("Bearer synthetic-secret")));
         Assert.Equal("run_failed", TaskFailureClassifier.CodeFromException(new InvalidOperationException("Bearer synthetic-secret")));
+        Assert.Equal("model_context_capacity", TaskFailureClassifier.CodeFromException(new PinnedModelContextException()));
     }
 
     [Fact]

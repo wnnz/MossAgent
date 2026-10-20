@@ -1,0 +1,10 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="using:MossAgent.App.Controls" xmlns:vm="using:MossAgent.App.ViewModels"
+                   xmlns:text="using:MossAgent.App.Resources" x:Class="MossAgent.App.Views.GitPushActionsView"
+                   x:DataType="vm:GitPushViewModel">
+  <StackPanel Spacing="4" IsVisible="{Binding HasContext}">
+    <ui:AppButton x:Name="OpenPushButton" Classes="compact" Content="{x:Static text:GitPushLabels.Open}"
+                  Command="{Binding OpenCommand}" HorizontalAlignment="Left" />
+    <ui:AppText Text="{Binding Status}" Classes="subtle type-10" TextWrapping="Wrap" IsVisible="{Binding !IsOpen}" />
+  </StackPanel>
+</ui:AppUserControl>

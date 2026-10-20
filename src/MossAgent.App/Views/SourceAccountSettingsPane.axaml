@@ -1,0 +1,74 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:labels="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Views.SourceAccountSettingsPane"
+                   x:CompileBindings="False">
+  <Grid>
+    <Grid Classes="settings-content-column" RowDefinitions="Auto,*">
+      <ui:AppSettingsPageHeader Classes="separated" Title="{x:Static labels:SourceAccountText.Title}"
+                                Description="{x:Static labels:SourceAccountText.Description}"
+                                Status="{Binding Status}" IsStatusError="{Binding HasStatusError}">
+        <ui:AppSettingsPageHeader.Actions>
+          <StackPanel Classes="settings-header-actions">
+            <ui:AppActionButton Label="{x:Static labels:SourceAccountText.Refresh}" IconData="{StaticResource UiIconRefresh}"
+                                Classes="ghost" Command="{Binding RefreshCommand}" />
+            <ui:AppActionButton Label="{x:Static labels:SourceAccountText.Add}" IconData="{StaticResource UiIconPlus}"
+                                Classes="primary" Command="{Binding OpenCreateFormCommand}" />
+          </StackPanel>
+        </ui:AppSettingsPageHeader.Actions>
+      </ui:AppSettingsPageHeader>
+      <ui:AppCard Grid.Row="1" Classes="card card-inset-list settings-catalog-card">
+        <Grid RowDefinitions="Auto,*">
+          <ui:AppEmptyState Classes="settings-empty" IsVisible="{Binding HasNoItems}"
+                            IconData="{StaticResource UiIconSources}"
+                            Title="{x:Static labels:SourceAccountText.Empty}"
+                            Description="{x:Static labels:SourceAccountText.EmptyDescription}" />
+          <ui:AppListBox Grid.Row="1" Classes="settings-catalog-list" ItemsSource="{Binding Items}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <ui:AppSettingsItemRow Title="{Binding Name}" Subtitle="{Binding Endpoint}" Metadata="{Binding Status}"
+                                      ActionTarget="{Binding}" Classes="endpoint"
+                                      PrimaryLabel="{x:Static labels:SourceAccountText.Verify}"
+                                      PrimaryCommand="{Binding $parent[UserControl].DataContext.VerifyCommand}"
+                                      SecondaryLabel="{x:Static labels:SourceAccountText.Edit}"
+                                      SecondaryCommand="{Binding $parent[UserControl].DataContext.OpenEditFormCommand}" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ui:AppListBox>
+        </Grid>
+      </ui:AppCard>
+    </Grid>
+    <ui:AppSettingsDialog IsOpen="{Binding Editor.IsOpen, Mode=OneWay}"
+                          Title="{x:Static labels:SourceAccountText.DialogTitle}"
+                          CloseLabel="{x:Static labels:SourceAccountText.Close}" CloseCommand="{Binding CloseFormCommand}">
+      <StackPanel Spacing="9">
+        <ui:AppText Text="{x:Static labels:SourceAccountText.Name}" Classes="muted type-12" />
+        <ui:AppInput Text="{Binding Editor.Name, Mode=TwoWay}" AutomationProperties.Name="{x:Static labels:SourceAccountText.Name}" />
+        <ui:AppText Text="{x:Static labels:SourceAccountText.Endpoint}" Classes="muted type-12" />
+        <ui:AppInput Text="{Binding Editor.Endpoint, Mode=TwoWay}" AutomationProperties.Name="{x:Static labels:SourceAccountText.Endpoint}" />
+        <ui:AppText Text="{x:Static labels:SourceAccountText.EndpointHint}" Classes="subtle type-11" TextWrapping="Wrap" />
+        <ui:AppText Text="{x:Static labels:SourceAccountText.Token}" Classes="muted type-12" />
+        <ui:AppInput Text="{Binding Editor.AccessToken, Mode=TwoWay}" PasswordChar="●"
+                     AutomationProperties.Name="{x:Static labels:SourceAccountText.Token}" />
+        <ui:AppText Text="{x:Static labels:SourceAccountText.SecretNotice}" Classes="subtle type-11" TextWrapping="Wrap" />
+        <ui:AppText Text="{x:Static labels:SourceAccountText.Proxy}" Classes="muted type-12" />
+        <ui:AppComboBox ItemsSource="{Binding Editor.Proxies}" SelectedItem="{Binding Editor.SelectedProxy, Mode=TwoWay}"
+                        HorizontalAlignment="Stretch" AutomationProperties.Name="{x:Static labels:SourceAccountText.Proxy}">
+          <ComboBox.ItemTemplate><DataTemplate><ui:AppText Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate>
+        </ui:AppComboBox>
+        <ui:AppCheckBox Content="{x:Static labels:SourceAccountText.Enabled}" IsChecked="{Binding Editor.IsEnabled, Mode=TwoWay}" />
+      </StackPanel>
+      <ui:AppSettingsDialog.Footer>
+        <StackPanel Spacing="4">
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+            <ui:AppButton Classes="primary" Content="{x:Static labels:SourceAccountText.Save}" Command="{Binding SaveCommand}" />
+            <ui:AppButton Grid.Column="1" Classes="danger" Content="{x:Static labels:SourceAccountText.Delete}" Command="{Binding DeleteCommand}" />
+            <ui:AppButton Grid.Column="2" Content="{x:Static labels:SourceAccountText.Cancel}" Command="{Binding CloseFormCommand}" />
+          </Grid>
+          <ui:AppText Text="{Binding Status}" Classes="subtle type-11" Classes.status-error="{Binding HasStatusError}" TextWrapping="Wrap" />
+        </StackPanel>
+      </ui:AppSettingsDialog.Footer>
+    </ui:AppSettingsDialog>
+  </Grid>
+</ui:AppUserControl>

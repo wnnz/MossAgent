@@ -82,6 +82,7 @@ public sealed class ModelPickerViewModelTests
             await repository.SaveModelAsync(model, CancellationToken.None);
 
             var workspace = services.GetRequiredService<WorkspaceViewModel>();
+            await workspace.LoadAsync();
             var picker = workspace.ModelPicker;
             AiProvider? selectedProvider = null;
             ModelProfile? selectedModel = null;
@@ -134,6 +135,7 @@ public sealed class ModelPickerViewModelTests
             await repository.SaveModelAsync(model, CancellationToken.None);
 
             var mainWindow = services.GetRequiredService<MainWindowViewModel>();
+            await mainWindow.Workspace.LoadAsync();
             await mainWindow.Models.RefreshProvidersCommand.ExecuteAsync(null);
             await mainWindow.Workspace.ModelPicker.ReloadAsync();
             Assert.Equal(model.Id, mainWindow.Workspace.SelectedModel?.Id);

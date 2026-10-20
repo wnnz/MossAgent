@@ -4,7 +4,8 @@ public sealed record GitChangedFileViewModel(
     string Path,
     string Status,
     bool HasStagedChange,
-    bool HasUnstagedChange)
+    bool HasUnstagedChange,
+    string? OriginalPath = null)
 {
     public string StatusLabel => Status switch
     {

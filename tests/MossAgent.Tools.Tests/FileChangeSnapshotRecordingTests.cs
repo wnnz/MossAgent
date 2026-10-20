@@ -94,7 +94,7 @@ public sealed class FileChangeSnapshotRecordingTests
                 "\ud800", new UTF8Encoding(false, true), version, context, fixture.Token));
         else
         {
-            using var locked = FileSnapshotReader.Open(fixture.Path);
+            using var locked = new FileStream(fixture.Path, FileMode.Open, FileAccess.Read, FileShare.Read);
             await Assert.ThrowsAnyAsync<IOException>(() => fixture.Writer.WriteTextWithHistoryAsync(fixture.Path,
                 "failed update", new UTF8Encoding(false), version, context, fixture.Token));
         }
@@ -113,7 +113,7 @@ public sealed class FileChangeSnapshotRecordingTests
         await fixture.SeedAsync("original");
         var context = Context(fixture);
         var version = await fixture.SnapshotAsync();
-        using (var locked = FileSnapshotReader.Open(fixture.Path))
+        using (var locked = new FileStream(fixture.Path, FileMode.Open, FileAccess.Read, FileShare.Read))
             await Assert.ThrowsAnyAsync<IOException>(() => fixture.Writer.WriteTextWithHistoryAsync(fixture.Path,
                 "updated", Encoding.UTF8, version, context, fixture.Token));
         Assert.Equal("original", await fixture.ContentsAsync());

@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http;
 using MossAgent.Domain;
+using MossAgent.Application.Attachments;
+using MossAgent.Application.Models;
 
 namespace MossAgent.Application.Agent;
 
@@ -23,6 +25,8 @@ public static class TaskFailureClassifier
         "provider_blocked" => TaskFailureReason.ProviderBlocked,
         "output_limit" => TaskFailureReason.ProviderOutputLimit,
         "unsupported_reasoning_effort" => TaskFailureReason.UnsupportedReasoningEffort,
+        "attachment_history_unavailable" => TaskFailureReason.AttachmentHistory,
+        "model_context_capacity" => TaskFailureReason.ModelContextCapacity,
         _ => TaskFailureReason.Unknown
     };
 
@@ -30,6 +34,8 @@ public static class TaskFailureClassifier
 
     public static string CodeFromException(Exception exception) => exception switch
     {
+        ConversationAttachmentUnavailableException => "attachment_history_unavailable",
+        PinnedModelContextException => "model_context_capacity",
         HttpRequestException { StatusCode: HttpStatusCode.ProxyAuthenticationRequired } => "proxy_authentication_failed",
         HttpRequestException => "provider_connection",
         TimeoutException or OperationCanceledException => "provider_timeout",

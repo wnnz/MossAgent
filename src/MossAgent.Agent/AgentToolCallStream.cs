@@ -47,7 +47,7 @@ internal static class AgentToolCallStream
                 progress.Writer.TryComplete();
             }
         }
-        var execution = ExecuteWithProgressAsync();
+        var execution = Task.Run(ExecuteWithProgressAsync, CancellationToken.None);
         try
         {
             await foreach (var item in progress.Reader.ReadAllAsync(CancellationToken.None)) yield return item;

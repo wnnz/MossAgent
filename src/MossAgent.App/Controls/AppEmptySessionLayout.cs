@@ -14,6 +14,7 @@ public sealed class AppEmptySessionLayout : Panel
 
     protected override Size MeasureOverride(Size availableSize)
     {
+        Classes.Set("short-viewport", availableSize.Height < 140);
         var width = 0d;
         var height = 0d;
         foreach (var child in Children)
@@ -22,7 +23,7 @@ public sealed class AppEmptySessionLayout : Panel
             width = Math.Max(width, child.DesiredSize.Width);
             height += child.DesiredSize.Height;
         }
-        return new Size(width, height);
+        return new Size(width, Math.Min(height, availableSize.Height));
     }
 
     protected override Size ArrangeOverride(Size finalSize)

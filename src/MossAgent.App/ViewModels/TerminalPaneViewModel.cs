@@ -163,7 +163,7 @@ public sealed class TerminalPaneViewModel : ObservableObject, IDisposable
         "tool_cancelled" => "TerminalCancelled",
         "tool_timeout" => "TerminalTimedOut",
         "approval_denied" or "capability_denied" => "TerminalPermissionDenied",
-        "path_denied" => "TerminalPathDenied",
+        "path_denied" or "workspace_denied" => "TerminalPathDenied",
         _ => "TerminalFailed"
     };
 

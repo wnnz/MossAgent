@@ -39,7 +39,9 @@ public sealed class AnthropicMessagesProvider(IProviderHttpClientFactory clients
             if (parser.Parse(document.RootElement) is { } modelEvent)
             {
                 yield return ProviderErrorSanitizer.Sanitize(modelEvent, request.Provider);
+                if (modelEvent is ModelFailed or ModelCompleted) yield break;
             }
         }
+        yield return new ModelFailed("incomplete_response", ProviderText.Get("StreamIncompleteResponse"));
     }
 }

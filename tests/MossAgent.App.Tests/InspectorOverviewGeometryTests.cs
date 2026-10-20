@@ -94,7 +94,7 @@ public sealed class InspectorOverviewGeometryTests : IAsyncLifetime
         Assert.False(card.IsEffectivelyVisible);
     });
 
-    private Task WithWindow(Action<MainWindow, MainWindowViewModel> action) => _session.Dispatch<Task>(async () =>
+    private Task WithWindow(Action<MainWindow, MainWindowViewModel> action) => _session.DispatchAsync(async () =>
     {
         var root = Directory.CreateTempSubdirectory("MossAgent-overview-geometry-").FullName;
         try
@@ -118,7 +118,7 @@ public sealed class InspectorOverviewGeometryTests : IAsyncLifetime
             finally { window.Close(); }
         }
         finally { SqliteTestPool.Clear(root); Directory.Delete(root, recursive: true); }
-    }, TestContext.Current.CancellationToken).Unwrap();
+    }, TestContext.Current.CancellationToken);
 
     private static AppCard Card(MainWindow window) => Assert.Single(window.GetVisualDescendants().OfType<AppCard>(),
         control => control.Classes.Contains("inspector-surface"));

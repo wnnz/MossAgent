@@ -9,11 +9,12 @@ internal static class GeminiRequestBuilder
 {
     public static string Build(ModelRequest request, ProviderToolNameMap toolNames)
     {
+        var images = new ModelImageRequestValidation(request.Model.SupportsImages);
         if (!ModelReasoningPolicy.Supports(request.Provider.Protocol, request.Model.ModelId, request.Model.ReasoningEffort))
             throw new ArgumentException("Unsupported Gemini reasoning effort.", nameof(request));
         var root = new JsonObject
         {
-            ["contents"] = BuildContents(request, toolNames),
+            ["contents"] = BuildContents(request, toolNames, ref images),
             ["tools"] = BuildTools(request, toolNames),
             ["generationConfig"] = BuildGenerationConfig(request)
         };
@@ -29,18 +30,21 @@ internal static class GeminiRequestBuilder
         }
 
         AdvancedParameterMerger.Merge(root, request.Model.AdvancedParametersJson, request.Provider.Protocol);
-        return root.ToJsonString();
+        return ModelRequestJson.Serialize(root, images.ContainsImages);
     }
 
     private static JsonArray BuildContents(
         ModelRequest request,
-        ProviderToolNameMap toolNames)
+        ProviderToolNameMap toolNames,
+        ref ModelImageRequestValidation images)
     {
         var result = new JsonArray();
         JsonArray? previousToolParts = null;
         ILookup<string, ModelToolCall>? toolCalls = null;
-        foreach (var message in request.Messages.Where(static item => item.Role != ModelRole.System))
+        foreach (var message in request.Messages)
         {
+            images.Include(message);
+            if (message.Role == ModelRole.System) continue;
             JsonArray parts;
             if (message.Role == ModelRole.Tool)
             {
@@ -94,6 +98,7 @@ internal static class GeminiRequestBuilder
             parts.Add(new JsonObject { ["text"] = message.Content });
         }
 
+        ModelImageContentBuilder.AppendGemini(parts, message);
         foreach (var call in message.Role == ModelRole.Assistant ? message.ToolCalls ?? [] : [])
         {
             var function = new JsonObject

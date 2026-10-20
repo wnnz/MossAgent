@@ -44,7 +44,9 @@ public sealed class OpenAiResponsesProvider(IProviderHttpClientFactory clients) 
             if (OpenAiEventMapper.Map(document.RootElement, toolNames) is { } modelEvent)
             {
                 yield return ProviderErrorSanitizer.Sanitize(modelEvent, request.Provider);
+                if (modelEvent is ModelFailed or ModelCompleted) yield break;
             }
         }
+        yield return new ModelFailed("incomplete_response", ProviderText.Get("StreamIncompleteResponse"));
     }
 }

@@ -7,7 +7,7 @@ using MossAgent.Tools.Abstractions;
 
 namespace MossAgent.App.ViewModels;
 
-public sealed class DiffPaneViewModel : ObservableObject, IDisposable
+public sealed class DiffPaneViewModel : ObservableObject, IDisposable, IAsyncDisposable
 {
     private readonly IToolExecutor _tools;
     private ToolExecutionContext? _context;
@@ -29,10 +29,16 @@ public sealed class DiffPaneViewModel : ObservableObject, IDisposable
     public DiffPaneViewModel(IToolExecutor tools)
     {
         _tools = tools;
+        IndexActions = new(tools, RefreshAsync);
+        Commit = new(tools, RefreshAsync);
+        Push = new(tools, RefreshAsync);
         RefreshCommand = new AsyncRelayCommand(RefreshAsync, () => HasTask && !IsLoading);
     }
 
     public IAsyncRelayCommand RefreshCommand { get; }
+    public GitIndexActionsViewModel IndexActions { get; }
+    public GitCommitViewModel Commit { get; }
+    public GitPushViewModel Push { get; }
     public ObservableCollection<GitChangedFileViewModel> Files { get; } = [];
     public bool HasTask => _context is not null && !_disposed;
     public bool HasFiles => Files.Count > 0;
@@ -51,13 +57,14 @@ public sealed class DiffPaneViewModel : ObservableObject, IDisposable
             if (ReferenceEquals(_selectedFile, value)) return;
             _selectedFile = value;
             OnPropertyChanged();
+            IndexActions.Select(value, IsStaged);
             _ = RefreshSelectedDiffAsync();
         }
     }
     public bool IsStaged
     {
         get => _isStaged;
-        set { if (SetProperty(ref _isStaged, value)) ApplyFilter(); }
+        set { if (SetProperty(ref _isStaged, value)) { IndexActions.Select(SelectedFile, value); ApplyFilter(); } }
     }
 
     public void Attach(ToolExecutionContext? context)
@@ -68,6 +75,9 @@ public sealed class DiffPaneViewModel : ObservableObject, IDisposable
         _scope.Dispose();
         _scope = new();
         _context = context;
+        IndexActions.Attach(context);
+        Commit.Attach(context);
+        Push.Attach(context);
         _hasSnapshot = false;
         Show(string.Empty);
         ContentStatus = InspectorText.Get("SelectFile");
@@ -180,10 +190,21 @@ public sealed class DiffPaneViewModel : ObservableObject, IDisposable
         if (_disposed) return;
         Attach(null);
         _disposed = true;
+        IndexActions.Dispose();
+        Commit.Dispose();
+        Push.Dispose();
         _scope.Cancel();
         _scope.Dispose();
         _diffCancellation?.Cancel();
         _diffCancellation?.Dispose();
         RefreshCommand.NotifyCanExecuteChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Dispose();
+        await IndexActions.DisposeAsync().ConfigureAwait(false);
+        await Commit.DisposeAsync().ConfigureAwait(false);
+        await Push.DisposeAsync().ConfigureAwait(false);
     }
 }

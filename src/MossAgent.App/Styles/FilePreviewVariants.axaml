@@ -189,4 +189,13 @@
     <Setter Property="FontSize" Value="12" /><Setter Property="LineHeight" Value="22" /><Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="TextWrapping" Value="NoWrap" /><Setter Property="Margin" Value="0,0,12,0" />
   </Style>
+  <Style Selector="ui|AppBorder.file-code-row.annotation-target, ui|AppBorder.file-code-row.annotation-target ui|AppBorder.file-code-gutter">
+    <Setter Property="Background" Value="{DynamicResource FileSearchCurrentBrush}" />
+  </Style>
+  <Style Selector="ui|AppCard.code-annotation-card">
+    <Setter Property="Margin" Value="0,4" />
+    <Setter Property="Width" Value="{ReflectionBinding $parent[ui:AppScrollViewer].Viewport.Width}" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="RenderTransform" Value="{ReflectionBinding $parent[ui:AppCodePreview].GutterTransform}" />
+  </Style>
 </Styles>

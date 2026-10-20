@@ -44,7 +44,7 @@ public sealed class CompactSurfaceRenderingTests : IAsyncLifetime
             window.SetRenderScaling(scale);
             window.UpdateLayout();
             Save(window, FormattableString.Invariant($"composer-{dark}-{width}-{scale}x"));
-            var surface = Assert.Single(view.GetVisualDescendants().OfType<AppCard>());
+            var surface = Assert.Single(view.GetVisualDescendants().OfType<AppCard>(), card => card.Classes.Contains("composer-surface"));
             var model = Assert.Single(view.GetVisualDescendants().OfType<AppActionButton>(), button => button.Classes.Contains("composer-model-picker"));
             var send = Assert.Single(view.GetVisualDescendants().OfType<AppIconButton>(), button => button.Classes.Contains("composer-send"));
             var policy = Assert.Single(view.GetVisualDescendants().OfType<AppApprovalPolicyButton>());
@@ -118,7 +118,7 @@ public sealed class CompactSurfaceRenderingTests : IAsyncLifetime
         {
             Assert.True(outside.Focus());
             window.UpdateLayout();
-            var surface = Assert.Single(view.GetVisualDescendants().OfType<AppCard>());
+            var surface = Assert.Single(view.GetVisualDescendants().OfType<AppCard>(), card => card.Classes.Contains("composer-surface"));
             var idle = Assert.IsAssignableFrom<ISolidColorBrush>(surface.BorderBrush).Color;
             var bounds = surface.Bounds;
             var thickness = surface.BorderThickness;
@@ -142,6 +142,7 @@ public sealed class CompactSurfaceRenderingTests : IAsyncLifetime
         RepositoryStatus = new { BranchLabel = "feature/interface-polish" },
         AgentPicker = new { CanChoose = false, HasCatalogNotice = false },
         Attachments = new { HasItems = false, Status = string.Empty, AddFilesCommand = new RelayCommand(() => { }) },
+        Queue = new { IsAvailable = false, IsVisible = false },
         ModelPicker = new
         {
             ComposerDisplayName = "OpenAI / GPT-5.4 Pro — extended context development model",

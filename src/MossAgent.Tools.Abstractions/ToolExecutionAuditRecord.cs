@@ -15,4 +15,5 @@ public sealed record ToolExecutionAuditRecord(
     bool? IsSuccess,
     string? ErrorCode,
     int? OutputLength,
-    int ArtifactCount);
+    int ArtifactCount,
+    DateTimeOffset? InterruptedAt = null);

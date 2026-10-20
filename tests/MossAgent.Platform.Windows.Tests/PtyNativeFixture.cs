@@ -41,7 +41,7 @@ internal sealed class PtyNativeFixture : IAsyncDisposable
     }
 
     public static string PublishPid(string name) =>
-        $"[IO.File]::WriteAllText('{name}.tmp', [string]$PID); [IO.File]::Move('{name}.tmp', '{name}', $true)";
+        $"[IO.File]::WriteAllText('{name}.tmp', [string]$PID); [IO.File]::Move('{name}.tmp', '{name}', $true); [IO.File]::WriteAllText('{name}.ready', '')";
 
     public async Task CreateChildScriptAsync()
     {
@@ -54,7 +54,7 @@ internal sealed class PtyNativeFixture : IAsyncDisposable
 
     public async Task<Process> BindAsync(string name)
     {
-        await WaitForFileAsync(name);
+        await WaitForFileAsync(name + ".ready");
         var pid = int.Parse(await File.ReadAllTextAsync(Path.Combine(Root, name), Token));
         var process = Process.GetProcessById(pid);
         _ = process.Handle;
@@ -67,6 +67,12 @@ internal sealed class PtyNativeFixture : IAsyncDisposable
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(Token);
         cancellation.CancelAfter(Deadline);
         while (!File.Exists(Path.Combine(Root, name))) await Task.Delay(25, cancellation.Token);
+    }
+
+    public async Task<string> ReadPublishedFileAsync(string name)
+    {
+        await WaitForFileAsync(name + ".ready");
+        return await File.ReadAllTextAsync(Path.Combine(Root, name), Token);
     }
 
     public static async Task AssertExitedAsync(Process process)

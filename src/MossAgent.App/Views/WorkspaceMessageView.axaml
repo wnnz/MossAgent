@@ -14,7 +14,8 @@
               <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
-              <DataTemplate><ui:AppAttachmentChip DisplayPath="{Binding DisplayPath}" SizeLabel="{Binding SizeLabel}" /></DataTemplate>
+              <DataTemplate><ui:AppAttachmentChip DisplayPath="{Binding DisplayPath}" SizeLabel="{Binding SizeLabel}"
+                                                 Thumbnail="{Binding Thumbnail}" /></DataTemplate>
             </ItemsControl.ItemTemplate>
           </ui:AppItemsControl>
           <ui:AppSelectableText Classes="content-font type-15 line-24" Text="{Binding Content}" TextWrapping="Wrap" />

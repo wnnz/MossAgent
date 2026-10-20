@@ -64,7 +64,9 @@ public sealed class PlaywrightCdpOwnershipBoundaryTests
         var error = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending);
 
         Assert.Equal(cancellation.Token, error.CancellationToken);
-        Assert.Single(await session.ListTabsAsync(token));
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => session.ListTabsAsync(token));
+        Assert.Equal(1, probe.RuntimeDisposeCount);
+        Assert.Equal(0, probe.ContextCloseCount);
         Assert.False(probe.Existing.IsClosed);
     }
 

@@ -14,6 +14,9 @@
                           Classes="navigation-rail-button" Label="{Binding AutomationsLabel}"
                           Command="{Binding AutomationsCommand}"
                           IconData="{DynamicResource UiIconClock}" />
+        <ui:AppIconButton x:Name="PullRequestsButton" DataContext="{Binding #Root}"
+                          Classes="navigation-rail-button" Label="{Binding PullRequestsLabel}"
+                          Command="{Binding PullRequestsCommand}" IconData="{DynamicResource UiIconBranch}" />
         <ui:AppIconButton x:Name="AuditButton" DataContext="{Binding #Root}"
                           Classes="navigation-rail-button" Label="{Binding AuditLabel}"
                           Command="{Binding InspectorCommand}" CommandParameter="audit"

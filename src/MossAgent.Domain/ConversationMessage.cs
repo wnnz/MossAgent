@@ -6,4 +6,5 @@ public sealed record ConversationMessage(
     MessageRole Role,
     string Content,
     DateTimeOffset CreatedAt,
-    string? ToolCallId = null);
+    string? ToolCallId = null,
+    IReadOnlyList<ConversationAttachment>? Attachments = null);

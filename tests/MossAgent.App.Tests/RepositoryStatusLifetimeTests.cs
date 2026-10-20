@@ -148,19 +148,40 @@ public sealed class RepositoryStatusLifetimeTests
     public async Task Refresh_UsesTheSelectedWorktreeAndRetainsNonGitSemantics(bool worktree)
     {
         using var probe = new RepositoryStatusProbe();
-        var status = new WorkspaceRepositoryStatusViewModel(probe);
+        var worktrees = new WorkspaceWorktreeProbe();
+        await using var status = new WorkspaceRepositoryStatusViewModel(probe, worktrees);
         var project = Project("project");
         var now = DateTimeOffset.UtcNow;
-        var task = new AgentTask(Guid.NewGuid(), project.Id, "synthetic", ApprovalPolicy.ReadOnly,
-            AgentTaskStatus.Completed, now, now, worktree ? Path.Combine(Path.GetTempPath(), "worktree") : null);
+        var taskId = Guid.NewGuid();
+        var path = worktree ? await worktrees.CreateAsync(project, taskId, TestContext.Current.CancellationToken) : null;
+        var task = new AgentTask(taskId, project.Id, "synthetic", ApprovalPolicy.ReadOnly,
+            AgentTaskStatus.Completed, now, now, path);
         var refresh = status.RefreshAsync(project, task);
         var read = Assert.Single(probe.Reads);
         Assert.Equal(task.WorktreePath ?? project.PrimaryDirectory, read.Directory);
         Assert.True(read.Token.CanBeCanceled);
         read.Completion.SetResult(null);
         await refresh;
-        Assert.Equal(worktree ? "worktree" : "project", status.DirectoryLabel);
+        Assert.Equal(worktree ? taskId.ToString("N") : "project", status.DirectoryLabel);
         Assert.Equal("非 Git 仓库", status.BranchLabel);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task UnavailableOrRejectingWorktreeValidationNeverStartsBranchDiscovery(bool validatorAvailable)
+    {
+        using var probe = new RepositoryStatusProbe();
+        await using var status = new WorkspaceRepositoryStatusViewModel(probe, validatorAvailable ? new WorkspaceWorktreeProbe() : null);
+        var project = Project("project");
+        var now = DateTimeOffset.UtcNow;
+        var task = new AgentTask(Guid.NewGuid(), project.Id, "synthetic", ApprovalPolicy.ReadOnly,
+            AgentTaskStatus.Completed, now, now, Path.Combine(Path.GetTempPath(), "unvalidated-worktree"));
+
+        await status.RefreshAsync(project, task);
+
+        Assert.Empty(probe.Reads);
+        Assert.Equal("Git 状态未知", status.BranchLabel);
     }
 
     [Fact]

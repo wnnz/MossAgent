@@ -24,17 +24,20 @@ internal static class GitStatusParser
             }
 
             var path = entry[3..];
+            string? originalPath = null;
             if (nullTerminated && IsRenameOrCopy(status) && index + 1 < entries.Length)
             {
-                index++;
+                originalPath = entries[++index];
             }
-            else if (!nullTerminated && path.Contains(" -> ", StringComparison.Ordinal))
+            else if (!nullTerminated && IsRenameOrCopy(status) && path.Contains(" -> ", StringComparison.Ordinal))
             {
-                path = path[(path.LastIndexOf(" -> ", StringComparison.Ordinal) + 4)..];
+                var separator = path.LastIndexOf(" -> ", StringComparison.Ordinal);
+                originalPath = path[..separator];
+                path = path[(separator + 4)..];
             }
 
             files.Add(new GitChangedFileViewModel(
-                path, status, HasStagedChange(status), HasUnstagedChange(status)));
+                path, status, HasStagedChange(status), HasUnstagedChange(status), originalPath));
         }
 
         return files.OrderBy(static file => file.Path, StringComparer.OrdinalIgnoreCase).ToArray();

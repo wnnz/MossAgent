@@ -1,0 +1,140 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   xmlns:views="clr-namespace:MossAgent.App.Views"
+                   x:Class="MossAgent.App.Views.PullRequestsView" x:CompileBindings="False">
+  <Grid>
+    <Grid Classes="automation-page-content" RowDefinitions="Auto,Auto,*" RowSpacing="12">
+      <ui:AppSettingsPageHeader Classes="compact" Title="{x:Static text:PullRequestText.Title}"
+                                Description="{x:Static text:PullRequestText.Description}">
+        <ui:AppSettingsPageHeader.Actions>
+          <StackPanel Classes="settings-header-actions">
+            <ui:AppActionButton Label="{x:Static text:PullRequestText.Refresh}" IconData="{StaticResource UiIconRefresh}" Command="{Binding RefreshCommand}" />
+            <ui:AppActionButton Label="{x:Static text:PullRequestText.Create}" IconData="{StaticResource UiIconPlus}" Command="{Binding CreateCommand}" Classes="primary" />
+          </StackPanel>
+        </ui:AppSettingsPageHeader.Actions>
+      </ui:AppSettingsPageHeader>
+      <StackPanel Grid.Row="1" Spacing="8">
+        <ui:AppText Text="{x:Static text:PullRequestText.Repository}" Classes="muted type-12" />
+        <ui:AppComboBox ItemsSource="{Binding Repositories}" SelectedItem="{Binding SelectedRepository, Mode=TwoWay}"
+                        IsEnabled="{Binding !IsBusy}" HorizontalAlignment="Stretch"
+                        AutomationProperties.Name="{x:Static text:PullRequestText.Repository}">
+          <ComboBox.ItemTemplate><DataTemplate><ui:AppText Text="{Binding Name}" TextTrimming="CharacterEllipsis" /></DataTemplate></ComboBox.ItemTemplate>
+        </ui:AppComboBox>
+        <WrapPanel>
+          <ui:AppButton Content="{x:Static text:PullRequestText.OpenLink}" Command="{Binding Link.ShowCommand}" Classes="ghost button-sm"
+                        AutomationProperties.Name="{x:Static text:PullRequestText.OpenLink}" />
+          <ui:AppButton Content="{x:Static text:PullRequestText.Load}" Command="{Binding LoadCommand}" Classes="ghost button-sm" />
+          <ui:AppButton Content="{x:Static text:PullRequestText.Revoke}" Command="{Binding RevokeCommand}" Classes="ghost button-sm" />
+          <ui:AppButton Content="{x:Static text:PullRequestText.Previous}" Command="{Binding PreviousCommand}" Classes="ghost button-sm" />
+          <ui:AppButton Content="{x:Static text:PullRequestText.Next}" Command="{Binding NextCommand}" Classes="ghost button-sm" />
+          <ui:AppButton Content="{x:Static text:PullRequestText.Cancel}" Command="{Binding CancelCommand}" Classes="ghost button-sm" IsVisible="{Binding IsBusy}" />
+        </WrapPanel>
+        <ui:AppText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap" />
+        <ui:AppText Text="{x:Static text:PullRequestText.Remaining}" Classes="type-11 subtle" TextWrapping="Wrap" />
+      </StackPanel>
+      <ui:AppEmptyState Grid.Row="2" IsVisible="{Binding IsEmpty}" IconData="{StaticResource UiIconBranch}"
+                        Title="{x:Static text:PullRequestText.Empty}" Description="{x:Static text:PullRequestText.EmptyHint}" />
+      <ui:AppResponsiveColumns Grid.Row="2" IsVisible="{Binding !IsEmpty}" Classes="review-layout">
+        <Grid RowDefinitions="*,Auto" RowSpacing="8" Classes="review-list-pane">
+          <ui:AppListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}" IsEnabled="{Binding !IsBusy}" Classes="thin-scrollbar">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Spacing="4">
+                  <ui:AppText Text="{Binding Title}" Classes="type-14 weight-semibold" TextWrapping="Wrap" />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <ui:AppText Text="{Binding Number, StringFormat='# {0}'}" Classes="type-12 muted" />
+                    <ui:AppText Text="{Binding Author}" Classes="type-12 muted" />
+                    <ui:AppText Text="{Binding State}" Classes="type-12 muted" />
+                  </StackPanel>
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ui:AppListBox>
+          <ui:AppButton Grid.Row="1" Content="{x:Static text:PullRequestText.Detail}" Command="{Binding DetailCommand}" Classes="ghost button-sm" />
+        </Grid>
+        <ui:AppScrollViewer Classes="thin-scrollbar settings-page-scroll content-gutter" IsVisible="{Binding HasDetail}">
+          <StackPanel Spacing="8">
+            <ui:AppButton Content="{x:Static text:PullRequestText.BackToList}" Command="{Binding BackCommand}" Classes="ghost button-sm review-back-to-list" />
+            <ui:AppText Text="{Binding Detail.Title}" Classes="type-14 weight-semibold" TextWrapping="Wrap" />
+            <ui:AppText Text="{x:Static text:PullRequestText.BaseRevision}" Classes="type-12 muted" />
+            <ui:AppSelectableText Text="{Binding Detail.BaseRevision}" TextWrapping="Wrap" />
+            <ui:AppText Text="{x:Static text:PullRequestText.HeadRevision}" Classes="type-12 muted" />
+            <ui:AppSelectableText Text="{Binding Detail.HeadRevision}" TextWrapping="Wrap" />
+            <ui:AppSelectableText Text="{Binding Detail.Body}" TextWrapping="Wrap" />
+            <StackPanel Spacing="8" IsVisible="{Binding HasChat}">
+              <ui:AppText Text="{x:Static text:PullRequestText.ChatHint}" Classes="type-11 subtle" TextWrapping="Wrap" />
+              <WrapPanel>
+                <ui:AppButton Content="{x:Static text:PullRequestText.OpenChat}" Command="{Binding Chat.OpenCommand}" Classes="ghost button-sm" />
+                <ui:AppButton Content="{x:Static text:PullRequestText.InvestigateChecks}" Command="{Binding Chat.InvestigateCommand}" Classes="ghost button-sm" />
+              </WrapPanel>
+              <ui:AppText Text="{x:Static text:PullRequestText.ReadOnlyChatHint}" Classes="type-11 subtle" TextWrapping="Wrap" />
+              <ui:AppButton Content="{x:Static text:PullRequestText.OpenReadOnlyChat}" Command="{Binding Chat.ReadOnlyCommand}" Classes="ghost button-sm" HorizontalAlignment="Left"
+                            AutomationProperties.Name="{x:Static text:PullRequestText.OpenReadOnlyChat}"
+                            AutomationProperties.HelpText="{x:Static text:PullRequestText.ReadOnlyChatHint}" />
+              <ui:AppText Text="{Binding Chat.Status}" Classes="type-12 muted" TextWrapping="Wrap" />
+            </StackPanel>
+            <views:PullRequestInspectionView DataContext="{Binding Inspection}" />
+          </StackPanel>
+        </ui:AppScrollViewer>
+      </ui:AppResponsiveColumns>
+    </Grid>
+    <ui:AppSettingsDialog IsOpen="{Binding IsEditorOpen}" Title="{x:Static text:PullRequestText.Create}"
+                          CloseLabel="{x:Static text:PullRequestText.Close}" CloseCommand="{Binding CloseEditorCommand}">
+      <StackPanel Spacing="8" IsEnabled="{Binding !IsBusy}">
+        <ui:AppText Text="{x:Static text:PullRequestText.Account}" Classes="type-12 muted" />
+        <ui:AppComboBox ItemsSource="{Binding Accounts}" SelectedItem="{Binding SelectedAccount, Mode=TwoWay}" HorizontalAlignment="Stretch"
+                        AutomationProperties.Name="{x:Static text:PullRequestText.Account}">
+          <ComboBox.ItemTemplate><DataTemplate><ui:AppText Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate>
+        </ui:AppComboBox>
+        <ui:AppText Text="{x:Static text:PullRequestText.Owner}" Classes="type-12 muted" />
+        <ui:AppInput Text="{Binding Owner, Mode=TwoWay}" AutomationProperties.Name="{x:Static text:PullRequestText.Owner}" />
+        <ui:AppText Text="{x:Static text:PullRequestText.Name}" Classes="type-12 muted" />
+        <ui:AppInput Text="{Binding Repository, Mode=TwoWay}" AutomationProperties.Name="{x:Static text:PullRequestText.Name}" />
+        <ui:AppText Text="{x:Static text:PullRequestText.GrantHint}" Classes="type-12 muted" TextWrapping="Wrap" />
+      </StackPanel>
+      <ui:AppSettingsDialog.Footer>
+        <StackPanel Spacing="8">
+          <ui:AppText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap" />
+          <ui:AppButton Content="{x:Static text:PullRequestText.Create}" Command="{Binding SaveGrantCommand}" Classes="primary" />
+        </StackPanel>
+      </ui:AppSettingsDialog.Footer>
+    </ui:AppSettingsDialog>
+    <ui:AppSettingsDialog DataContext="{Binding Link}" IsOpen="{Binding IsOpen}" Title="{x:Static text:PullRequestText.OpenLink}"
+                          CloseLabel="{x:Static text:PullRequestText.Close}" CloseCommand="{Binding CloseCommand}">
+      <StackPanel Spacing="8">
+        <StackPanel Spacing="8" IsEnabled="{Binding !IsBusy}">
+          <ui:AppText Text="{x:Static text:PullRequestText.Account}" Classes="type-12 muted" />
+          <ui:AppComboBox ItemsSource="{Binding Accounts}" SelectedItem="{Binding Account, Mode=TwoWay}" HorizontalAlignment="Stretch"
+                          AutomationProperties.Name="{x:Static text:PullRequestText.Account}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Spacing="2">
+                  <ui:AppText Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                  <ui:AppText Text="{Binding Endpoint}" Classes="type-11 subtle" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ui:AppComboBox>
+          <ui:AppText Text="{x:Static text:PullRequestText.LinkUrl}" Classes="type-12 muted" />
+          <ui:AppInput Text="{Binding Url, Mode=TwoWay}" MaxLength="4096"
+                       AutomationProperties.Name="{x:Static text:PullRequestText.LinkUrl}"
+                       AutomationProperties.HelpText="{x:Static text:PullRequestText.LinkHint}" />
+        </StackPanel>
+        <ui:AppText Text="{x:Static text:PullRequestText.LinkHint}" Classes="type-12 muted" TextWrapping="Wrap" />
+        <ui:AppText Text="{x:Static text:PullRequestText.LinkGrantHint}" Classes="type-12 muted" TextWrapping="Wrap" />
+      </StackPanel>
+      <ui:AppSettingsDialog.Footer>
+        <StackPanel Spacing="8">
+          <ui:AppSelectableText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap"
+                                AutomationProperties.Name="{x:Static text:PullRequestText.LinkStatus}" />
+          <WrapPanel>
+            <ui:AppButton Content="{x:Static text:PullRequestText.OpenLink}" Command="{Binding OpenCommand}" Classes="primary" />
+            <ui:AppButton Content="{x:Static text:PullRequestText.Cancel}" Command="{Binding CancelCommand}" Classes="ghost" IsVisible="{Binding IsBusy}" />
+          </WrapPanel>
+        </StackPanel>
+      </ui:AppSettingsDialog.Footer>
+    </ui:AppSettingsDialog>
+  </Grid>
+</ui:AppUserControl>

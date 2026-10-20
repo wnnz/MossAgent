@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Title" xml:space="preserve"><value>Pull Request</value></data>
+  <data name="Description" xml:space="preserve"><value>只读查看明确授权的 GitHub 仓库。不克隆仓库、不授予本地工具权限、不发布评论。</value></data>
+  <data name="Refresh" xml:space="preserve"><value>刷新账号与授权</value></data>
+  <data name="Create" xml:space="preserve"><value>授权仓库</value></data>
+  <data name="Repository" xml:space="preserve"><value>仓库</value></data>
+  <data name="Load" xml:space="preserve"><value>获取开放 PR</value></data>
+  <data name="Revoke" xml:space="preserve"><value>撤销授权</value></data>
+  <data name="Previous" xml:space="preserve"><value>上一页</value></data>
+  <data name="Next" xml:space="preserve"><value>下一页</value></data>
+  <data name="Detail" xml:space="preserve"><value>读取选中 PR 详情</value></data>
+  <data name="Cancel" xml:space="preserve"><value>取消操作</value></data>
+  <data name="Close" xml:space="preserve"><value>取消</value></data>
+  <data name="Empty" xml:space="preserve"><value>暂无 PR 结果</value></data>
+  <data name="EmptyHint" xml:space="preserve"><value>先在设置连接源代码账号，再授权仓库并获取开放 PR。空结果不代表仓库不存在。</value></data>
+  <data name="Account" xml:space="preserve"><value>源代码账号</value></data>
+  <data name="Owner" xml:space="preserve"><value>仓库所有者（用户或组织）</value></data>
+  <data name="Name" xml:space="preserve"><value>仓库名称</value></data>
+  <data name="GrantHint" xml:space="preserve"><value>仅授予此账号下该仓库的 PR 读取权限，服务端仍会检查令牌权限。更换或编辑账号后需撤销旧授权并重新授权。</value></data>
+  <data name="MissingAccount" xml:space="preserve"><value>账号已删除</value></data>
+  <data name="Granted" xml:space="preserve"><value>已保存只读授权。点击“获取开放 PR”读取服务端数据。</value></data>
+  <data name="Revoked" xml:space="preserve"><value>已撤销仓库授权。</value></data>
+  <data name="Loading" xml:space="preserve"><value>正在处理，可取消…</value></data>
+  <data name="Loaded" xml:space="preserve"><value>读取完成。</value></data>
+  <data name="Cancelled" xml:space="preserve"><value>操作已取消或超时，可重新获取。</value></data>
+  <data name="Failed" xml:space="preserve"><value>操作失败，请检查源代码账号和网络后重试。</value></data>
+  <data name="InvalidRepository" xml:space="preserve"><value>请输入有效的所有者和仓库名称，不要输入 URL、路径或空白。</value></data>
+  <data name="ScopeDenied" xml:space="preserve"><value>授权已失效。请刷新账号与授权，撤销旧授权后重新授权仓库。</value></data>
+  <data name="AuthFailed" xml:space="preserve"><value>令牌认证失败，请在设置中更新源代码账号。</value></data>
+  <data name="Forbidden" xml:space="preserve"><value>账号无权读取此仓库，请检查令牌的仓库权限。</value></data>
+  <data name="RateLimited" xml:space="preserve"><value>服务端限制了请求频率，请稍后手动重试。</value></data>
+  <data name="NotFound" xml:space="preserve"><value>仓库或 PR 不存在，或当前令牌无权查看。</value></data>
+  <data name="InvalidResponse" xml:space="preserve"><value>服务端响应无效、过大或发生重定向，已停止读取。</value></data>
+  <data name="Remaining" xml:space="preserve"><value>支持授权仓库的 PR 列表、链接打开、文件补丁、讨论、行内评论、检查读取、固定快照审阅和独立只读查询对话；个人收件箱、审阅活动和远程写操作仍待实现。</value></data>
+  <data name="OpenLink" xml:space="preserve"><value>从 PR 链接打开</value></data>
+  <data name="LinkUrl" xml:space="preserve"><value>PR 链接（HTTPS）</value></data>
+  <data name="LinkStatus" xml:space="preserve"><value>PR 链接打开结果</value></data>
+  <data name="LinkHint" xml:space="preserve"><value>请选择账号并粘贴 GitHub 或对应企业实例的 PR 链接。支持详情、文件、提交和检查页链接；参数、锚点及提交页后缀仅用于识别 PR，不定位评论或固定历史版本，始终读取当前详情。</value></data>
+  <data name="LinkGrantHint" xml:space="preserve"><value>没有账号时，请先在设置连接源代码账号。只读取所选账号已明确授权的仓库，不自动授权、克隆或发送模型消息。未授权时，请取消后使用“授权仓库”；企业链接必须与已配置 API 端点的域名和端口一致。</value></data>
+  <data name="LinkLoaded" xml:space="preserve"><value>已打开链接中的 PR，列表仅显示此项（包括已关闭的 PR）。点击“获取开放 PR”可重新读取开放列表。</value></data>
+  <data name="InvalidPrUrl" xml:space="preserve"><value>请输入有效 HTTPS PR 链接，例如 https://github.com/owner/repo/pull/123；不支持账号密码、编码路径、路径跳转或其他页面。</value></data>
+  <data name="LinkAccountMismatch" xml:space="preserve"><value>链接与所选账号的源代码平台不一致，请选择对应域名和端口的账号或更正链接。</value></data>
+  <data name="LinkRepositoryNotGranted" xml:space="preserve"><value>此账号尚未授权链接中的仓库。请取消后使用“授权仓库”显式添加；链接不会自动授予权限。</value></data>
+  <data name="BaseRevision" xml:space="preserve"><value>目标提交</value></data>
+  <data name="HeadRevision" xml:space="preserve"><value>来源提交</value></data>
+  <data name="Inspection" xml:space="preserve"><value>审阅内容</value></data>
+  <data name="BackToList" xml:space="preserve"><value>返回 PR 列表</value></data>
+  <data name="PageLabel" xml:space="preserve"><value>第 {0} 页 · 本页 {1} 项</value></data>
+  <data name="ReadSection" xml:space="preserve"><value>获取此类内容</value></data>
+  <data name="Section_files" xml:space="preserve"><value>变更文件与补丁</value></data>
+  <data name="Section_conversation" xml:space="preserve"><value>PR 讨论</value></data>
+  <data name="Section_inline" xml:space="preserve"><value>行内评论</value></data>
+  <data name="Section_runs" xml:space="preserve"><value>检查运行</value></data>
+  <data name="Section_statuses" xml:space="preserve"><value>传统提交状态</value></data>
+  <data name="SectionEmpty" xml:space="preserve"><value>此页没有结果，可切换类别或重新获取。</value></data>
+  <data name="PageLimited" xml:space="preserve"><value>已达到此接口的分页上限，结果可能不完整。文件接口最多返回 3000 个文件，其他类别最多读取 1000 页。</value></data>
+  <data name="PatchAvailable" xml:space="preserve"><value>补丁行数与服务端增删计数一致；仅展示已获取的文件页。</value></data>
+  <data name="PatchMissing" xml:space="preserve"><value>服务端没有返回此文件补丁，可能是二进制、过大或被省略；不能视为没有变更。</value></data>
+  <data name="PatchTooLarge" xml:space="preserve"><value>补丁超过单文件或本页显示限额，仅保留文件信息；不能视为完整差异。</value></data>
+  <data name="PatchIncomplete" xml:space="preserve"><value>补丁区块或增删行数不完整，以下仅是部分内容，不代表完整差异。</value></data>
+  <data name="SelectFile" xml:space="preserve"><value>获取文件页后选择文件查看补丁。</value></data>
+  <data name="CommentHint" xml:space="preserve"><value>评论按服务端原文展示，不加载远程图片或链接。行内评论显示其路径、行号、侧别和提交；历史评论不自动定位到当前差异。</value></data>
+  <data name="VersionHint" xml:space="preserve"><value>每次读取前后核对已展示的目标和来源提交。若版本改变，请重新读取 PR 详情。评论与检查可能随时更新，这不是服务端原子快照。</value></data>
+  <data name="RevisionChanged" xml:space="preserve"><value>PR 提交版本已改变，旧审阅数据已清除。请重新读取选中 PR 的详情后再获取内容。</value></data>
+  <data name="OutputLimited" xml:space="preserve"><value>此页结果超过安全显示限额，未展示不完整 JSON；请在源代码平台查看完整内容。</value></data>
+  <data name="AnnotationHint" xml:space="preserve"><value>先获取文件页和行内评论页。仅将当前来源提交、精确文件路径及完整补丁中的有效行关联到差异；仅覆盖当前加载的两页。多行评论定位到结束行。</value></data>
+  <data name="LocateComment" xml:space="preserve"><value>定位到差异行</value></data>
+  <data name="CommentLineFormat" xml:space="preserve"><value>结束行 {0} · {1}</value></data>
+  <data name="CommentRangeFormat" xml:space="preserve"><value>行范围：{0} {1} → {2} {3}</value></data>
+  <data name="CommentNoLine" xml:space="preserve"><value>无当前行定位</value></data>
+  <data name="Location_Current" xml:space="preserve"><value>已校验当前提交、文件及差异行，可定位。</value></data>
+  <data name="Location_Historical" xml:space="preserve"><value>此评论属于历史提交，不定位到当前差异。</value></data>
+  <data name="Location_FileNotLoaded" xml:space="preserve"><value>对应文件不在当前文件页，请切换文件页后再定位。</value></data>
+  <data name="Location_PatchUnavailable" xml:space="preserve"><value>补丁缺失、过大或不完整，不能可靠定位评论。</value></data>
+  <data name="Location_MissingLine" xml:space="preserve"><value>评论没有有效当前行或侧别，可能是过期或文件级评论。</value></data>
+  <data name="Location_InvalidLine" xml:space="preserve"><value>评论行或范围不在已验证的补丁中，不自动定位。</value></data>
+  <data name="Location_UnsupportedRange" xml:space="preserve"><value>此评论跨侧或缺少范围信息，保留原始位置但不自动定位。</value></data>
+  <data name="OpenChat" xml:space="preserve"><value>打开审阅对话</value></data>
+  <data name="OpenReadOnlyChat" xml:space="preserve"><value>打开只读查询对话</value></data>
+  <data name="ReadOnlyMode" xml:space="preserve"><value>只读查询</value></data>
+  <data name="ReadOnlyChatHint" xml:space="preserve"><value>只读查询使用另一独立对话；手动发送后，代理可按需查询此 PR 和所示提交版本的描述、文件、评论及检查。不读取其他 PR、本地文件或 CI 日志，不发布反馈。快照对话的权限不会改变。</value></data>
+  <data name="InvestigateChecks" xml:space="preserve"><value>准备失败检查调查草稿</value></data>
+  <data name="ChatHint" xml:space="preserve"><value>打开或恢复此仓库与提交版本的独立对话。只包含首次创建时已加载且限额内的 PR 快照；不会发送消息、获取额外文件或日志、执行本地工具或发布远程反馈。调查仅填入空草稿，请确认模型后手动发送。</value></data>
+  <data name="ChatOpening" xml:space="preserve"><value>正在打开版本绑定的审阅对话…</value></data>
+  <data name="ChatOpened" xml:space="preserve"><value>审阅对话已就绪，尚未发送消息。</value></data>
+  <data name="ChatDraftPreserved" xml:space="preserve"><value>审阅对话已有草稿或附件，已保留原内容，未填入调查摘要。</value></data>
+  <data name="InvestigationPrompt" xml:space="preserve"><value>请基于此审阅会话固定的 PR 快照分析以下已加载检查的失败原因，区分已知证据与推测，并列出需要补充的信息。不要获取日志、打开链接、运行命令或发布远程反馈。</value></data>
+</root>

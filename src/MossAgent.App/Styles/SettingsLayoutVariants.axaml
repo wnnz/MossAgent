@@ -72,4 +72,16 @@
   <Style Selector=".app-list-box.settings-catalog-list" x:SetterTargetType="controls:AppListBox">
     <Setter Property="MaxHeight" Value="560" />
   </Style>
+  <Style Selector="controls|AppResponsiveColumns.review-layout">
+    <Setter Property="PrimaryWidth" Value="260" />
+  </Style>
+  <Style Selector="controls|AppResponsiveColumns.review-layout:compact > Grid.review-list-pane">
+    <Setter Property="IsVisible" Value="{ReflectionBinding !HasDetail}" />
+  </Style>
+  <Style Selector="controls|AppButton.review-back-to-list">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+  <Style Selector="controls|AppResponsiveColumns.review-layout:compact controls|AppButton.review-back-to-list">
+    <Setter Property="IsVisible" Value="True" />
+  </Style>
 </Styles>

@@ -184,12 +184,14 @@ public sealed class ShellGeometryTests
 
         Assert.Equal("{Binding ModelPicker.ComposerDisplayName}", picker.Attribute("Label")?.Value);
         Assert.DoesNotContain(picker.Elements(), element => element.Name.LocalName == "Grid");
-        Assert.Equal("Auto,Auto,*,Auto", picker.Parent?.Attribute("ColumnDefinitions")?.Value);
+        Assert.Equal("Auto,Auto,*,Auto,Auto", picker.Parent?.Attribute("ColumnDefinitions")?.Value);
         Assert.Equal("2", picker.Attribute("Grid.Column")?.Value);
         Assert.Null(picker.Attribute("HorizontalAlignment"));
         Assert.Contains(picker.Parent!.Elements(), element => element.Name.LocalName == "AppIconButton"
             && element.Attribute("Classes")?.Value.Contains("composer-send", StringComparison.Ordinal) == true
-            && element.Attribute("Grid.Column")?.Value == "3");
+            && element.Attribute("Grid.Column")?.Value == "4");
+        Assert.Contains(picker.Parent!.Elements(), element => element.Attribute("Name")?.Value == "QueueButton"
+            || element.Attributes().Any(attribute => attribute.Name.LocalName == "Name" && attribute.Value == "QueueButton"));
         var pickerStyle = Assert.Single(variants.Descendants(), element =>
             element.Name.LocalName == "Style"
             && element.Attribute("Selector")?.Value == "controls|AppButton.composer-model-picker");

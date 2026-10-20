@@ -8,6 +8,7 @@ internal static class WorkspaceAttachmentContextBuilder
     public static string? Build(IEnumerable<WorkspaceAttachmentContent> attachments)
     {
         var payload = attachments
+            .Where(static attachment => attachment.MediaType == "text/plain" && attachment.Image is null)
             .Select(static attachment => new
             {
                 path = attachment.DisplayPath,

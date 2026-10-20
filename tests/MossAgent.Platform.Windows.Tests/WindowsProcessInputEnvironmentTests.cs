@@ -74,4 +74,31 @@ public sealed class WindowsProcessInputEnvironmentTests
 
         Assert.DoesNotContain("fixture-secret", error.ToString());
     }
+
+    [Fact]
+    public async Task RemovedPrefixesExcludeInheritedAndOverrideVariablesOnlyInTheChild()
+    {
+        var host = Environment.GetEnvironmentVariable("ComSpec");
+        var request = new TaskProcessStartRequest("pwsh", Path.GetTempPath(), ["-NoProfile", "-Command",
+            "[Console]::Write((ConvertTo-Json -Compress @([Environment]::GetEnvironmentVariable('GIT_INDEX_FILE'), [Environment]::GetEnvironmentVariable('GIT_TRACE'), [Environment]::GetEnvironmentVariable('ComSpec'), $env:MOSSAGENT_RETAINED_FIXTURE)))"],
+            Environment: new Dictionary<string, string?> { ["GIT_INDEX_FILE"] = "untrusted-index", ["GIT_TRACE"] = "untrusted-log", ["MOSSAGENT_RETAINED_FIXTURE"] = "retained" },
+            RemovedEnvironmentPrefixes: ["git_", "comspec"]);
+        await using var process = new WindowsTaskProcessLauncher().Start(request, Token);
+        var output = await process.StandardOutput.ReadToEndAsync(Token).WaitAsync(TimeSpan.FromSeconds(10), Token);
+        await process.WaitForExitAsync(Token);
+        Assert.Equal(0, process.ExitCode);
+        Assert.Equal(new string?[] { null, null, null, "retained" }, JsonSerializer.Deserialize<string?[]>(output));
+        Assert.Equal(host, Environment.GetEnvironmentVariable("ComSpec"));
+        Assert.Null(Environment.GetEnvironmentVariable("MOSSAGENT_RETAINED_FIXTURE"));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("NAME=VALUE")]
+    [InlineData("NAME\0")]
+    public void InvalidRemovalPrefixIsRejectedBeforeLaunch(string prefix)
+    {
+        var request = new TaskProcessStartRequest("pwsh", Path.GetTempPath(), ["-NoProfile", "-Command", "exit 0"], RemovedEnvironmentPrefixes: [prefix]);
+        Assert.Throws<ArgumentException>(() => new WindowsTaskProcessLauncher().Start(request, Token));
+    }
 }

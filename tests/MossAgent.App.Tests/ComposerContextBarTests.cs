@@ -35,10 +35,14 @@ public sealed class ComposerContextBarTests
         var projectButton = Assert.Single(layout.Elements(), element =>
             element.Name.LocalName == "AppActionButton"
             && element.Attribute("ToolTip.Tip")?.Value == "{Binding ProjectLabel}");
-        var branchLabel = Assert.Single(layout.Elements(), element =>
+        var details = Assert.Single(layout.Elements(), element => element.Name.LocalName == "Grid"
+            && element.Attribute("Grid.Column")?.Value == "1");
+        var branchLabel = Assert.Single(details.Elements(), element =>
             element.Name.LocalName == "AppIconLabel"
             && element.Attribute("IconData")?.Value == "{StaticResource UiIconBranch}");
         Assert.Equal("1", branchLabel.Attribute("Grid.Column")?.Value);
+        Assert.Contains(details.Elements(), element => element.Name.LocalName == "AppContentControl"
+            && element.Attribute("Content")?.Value == "{Binding #Root.EnvironmentPickerContent}");
         Assert.DoesNotContain(projectButton.Descendants(), element =>
             element.Attribute("IconData")?.Value == "{StaticResource UiIconBranch}");
         Assert.Contains(layout.Elements(), element =>

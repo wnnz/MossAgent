@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using MossAgent.Domain;
+using MossAgent.Application.Conversations;
 
 namespace MossAgent.App.ViewModels;
 
@@ -34,6 +35,8 @@ public sealed class WorkspaceRunState(
     }
     public string? AttachmentContext { get; } = attachmentContext;
     public string? AgentInstructions { get; } = agentInstructions;
+    public ConversationSteeringSession? Steering { get; internal set; }
+    public bool AuthorizationChanged { get; internal set; }
     public CancellationToken CancellationToken
     {
         get

@@ -28,6 +28,8 @@ public sealed partial class AppComposerContextBar : AppUserControl
         AvaloniaProperty.Register<AppComposerContextBar, ICommand?>(nameof(SelectAgentCommand));
     public static readonly StyledProperty<Control?> ProjectPickerContentProperty =
         AvaloniaProperty.Register<AppComposerContextBar, Control?>(nameof(ProjectPickerContent));
+    public static readonly StyledProperty<Control?> EnvironmentPickerContentProperty =
+        AvaloniaProperty.Register<AppComposerContextBar, Control?>(nameof(EnvironmentPickerContent));
     public static readonly DirectProperty<AppComposerContextBar, bool> IsProjectAvailableProperty =
         AvaloniaProperty.RegisterDirect<AppComposerContextBar, bool>(nameof(IsProjectAvailable), bar => bar.IsProjectAvailable);
     public static readonly DirectProperty<AppComposerContextBar, bool> IsAgentAvailableProperty =
@@ -36,6 +38,7 @@ public sealed partial class AppComposerContextBar : AppUserControl
     private bool _isProjectAvailable;
     private bool _isAgentAvailable;
     private bool _isCondensed;
+    private bool _isStacked;
 
     public AppComposerContextBar()
     {
@@ -53,6 +56,7 @@ public sealed partial class AppComposerContextBar : AppUserControl
     public ICommand? OpenProjectCommand { get => GetValue(OpenProjectCommandProperty); set => SetValue(OpenProjectCommandProperty, value); }
     public ICommand? SelectAgentCommand { get => GetValue(SelectAgentCommandProperty); set => SetValue(SelectAgentCommandProperty, value); }
     public Control? ProjectPickerContent { get => GetValue(ProjectPickerContentProperty); set => SetValue(ProjectPickerContentProperty, value); }
+    public Control? EnvironmentPickerContent { get => GetValue(EnvironmentPickerContentProperty); set => SetValue(EnvironmentPickerContentProperty, value); }
     public bool IsProjectAvailable => _isProjectAvailable;
     public bool IsAgentAvailable => _isAgentAvailable;
     public string DefaultAgentLabel => SettingsText.Get("ComposerDefaultAgent");
@@ -61,12 +65,20 @@ public sealed partial class AppComposerContextBar : AppUserControl
     {
         var width = Bounds.Width > 0 ? Math.Min(Bounds.Width, availableSize.Width) : availableSize.Width;
         var condensed = HasAgents && width < 440;
-        if (_isCondensed != condensed)
+        var stacked = Project is not null && EnvironmentPickerContent is not null && width < 560;
+        if (_isCondensed != condensed || _isStacked != stacked)
         {
             _isCondensed = condensed;
-            ContextLayout.ColumnDefinitions[0].Width = condensed ? GridLength.Star : GridLength.Auto;
-            ContextLayout.ColumnDefinitions[2].Width = condensed ? GridLength.Star : GridLength.Auto;
+            _isStacked = stacked;
+            Classes.Set("stacked", stacked);
+            ContextLayout.ColumnDefinitions[0].Width = condensed || stacked ? GridLength.Star : GridLength.Auto;
+            ContextLayout.ColumnDefinitions[1].Width = stacked ? new GridLength(0) : GridLength.Star;
+            ContextLayout.ColumnDefinitions[2].Width = condensed || stacked ? GridLength.Star : GridLength.Auto;
+            Grid.SetColumn(ContextDetails, stacked ? 0 : 1);
+            Grid.SetColumnSpan(ContextDetails, stacked ? 3 : 1);
+            Grid.SetRow(ContextDetails, stacked ? 1 : 0);
         }
+        Grid.SetColumnSpan(ProjectButton, stacked ? HasAgents ? 2 : 3 : 1);
         return base.MeasureOverride(availableSize);
     }
 
@@ -84,6 +96,7 @@ public sealed partial class AppComposerContextBar : AppUserControl
                 RaisePropertyChanged(ProjectLabelProperty,
                     change.GetOldValue<ProjectProfile?>()?.Name ?? ProjectlessChatText.Label, ProjectLabel);
             CloseFlyouts();
+            InvalidateMeasure();
         }
         if (change.Property == HasAgentsProperty || change.Property == SelectAgentCommandProperty || change.Property == CanChooseAgentProperty)
         {
@@ -92,6 +105,7 @@ public sealed partial class AppComposerContextBar : AppUserControl
             if (!IsAgentAvailable) CloseFlyouts();
         }
         if (change.Property == AgentNameProperty || change.Property == AgentsProperty) CloseFlyouts();
+        if (change.Property == EnvironmentPickerContentProperty) InvalidateMeasure();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs args)

@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using MossAgent.Domain;
 using MossAgent.Tools.Abstractions.Browser;
 
@@ -16,8 +17,29 @@ public sealed record ToolExecutionContext(
     ISubagentToolGateway? SubagentTools = null,
     Action<ToolDialogueMessage>? SubagentProgress = null)
 {
+    private FrozenSet<string>? _allowedToolNames;
+
     public TaskFileSnapshotStore FileSnapshots { get; init; } = new(TaskId);
     public Action<ToolExecutionProgress>? Progress { get; init; }
     public ToolFileChange? ReviewedChange { get; init; }
     public bool ToolsEnabled { get; init; } = true;
+    public ITaskWorkspaceGuard? WorkspaceGuard { get; init; }
+    public SourceRepositoryScope? SourceScope { get; init; }
+    public PullRequestRevision? SourceReviewRevision { get; init; }
+    public IReadOnlySet<string>? AllowedToolNames
+    {
+        get => _allowedToolNames;
+        init => _allowedToolNames = value?.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    public bool IsToolAllowed(string name) => ToolsEnabled && (_allowedToolNames is null || _allowedToolNames.Contains(name))
+        && (SourceReviewRevision is null || SourceScope is not null && SourceReviewToolPolicy.IsAllowed(name))
+        && (SourceScope is null || name.Equals("source.pr_list", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("source.pr_get", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("source.pr_files", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("source.pr_comments", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("source.pr_checks", StringComparison.OrdinalIgnoreCase));
+
+    public Task ValidateWorkspaceAsync(CancellationToken cancellationToken) =>
+        WorkspaceGuard?.ValidateAsync(this, cancellationToken) ?? Task.CompletedTask;
 }

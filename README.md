@@ -5,6 +5,19 @@ MossAgent is a Windows-first desktop coding agent built with Avalonia 12 and
 tools, browser automation, MCP, persistence, and the UI can evolve without
 forming a single application-wide dependency graph.
 
+## Product objective
+
+Restore Codex Desktop's functionality and main workflows, not its exact pixels.
+Prioritize working end-to-end behavior, safety and reliability while retaining a
+consistent, usable MossAgent interface. The current capability inventory, missing
+features and verification limits are in
+[docs/FUNCTIONAL_PARITY_MATRIX.md](docs/FUNCTIONAL_PARITY_MATRIX.md).
+The 2026-10-20 implementation inventory, verified scope, known blockers and
+detailed remaining implementation plans are recorded in
+[docs/DELIVERY_STATUS_AND_ROADMAP.md](docs/DELIVERY_STATUS_AND_ROADMAP.md).
+Earlier visual-fidelity records remain historical evidence, not pixel-matching
+requirements for product completion.
+
 ## Current implementation
 
 - Avalonia task workbench with persisted task history, conversation restore,
@@ -12,6 +25,29 @@ forming a single application-wide dependency graph.
   cancellation, and queued approval controls.
 - SQLite persistence for projects, tasks, messages, proxies, providers, and
   per-provider model configuration.
+- Independent text drafts for tasks, project conversations and projectless chat,
+  with automatic SQLite saving, restart restoration, revision-conflict checks
+  and explicit save/recovery controls. Project-scoped and explicitly selected
+  projectless text/static-image drafts use file-backed snapshots and the same
+  revision checks without granting directory or tool access.
+- Submitted UTF-8 text attachments use immutable, task/message-owned file
+  snapshots with SQLite metadata, restored history chips and original-turn model
+  context across follow-ups and application composition restarts. Missing or
+  changed snapshots block requests with recovery guidance.
+- Authorized static PNG/JPEG/GIF/WebP selection uses real bounded decoding,
+  binary snapshots, metadata-only SQLite migration and draft/history restoration.
+  Image-only turns send native image blocks; incompatible models retain drafts
+  and disable sending. Production composition and loopback checks are recorded in
+  [docs/IMAGE_ATTACHMENT_WORKFLOW_ACCEPTANCE.md](docs/IMAGE_ATTACHMENT_WORKFLOW_ACCEPTANCE.md).
+  Projectless file selection, draft recovery and submitted-image history are
+  covered in [docs/PROJECTLESS_ATTACHMENTS_ACCEPTANCE.md](docs/PROJECTLESS_ATTACHMENTS_ACCEPTANCE.md).
+  Composer/draft and sent/history image thumbnails use bounded background
+  rendering and immutable snapshots; see
+  [docs/ATTACHMENT_THUMBNAIL_ACCEPTANCE.md](docs/ATTACHMENT_THUMBNAIL_ACCEPTANCE.md).
+  JPEG previews respect all eight EXIF orientations without rewriting selected
+  bytes; see [docs/IMAGE_ORIENTATION_ACCEPTANCE.md](docs/IMAGE_ORIENTATION_ACCEPTANCE.md).
+  Native picker/EXE restart, full-size viewing, PDF input and real-provider
+  interpretation remain incomplete.
 - Native streaming adapters for OpenAI Responses, Anthropic Messages, and
   Gemini GenerateContent, including multi-turn function/tool calls and
   reversible provider-safe names for dotted MCP/built-in tool identifiers.

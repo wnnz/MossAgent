@@ -425,7 +425,7 @@
     <Setter Property="FontSize" Value="11" />
     <Setter Property="Padding" Value="7,3" />
   </Style>
-  <Style Selector=".app-scroll-viewer.modal-scroll" x:SetterTargetType="controls:AppScrollViewer">
+  <Style Selector=".app-scroll-viewer.modal-scroll, .app-scroll-viewer.content-gutter" x:SetterTargetType="controls:AppScrollViewer">
     <Setter Property="Padding" Value="0,0,18,0" />
   </Style>
   <Style Selector=".app-scroll-viewer.settings-page-scroll" x:SetterTargetType="controls:AppScrollViewer">

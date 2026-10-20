@@ -48,19 +48,22 @@ public sealed class AppFlyoutBehaviorTests
     {
         var views = Path.Combine(RepositoryRoot(), "src", "MossAgent.App", "Views");
         var flyouts = Directory.EnumerateFiles(views, "*.axaml")
-            .Append(Path.Combine(views, "..", "Controls", "AppSidebarSearch.axaml"))
+            .Concat(Directory.EnumerateFiles(Path.Combine(views, "..", "Controls"), "*.axaml"))
             .SelectMany(file => XDocument.Load(file).Descendants()
-                .Where(element => element.Name.LocalName == "AppFlyout"))
+                .Where(element => element.Name.LocalName == "AppFlyout")
+                .Select(element => (File: Path.GetFileName(file), Element: element)))
             .ToArray();
-        var interactive = flyouts.Where(flyout => flyout.Descendants().Any(element =>
-            element.Name.LocalName is "AppInput" or "ModelPickerFlyoutView")).ToArray();
+        var interactive = flyouts.Where(flyout => ContainsInput(flyout.Element)).ToArray();
 
-        Assert.Equal(3, interactive.Length);
-        Assert.All(interactive, flyout => Assert.Null(flyout.Attribute("DismissOnButtonClick")));
-        Assert.DoesNotContain(flyouts.Where(flyout => flyout.Attribute("DismissOnButtonClick")?.Value == "True"),
-            flyout => flyout.Descendants().Any(element => element.Name.LocalName is
-                "AppInput" or "AppComboBox" or "AppSlider" or "ModelPickerFlyoutView"));
+        Assert.Contains(interactive, flyout => flyout.File == "WorkspaceComposerView.axaml");
+        Assert.Contains(interactive, flyout => flyout.File == "AppSidebarSearch.axaml");
+        Assert.All(interactive, flyout => Assert.Null(flyout.Element.Attribute("DismissOnButtonClick")));
+        Assert.DoesNotContain(flyouts.Where(flyout => flyout.Element.Attribute("DismissOnButtonClick")?.Value == "True"),
+            flyout => ContainsInput(flyout.Element));
     }
+
+    private static bool ContainsInput(XElement flyout) => flyout.Descendants().Any(element =>
+        element.Name.LocalName is "AppInput" or "AppComboBox" or "AppSlider" or "ModelPickerFlyoutView");
 
     private static string RepositoryRoot()
     {

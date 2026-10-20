@@ -8,6 +8,12 @@
   <Style Selector="StackPanel.composer-agent-menu">
     <Setter Property="Width" Value="230" />
   </Style>
+  <Style Selector="controls|AppButton.composer-environment-button">
+    <Setter Property="MaxWidth" Value="120" />
+  </Style>
+  <Style Selector="controls|AppCard.composer-environment-menu">
+    <Setter Property="MaxWidth" Value="300" />
+  </Style>
   <Style Selector=".app-scroll-viewer.composer-agent-options" x:SetterTargetType="controls:AppScrollViewer">
     <Setter Property="MaxHeight" Value="240" />
     <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
@@ -34,6 +40,12 @@
   <Style Selector="Grid.compact-composer controls|AppBorder.composer-context-surface">
     <Setter Property="Margin" Value="15,0,15,0" />
     <Setter Property="Height" Value="32" />
+  </Style>
+  <Style Selector=".app-composer-context-bar.stacked controls|AppBorder.composer-context-surface">
+    <Setter Property="Height" Value="NaN" />
+  </Style>
+  <Style Selector=".app-composer-context-bar.stacked Grid.composer-context-layout">
+    <Setter Property="RowSpacing" Value="4" />
   </Style>
   <Style Selector="Grid.compact-composer controls|AppCard.card-inset-composer">
     <Setter Property="Padding" Value="14,0,14,6" />

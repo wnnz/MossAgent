@@ -146,6 +146,7 @@ internal sealed class SubagentRunExecutor(IModelProviderRegistry providers)
         var preview = new SubagentTextPreview(context.SubagentProgress);
         try
         {
+            ModelImageRequestValidation.Validate(request);
             await foreach (var modelEvent in providers.Get(request.Provider.Protocol)
                                .StreamAsync(request, cancellationToken))
             {

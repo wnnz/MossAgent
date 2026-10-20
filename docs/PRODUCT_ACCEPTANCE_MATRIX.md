@@ -1,5 +1,87 @@
 # Product acceptance matrix
 
+## Current objective (2026-10-18)
+
+The product goal is now functional and workflow parity with Codex Desktop, not
+one-to-one visual fidelity. `FUNCTIONAL_PARITY_MATRIX.md` owns the current gap
+inventory and priorities. Existing feature, safety, real-interaction, theme,
+viewport and keyboard requirements remain; exact Codex geometry, artwork, colors
+and pixel equality are no longer completion gates.
+
+The records below preserve their original scope, results and dates. Historical
+statements about an open pixel-parity gate do not reintroduce that requirement;
+removing it does not turn unverified functional behavior or failed tests into a
+pass. Historical scheduler/goal-status statements are not current runtime status.
+
+## Historical implementation and evidence records
+
+`SOURCE_PR_READING_ACCEPTANCE.md` records the schema-19 read-only source slice:
+explicit credential-revision-bound repository grants, revocation tombstones,
+source-operation audit sessions, standard pipeline PR list/detail tools and an
+independent shared-control page. Configured-repository pagination, description,
+base/head commits, cancellation and error feedback now have a running chain.
+This does not complete personal inbox/URL/diff/comments/checks, review chat,
+revision view state, remote mutations, OAuth, GitLab or native/live-source gates.
+
+`WORKTREE_PATH_SAFETY_ACCEPTANCE.md` records the managed worktree creation/removal
+boundary slice: raw Windows path aliases, GUID direct children, link/reparse
+ancestry, explicit repository scope, bounded pointer preflight and matching Git
+identities/backlinks. A real standalone external-metadata authorization bypass
+has red/green temporary-repository evidence, including explicit authorization and
+revocation. The latest candidate passes Infrastructure 437, related App 69 and
+real Windows Git ownership 8 checks, with a clean solution build and 219-file C#
+shape audit. These 514 checks are not a new complete regression; the preceding
+frozen candidate's full App run is pending. Native handle-level race protection,
+restored-task authorization and native restart remain incomplete. Earlier failed
+and interrupted reports are retained, not relabeled as green.
+
+`APP_REGRESSION_RECOVERY_ACCEPTANCE.md` records a confirmed Headless test-harness
+deadlock, five corrected awaiting window helpers and a strengthened existing
+dispatch guard. The failed reproducer and explicitly retired old test processes
+remain recorded. A 74-case focused run and final solution build pass; the expanded
+complete regression exposed four settings/new-task
+draft-scope assertions. Their follow-up checks the real destination draft and
+retains both scopes through SQLite and round-trip navigation, without changing
+production scope semantics. That follow-up passes 31 focused cases and a fresh
+solution build; it is not a replacement full-suite result. That expanded run
+subsequently aborted after 3,812 App passes during fixture cleanup; its other
+seven test projects passed. `DRAFT_BACKGROUND_PERSISTENCE_ACCEPTANCE.md` records
+the separate background-persistence fix, a 118-case focused pass, and the current
+full/final candidates. The new full candidate has exposed a model-lookup
+allocation failure and an agent-selection race; neither a focused pass nor the
+additional load-serialization fix establishes a green complete regression.
+Earlier allocation failures and whole-product acceptance are not declared resolved.
+
+`PROJECTLESS_ATTACHMENTS_ACCEPTANCE.md` extends explicit text/static-image inputs
+to plain chats through a separate Application reader port, not a fake project or
+directory grant. Version-17 migration, independent draft/history reopen, actual
+loopback requests without tools, stale selection refusal and theme/keyboard
+checks are covered there. It also records the initial six App regression failures
+and their fixes; its verification scope does not establish native or whole-product
+acceptance.
+
+`IMAGE_ATTACHMENT_WORKFLOW_ACCEPTANCE.md` records the preceding static-image
+workflow checkpoint: real bounded codecs, authorized reads, immutable binary
+draft/message snapshots, version-16 metadata migration and rollback, typed
+unavailable chips, selected-model capability feedback and image-only sending.
+Independent production compositions restore unsent and submitted images after
+source deletion; follow-up loopback requests retain native image blocks without
+Base64 text context. At that checkpoint Infrastructure 316, Providers 600, Agent 132 and
+related App 150 checks pass, as does the solution build. These are not native
+picker/EXE-restart, real-provider reasoning, a current complete App suite or
+whole-product acceptance. Earlier pending processes/failures are not erased.
+
+`ATTACHMENT_HISTORY_ACCEPTANCE.md` records submitted UTF-8 attachment snapshots,
+message-owned SQLite metadata, restored chips and original-turn context across
+follow-up requests and independent App compositions. Source changes do not alter
+submitted data; missing/tampered snapshots block provider calls with a safe,
+persisted recovery diagnostic. Ownership, junction, size, cancellation, timeout,
+atomic metadata and forward-migration checks use temporary data and scripted
+providers, not native selector clicks, an EXE restart or multimodal inputs.
+Unsent attachment drafts were not covered at that historical checkpoint; later
+draft/image/projectless records supersede that gap. The overall functional-parity
+goal remains incomplete.
+
 `PROJECT_EDITOR_VIEWPORT_ACCEPTANCE.md` records the bounded project-editor slice:
 long directory lists no longer push Save outside the owner viewport, keyboard
 focus reveals primary-directory actions, and Add Project starts a new draft after
@@ -1008,3 +1090,161 @@ in the final 44/44 focused run; two unrelated source guards remain recorded.
 The focused result is a subset, not a new complete-App pass. App DLL identities,
 scoped whitespace, seven-file type/size and relevant markup-size audits agree.
 Current user windows, data, permissions and packaging policy are untouched.
+
+## Restored worktree operation authorization checkpoint
+
+`RESTORED_WORKTREE_AUTHORIZATION_ACCEPTANCE.md` records task-bound, read-only Git
+validation for resumed tasks, provider preparation, direct branch reads and
+standard tool execution before/after approval. Preview/diff/statistics/undo,
+terminal/browser actions and child-agent context copies retain the guard.
+Explicit cleanup now rejects a different task's valid registered worktree or a
+mismatched project instead of removing it and clearing persisted metadata.
+Isolated red/green tests retain their original failures. The final related
+checkpoint passes 506 Tools, 442 Infrastructure, 140 Agent, 799 App and 8 real
+Windows Git process cases (1,895 total), with a zero-warning/error solution
+build and a 238-file handwritten C# audit. Frozen code/configuration, binary
+and source-ZIP identities agree; reports and limits are in the linked document.
+This is snapshot
+authorization, not native handle-level race protection, live authorization
+revocation, native-window/restart acceptance or whole-product completion.
+
+The restored-authorization candidate's subsequent complete run now has a real
+zero exit and eight Completed reports: 7,355/7,355, including 5,137 App cases,
+with no failed/skipped tests. All 1,601 frozen binary identities remain unchanged.
+The terminal and per-assembly counters are retained in its candidate directory.
+This uses pre-staging binaries; source-policy tests can also read live source.
+It is not full regression evidence for later Git staging work.
+
+## Git file-staging checkpoint
+
+`GIT_STAGING_ACCEPTANCE.md` records selected-file stage/unstage through the
+standard pipeline and production App composition, real index/filter refresh,
+unborn/deleted/renamed/literal file handling, copy-source isolation and failed
+Git audit. Complete repository/metadata authorization, DOS aliases, junctions
+appearing during approval, task guards, bounded output and real cancellation
+cleanup have deterministic coverage. Headless keyboard and light/dark narrow/
+wide component checks are not native-window acceptance. Commit/push/PR and
+group/hunk staging remain missing, and repository hooks are not OS-sandboxed.
+The final candidate has seven zero-exit recorded commands and six Completed
+reports: 549 Tools, 442 Infrastructure, 140 Agent, 1,124 related App, 300 Visual
+and 8 real Windows Git cases, totaling 2,563/2,563 with no failures or skips.
+The separate 24-case focused App pass overlaps that total and is not added again.
+The solution build is clean, the 261-file C# and changed-markup audits pass, and
+all 2,135 source/configuration and 2,439 runtime identities/path sets agree with
+the frozen source ZIP and manifests. This is related regression, not complete
+solution tests, native acceptance or whole-product completion.
+
+## Staged-only Git commit checkpoint
+
+`GIT_COMMIT_ACCEPTANCE.md` records separate preview/commit tools, state-bound
+confirmation, ordinary staged-only commits and the production inspector dialog.
+Real temporary Git/SQLite composition verifies new HEAD, exact staged bytes,
+unselected-file preservation and unchanged conversation input. Approval-time
+index/HEAD/branch changes, conflicts, denial, guard revocation, hook/identity
+failure and cancellation/output/audit paths have focused coverage. Both dedicated
+Git runners strip `GIT_` child variables to prevent inherited index/config/object/
+trace redirection; ordinary Git configuration/hooks remain active, not sandboxed.
+Shared dialog focus restoration now handles a trigger reenabled during closing
+without stealing newer focus. Focused terminal reports pass 35 Tools, 87 App and
+11 Windows environment checks, and the 293-file C# audit passes. Expanded frozen
+candidate regression has terminated with seven zero-exit commands and six
+Completed reports: 565 Tools, 442 Infrastructure, 140 Agent, 1,927 related App,
+300 Visual and 146 Windows checks, totaling 3,520/3,520 without failures/skips.
+Source/runtime hashes, path sets and the source ZIP agree at terminal (2,158
+source/configuration and 2,439 runtime files). Overlapping focused passes are not
+added to that total. A separate completion-state/focus candidate follows this
+snapshot; the earlier result is not full regression of later code. Push/PR,
+group/hunk staging, native/restart and
+interactive signing/hook acceptance remain incomplete. No development-worktree
+commit, push or release occurs.
+
+The separate `git-commit-completion-20261018` candidate now closes successful
+commit dialogs only after releasing busy/operation ownership in the same UI
+update. Four immediate/delayed commit/refresh state tests first fail; the real
+production focus assertion passes even in that red run, so native focus loss is
+not claimed as reproduced. After the fix, focused 91 and related 373 cases pass,
+with no failures/skips in the final related report and a clean solution build.
+The 91 cases overlap the 373 total. All 2,158 source and 2,439 runtime identities,
+path sets and frozen ZIP bytes agree; only the view model and its two test files
+differ from the earlier 3,520-case snapshot. Current full-solution and native
+acceptance remain separate; earlier broad passes are not relabeled as new runs.
+
+## Confirmed single-branch Git push checkpoint
+
+`GIT_PUSH_ACCEPTANCE.md` records local preview plus approved state-bound push,
+credential-free endpoint labels, authorized local bare/non-bare destinations and
+the actual production inspector confirmation. Real temporary Git/SQLite tests
+verify exact captured commit/target, preserved dirty/staged content and composer
+draft, real status refresh and keyboard focus. Scoped process settings override
+mirror/tag/submodule/push-option defaults without changing upstream configuration;
+ordinary hooks and credentials are not bypassed. Explicit unsupported cases and
+remaining native/TOCTOU/hook sandbox limits are retained.
+
+The frozen `git-push-20261018` candidate has seven zero-exit commands and six
+Completed reports: 613 Tools, 442 Infrastructure, 140 Agent, 1,966 related App,
+300 Visual and 146 Windows cases, totaling 3,607/3,607 without failures/skips.
+Complete solution build has zero warnings/errors. Terminal manifests verify all
+2,187 source/configuration and 2,439 runtime hashes/path sets and source ZIP bytes;
+the source snapshot SHA-256 is
+`407C0C9EFEC56E52BC5F3DD3BCCAB260332BD0534A8F8E03F83A4986173E6B9B`.
+The 320-file C# and 16-file markup audits pass. Light/dark shared-dialog renders
+at 280/640 by 560/700 DIP cover ready/busy/interrupted/failed states; Headless
+geometry and production composition are not native-window/live-account proof.
+Earlier focused passes overlap this total. PR, remote/credential configuration UI,
+group/hunk staging, native/restart and complete product acceptance remain open.
+No development-worktree commit, push or release occurs. PR requirements and
+source-only security design are in `PULL_REQUEST_WORKFLOW_PLAN.md`, not implemented
+functionality or proof that this overall goal is complete.
+
+## Task tool-scope foundation checkpoint
+
+`TOOL_SCOPE_ACCEPTANCE.md` records an immutable allowed-name scope enforced by
+the shared executor before authorization/approval side effects. Agent filters
+per-turn descriptors/delegation and child gateways intersect parent/child scopes;
+an unsolicited model call is still denied through the real execution pipeline.
+This does not enable tools for plain projectless chat or implement source-account
+authorization, PR HTTP, account connection or a working PR page.
+
+The separate `pr-review-scope-20261018` candidate has three zero-exit Completed
+reports: 624 Tools, 145 Agent and 334 related App cases, totaling 1,103/1,103 with
+no failures/skips. Its complete solution build has zero warnings/errors, and the
+326-file C# type/size/syntax audit passes. Earlier focused 18 and 21 checks overlap
+the total. These are current related checks, not a repeated 3,607-case Git push
+run, whole-solution regression, native-window QA or real-source-account proof.
+The complete PR chain in `PULL_REQUEST_WORKFLOW_PLAN.md` remains to implement.
+
+## GitHub token connection checkpoint
+
+`SOURCE_ACCOUNT_CONNECTION_ACCEPTANCE.md` records independent named source
+accounts, schema-18 persistence, proxy selection, shared settings dialogs and
+actual identity reauthentication. List rows never retain token fields. Bounded
+GitHub requests pin the configured HTTPS authority/API prefix, disable redirects
+and cookies, fail closed on unavailable proxies and suppress stale identities
+after account changes. Production-composed shared controls, real SQLite and
+controlled loopback HTTP verify keyboard save/refresh/edit and two separate
+identity requests in both themes; this grants no roots, tools or repository
+permissions and is not a PR inbox or OAuth connection.
+
+The first `source-accounts-20261018` candidate terminates with five Completed
+reports: 490 Infrastructure, 624 Tools, 145 Agent, 99 related App and 300 Visual
+cases, totaling 1,658/1,658 without failures/skips. Its full solution build has
+zero warnings/errors; 2,220 source/configuration and 2,259 runtime file hashes and
+path sets agree before/after testing. The 360-file C# audit passes. Twelve
+Headless renders cover compact/ordinary layouts, both themes and 1/1.25 scaling;
+selected renders were inspected. This is related regression, not full-solution
+tests, native-window/live-account proof or a source/runtime archive.
+
+A separate `source-account-disable-20261018` candidate fixes a subsequently
+reproduced revocation problem: an unavailable proxy must not prevent disabling
+its account. Both SQLite and UI tests first fail, then pass. Disabling preserves
+the proxy reference; missing proxies and reenabling with a disabled proxy are
+still rejected. Account disable/delete during an identity request invalidates
+the old result. Its current complete solution build has zero warnings/errors;
+493 Infrastructure and 100 related App checks pass, totaling 593/593 without
+failures/skips. All 2,221 selected source/configuration and 2,259 runtime hashes/
+path sets agree before/after testing; the 361-file changed/new C# audit and diff
+whitespace check pass. Earlier 1,658-case results and overlapping focused runs
+are not relabeled or added as regression of these later changes.
+PR repository grants, inbox/details/review/writes, OAuth, GitLab, cloud reviews,
+plugin compatibility and native/restart acceptance remain incomplete. No commit,
+push, release, real credentials or paid provider request occurs.

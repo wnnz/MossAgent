@@ -17,9 +17,10 @@ public sealed class SqliteToolExecutionAuditReader(SqliteConnectionFactory conne
         command.CommandText = """
             SELECT e.id,e.task_id,e.call_id,e.tool_name,e.risk_level,e.approval_policy,
                 e.started_at,e.completed_at,e.approval_granted,e.is_success,e.error_code,
-                e.output_length,COUNT(a.id)
+                e.output_length,COUNT(a.id),i.interrupted_at
             FROM tool_executions e
             LEFT JOIN tool_artifacts a ON a.execution_id=e.id
+            LEFT JOIN tool_execution_interruptions i ON i.execution_id=e.id
             WHERE e.task_id=$task
             GROUP BY e.id
             ORDER BY e.started_at DESC
@@ -72,5 +73,6 @@ public sealed class SqliteToolExecutionAuditReader(SqliteConnectionFactory conne
         reader.IsDBNull(8) ? null : reader.GetBoolean(8),
         reader.IsDBNull(9) ? null : reader.GetBoolean(9),
         reader.IsDBNull(10) ? null : reader.GetString(10),
-        reader.IsDBNull(11) ? null : reader.GetInt32(11), reader.GetInt32(12));
+        reader.IsDBNull(11) ? null : reader.GetInt32(11), reader.GetInt32(12),
+        reader.IsDBNull(13) ? null : DateTimeOffset.Parse(reader.GetString(13)));
 }

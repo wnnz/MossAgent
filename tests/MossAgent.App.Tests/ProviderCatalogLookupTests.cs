@@ -4,6 +4,7 @@ using Xunit;
 
 namespace MossAgent.App.Tests;
 
+[Collection(AllocationMeasurementCollection.Name)]
 public sealed class ProviderCatalogLookupTests
 {
     [Fact]
@@ -98,11 +99,10 @@ public sealed class ProviderCatalogLookupTests
         providers.SelectedItem = target;
         var valid = true;
         for (var index = 0; index < 1_000; index++) valid &= CheckProvider(providers, target, missing);
-        var before = GC.GetAllocatedBytesForCurrentThread();
-
-        for (var index = 0; index < 10_000; index++) valid &= CheckProvider(providers, target, missing);
-
-        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        var allocated = AllocationMeasurement.Measure(() =>
+        {
+            for (var index = 0; index < 10_000; index++) valid &= CheckProvider(providers, target, missing);
+        });
         Assert.True(valid);
         Assert.Equal(0, allocated);
     }
@@ -128,11 +128,10 @@ public sealed class ProviderCatalogLookupTests
         models.SelectedModel = target;
         var valid = true;
         for (var index = 0; index < 1_000; index++) valid &= CheckModel(models, target, group, missing);
-        var before = GC.GetAllocatedBytesForCurrentThread();
-
-        for (var index = 0; index < 10_000; index++) valid &= CheckModel(models, target, group, missing);
-
-        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        var allocated = AllocationMeasurement.Measure(() =>
+        {
+            for (var index = 0; index < 10_000; index++) valid &= CheckModel(models, target, group, missing);
+        });
         Assert.True(valid);
         Assert.Equal(0, allocated);
     }

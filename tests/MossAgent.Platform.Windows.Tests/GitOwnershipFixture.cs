@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using MossAgent.Application.Git;
 using MossAgent.Domain;
 using MossAgent.Infrastructure.Git;
 using MossAgent.Infrastructure.Persistence;
@@ -16,6 +17,8 @@ internal sealed class GitOwnershipFixture : IAsyncDisposable
 {
     public string Root { get; } = Path.Combine(Path.GetTempPath(), "MossAgent.Tests", Guid.NewGuid().ToString("N"));
     public string Repository => Path.Combine(Root, "repository");
+    public Guid WorktreeTaskId { get; } = Guid.NewGuid();
+    public string ManagedWorktreePath => Path.Combine(Root, "data", "worktrees", WorktreeTaskId.ToString("N"));
     public GitCommandRunner Runner { get; } = new(new WindowsTaskProcessLauncher());
     public Process? Descendant { get; private set; }
     private Process? _hook;
@@ -64,8 +67,8 @@ internal sealed class GitOwnershipFixture : IAsyncDisposable
         {
             var project = new ProjectProfile(Guid.NewGuid(), "synthetic", Repository, [Root], DateTimeOffset.UnixEpoch);
             Execution = new GitWorktreeService(new AppDataPaths(Path.Combine(Root, "data")),
-                new GitProcessRunner(new WindowsTaskProcessLauncher(), clock))
-                .CreateAsync(project, Guid.NewGuid(), token);
+                new GitProcessRunner(new WindowsTaskProcessLauncher(), clock), clock)
+                .CreateAsync(project, WorktreeTaskId, token);
         }
         else
         {
@@ -126,6 +129,8 @@ internal sealed class GitOwnershipFixture : IAsyncDisposable
             try { await Execution.WaitAsync(TimeSpan.FromSeconds(20)); }
             catch (OperationCanceledException) { }
             catch (TimeoutException) when (Execution.IsFaulted) { }
+            catch (GitWorktreeCreationException failure) when (Execution.IsFaulted
+                && failure.InnerException is OperationCanceledException or TimeoutException) { }
         }
         foreach (var file in Directory.EnumerateFiles(Root, "*", SearchOption.AllDirectories))
             File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);

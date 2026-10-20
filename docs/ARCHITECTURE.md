@@ -3,10 +3,11 @@
 `AGENTS.md` is the binding engineering policy. This document is the concise map
 of the intended system and should be kept current as modules are implemented.
 
-`PRODUCT_ACCEPTANCE_MATRIX.md` tracks the complete product objective and remaining
-evidence gaps. `INTEGRATED_WORKFLOW_ACCEPTANCE.md` records native production-App
+`FUNCTIONAL_PARITY_MATRIX.md` tracks the current functional objective, inventory
+and next steps. `PRODUCT_ACCEPTANCE_MATRIX.md` retains the detailed historical
+evidence. `INTEGRATED_WORKFLOW_ACCEPTANCE.md` records native production-App
 composition checks; passing an individual slice does not establish full-product
-or same-state Codex pixel-equivalence completion.
+completion. Pixel equivalence with Codex is no longer a completion requirement.
 
 ## Runtime flow
 
@@ -43,12 +44,325 @@ Avalonia UI
 
 ## Stable boundaries
 
+- Conversation follow-ups now connect Queue storage and runtime through App
+  composition. Domain owns bounded immutable snapshots; Application revalidates
+  saved models/agents, roots/worktrees, source access and attachment snapshots.
+  Schema 23 atomically consumes drafts on enqueue and commits first-entry removal,
+  one user message and Running status on dispatch. The dispatch port carries the
+  prepared selection; the same short transaction rechecks project primary/roots,
+  provider runtime settings, model identity/availability/media requirements and
+  agent availability. Attachment/worktree I/O stays outside the transaction;
+  mismatches leave the queue, task and next draft unchanged. Saved model parameters
+  and agent instructions are retained. See `CONVERSATION_FOLLOWUP_DISPATCH_ACCEPTANCE.md`
+  for the settings race, rollback and real queued-process evidence and limits.
+  App provides task-owned editing,
+  ordering, removal, manual continuation and completion chaining through shared
+  controls. Failure, cancellation, shutdown and reconstruction pause the chain;
+  committed messages never return to the queue. Operations own cancellation,
+  gates and dispatcher publication. Explicit Responses failed/incomplete events
+  stop automatic continuation. Responses/Anthropic also reject empty HTTP 200
+  and missing-terminal SSE EOF, stop on terminal events and discard incomplete
+  model tool calls through the existing Agent failure path. Responses' explicit
+  [DONE] compatibility is retained. Saved approval policy and CLI termination/
+  manual recovery have controlled evidence; remaining stream variants, dispatch
+  races and native/live acceptance remain gaps. See
+  `PROVIDER_STREAM_COMPLETION_ACCEPTANCE.md`,
+  `CONVERSATION_FOLLOWUP_PROCESS_RECOVERY.md` and
+  `CONVERSATION_FOLLOWUP_RUNTIME_ACCEPTANCE.md`;
+  the storage checkpoint remains in `CONVERSATION_FOLLOWUP_STORAGE_ACCEPTANCE.md`.
+
+  `QUEUE_BROWSER_RUNTIME_ACCEPTANCE.md` adds a CLI check of the
+  production Queue/Agent chain with actual managed Chrome and simulated model
+  HTTP: cancelling one pending navigation preserves another task's pending
+  approval/run/draft, and reconstructed services retain results and require
+  manual continuation without replay. It does not establish native GUI, browser
+  creation cancellation, process restart or command filesystem confinement.
+
+  Browser session operations now check cancellation/stopped state before SDK
+  entry. Cancellation or tool deadline invalidates the task session, awaits
+  owned context/page cleanup and drains the pending SDK operation before returning.
+  A stale session cannot be reused; explicit manager release and reattachment
+  recover without replay. Borrowed CDP context/user pages remain open. Real Chrome
+  reproduces the old late click and confirms the integrated fix with completed
+  approvals/audits; see `BROWSER_OPERATION_CANCELLATION_ACCEPTANCE.md` for evidence
+  and remaining creation/crash/native acceptance limits.
+
+  Two later original-assembly CLI checks add actual managed-Chrome evidence at
+  profile-creation cancellation and at host-only process termination after
+  completed tool audits. They preserve another owned task/instance and require
+  explicit newly approved recovery, with no automatic replay; see
+  `BROWSER_CREATION_CANCELLATION_ACCEPTANCE.md` and
+  `BROWSER_PROCESS_RECOVERY_ACCEPTANCE.md`. These do not establish all SDK launch
+  instants, mid-side-effect crashes, native GUI, embedded/daily/CDP recovery or
+  Agent/Queue continuation across a real browser-host crash.
+
+- Active-run text guidance uses `ConversationSteeringSession` and the Agent's
+  steering input port. Schema 25 atomically accepts a bounded receipt and consumes
+  its revision-checked draft; a safe boundary inserts a pending prefix once before
+  the next request, after the current tool batch. Required input must fit intact.
+  The run's provider/model/agent, tool roots, approval policy and cancellation
+  remain captured. App exposes shared controls, active Ctrl+Enter and bounded
+  receipt history; Enter retains Queue. Each run owns its gate and acceptance
+  lifetime, while draft coordination is per entry. App and SQLite recheck exact
+  authorization for acceptance/application. Only an empty boundary permits added
+  roots while retaining the original tool context. Failure/stop/reconstruction
+  close acceptance and mark pending receipts Interrupted without replay. History
+  registration, gate waits and late repository errors are contained during stop;
+  ordinary failures retain localized manual retry. See
+  `CONVERSATION_STEERING_PLAN.md` and `CONVERSATION_STEERING_ACCEPTANCE.md` for the
+  guarded integration, exact-candidate full Debug/Release evidence and separate
+  controlled process recovery. Attachment guidance, configurable submission
+  behavior, native/live acceptance and mid-side-effect/commit crashes remain gaps.
+
+- Schema 24 records observed tool interruptions separately from execution results.
+  Infrastructure recovers Running/Waiting tasks and unfinished audits in one
+  transaction without replay, fabricated completion/approval/success or lost
+  artifacts. Earliest interruption metadata is stable; a later real completion
+  remains authoritative. App's shared audit row distinguishes unknown effects
+  from live work. Actual Queue/Agent + managed Chrome checks cover host termination
+  during a held navigation, another preserved instance and explicit continuation;
+  see `AUDIT_INTERRUPTION_RECOVERY_ACCEPTANCE.md` for evidence and limits.
+  `BROWSER_COMMITTED_EFFECT_RECOVERY_ACCEPTANCE.md` adds original Debug/Release
+  checks after a flushed synthetic POST effect but before the click result:
+  restart/continuation preserve the effect once and keep its audit result unknown.
+
+- Windows commands currently validate the working directory and own a cancellable
+  Job Object, but ordinary CreateProcess tokens do not isolate filesystem access.
+  A production-pipeline temporary-marker reproduction confirms outside-root reads.
+  This is an open safety blocker, not an established sandbox boundary. Independent
+  AppContainer feasibility checks are not integrated. A disposable-volume check
+  supports ordinary PowerShell 7 file commands only after granting root metadata
+  access; real-volume provisioning and strict scope remain unresolved. A separate
+  authorized read-only elevated preflight confirms all 44 KnownDll WRITE_DAC
+  requests are refused; native queries identify WinTcb-Light trust labels, so
+  the volatile global runtime-ACL lease route is rejected on this host. See
+  `COMMAND_FILESYSTEM_ISOLATION_PLAN.md` for evidence and the implementation gate.
+  `WINDOWS_ISOLATION_BACKEND_DECISION.md` records the public MXC SDK review and
+  actual ordinary-user probe: this 23H2 host offers AppContainerDacl fallback,
+  not BaseContainer. IsSupported alone is insufficient. No SDK adapter, system
+  setup, weaker fallback or supported-platform change is integrated; process and
+  ConPTY isolation/cancellation remain separate required acceptance gates.
+
+- Source accounts are distinct from AI providers. Domain validates immutable
+  credential-bearing account values with safe display/JSON boundaries;
+  Application owns revision-checked persistence and identity ports. Schema 18
+  and a dedicated Infrastructure GitHub client implement saved token/proxy
+  settings and bounded HTTPS identity requests with no redirects/cookies or
+  silent proxy fallback. App uses shared dialogs and metadata-only rows, not
+  SQL/HTTP. Identity verification grants no project roots, tools or repository
+  permissions. Schema 19 adds separate, credential-revision-bound read grants,
+  irrevocable grant-ID tombstones and source-operation sessions. These sessions
+  own standard task audit identities but are excluded from ordinary chat catalogs;
+  they create no project, roots, worktree or model chat. App's PR page invokes
+  source.pr_list/source.pr_get and separate files/comments/checks tools through
+  the common executor, with fixed read-only
+  capability and exact source scope. Async prevalidation runs before and after
+  approval with cancellation/deadlines; Application rechecks grants/accounts after
+  HTTP before returning data. Source scope restricts all other tools even without
+  an explicit name allowlist, and child gateways retain the parent source scope.
+  The dedicated client constructs local page/PR endpoints, bounds responses and
+  parses untrusted description text without following server links. This is
+  configured-repository reading, with before/after base/head checks for bounded
+  file patches, comments, check runs and legacy statuses. Revision/scope changes
+  invalidate all inspection categories; page cancellation and late cleanup are
+  awaited. Domain's shared bounded patch map validates file patches and current
+  inline-comment anchors against exact paths, head commits and LEFT/RIGHT lines.
+  App renders verified comments below their diff lines and supports keyboard
+  location with visible focus; same-side ranges attach to their verified end line.
+  Navigation, pagination, observed revision/grant changes and disposal invalidate
+  markers and old commands. Historical, missing and unsupported locations remain
+  readable without pretending to match the current patch. This adds no HTTP or
+  filesystem access. It is not atomic snapshot isolation or an inbox,
+  OAuth or confirmed source writes. See `SOURCE_PR_INLINE_COMMENTS_ACCEPTANCE.md`,
+  `SOURCE_PR_INSPECTION_ACCEPTANCE.md` and `SOURCE_PR_READING_ACCEPTANCE.md`.
+  See `SOURCE_ACCOUNT_CONNECTION_ACCEPTANCE.md`.
+
+- Schema 20 binds separate ordinary projectless review conversations to an exact
+  grant/PR/base/head tuple. Application builds an immutable bounded snapshot from
+  explicitly loaded inspection pages; reopening that tuple preserves the first
+  snapshot, while a new base/head creates another conversation. These are model
+  chats, unlike the hidden repository-operation audit sessions above. Workspace
+  history, model/reasoning selection, streaming, cancellation and persistence
+  remain shared. The snapshot is user-role untrusted data with fixed review
+  instructions, carried separately from evictable history. Agent reserves its
+  full message cost before selecting recent turns; insufficient capacity refuses
+  the provider request instead of dropping or clipping the snapshot. App shows
+  an actionable localized failure-card hint and never retries automatically.
+  Schema 21 preserves the model-context-capacity category across catalog reloads
+  and reopen using the existing task-failure port and an atomic forward migration.
+  Roots,
+  working directory, tools, browser and subagents remain
+  unavailable. Access is revalidated at opening, before appending a user prompt,
+  before provider execution and before publishing each model event. Local history
+  remains readable after revocation, but new turns and later output are refused.
+  Failed-check investigation only seeds an empty target draft through the existing
+  composer cache and compare-and-swap persistence, preserving foreground input,
+  attachments and conflicts. It never sends, follows log URLs or posts feedback.
+  Inboxes, feedback writes and live/native acceptance remain separate gaps.
+  See `SOURCE_PR_REVIEW_CHAT_ACCEPTANCE.md`.
+
+- Schema 22 preserves old review chats as Snapshot and adds an explicit
+  ReadOnlySource mode to the grant/PR/base/head uniqueness key. Opening that
+  separate conversation neither sends a model request nor reads additional source
+  data. Only source.pr_get/files/comments/checks metadata is projected for its
+  model; the globally hidden source tools remain hidden in ordinary chats. The
+  task retains no local roots, working directory, browser or subagents. Requests
+  must match its PR number and base/head; application checks grant/account
+  revisions after HTTP and checks remote commits before/after inspection pages.
+  The standard pipeline still owns approval, cancellation, per-tool deadlines,
+  bounded output and audit. Agent starts tool execution off the caller's UI
+  synchronization context, streams bounded progress, and cancels/awaits the same
+  operation when enumeration stops. Access invalidation during progress can
+  therefore finish the audit as either scope denial or cancellation; neither
+  permits late content or another provider request. Source failures use fixed
+  localized scope/revision/output hints rather than arbitrary exception text.
+  Pinned context, history and explicit manual continuation stay shared; the old
+  snapshot chat never acquires source tools. See
+  `SOURCE_PR_ON_DEMAND_READING_ACCEPTANCE.md` for controlled evidence and limits.
+
+- Domain parses explicit PR web links without retaining query/fragment data.
+  Application resolves only the selected account revision and its existing
+  exact-repository grant; no URL creates scope or makes a network request by
+  itself. App's separate link form invokes the existing source.pr_get pipeline,
+  drains previous inspection work, rejects stale/canceled results and attaches
+  the existing detail/inspection/chat flow. GitHub web/API mapping is fixed;
+  Enterprise web links require the configured API host/port, preserving its API
+  prefix. The shared dialog retains independent grant drafts, localized repair
+  messages and keyboard focus. URL suffixes identify the current PR, not a
+  historical commit or comment location. See `SOURCE_PR_URL_ACCEPTANCE.md` for
+  the candidate's validation scope and remaining native/live/PR-workflow gaps.
+
+- App's composer owns task, project-new-conversation and projectless draft scopes
+  through dedicated coordinators and the Application persistence port. Draft
+  reads, delayed writes and reconciliation run independently of the UI message
+  loop; notifications still marshal to the captured UI context. Initial workspace
+  loading and explicit refreshes are serialized so an earlier initialization
+  cannot overtake an awaited refresh and reset a later model/agent choice.
+  Version-13
+  SQLite text rows and version-15 file-backed attachment metadata share revision-
+  checked transactional writes; version 16 adds validated media-type metadata
+  and version 17 admits explicitly selected projectless attachment drafts.
+  Bounded UTF-8 and static-image bytes stay outside SQLite.
+  Delayed reads cannot replace newer input or another scope. Successful first
+  sends promote only the next unsent text and attachment selection identities;
+  failed sends retain them. Missing/corrupt snapshots retain removable chips and
+  block sending; changed project authorizations require removal/reselection.
+  Storage failures/conflicts retain local input and block silent normal exit.
+  The shutdown overlay supports retry, explicit conflict replacement and removal
+  of unavailable attachments without discarding text or valid attachments.
+  This grants no tool/filesystem access. Foreground sends use Application's
+  `IConversationSubmissionRepository`: task, user message, attachment references
+  and revision-checked draft consumption/promotion share one SQLite transaction.
+  App serializes this with background draft writes and retains input edited
+  during the commit. Conflicts roll back before a model request. Cancellation
+  before commit retains input; after commit the saved conversation becomes
+  Cancelled and is selected for explicit manual continuation. Snapshot files/Git
+  remain outside that transaction and failed writes can leave unreferenced files;
+  startup never sends restored input automatically. Native restart and real-provider image
+  interpretation remain incomplete. See `CONVERSATION_DRAFT_ACCEPTANCE.md`,
+  `ATTACHMENT_DRAFT_ACCEPTANCE.md`, `IMAGE_ATTACHMENT_WORKFLOW_ACCEPTANCE.md`
+  and `CONVERSATION_SUBMISSION_ACCEPTANCE.md`.
+
+- App attachment selection is scoped to a project authorization snapshot or
+  explicit projectless file selection, and its conversation. Navigation,
+  authorization changes, cancellation, timeout and
+  shutdown invalidate pending picker/reader results; stale results cannot enter
+  another conversation. Explicit text/static-image selection continues through
+  `IWorkspaceAttachmentReader` for projects or `ISelectedAttachmentReader` for
+  exact absolute files selected without a project. The latter refuses device/ADS
+  paths and link/reparse ancestors; it never authorizes the parent directory or
+  exposes a model tool. Both reuse bounded reads and the image decoder port.
+  Selection stamps are internal consistency hashes, not unforgeable capabilities;
+  restored attachments read internal snapshots, never original source paths.
+  This does not add tool permissions or PDF inputs. See
+  `ATTACHMENT_SELECTION_ISOLATION_ACCEPTANCE.md` and
+  `PROJECTLESS_ATTACHMENTS_ACCEPTANCE.md`.
+
+- Submitted text attachments use `IConversationAttachmentStore`: immutable UTF-8
+  files under task/message artifact identities, never re-reads of source paths.
+  Version-14 SQLite commits message references/metadata with the task and message;
+  bytes remain outside the database. Historical chips restore from metadata.
+  Model history validates ownership, length/hash, links and bounded text reads,
+  then appends untrusted data only to its original user turn. Older attachments
+  outside the model-aware hydration budget receive an explicit omission marker;
+  Agent retains its final context-window budget. Missing/corrupt snapshots fail
+  before provider calls with a persisted localized diagnostic. Thirty-second
+  file operations propagate cancellation off the UI thread. This is not a
+  filesystem/SQLite distributed transaction; unreferenced snapshots may remain
+  after failed persistence. See `ATTACHMENT_HISTORY_ACCEPTANCE.md`.
+
 - Conversations may have no project: a null `AgentTask.ProjectId` is a persisted
   plain-chat scope, not an implicit directory grant. Such runs advertise no tools
   or subagents and reject unsolicited tool calls. The standard execution pipeline
-  also denies tools when `ToolsEnabled` is false. No terminal, browser or file
-  context is attached. See `PROJECTLESS_CHAT.md` for migration and validation scope.
+  also denies tools when `ToolsEnabled` is false. No terminal, browser or automatic
+  filesystem context is attached. Explicitly selected text/images remain user
+  inputs, not tool or directory grants. See `PROJECTLESS_CHAT.md` for migration
+  and validation scope.
 
+- Application's immutable `ModelImage` envelope extends `ModelMessage` without
+  putting pixels into plain text or ordinary JSON persistence. Request-local
+  validation checks image capability, user-only ownership, count and byte limits;
+  Providers folds validation into its existing message traversal and emits native
+  Responses, compatible Chat, Anthropic and Gemini blocks. Final image JSON has
+  a UTF-8 body limit. Agent charges conservative encoded-character costs as fixed
+  context metadata, retaining or evicting whole images, and marks image omission
+  in textual shared-subagent context. `IMAGE_INPUT_ACCEPTANCE.md` records this
+  transport groundwork, not native-picker or paid-provider acceptance.
+
+- Domain's immutable `AttachmentImage` stores validated snapshot metadata and
+  non-diagnostic Base64. Infrastructure's Skia decoder verifies PNG/JPEG/GIF/WebP
+  content, static frames (including APNG rejection), dimensions, pixel counts and
+  encoded sizes before accepting full decoded pixels. Reader/store/draft ports
+  retain authorized paths, cancellation and thirty-second operation boundaries;
+  stores re-decode images before publishing immutable binary snapshots. Version-16
+  SQLite changes media/size constraints while preserving old UTF-8 rows and files.
+  Opaque internal `.txt` snapshot names are retained for compatibility; checked
+  MIME, length/hash and actual decoding determine image content, not extensions.
+  App retains unavailable typed chips, rejects incompatible model selection,
+  permits image-only messages and restores image blocks on the original user
+  turn, never inside text context. Context/count limits omit whole older payloads
+  with explicit markers, not the latest selected image. File/SQL operations are
+  still not one distributed transaction. Native synchronous decoding cannot be
+  interrupted midway: bounded work may finish after the awaiting caller cancels.
+  Projectless selection now uses the independent exact-file reader port.
+  Composer/draft thumbnails now use Application's `IAttachmentThumbnailRenderer`
+  and Infrastructure's bounded, serialized background Skia rendering. The shared
+  chip owns cancellation, stale-result rejection and bitmap disposal; it only
+  sees already-selected bytes and a small validated PNG, never reads source paths
+  or grants tool access. The source decoder and renderer share format/animation/
+  pixel validation. Sent rows retain the selected immutable thumbnail source;
+  restored history receives lazy sources from App's
+  `ConversationAttachmentThumbnailFactory`, which validates task/message metadata
+  and reads only the existing attachment-store port. The factory gates snapshot
+  loads and rendering; detach cancellation and fallback remain control-owned.
+  It adds no filesystem/tool permission or eager history hydration.
+  Infrastructure now retains the codec origin and applies it after thumbnail
+  resizing, using only a bounded small surface. JPEG EXIF previews normalize all
+  eight orientations without rewriting original bytes or encoded dimensions.
+  `ATTACHMENT_THUMBNAIL_ACCEPTANCE.md` and `IMAGE_ORIENTATION_ACCEPTANCE.md`
+  separate deterministic component/draft/sent-history evidence from remaining
+  other-format orientation checks, PDF, child-agent image sharing, native
+  picker/restart and live-provider format/interpretation acceptance.
+  See `IMAGE_ATTACHMENT_WORKFLOW_ACCEPTANCE.md`.
+
+- Tools.BuiltIn's internal snapshot reader allows delete sharing but not write
+  sharing. Windows atomic edits can publish a new file while an existing preview
+  retains its original handle/bytes; in-place mutation and external non-delete-
+  sharing locks remain blocked. Path authorization and current-path hash checks
+  still govern every edit. `FILE_SNAPSHOT_SHARING_ACCEPTANCE.md` records the
+  deterministic pipeline reproduction and unchanged conflict/cleanup boundaries;
+  this does not establish the cause of older authorization-test failures.
+
+- Tool contexts may carry an immutable, case-insensitive allowed-name scope,
+  independent of directory roots and approval policy. Null retains existing task
+  behavior; empty denies all tools, and no scope can override `ToolsEnabled=false`.
+  The standard executor validates the scope after schema/capability checks and
+  before workspace/prevalidator/approval side effects, with an audited denial.
+  Agent filters each model turn's descriptors and delegation catalog; unsolicited
+  calls still go through the executor. Subagent gateways capture the parent scope
+  and intersect child scopes rather than permitting a broader child context.
+  This is groundwork for explicit source-review tasks, not source-account grants,
+  projectless tool access or a completed PR workflow. See `TOOL_SCOPE_ACCEPTANCE.md`.
 - Tools.BuiltIn owns common input-schema validation before capability checks,
   approval or execution, including MCP adapters. JsonSchema.Net 8.0.5 replaces
   the incomplete handwritten assertion evaluator; per-call dialect handlers
@@ -1527,6 +1841,121 @@ Avalonia UI
   Truncated branch output is not reported as a valid branch. Cleanup does not
   roll back worktree or branch mutations and never replays cancelled operations.
   See `GIT_PROCESS_OWNERSHIP_ACCEPTANCE.md` for real Git/hook evidence and limits.
+- File-level Git index mutations are separate `git.stage_file` and
+  `git.unstage_file` tools. Infrastructure implements the Tools.Abstractions
+  repository-authorization port through its bounded identity inspector, including
+  unborn repositories, complete repository scope and independently authorized
+  external metadata. Tools pin the captured Git/worktree directories and literal
+  file pathspecs, reject metadata/directories/links/device aliases, and revalidate
+  file paths after approval. Both mutations are external-side-effect risks:
+  filters or repository hooks may execute programs. They retain the standard
+  capability, task-workspace guard, approval, cancellation, deadline, bounded
+  output and audit pipeline. This is not an operating-system sandbox for hooks.
+  App's dedicated index-actions view model snapshots task roots, cancels obsolete
+  operations, rejects their results and awaits real tool/refresh cleanup on
+  asynchronous disposal. The diff inspector exposes a keyboard-accessible action
+  for the selected staged/unstaged side and refreshes real status after success.
+  Only that side's rename includes its source; copies do not unstage independent
+  edits to the source. Cancellation warns that the index may already have changed.
+  No working-file reset, commit, push, PR, stage-all or hunk workflow is implied.
+  See `GIT_STAGING_ACCEPTANCE.md` for evidence and remaining limits.
+- Staged-only commits use separate `git.commit_preview` and `git.commit` tools
+  through that same repository authorization and execution pipeline. The preview
+  reads the complete bounded index plus HEAD/branch twice around repository
+  reauthorization; a SHA-256 state token includes repository and metadata paths.
+  Commit checks this token again after ordinary approval, refusing changed state,
+  conflicts or an empty staged diff. It passes a literal bounded message to an
+  ordinary `git commit`, without staging, amending, configuring identity, bypassing
+  hooks/signing, pushing or retrying. This does not eliminate native path/index
+  races or sandbox hooks. App's dedicated task-scoped modal preserves in-memory
+  message drafts across navigation, cancels obsolete work and awaits actual tool
+  and refresh cleanup. Failed/cancelled execution requires a fresh preview and
+  warns that a commit may already exist. No draft restart persistence is implied.
+  Successful completion releases operation ownership and publishes non-busy and
+  closed state together, so modal close cannot expose a still-busy trigger between
+  separate dispatcher updates. Obsolete generations cannot close a newer dialog.
+  See `GIT_COMMIT_ACCEPTANCE.md` for evidence and outstanding acceptance.
+- Confirmed pushes use separate local-only `git.push_preview` and side-effecting
+  `git.push` tools. A bounded configuration/HEAD/branch/endpoint snapshot is sampled
+  twice around repository authorization and checked again after approval. The
+  command pins its captured commit ID to one heads ref, overriding broad mirror,
+  tag, submodule and push-option defaults only for that process. Ordinary hooks,
+  credentials and signing remain active; no automatic commit, force, upstream
+  configuration or retry is added. Multiple push URLs and custom helpers fail
+  explicitly. Infrastructure implements a local-destination authorization port,
+  supporting bare/non-bare repositories only inside authorized roots with bounded
+  metadata-tree link checks; alternate object stores are currently unsupported.
+  Raw configuration, credential-bearing URLs and push output never reach tool
+  output/audit/UI. App's task-scoped inspector modal invalidates edited previews,
+  preserves selections and awaits actual tool/refresh cleanup on cancellation or
+  disposal. Successful close publishes non-busy state first. Cancellation can
+  follow remote mutation; native TOCTOU and hook/helper sandboxing are not claimed.
+  See `GIT_PUSH_ACCEPTANCE.md` for evidence and outstanding acceptance.
+- Both dedicated Git runners remove all `GIT_` environment variables from child
+  processes, including inherited values and explicit overrides, using the optional
+  prefix-removal process contract. Windows validates prefixes, builds a private
+  environment block and does not mutate the parent environment. This prevents
+  index/object/config/trace redirection through inherited Git variables; it also
+  intentionally excludes environment-only Git identity, config and SSH overrides.
+  Ordinary repository/user/system Git configuration, hooks and signing remain
+  active. The contract does not restrict shell commands or provide an OS sandbox.
+  App's shared modal returns focus after a temporarily disabled trigger command
+  becomes available, without overriding newer focus, reopens or detached views.
+- New conversations in projects expose a dedicated environment-selection view model
+  through the shared composer context bar. Selection delegates to the existing
+  Git worktree port, never UI filesystem/process code, and retains approval
+  policy. Existing task environments are fixed and restored from task metadata.
+  The flyout accepts a local branch, tag or commit; empty selection retains HEAD.
+  App captures the reference with the send snapshot and locks it during preparation.
+  The existing Application worktree port carries it to Infrastructure, which
+  validates bounded input and resolves a commit with rev-parse --verify
+  --end-of-options before passing only its immutable hash to worktree add.
+  Invalid/noncommit references refuse creation and retain the draft; there is no
+  implicit fallback or fetch, existing-task override or database migration.
+  See `WORKTREE_BASE_REFERENCE_ACCEPTANCE.md` for integration and evidence limits.
+  After snapshot/persistence failure, preparation queries active and archived
+  ownership under an independent 30-second recovery deadline; only an unowned
+  new worktree is removed, without force. Ambiguous persistence or failed cleanup
+  preserves the path with a localized recovery notice. Preparation has its own
+  cancellation source and tracked completion; the composer exposes cancellation
+  while Enter remains submission-only and disabled during preparation. Late
+  snapshots are rejected before message persistence; pending snapshot/status writes
+  and recovery removal retain ownership until return even when a cooperative
+  cancellation deadline expires. Narrow context bars reflow environment/branch
+  onto a second row, and the welcome layout respects the finite remaining height
+  with a shared short-viewport appearance.
+  An already committed task is finalized as Cancelled with an independent deadline without
+  consuming the draft or starting a provider. Unconfirmed finalization retains
+  visible task metadata and an inspect-before-resend notice. Git creation failure
+  with a retained managed directory reports a typed recovery path after owned
+  process cleanup instead of blindly deleting it.
+  Infrastructure now restricts managed creation/removal to direct GUID children,
+  validates absolute paths and link/reparse ancestry, and checks Git pointer files
+  before native discovery. Source repository scope must be explicitly authorized;
+  standalone metadata outside the working root requires an explicit additional
+  authorization, while registered linked sources retain backlink-validated common
+  metadata. Discovery identities and linked-worktree backlinks must agree. Mutations use
+  captured common-directory arguments and the resolved selected commit (or captured
+  source HEAD), preserving the selected linked-source baseline. Authorization is snapshotted before worker dispatch;
+  operations share a total cooperative 30-second deadline and await owned process
+  cleanup. Ordinary removal retains branches and dirty/ambiguous directories.
+  These checks do not pin native directory identities. See
+  `WORKTREE_PATH_SAFETY_ACCEPTANCE.md`. Restored task contexts additionally bind
+  Application's `ManagedWorktreeWorkspaceGuard` to the exact task-GUID path and
+  project/root authorization snapshot. Infrastructure's read-only validator
+  verifies repository identity and registration on each operation, including
+  before approval and again before tool execution. Context copies for preview,
+  diff, statistics, undo, terminal/browser controls and child agents retain the
+  guard. Resume validates before message/status persistence and run preparation
+  validates before model invocation; direct branch reads and explicit cleanup
+  fail closed without matching task/project authorization. Cleanup cannot use a
+  different task's otherwise-valid worktree path. Checks await cooperative
+  cancellation/deadline cleanup; raw validation errors are not exposed. This
+  remains snapshot authorization, not a live revocation subscription or native
+  handle-level race protection. See `RESTORED_WORKTREE_AUTHORIZATION_ACCEPTANCE.md`.
+  Native restart, creation-time crash recovery and complete worktree path/race auditing remain incomplete;
+  see `WORKTREE_CONVERSATION_ACCEPTANCE.md` and
+  `SEND_PREPARATION_CANCELLATION_ACCEPTANCE.md`.
 - Each active task owns an isolated run state and cancellation source. Agent
   event presentation crosses the Avalonia dispatcher before touching UI-bound
   observable collections, while tool approvals are serialized through a

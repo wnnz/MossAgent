@@ -144,6 +144,31 @@ public sealed class ComposerInputKeyboardTests : IAsyncLifetime
         Assert.Equal(2, submitted.Count);
     });
 
+    [Fact]
+    public Task AlternateSubmissionUsesItsOwnCommandAndStillRejectsHeldKeys() => WithInput((window, input, submitted) =>
+    {
+        var alternate = 0;
+        input.AlternateSubmitCommand = new RelayCommand(() => alternate++);
+        KeyDown(window, RawInputModifiers.Control);
+        KeyDown(window, RawInputModifiers.Control);
+        Assert.Equal(1, alternate);
+        Assert.Empty(submitted);
+        KeyUp(window, RawInputModifiers.Control);
+        Press(window, RawInputModifiers.None);
+        Assert.Single(submitted);
+    });
+
+    [Fact]
+    public Task UnavailableAlternateCommandCannotFallBackToTheDefaultAction() => WithInput((window, input, submitted) =>
+    {
+        input.AlternateSubmitCommand = new RelayCommand(() => submitted.Add("invalid"), () => false);
+        Press(window, RawInputModifiers.Control);
+        Assert.Empty(submitted);
+        Assert.Equal("draft", input.Text);
+        Press(window, RawInputModifiers.None);
+        Assert.Single(submitted);
+    });
+
     private Task WithInput(Action<AppWindow, AppComposerInput, List<string>> action) => _session.Dispatch(() =>
     {
         var submitted = new List<string>();

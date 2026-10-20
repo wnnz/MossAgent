@@ -5,6 +5,7 @@ using Xunit;
 
 namespace MossAgent.App.Tests;
 
+[Collection(AllocationMeasurementCollection.Name)]
 public sealed class WorkspaceCatalogLookupTests(ITestOutputHelper output)
 {
     [Fact]
@@ -87,11 +88,10 @@ public sealed class WorkspaceCatalogLookupTests(ITestOutputHelper output)
         var projectId = missing ? Guid.NewGuid() : projects[^1].Id;
         var valid = true;
         for (var index = 0; index < 1_000; index++) valid &= Check(projects, groups, projectId, missing);
-        var before = GC.GetAllocatedBytesForCurrentThread();
-
-        for (var index = 0; index < 10_000; index++) valid &= Check(projects, groups, projectId, missing);
-
-        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        var allocated = AllocationMeasurement.Measure(() =>
+        {
+            for (var index = 0; index < 10_000; index++) valid &= Check(projects, groups, projectId, missing);
+        });
         output.WriteLine($"10,000 combined project/index/group lookups, missing={missing}: {allocated} bytes");
         Assert.True(valid);
         Assert.Equal(0, allocated);

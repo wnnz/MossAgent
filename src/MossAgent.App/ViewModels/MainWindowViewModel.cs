@@ -41,17 +41,20 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         ApprovalViewModel approval,
         IThemeService themeService,
         ThemePaletteSettingsViewModel palette,
-        AutomationViewModel? automations = null)
+        AutomationViewModel? automations = null,
+        SourceAccountSettingsViewModel? sourceAccounts = null,
+        PullRequestsViewModel? pullRequests = null)
     {
         Workspace = workspace;
         _inspector = new WorkspaceInspectorViewModel(workspace.Catalog);
         _inspector.PropertyChanged += HandleInspectorChanged;
         workspace.FilePreview.Opened += HandlePreviewOpened;
         workspace.FileChanges.ReviewRequested += HandleFileChangesReview;
-        Pages = new WorkspacePageNavigationViewModel(workspace.Catalog, automations);
+        Pages = new WorkspacePageNavigationViewModel(workspace.Catalog, automations, pullRequests, workspace.Drafts);
         workspace.Catalog.ConversationRequested += HandleConversationRequested;
         Providers = providers;
         Proxies = proxies;
+        SourceAccounts = sourceAccounts;
         Models = models;
         Browser = browser;
         Mcp = mcp;
@@ -71,6 +74,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         models.ModelCatalogChanged += ReloadModelCatalogAsync;
         proxies.ProxiesChanged += providers.ReloadProxiesAsync;
         proxies.ProxiesChanged += browser.ReloadProxiesAsync;
+        if (sourceAccounts is not null) proxies.ProxiesChanged += sourceAccounts.ReloadProxiesAsync;
         agents.ProfilesChanged += workspace.ReloadAgentsAsync;
         workspace.ModelPicker.ProviderSettingsRequested += HandleProviderSettingsRequested;
         _themeService.ThemeChanged += HandleThemeChanged;
@@ -85,6 +89,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         ToggleRightPanelCommand = new RelayCommand(() =>
         {
             IsSettingsOpen = false;
+            Pages.IsPullRequestsOpen = false;
             _inspector.ToggleRightPanel();
         });
         ToggleBottomPanelCommand = new RelayCommand(() => IsBottomPanelOpen = !IsBottomPanelOpen);
@@ -112,6 +117,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     /// 网络代理配置视图模型。
     /// </summary>
     public ProxySettingsViewModel Proxies { get; }
+    public SourceAccountSettingsViewModel? SourceAccounts { get; }
 
     /// <summary>
     /// 模型配置视图模型。
@@ -174,6 +180,8 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         Models.ModelCatalogChanged -= ReloadModelCatalogAsync;
         Proxies.ProxiesChanged -= Providers.ReloadProxiesAsync;
         Proxies.ProxiesChanged -= Browser.ReloadProxiesAsync;
+        if (SourceAccounts is not null) Proxies.ProxiesChanged -= SourceAccounts.ReloadProxiesAsync;
+        SourceAccounts?.Dispose();
         Proxies.Dispose();
         Browser.Dispose();
         Agents.ProfilesChanged -= Workspace.ReloadAgentsAsync;
@@ -216,7 +224,11 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     public bool IsSettingsOpen
     {
         get => _isSettingsOpen;
-        set => SetProperty(ref _isSettingsOpen, value);
+        set
+        {
+            if (!SetProperty(ref _isSettingsOpen, value)) return;
+            if (value) Pages.IsPullRequestsOpen = false;
+        }
     }
 
     public int SettingsTabIndex
@@ -232,6 +244,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(IsSubagentSettingsSelected));
             OnPropertyChanged(nameof(IsAgentSettingsSelected));
             OnPropertyChanged(nameof(IsAppearanceSettingsSelected));
+            OnPropertyChanged(nameof(IsSourceAccountSettingsSelected));
         }
     }
 
@@ -247,6 +260,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     public bool IsAgentSettingsSelected => SettingsTabIndex == 6;
 
     public bool IsAppearanceSettingsSelected => SettingsTabIndex == 5;
+    public bool IsSourceAccountSettingsSelected => SettingsTabIndex == 7 && SourceAccounts is not null;
 
     public bool IsSystemThemeSelected => _themeService.Preference == ThemePreference.System;
     public bool IsLightThemeSelected => _themeService.Preference == ThemePreference.Light;
@@ -273,6 +287,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(IsSubagentSettingsMatch));
             OnPropertyChanged(nameof(IsAgentSettingsMatch));
             OnPropertyChanged(nameof(IsAppearanceSettingsMatch));
+            OnPropertyChanged(nameof(IsSourceAccountSettingsMatch));
             OnPropertyChanged(nameof(IsPersonalSettingsMatch));
             OnPropertyChanged(nameof(IsIntegrationSettingsMatch));
             OnPropertyChanged(nameof(IsAgentSectionSettingsMatch));
@@ -287,12 +302,14 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     public bool IsSubagentSettingsMatch => MatchesSettingsQuery("子代理 模型 思考");
     public bool IsAgentSettingsMatch => MatchesSettingsQuery("自定义代理 提示词 模型 思考");
     public bool IsAppearanceSettingsMatch => MatchesSettingsQuery("外观 主题 浅色 深色 系统");
+    public bool IsSourceAccountSettingsMatch => SourceAccounts is not null
+        && MatchesSettingsQuery(SourceAccountText.Title + " GitHub PR Pull Request source account");
     public bool IsPersonalSettingsMatch => IsAppearanceSettingsMatch || IsProviderSettingsMatch || IsProxySettingsMatch;
-    public bool IsIntegrationSettingsMatch => IsMcpSettingsMatch || IsBrowserSettingsMatch;
+    public bool IsIntegrationSettingsMatch => IsMcpSettingsMatch || IsBrowserSettingsMatch || IsSourceAccountSettingsMatch;
     public bool IsAgentSectionSettingsMatch => IsAgentSettingsMatch || IsSubagentSettingsMatch;
     public bool HasSettingsSearchResults => IsProviderSettingsMatch || IsProxySettingsMatch
         || IsBrowserSettingsMatch || IsMcpSettingsMatch || IsSubagentSettingsMatch
-        || IsAppearanceSettingsMatch || IsAgentSettingsMatch;
+        || IsAppearanceSettingsMatch || IsAgentSettingsMatch || IsSourceAccountSettingsMatch;
 
     /// <summary>
     /// 是否展开左侧项目和会话导航栏。
@@ -415,7 +432,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
 
     private void SelectSettingsTab(string? tab)
     {
-        if (!int.TryParse(tab, out var index) || index is < 0 or > 6) return;
+        if (!int.TryParse(tab, out var index) || index is < 0 or > 7 || (index == 7 && SourceAccounts is null)) return;
         Workspace.ModelPicker.IsPickerOpen = false;
         SettingsTabIndex = index;
         IsSettingsOpen = true;
@@ -441,6 +458,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         if (!InspectorText.IsValidTab(tab)) return;
         IsSettingsOpen = false;
         Pages.IsAutomationsOpen = false;
+        Pages.IsPullRequestsOpen = false;
         ActiveInspectorTab = tab!;
         Workspace.FilePreview.Hide();
         IsRightPanelOpen = true;

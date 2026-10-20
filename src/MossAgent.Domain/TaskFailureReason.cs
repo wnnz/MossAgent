@@ -16,5 +16,7 @@ public enum TaskFailureReason
     ProviderBlocked = 11,
     ProviderOutputLimit = 12,
     UnsupportedReasoningEffort = 13,
-    ProxyAuthentication = 14
+    ProxyAuthentication = 14,
+    AttachmentHistory = 15,
+    ModelContextCapacity = 16
 }

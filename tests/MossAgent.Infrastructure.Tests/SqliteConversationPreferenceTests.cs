@@ -117,7 +117,7 @@ public sealed class SqliteConversationPreferenceTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(12, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(25, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(fixture.Task with { IsPinned = true }, Assert.Single(await fixture.Repository.GetPinnedTasksAsync(fixture.Token)));
         Assert.Equal(message, Assert.Single(await fixture.Repository.GetMessagesAsync(fixture.Task.Id, fixture.Token)));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_model_preferences;"));
@@ -140,6 +140,6 @@ public sealed class SqliteConversationPreferenceTests
         Assert.Equal(fixture.Task, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)));
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_eleven;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(12, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(25, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
     }
 }

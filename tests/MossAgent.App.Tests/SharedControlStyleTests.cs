@@ -240,7 +240,8 @@ public sealed class SharedControlStyleTests
             "Styles", "SurfaceVariants.axaml"));
         var selectors = document.Descendants()
             .Where(element => element.Name.LocalName == "Style")
-            .Select(element => element.Attribute("Selector")?.Value)
+            .SelectMany(element => (element.Attribute("Selector")?.Value ?? string.Empty)
+                .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
             .ToArray();
 
         Assert.Contains("controls|AppCard.flyout-surface", selectors);
@@ -248,6 +249,7 @@ public sealed class SharedControlStyleTests
         Assert.Contains(".app-input.terminal-input", selectors);
         Assert.Contains(".app-combo-box.compact-selector", selectors);
         Assert.Contains(".app-scroll-viewer.modal-scroll", selectors);
+        Assert.Contains(".app-scroll-viewer.content-gutter", selectors);
         var navigation = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App",
             "Styles", "NavigationActionVariants.axaml"));
         Assert.Contains(navigation.Descendants(), element => element.Name.LocalName == "Style"

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using MossAgent.Application.Persistence;
+using MossAgent.Application.Conversations;
 using MossAgent.Browser;
 using MossAgent.Browser.Tools;
 using MossAgent.Mcp;
@@ -21,6 +22,7 @@ using MossAgent.Providers.Anthropic;
 using MossAgent.Providers.Gemini;
 using MossAgent.Agent;
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Git;
 using MossAgent.Tools.Abstractions.Browser;
 using MossAgent.Tools.BuiltIn.Execution;
 using MossAgent.Tools.BuiltIn.Files;
@@ -37,6 +39,10 @@ using MossAgent.App.Services;
 using MossAgent.Application.Automations;
 using MossAgent.Tools.Abstractions.Files;
 using MossAgent.Platform.Windows.Files;
+using MossAgent.Application.SourceControl;
+using MossAgent.Infrastructure.SourceControl;
+using MossAgent.Tools.Abstractions.SourceControl;
+using MossAgent.Tools.BuiltIn.SourceControl;
 
 namespace MossAgent.App;
 
@@ -69,19 +75,44 @@ internal static class AppComposition
         services.AddSingleton<IAgentConfigurationRepository, SqliteAgentConfigurationRepository>();
         services.AddSingleton<IBrowserConfigurationRepository, SqliteBrowserConfigurationRepository>();
         services.AddSingleton<IMcpConfigurationRepository, SqliteMcpConfigurationRepository>();
+        services.AddSingleton<ISourceAccountRepository, SqliteSourceAccountRepository>();
+        services.AddSingleton<ISourceAccountHttpClientFactory, SourceAccountHttpClientFactory>();
+        services.AddSingleton<ISourceAccountIdentityClient, GitHubIdentityClient>();
+        services.AddSingleton<SourceAccountConnections>();
+        services.AddSingleton<ISourceRepositoryGrants, SqliteSourceRepositoryGrants>();
+        services.AddSingleton<ISourceReviewSessions, SqliteSourceReviewSessions>();
+        services.AddSingleton<IPullRequestClient, GitHubPullRequestClient>();
+        services.AddSingleton<ISourceReviewReader, SourceReviewReader>();
+        services.AddSingleton<SourceRepositoryAccess>();
+        services.AddSingleton<ISourceReviewChats, SqliteSourceReviewChats>();
+        services.AddSingleton<SourceReviewChatCreator>();
+        services.AddSingleton<SourceReviewChatAccess>();
+        services.AddSingleton<IPullRequestInspectionClient, GitHubPullRequestInspectionClient>();
+        services.AddSingleton<ISourcePullRequestInspection, SourcePullRequestInspection>();
         services.AddSingleton<IWorkspaceRepository, SqliteWorkspaceRepository>();
         services.AddSingleton<IConversationPreferenceRepository, SqliteConversationPreferenceRepository>();
+        services.AddSingleton<IConversationDraftRepository, SqliteConversationDraftRepository>();
+        services.AddSingleton<IConversationFollowupRepository, SqliteConversationFollowupRepository>();
+        services.AddSingleton<IConversationSteeringRepository, SqliteConversationSteeringRepository>();
+        services.AddSingleton<ConversationFollowupPreparer>();
+        services.AddSingleton<WorkspaceFollowupServices>();
         services.AddSingleton<IAutomationRepository, SqliteAutomationRepository>();
         services.AddSingleton<IAutomationLease, AutomationSchedulerLease>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<ISidebarPreferenceStore, JsonSidebarPreferenceStore>();
-        services.AddSingleton<IWorkspaceAttachmentReader, WorkspaceAttachmentReader>();
+        services.AddSingleton<IAttachmentImageDecoder, SkiaAttachmentImageDecoder>();
+        services.AddSingleton<IAttachmentThumbnailRenderer, SkiaAttachmentThumbnailRenderer>();
+        services.AddSingleton<WorkspaceAttachmentReader>();
+        services.AddSingleton<IWorkspaceAttachmentReader>(static provider => provider.GetRequiredService<WorkspaceAttachmentReader>());
+        services.AddSingleton<ISelectedAttachmentReader>(static provider => provider.GetRequiredService<WorkspaceAttachmentReader>());
+        services.AddSingleton<IConversationAttachmentStore, ConversationAttachmentStore>();
         services.AddSingleton<ITaskArtifactPaths, TaskArtifactPaths>();
         services.AddSingleton<ITaskArtifactContentReader, TaskArtifactContentReader>();
         services.AddSingleton<IBrowserProfilePaths, BrowserProfilePaths>();
         services.AddSingleton<GitProcessRunner>();
         services.AddSingleton<IGitWorktreeService, GitWorktreeService>();
         services.AddSingleton<IGitRepositoryInfoService, GitRepositoryInfoService>();
+        services.AddSingleton<MossAgent.Tools.Abstractions.Git.IGitRepositoryAuthorization, GitRepositoryAuthorization>();
         services.AddSingleton<IProviderHttpClientFactory, ProviderHttpClientFactory>();
         services.AddSingleton<IProxyConnectionTester, ProxyConnectionTester>();
         services.AddSingleton<IToolExecutionAuditSink, SqliteToolExecutionAuditSink>();
@@ -101,6 +132,11 @@ internal static class AppComposition
         services.AddSingleton<IAuthorizedPathResolver>(
             static provider => provider.GetRequiredService<AuthorizedPathResolver>());
         services.AddSingleton<GitCommandRunner>();
+        services.AddSingleton<GitIndexPaths>();
+        services.AddSingleton<GitCommitStateReader>();
+        services.AddSingleton<GitPushEndpoints>();
+        services.AddSingleton<GitPushStateReader>();
+        services.AddSingleton<IGitPushDestinationAuthorization, GitPushDestinationAuthorization>();
         services.AddSingleton<IBrowserSessionFactory, PlaywrightBrowserSessionFactory>();
         services.AddSingleton<EmbeddedBrowserWorkspaceViewModel>();
         services.AddSingleton<IEmbeddedBrowserSessionFactory, EmbeddedBrowserSessionFactory>();
@@ -128,9 +164,20 @@ internal static class AppComposition
         services.AddSingleton<IAgentTool, ShellRunTool>();
         services.AddSingleton<IAgentTool, GitStatusTool>();
         services.AddSingleton<IAgentTool, GitDiffTool>();
+        services.AddSingleton<IAgentTool, GitStageFileTool>();
+        services.AddSingleton<IAgentTool, GitUnstageFileTool>();
+        services.AddSingleton<IAgentTool, GitCommitPreviewTool>();
+        services.AddSingleton<IAgentTool, GitCommitTool>();
+        services.AddSingleton<IAgentTool, GitPushPreviewTool>();
+        services.AddSingleton<IAgentTool, GitPushTool>();
         services.AddSingleton<IAgentTool, GitLogTool>();
         services.AddSingleton<IAgentTool, GitCreateWorktreeTool>();
         services.AddSingleton<IAgentTool, SubagentTool>();
+        services.AddSingleton<IAgentTool, PullRequestListTool>();
+        services.AddSingleton<IAgentTool, PullRequestGetTool>();
+        services.AddSingleton<IAgentTool, PullRequestFilesTool>();
+        services.AddSingleton<IAgentTool, PullRequestCommentsTool>();
+        services.AddSingleton<IAgentTool, PullRequestChecksTool>();
     }
 
     private static void RegisterBrowserAndDesktopTools(IServiceCollection services)
@@ -183,6 +230,8 @@ internal static class AppComposition
     private static void RegisterWorkspace(IServiceCollection services)
     {
         services.AddSingleton<ProxySettingsViewModel>();
+        services.AddSingleton<SourceAccountSettingsViewModel>();
+        services.AddSingleton<PullRequestsViewModel>();
         services.AddSingleton<ProviderSettingsViewModel>();
         services.AddSingleton<ModelSettingsViewModel>();
         services.AddSingleton<SubagentSettingsViewModel>();
@@ -190,6 +239,7 @@ internal static class AppComposition
         services.AddSingleton<WorkspaceTaskFactory>();
         services.AddSingleton<WorkspaceProjectService>();
         services.AddSingleton<WorkspaceAttachmentManagerViewModel>();
+        services.AddSingleton<ConversationAttachmentThumbnailFactory>();
         services.AddSingleton<WorkspaceRunTracker>();
         services.AddSingleton<WorkspaceRunExecutor>();
         services.AddSingleton<WorkspaceRunController>();

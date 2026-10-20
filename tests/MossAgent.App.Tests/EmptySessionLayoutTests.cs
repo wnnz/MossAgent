@@ -59,4 +59,32 @@ public sealed class EmptySessionLayoutTests : IAsyncLifetime
         Assert.Throws<ArgumentException>(() => layout.BrandOffset = double.NaN);
         Assert.Throws<ArgumentException>(() => layout.BrandOffset = double.PositiveInfinity);
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task ShortViewport_ReducesSharedWelcomeAppearanceAndRestoresItAfterResize(bool dark) => _session.Dispatch(() =>
+    {
+        var brand = new AppIcon { Classes = { "icon-brand", "empty-agent-offset" } };
+        var heading = new AppProjectPrompt { Prefix = "你想让我们在", ProjectName = "项目", Suffix = "中构建什么？" };
+        var layout = new AppEmptySessionLayout { Children = { brand, heading } };
+        var window = new AppWindow { Width = 470, Height = 600, Content = layout,
+            RequestedThemeVariant = dark ? ThemeVariant.Dark : ThemeVariant.Light };
+        window.Show();
+        try
+        {
+            foreach (var height in new[] { 600, 115, 141, 115, 600 })
+            {
+                layout.Height = height;
+                window.UpdateLayout();
+                Assert.Equal(height < 140, layout.Classes.Contains("short-viewport"));
+                Assert.Equal(height < 140 ? 32 : 46, brand.Size);
+                Assert.True(brand.Bounds.Top >= 0);
+                Assert.True(brand.Bounds.Bottom <= heading.Bounds.Top);
+                Assert.True(heading.Bounds.Bottom <= layout.Bounds.Height);
+                Assert.Null(brand.RenderTransform);
+            }
+        }
+        finally { window.Close(); }
+    }, TestContext.Current.CancellationToken);
 }

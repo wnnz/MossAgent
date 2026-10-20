@@ -26,4 +26,7 @@
   <data name="HttpErrorBodyLimit" xml:space="preserve"><value>供应商的错误响应超过安全上限（65,536 字节），正文未显示。请检查接口地址和供应商服务状态后重试。</value></data>
   <data name="HttpErrorInvalidEncoding" xml:space="preserve"><value>供应商的错误响应不是有效的 UTF-8 数据，正文未显示。请检查接口配置后重试。</value></data>
   <data name="ProxyAuthenticationFailed" xml:space="preserve"><value>代理认证失败，请检查所选代理的用户名和密码。</value></data>
+<data name="ResponseIncomplete" xml:space="preserve"><value>模型响应未完整结束，请检查输出限制或提供商状态后手动继续。</value></data>
+<data name="ResponseFailed" xml:space="preserve"><value>模型请求失败，请检查提供商状态后重试。</value></data>
+<data name="StreamIncompleteResponse" xml:space="preserve"><value>模型响应在结束信号到达前中断。已保留收到的内容，请检查网络或提供商状态后手动继续。</value></data>
 </root>

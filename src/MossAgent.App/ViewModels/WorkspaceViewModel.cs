@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Resources;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.Application.Agent;
@@ -9,33 +8,27 @@ using MossAgent.Application.Persistence;
 using MossAgent.Application.Settings;
 using MossAgent.Domain;
 using MossAgent.App.Browser;
-
 using MossAgent.App.Services;
 
 namespace MossAgent.App.ViewModels;
 
 public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDisposable
 {
-    private static readonly ResourceManager Labels = new(
-        "MossAgent.App.Resources.WorkspaceStrings", typeof(WorkspaceViewModel).Assembly);
-    private readonly WorkspaceTaskFactory _taskFactory;
     private readonly WorkspaceRunTracker _runs;
-    private readonly WorkspaceRunController _runController;
     private readonly WorkspaceTaskPanelCoordinator _panels;
     private readonly WorkspaceBackgroundRunCoordinator _backgroundRuns;
+    private readonly WorkspaceAttachmentDraftCoordinator _attachmentDrafts;
+    private readonly WorkspaceSendCoordinator _sender;
+    private readonly WorkspaceLoadCoordinator _loads = new();
     private AiProvider? _selectedProvider;
     private ModelProfile? _selectedModel;
     private ApprovalPolicy _approvalPolicy = ApprovalPolicy.AskEveryTime;
-    private string _composerText = string.Empty;
     private string _projectPickerQuery = string.Empty;
     private string _activity = WorkspaceText.Get("ChatReady");
-    private bool _isStarting;
+    private readonly WorkspaceSendPreparation _preparation = new();
     private bool _hasSendPreparationError;
     private bool _isShuttingDown;
     private bool _disposed;
-    private Task? _startingTask;
-    private Guid? _composerProjectId;
-    private Guid? _composerTaskId;
 
     public WorkspaceViewModel(
         IConfigurationRepository configurations,
@@ -50,15 +43,18 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         AppStartupViewModel? startup = null,
         ISidebarPreferenceStore? sidebarPreferences = null,
         WorkspaceFileChangeUndoService? undoService = null, WorkspaceFileChangeStatisticsService? statisticsService = null,
-        IConversationPreferenceRepository? conversationPreferences = null)
+        IConversationPreferenceRepository? conversationPreferences = null, IConversationDraftRepository? conversationDrafts = null,
+        WorkspaceFollowupServices? followups = null, IConversationSteeringRepository? steering = null)
     {
-        _taskFactory = taskFactory;
         _runs = runs;
-        _runController = runController;
         _panels = panels;
         Attachments = attachments;
         RepositoryStatus = repositoryStatus;
         Catalog = catalog;
+        Drafts = new(conversationDrafts);
+        _attachmentDrafts = new(attachments, Drafts);
+        Shutdown = new() { Drafts = Drafts };
+        Drafts.PropertyChanged += HandleDraftChanged;
         FileChanges = new WorkspaceFileChangesViewModel(catalog, panels, undoService, statisticsService);
         SidebarProjects = new WorkspaceSidebarProjectsViewModel(catalog.ProjectNavigation, sidebarPreferences);
         SidebarSearch = new WorkspaceSidebarSearchViewModel(catalog);
@@ -67,7 +63,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         Startup.PropertyChanged += HandleStartupChanged;
         Tabs = new WorkspaceConversationTabsViewModel(catalog);
         Catalog.ActiveMessagesProvider = _runs.GetMessages;
-        Catalog.IsTaskRunning = taskId => _runs.IsRunning(taskId) || FileChanges.Undo.OwnsTask(taskId);
+        Catalog.IsTaskRunning = taskId => _runs.IsRunning(taskId) || Queue?.IsPreparing(taskId) == true || FileChanges.Undo.OwnsTask(taskId);
         Catalog.SelectionChanged += HandleSelectionChanged;
         Catalog.Messages.CollectionChanged += HandleMessagesChanged;
         ModelPicker = new ModelPickerViewModel(configurations);
@@ -77,12 +73,24 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         ModelPicker.PropertyChanged += HandleModelPickerChanged;
         RefreshCommand = new AsyncRelayCommand(LoadAsync);
         PrimaryActionCommand = new RelayCommand(ExecutePrimaryAction, CanExecutePrimaryAction);
+        _preparation.StateChanged += NotifyRunStateChanged;
         FileChanges.Undo.StateChanged += HandleUndoStateChanged;
         OpenProjectPickerCommand = new RelayCommand(OpenProjectPicker);
-        SetApprovalPolicyCommand = new RelayCommand<ApprovalPolicy>(SetApprovalPolicy);
+        SetApprovalPolicyCommand = new RelayCommand<ApprovalPolicy>(policy => ApprovalPolicy = policy);
         Catalog.TaskManagement.PropertyChanged += HandleTaskMutationChanged;
         ConversationPreferences = conversationPreferences is null ? null
             : new WorkspaceConversationPreferences(conversationPreferences, catalog, ModelPicker, AgentPicker);
+        _sender = new(taskFactory, runs, runController, panels, catalog, attachments, Drafts, _preparation,
+            ConversationPreferences, new(PresentEventAsync, SetActivity, ApplyTaskUpdate, NotifyRunStateChanged),
+            () => _disposed, () => IsShuttingDown, value => Activity = value);
+        Queue = followups?.Create(this, taskFactory, runs, runController, panels,
+            new(PresentEventAsync, SetActivity, ApplyTaskUpdate, NotifyRunStateChanged), () => HasActiveRun && CanSend(true),
+            () => !_disposed && Startup.IsReady && !IsRunning && !IsShuttingDown && !FileChanges.Undo.IsBusy
+                && Catalog.SelectedTask is { } task && !Catalog.TaskManagement.BlocksTaskStart(task.Id))
+            ?? new(null, catalog, () => WorkspaceSendRequest.Capture(this), () => false, () => false, () => HasActiveRun, PrimaryActionCommand);
+        Queue.StateChanged += NotifyRunStateChanged;
+        Steering = new(steering, runs, runController, catalog, Drafts, PrimaryActionCommand, Queue.SubmitCommand,
+            () => !_disposed && !IsShuttingDown && Startup.IsReady && !FileChanges.Undo.IsBusy);
         _backgroundRuns = new(taskFactory, runs, runController, panels, catalog,
             () => !_disposed && !IsShuttingDown && Startup.IsReady, PresentEventAsync, SetActivity,
             ApplyTaskUpdate, NotifyRunStateChanged, (taskId, preference) => ConversationPreferences?.Remember(taskId, preference));
@@ -97,7 +105,11 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     public ModelPickerViewModel ModelPicker { get; }
     public WorkspaceAgentPickerViewModel AgentPicker { get; }
     public WorkspaceConversationPreferences? ConversationPreferences { get; }
-    public AppShutdownViewModel Shutdown { get; } = new();
+    public WorkspaceComposerDraftsViewModel Drafts { get; }
+    public WorkspaceFollowupQueueViewModel Queue { get; }
+    public WorkspaceSteeringViewModel Steering { get; }
+    public IRelayCommand ComposerSubmitCommand => Queue.SubmitCommand;
+    public AppShutdownViewModel Shutdown { get; }
     public bool IsShuttingDown => _isShuttingDown;
     public ObservableCollection<WorkspaceProjectNavigationViewModel> ProjectPickerProjects { get; } = [];
     public IRelayCommand OpenProjectPickerCommand { get; }
@@ -126,11 +138,11 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     public IRelayCommand PrimaryActionCommand { get; }
     public IRelayCommand<AgentProfile?> SelectAgentCommand => AgentPicker.SelectCommand;
     public IRelayCommand<ApprovalPolicy> SetApprovalPolicyCommand { get; }
-    public bool IsRunning => _isStarting || (Catalog.SelectedTask is { } task && _runs.IsRunning(task.Id));
+    public bool IsRunning => _preparation.IsActive || (Catalog.SelectedTask is { } task && (_runs.IsRunning(task.Id) || Queue?.IsPreparing(task.Id) == true));
     public bool HasActiveRun => Catalog.SelectedTask is { } task && _runs.IsRunning(task.Id);
     public bool HasSendPreparationError { get => _hasSendPreparationError; private set => SetProperty(ref _hasSendPreparationError, value); }
-    public string SendPreparationError => WorkspaceLabel(nameof(SendPreparationError));
-    public string PrimaryActionLabel => WorkspaceLabel(HasActiveRun ? "StopRunLabel" : _isStarting ? "PreparingRunLabel" : "SendRunLabel");
+    public string SendPreparationError => Catalog.Environment.PreparationNotice ?? WorkspaceLabel(nameof(SendPreparationError));
+    public string PrimaryActionLabel => WorkspaceLabel(HasActiveRun ? "StopRunLabel" : IsRunning ? _preparation.IsCancellationRequested ? "CancellingPreparationLabel" : "CancelPreparationLabel" : "SendRunLabel");
     public bool IsSelectedTaskFailed => Catalog.SelectedTask?.Status == AgentTaskStatus.Failed;
     public string TaskFailureHint => WorkspaceFailureText.Get(Catalog.SelectedTask?.FailureReason);
     public bool HasMessages => Messages.Count > 0;
@@ -158,6 +170,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         set
         {
             if (!SetProperty(ref _selectedModel, value)) return;
+            Attachments.SetModel(value);
             ModelPicker.SyncSelection(SelectedProvider, value);
             NotifyRunStateChanged();
         }
@@ -187,16 +200,18 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
 
     public string ComposerText
     {
-        get => _composerText;
-        set { if (SetProperty(ref _composerText, value)) NotifyRunStateChanged(); }
+        get => Drafts.Text;
+        set => Drafts.Text = value;
     }
 
     public string Activity { get => _activity; private set => SetProperty(ref _activity, value); }
-    public async Task LoadAsync()
+    public Task LoadAsync() => _loads.RunAsync(LoadCoreAsync);
+    private async Task LoadCoreAsync()
     {
         if (_disposed) return;
         await Catalog.ReloadAsync();
         if (_disposed) return;
+        await Drafts.LoadCurrentAsync();
         RefreshProjectPicker();
         OnPropertyChanged(nameof(IsProjectlessChat));
         await ModelPicker.ReloadAsync();
@@ -225,17 +240,18 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     private void ExecutePrimaryAction()
     {
         if (IsRunning) Stop();
-        else if (CanSend()) _startingTask = SendAsync();
+        else if (CanSend()) _preparation.Start(SendAsync);
     }
 
     private bool CanExecutePrimaryAction() => !_disposed && (IsRunning ? CanStop() : CanSend());
-    private bool CanSend() =>
-        !_disposed && Startup.IsReady && !_isStarting && !IsShuttingDown && !FileChanges.Undo.IsBusy && AgentPicker.CanUseSelection
+    private bool CanSend(bool allowRunning = false) =>
+        !_disposed && Startup.IsReady && Drafts.CanSend && Attachments.IsModelCompatible && !_preparation.IsActive && !IsShuttingDown && !FileChanges.Undo.IsBusy && AgentPicker.CanUseSelection
         && SelectedProvider is not null
         && SelectedModel is not null && ModelPicker.CanSendWithSelectedModel
         && ModelPicker.SelectedItem?.Provider.Id == SelectedProvider.Id
-        && ModelPicker.SelectedItem.Model.Id == SelectedModel.Id && !string.IsNullOrWhiteSpace(ComposerText)
-        && (Catalog.SelectedTask is null || (Catalog.SelectedTask.ProjectId == Catalog.SelectedProject?.Id && !_runs.IsRunning(Catalog.SelectedTask.Id)
+        && ModelPicker.SelectedItem.Model.Id == SelectedModel.Id && (!string.IsNullOrWhiteSpace(ComposerText) || Attachments.HasImageItems)
+        && (Catalog.SelectedTask is null || (Catalog.SelectedTask.ProjectId == Catalog.SelectedProject?.Id && (allowRunning || !_runs.IsRunning(Catalog.SelectedTask.Id))
+            && Queue?.IsPreparing(Catalog.SelectedTask.Id) != true
             && !Catalog.TaskManagement.BlocksTaskStart(Catalog.SelectedTask.Id)));
 
     private void HandleTaskMutationChanged(object? sender, PropertyChangedEventArgs args)
@@ -267,6 +283,10 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     {
         if (_disposed) return;
         _disposed = true;
+        Steering.Dispose();
+        Queue.StateChanged -= NotifyRunStateChanged;
+        Queue.Dispose();
+        _preparation.Dispose();
         RepositoryStatus.Dispose();
         Tabs.Dispose();
         Catalog.SelectionChanged -= HandleSelectionChanged;
@@ -277,6 +297,9 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         ModelPicker.ModelSelected -= HandleModelSelected;
         AgentPicker.PropertyChanged -= HandleAgentPickerChanged;
         ConversationPreferences?.Dispose();
+        Drafts.PropertyChanged -= HandleDraftChanged;
+        _attachmentDrafts.Dispose();
+        Drafts.Dispose();
         AgentPicker.Dispose();
         ModelPicker.Dispose();
         Catalog.ProjectEditor.Dispose();
@@ -293,18 +316,21 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
 
     public async ValueTask DisposeAsync()
     {
+        _isShuttingDown = true; await Queue.StopAsync(); await Steering.StopAsync(); await _preparation.StopAsync();
         await Task.WhenAll(RepositoryStatus.StopAsync(), FileChanges.Statistics.StopAsync(), SidebarProjects.StopAsync());
         if (ConversationPreferences is not null) await ConversationPreferences.StopAsync();
+        await Drafts.StopAsync();
         Dispose();
     }
 
     private async Task StopAllAsync()
     {
         _isShuttingDown = true;
+        Attachments.Stop();
         OnPropertyChanged(nameof(IsShuttingDown));
         NotifyRunStateChanged();
         _runs.CancelAll();
-        try { if (_startingTask is not null) await _startingTask; }
+        try { await Queue.StopAsync(); await Steering.StopAsync(); await _preparation.StopAsync(); }
         finally
         {
             var navigationStop = Task.WhenAll(RepositoryStatus.StopAsync(), SidebarProjects.StopAsync());
@@ -313,73 +339,35 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
                 await _runs.StopAsync();
                 await FileChanges.StopAsync();
                 if (ConversationPreferences is not null) await ConversationPreferences.StopAsync();
+                await Drafts.StopAsync();
             }
             finally { await navigationStop; }
         }
     }
 
-    private async Task SendAsync()
+    private async Task SendAsync(CancellationToken cancellationToken)
     {
-        var draft = ComposerText;
-        var prompt = draft.Trim();
-        var project = Catalog.SelectedProject;
-        var existingTask = Catalog.SelectedTask;
-        var preference = ConversationPreferences?.Capture();
-        var provider = SelectedProvider!;
-        var model = SelectedModel! with { ReasoningEffort = ModelPicker.EffectiveReasoningEffort };
-        var agentInstructions = SelectedAgent?.SystemPrompt;
-        var attachmentContext = Attachments.BuildContext();
-        var capturedAttachments = Attachments.Items.ToArray();
-        var messageAttachments = capturedAttachments
-            .Select(static attachment => new ChatMessageAttachmentViewModel(
-                attachment.DisplayPath, attachment.SizeLabel))
-            .ToArray();
-        var visibleMessages = existingTask is null ? [] : Messages.ToList();
+        var request = WorkspaceSendRequest.Capture(this);
+        Catalog.Environment.ClearPreparationNotice();
         HasSendPreparationError = false;
-        _isStarting = true;
-        NotifyRunStateChanged();
         try
         {
-            var task = await PrepareTaskAsync(project, existingTask, prompt);
-            ConversationPreferences?.Remember(task.Id, preference);
-            if (ComposerText == draft) ComposerText = string.Empty;
-            if (IsShuttingDown)
-            {
-                Catalog.UpsertTask(await _taskFactory.SetStatusAsync(task, AgentTaskStatus.Cancelled, CancellationToken.None));
-                return;
-            }
-            var assistant = new ChatMessageViewModel("MossAgent", string.Empty);
-            var messages = new ObservableCollection<ChatMessageViewModel>(visibleMessages)
-                { new("你", prompt, attachments: messageAttachments, createdAt: task.UpdatedAt), assistant };
-            var state = new WorkspaceRunState(
-                task, project, provider, model, messages, assistant,
-                attachmentContext, agentInstructions);
-            Attachments.Consume(capturedAttachments);
-            _runs.Add(state);
-            Catalog.UpsertTask(task);
-            Catalog.ShowActiveMessages(task.Id);
-            _panels.Attach(task, project);
-            _runs.TrackExecution(() => _runController.RunAsync(
-                state, _panels, PresentEventAsync, SetActivity,
-                ApplyTaskUpdate, NotifyRunStateChanged));
+            await _sender.SendAsync(request, cancellationToken);
         }
-        catch (Exception)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            if (!_disposed) Activity = WorkspaceText.Get("PreparationCancelled");
+        }
+        catch (Exception exception)
+        {
+            if (_disposed) throw new InvalidOperationException("Task finalization failed.");
+            Catalog.Environment.ReportPreparationFailure(exception);
+            OnPropertyChanged(nameof(SendPreparationError));
             HasSendPreparationError = true;
             Activity = SendPreparationError;
             if (IsShuttingDown) throw new InvalidOperationException("Task finalization failed.");
         }
-        finally
-        {
-            _isStarting = false;
-            NotifyRunStateChanged();
-        }
     }
-
-    private Task<AgentTask> PrepareTaskAsync(ProjectProfile? project, AgentTask? task, string prompt) =>
-        task is null
-            ? _taskFactory.CreateAsync(project, prompt, ApprovalPolicy, false, CancellationToken.None)
-            : _taskFactory.ResumeAsync(task, prompt, project is null ? ApprovalPolicy.ReadOnly : ApprovalPolicy, CancellationToken.None);
 
     private async Task PresentEventAsync(WorkspaceRunState state, AgentEvent agentEvent) =>
         state.Assistant = await WorkspaceAgentEventPresenter.PresentAsync(
@@ -389,6 +377,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
 
     private void CompleteEventPresentation(WorkspaceRunState state, AgentEvent agentEvent)
     {
+        Steering.NotifyRunEvent(state.Task.Id, agentEvent);
         if (agentEvent is AgentToolEvent { ToolName: "git.diff", Result.Content: { } diff }
             && Catalog.SelectedTask?.Id == state.Task.Id)
         {
@@ -399,15 +388,8 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
 
     private void HandleSelectionChanged()
     {
-        var projectId = Catalog.SelectedProject?.Id;
-        var taskId = Catalog.SelectedTask?.Id;
-        if (!_isStarting && (projectId != _composerProjectId || taskId != _composerTaskId))
-        {
+        if (_attachmentDrafts.SelectContext(Catalog.SelectedProject, Catalog.SelectedTask?.Id, preserveItems: _preparation.IsActive) && !_preparation.IsActive)
             HasSendPreparationError = false;
-            Attachments.Clear();
-        }
-        _composerProjectId = projectId;
-        _composerTaskId = taskId;
         RefreshProjectPicker();
         _ = RepositoryStatus.RefreshAsync(Catalog.SelectedProject, Catalog.SelectedTask);
         OnPropertyChanged(nameof(IsSelectedTaskFailed));
@@ -435,6 +417,12 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         RefreshProjectPicker();
     }
 
+    private void HandleDraftChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(WorkspaceComposerDraftsViewModel.Text)) OnPropertyChanged(nameof(ComposerText));
+        if (args.PropertyName == nameof(WorkspaceComposerDraftsViewModel.CanSend)) NotifyRunStateChanged();
+    }
+
     private void RefreshProjectPicker()
     {
         var query = ProjectPickerQuery.Trim();
@@ -443,8 +431,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         OnPropertyChanged(nameof(ProjectPickerHasMatches));
     }
 
-    private static string WorkspaceLabel(string key) => Labels.GetString(key)
-        ?? throw new InvalidOperationException($"Missing workspace resource: {key}");
+    private static string WorkspaceLabel(string key) => WorkspaceText.Get(key);
 
     private void HandleMessagesChanged(object? sender, NotifyCollectionChangedEventArgs args)
     {
@@ -461,17 +448,18 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     private void ApplyTaskUpdate(AgentTask task) =>
         Catalog.UpsertTask(task, Catalog.SelectedTask?.Id == task.Id);
 
-    private bool CanStop() => Catalog.SelectedTask is { } task && _runs.IsRunning(task.Id);
+    private bool CanStop() => HasActiveRun || _preparation.CanCancel || Catalog.SelectedTask is { } task && Queue.IsPreparing(task.Id);
     private void Stop()
     {
-        if (Catalog.SelectedTask is { } task) _runs.Cancel(task.Id);
+        if (HasActiveRun && Catalog.SelectedTask is { } task) _runs.Cancel(task.Id);
+        else _preparation.Cancel();
+        if (Catalog.SelectedTask is { } selected) Queue.CancelPreparation(selected.Id);
     }
-
-    private void SetApprovalPolicy(ApprovalPolicy policy) => ApprovalPolicy = policy;
 
     private void HandleUndoStateChanged()
     {
         PrimaryActionCommand.NotifyCanExecuteChanged();
+        Queue?.NotifyStateChanged();
         Catalog.NotifyTaskRunStateChanged();
     }
 
@@ -482,7 +470,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         OnPropertyChanged(nameof(PrimaryActionLabel));
         OnPropertyChanged(nameof(HasMessages));
         OnPropertyChanged(nameof(IsEmptySession));
-        Catalog.IsLocked = _isStarting || IsShuttingDown;
+        Catalog.IsLocked = _preparation.IsActive || IsShuttingDown;
         Catalog.NotifyTaskRunStateChanged();
         PrimaryActionCommand.NotifyCanExecuteChanged();
     }

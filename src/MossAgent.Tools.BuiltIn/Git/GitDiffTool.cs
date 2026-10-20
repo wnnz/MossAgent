@@ -56,7 +56,7 @@ public sealed class GitDiffTool(
             arguments.Add(path);
         }
 
-        return git.RunAsync(repository, arguments, context, cancellationToken, acceptDiffExitCode: untracked);
+        return git.RunAsync(repository, arguments, context, cancellationToken, acceptExitCodeOne: untracked);
     }
 
     private static void ValidateMode(ToolRequest request, string? path)

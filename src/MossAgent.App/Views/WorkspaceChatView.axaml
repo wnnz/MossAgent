@@ -7,6 +7,7 @@
              x:CompileBindings="False">
   <ui:AppUserControl.Resources>
     <ui:EmptySessionViewportMarginConverter x:Key="EmptySessionViewportMarginConverter" />
+    <ui:ComposerViewportHeightConverter x:Key="ComposerViewportHeightConverter" />
   </ui:AppUserControl.Resources>
   <ui:AppBorder Classes="chat-surface">
     <Grid RowDefinitions="52,*,Auto">
@@ -92,7 +93,15 @@
       <views:WorkspaceBottomPanel Grid.Row="1" VerticalAlignment="Bottom"
                                   DataContext="{Binding $parent[Window].DataContext}"
                                   IsVisible="{Binding $parent[Window].DataContext.IsBottomPanelOpen}" />
-      <views:WorkspaceComposerView Grid.Row="2" />
+      <ui:AppScrollViewer Grid.Row="2" x:Name="ComposerScrollViewer" HorizontalScrollBarVisibility="Disabled">
+        <ui:AppScrollViewer.MaxHeight>
+          <MultiBinding Converter="{StaticResource ComposerViewportHeightConverter}">
+            <Binding Path="Bounds" RelativeSource="{RelativeSource AncestorType=views:WorkspaceChatView}" />
+            <Binding Path="$parent[Window].DataContext.ChatMessageViewportMargin" />
+          </MultiBinding>
+        </ui:AppScrollViewer.MaxHeight>
+        <views:WorkspaceComposerView />
+      </ui:AppScrollViewer>
     </Grid>
   </ui:AppBorder>
 </ui:AppUserControl>

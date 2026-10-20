@@ -198,7 +198,7 @@ public sealed class ConversationHeadingLayoutTests : IAsyncLifetime
     }
 
     private Task WithWindow(Action<MainWindow, MainWindowViewModel, AgentTask> action,
-        int width = 1280, int height = 820, bool collapseSidebar = false, bool inspector = false) => _session.Dispatch<Task>(async () =>
+        int width = 1280, int height = 820, bool collapseSidebar = false, bool inspector = false) => _session.DispatchAsync(async () =>
     {
         var root = Directory.CreateTempSubdirectory("MossAgent-heading-tests-").FullName;
         try
@@ -231,7 +231,7 @@ public sealed class ConversationHeadingLayoutTests : IAsyncLifetime
             finally { window.Close(); }
         }
         finally { SqliteTestPool.Clear(root); await DeleteRootAsync(root).ConfigureAwait(false); }
-    }, TestContext.Current.CancellationToken).Unwrap();
+    }, TestContext.Current.CancellationToken);
 
     private static Rect Bounds(Control control, Control root) => new(control.TranslatePoint(default, root)!.Value, control.Bounds.Size);
 

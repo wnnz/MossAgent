@@ -1,0 +1,28 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Views.WorkspaceTaskEnvironmentView"
+                   x:CompileBindings="False" IsVisible="{Binding HasProject}">
+  <ui:AppActionButton x:Name="EnvironmentButton" Classes="composer-context-button composer-environment-button"
+                      Label="{Binding Label}" IsEnabled="{Binding CanChoose}" ToolTip.Tip="{Binding Hint}"
+                      AutomationProperties.Name="{Binding Label}" TrailingIconData="{StaticResource UiIconChevronDown}">
+    <Button.Flyout>
+      <ui:AppFlyout Placement="TopEdgeAlignedLeft"
+                    IsOpen="{Binding IsPickerOpen, Mode=TwoWay}">
+        <ui:AppCard Classes="flyout-surface card-inset-menu composer-environment-menu">
+          <StackPanel Spacing="4">
+            <ui:AppActionButton Classes="ghost menu-option align-leading" Label="{Binding ProjectDirectoryLabel}"
+                                IconData="{StaticResource UiIconFolder}" Command="{Binding UseProjectDirectoryCommand}" />
+            <ui:AppText Classes="type-11 muted" Text="{Binding BaseReferenceLabel}" />
+            <ui:AppInput x:Name="BaseReferenceInput" Text="{Binding BaseReference, Mode=TwoWay}"
+                             PlaceholderText="{Binding BaseReferencePlaceholder}" MaxLength="512"
+                             AutomationProperties.Name="{Binding BaseReferenceLabel}" IsEnabled="{Binding CanChoose}" />
+            <ui:AppActionButton Classes="ghost menu-option align-leading" Label="{Binding WorktreeLabel}"
+                                IconData="{StaticResource UiIconBranch}" Command="{Binding UseWorktreeCommand}" />
+            <ui:AppText Classes="type-11 muted" Text="{Binding Hint}" TextWrapping="Wrap" />
+          </StackPanel>
+        </ui:AppCard>
+      </ui:AppFlyout>
+    </Button.Flyout>
+  </ui:AppActionButton>
+</ui:AppUserControl>

@@ -71,7 +71,8 @@ public sealed class SqliteConfigurationRepository(SqliteConnectionFactory connec
             DELETE FROM proxies WHERE id=$id
                 AND NOT EXISTS (SELECT 1 FROM providers WHERE proxy_id=$id)
                 AND NOT EXISTS (SELECT 1 FROM browser_configuration WHERE proxy_id=$id)
-                AND NOT EXISTS (SELECT 1 FROM mcp_servers WHERE proxy_id=$id);
+                AND NOT EXISTS (SELECT 1 FROM mcp_servers WHERE proxy_id=$id)
+                AND NOT EXISTS (SELECT 1 FROM source_accounts WHERE proxy_id=$id);
             """;
         command.Parameters.AddWithValue("$id", id.ToString());
         if (await command.ExecuteNonQueryAsync(cancellationToken) == 0)

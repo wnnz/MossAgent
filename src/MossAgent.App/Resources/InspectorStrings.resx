@@ -163,4 +163,66 @@
   <data name="TerminalPasteConfirmHint" xml:space="preserve"><value>文本包含换行，可能执行命令。确认后才会粘贴，并按当前策略审批。</value></data>
   <data name="SnapshotPreviewSize" xml:space="preserve"><value>{0:0.#} KiB · 此任务快照差异 · 只读</value></data>
   <data name="SnapshotNoTextDiff" xml:space="preserve"><value>此任务快照没有文本行差异，可能仅编码或 BOM 不同。</value></data>
+  <data name="DiffStageFile" xml:space="preserve"><value>暂存所选文件</value></data>
+  <data name="DiffUnstageFile" xml:space="preserve"><value>取消所选文件暂存</value></data>
+  <data name="DiffStaging" xml:space="preserve"><value>正在暂存…</value></data>
+  <data name="DiffUnstaging" xml:space="preserve"><value>正在取消暂存…</value></data>
+  <data name="DiffIndexCancel" xml:space="preserve"><value>取消操作</value></data>
+  <data name="DiffIndexCancelling" xml:space="preserve"><value>已请求取消，正在等待操作和清理结束。</value></data>
+  <data name="DiffStagedFile" xml:space="preserve"><value>所选文件已暂存，未提交或推送。</value></data>
+  <data name="DiffUnstaged" xml:space="preserve"><value>已取消所选文件暂存，工作文件保持不变。</value></data>
+  <data name="DiffIndexInterrupted" xml:space="preserve"><value>操作已取消或超时；暂存区可能已改变，请刷新确认后再操作。</value></data>
+  <data name="DiffIndexDenied" xml:space="preserve"><value>未获操作许可，请检查当前对话的审批策略。</value></data>
+  <data name="DiffIndexPathDenied" xml:space="preserve"><value>文件或仓库元数据不在有效授权范围内，请检查项目及工作树授权。</value></data>
+  <data name="DiffIndexFailed" xml:space="preserve"><value>未能完成暂存操作，请检查 Git 状态或索引锁，然后刷新重试。</value></data>
+  <data name="GitCommitTitle" xml:space="preserve"><value>提交已暂存更改</value></data>
+  <data name="GitCommitOpen" xml:space="preserve"><value>提交更改…</value></data>
+  <data name="GitCommitMessage" xml:space="preserve"><value>提交说明</value></data>
+  <data name="GitCommitMessageHint" xml:space="preserve"><value>描述这次提交的变更，可添加多行正文</value></data>
+  <data name="GitCommitWarning" xml:space="preserve"><value>仅提交已暂存内容，不包含未暂存修改，也不会推送。仓库钩子或签名程序可能运行；确认前请核对暂存列表。</value></data>
+  <data name="GitCommitConfirm" xml:space="preserve"><value>确认提交</value></data>
+  <data name="GitCommitRefresh" xml:space="preserve"><value>刷新预览</value></data>
+  <data name="GitCommitCancel" xml:space="preserve"><value>返回</value></data>
+  <data name="GitCommitStop" xml:space="preserve"><value>停止操作</value></data>
+  <data name="GitCommitPreviewCount" xml:space="preserve"><value>将提交 {0} 个已暂存文件</value></data>
+  <data name="GitCommitBranch" xml:space="preserve"><value>分支：{0} · HEAD：{1}</value></data>
+  <data name="GitCommitDetached" xml:space="preserve"><value>游离 HEAD</value></data>
+  <data name="GitCommitInitial" xml:space="preserve"><value>首次提交</value></data>
+  <data name="GitCommitLoading" xml:space="preserve"><value>正在读取分支、HEAD 和暂存内容…</value></data>
+  <data name="GitCommitRunning" xml:space="preserve"><value>正在提交，等待 Git、仓库钩子或签名程序结束…</value></data>
+  <data name="GitCommitReviewHint" xml:space="preserve"><value>请核对暂存列表与提交说明，然后确认提交。</value></data>
+  <data name="GitCommitNothingStaged" xml:space="preserve"><value>没有已暂存更改，请返回并先暂存需要提交的文件。</value></data>
+  <data name="GitCommitStateChanged" xml:space="preserve"><value>分支、HEAD 或暂存区已变化，未提交。请刷新预览、核对变更并重新确认。</value></data>
+  <data name="GitCommitConflicts" xml:space="preserve"><value>暂存区存在未解决冲突，请先解决并暂存。</value></data>
+  <data name="GitCommitSucceeded" xml:space="preserve"><value>已创建本地提交，未推送。</value></data>
+  <data name="GitCommitCancelling" xml:space="preserve"><value>已请求停止，正在等待实际操作和清理结束。</value></data>
+  <data name="GitCommitInterrupted" xml:space="preserve"><value>操作已取消或超时；提交可能已经产生。请先检查 Git 历史，再刷新预览，勿直接重复提交。</value></data>
+  <data name="GitCommitFailed" xml:space="preserve"><value>提交未能确认完成。请检查 Git 身份、索引锁、钩子、签名和提交历史，再刷新预览；提交说明已保留。</value></data>
+  <data name="GitPushTitle" xml:space="preserve"><value>推送已提交内容</value></data>
+  <data name="GitPushOpen" xml:space="preserve"><value>推送分支…</value></data>
+  <data name="GitPushRemote" xml:space="preserve"><value>已配置的远端名称</value></data>
+  <data name="GitPushRemoteHint" xml:space="preserve"><value>留空使用已配置的默认远端，如 origin</value></data>
+  <data name="GitPushBranch" xml:space="preserve"><value>目标分支</value></data>
+  <data name="GitPushBranchHint" xml:space="preserve"><value>留空使用跟踪分支或当前分支</value></data>
+  <data name="GitPushWarning" xml:space="preserve"><value>仅推送预览的提交到一个分支；不自动提交、不强推、不附带标签或子模块，也不修改上游跟踪设置。Git 钩子、凭据或签名程序可能运行；取消时远端可能已经更新。</value></data>
+  <data name="GitPushConfirm" xml:space="preserve"><value>确认推送</value></data>
+  <data name="GitPushSummary" xml:space="preserve"><value>提交 {0} → {1}/{2} · {3}</value></data>
+  <data name="GitPushRemotes" xml:space="preserve"><value>已配置远端：{0}</value></data>
+  <data name="GitPushReview" xml:space="preserve"><value>请核对提交、远端和目标分支，再确认推送。编辑选择后需要重新预览。</value></data>
+  <data name="GitPushSelectionChanged" xml:space="preserve"><value>选择已变化，请刷新预览并核对后再确认。</value></data>
+  <data name="GitPushChangedAfterSuccess" xml:space="preserve"><value>原确认目标的推送已完成，但当前选择已经变化；请重新预览，不要直接重复推送。</value></data>
+  <data name="GitPushLoading" xml:space="preserve"><value>正在读取本地提交、配置和推送目标，不连接远端…</value></data>
+  <data name="GitPushRunning" xml:space="preserve"><value>正在推送，等待 Git、网络、钩子或凭据程序完成…</value></data>
+  <data name="GitPushStateChanged" xml:space="preserve"><value>提交、分支、配置或目标已变化，未推送。请刷新预览并重新确认。</value></data>
+  <data name="GitPushNoHead" xml:space="preserve"><value>没有可推送的提交，请先创建本地提交。</value></data>
+  <data name="GitPushNoRemote" xml:space="preserve"><value>没有找到选定远端，请检查 Git 配置或填写有效远端名称，再刷新预览。</value></data>
+  <data name="GitPushBranchRequired" xml:space="preserve"><value>请输入有效目标分支；游离 HEAD 需要明确填写。</value></data>
+  <data name="GitPushTransportUnsupported" xml:space="preserve"><value>请使用标准 HTTP(S)、SSH、git 或明确授权的本地 Git 仓库；暂不支持自定义远端助手。</value></data>
+  <data name="GitPushMultipleUrls" xml:space="preserve"><value>该远端有多个推送地址，暂不支持同时写入多个目标。请配置明确的单一推送地址。</value></data>
+  <data name="GitPushSucceeded" xml:space="preserve"><value>普通单分支推送已完成，未强推或修改上游配置。</value></data>
+  <data name="GitPushInterrupted" xml:space="preserve"><value>操作已取消或超时，远端可能已经更新。请先检查远端与 Git 历史，再刷新预览，勿直接重复推送。</value></data>
+  <data name="GitPushFailed" xml:space="preserve"><value>无法确认推送完成，请检查远端历史、访问凭据、非快进冲突及钩子/签名配置，再刷新预览。原始输出可能含凭据，未显示。</value></data>
+  <data name="AuditInterrupted" xml:space="preserve"><value>已中断</value></data>
+  <data name="AuditInterruptedHint" xml:space="preserve"><value>应用关闭前未收到完成结果，操作可能已发生。请先核实实际状态，再手动继续；应用不会自动重放该操作。</value></data>
+  <data name="AuditUnknownDuration" xml:space="preserve"><value>执行结果未知</value></data>
 </root>

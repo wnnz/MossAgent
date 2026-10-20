@@ -13,6 +13,8 @@ internal sealed class ModelSelectionResponseServer : IAsyncDisposable
     private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly ConcurrentQueue<JsonElement> _requests = new();
     private readonly Task _serving;
+    private int _failNext;
+    private int _incompleteNext;
 
     public ModelSelectionResponseServer(CancellationToken token, bool pauseResponse = false)
     {
@@ -25,7 +27,10 @@ internal sealed class ModelSelectionResponseServer : IAsyncDisposable
 
     public Uri BaseUri { get; }
     public IReadOnlyList<JsonElement> Requests => _requests.ToArray();
+    public Func<JsonElement, int, string?>? ResponseOverride { get; set; }
     public void ReleaseResponses() => _release.TrySetResult();
+    public void FailNextResponse() => Interlocked.Exchange(ref _failNext, 1);
+    public void InterruptNextResponse(bool empty) => Interlocked.Exchange(ref _incompleteNext, empty ? 2 : 1);
 
     private async Task ServeAsync(CancellationToken token)
     {
@@ -36,12 +41,25 @@ internal sealed class ModelSelectionResponseServer : IAsyncDisposable
             using var document = JsonDocument.Parse(await ReadBodyAsync(stream, token));
             _requests.Enqueue(document.RootElement.Clone());
             await _release.Task.WaitAsync(token);
-            var data = JsonSerializer.Serialize(new { type = "response.output_text.delta", delta = "模型选择链路已完成。" });
-            var bytes = Encoding.UTF8.GetBytes($"data: {data}\n\ndata: [DONE]\n\n");
+            var data = Interlocked.Exchange(ref _failNext, 0) == 1
+                ? JsonSerializer.Serialize(new { type = "response.failed", response = new { status = "failed", error = new { code = "server_error", message = "synthetic-secret" } } })
+                : JsonSerializer.Serialize(new { type = "response.output_text.delta", delta = "模型选择链路已完成。" });
+            data = ResponseOverride?.Invoke(document.RootElement, _requests.Count) ?? data;
+            var incomplete = Interlocked.Exchange(ref _incompleteNext, 0);
+            var body = incomplete == 2 ? string.Empty : $"data: {data}\n\n";
+            if (incomplete == 0) body += "data: [DONE]\n\n";
+            var bytes = Encoding.UTF8.GetBytes(body);
             var header = Encoding.ASCII.GetBytes($"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n"
                 + $"Content-Length: {bytes.Length}\r\nConnection: close\r\n\r\n");
-            await stream.WriteAsync(header, token);
-            await stream.WriteAsync(bytes, token);
+            try
+            {
+                await stream.WriteAsync(header, token);
+                await stream.WriteAsync(bytes, token);
+            }
+            catch (IOException) when (!token.IsCancellationRequested)
+            {
+                // A deliberately cancelled provider request must not stop later fixture requests.
+            }
         }
     }
 

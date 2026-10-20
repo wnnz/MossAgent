@@ -30,6 +30,8 @@ internal static class SubagentConversationContextBuilder
             });
             truncated |= AppendTail(context, Environment.NewLine);
             truncated |= AppendTail(context, message.Content);
+            if (!message.Images.IsDefaultOrEmpty)
+                truncated |= AppendTail(context, "\n[Image inputs omitted: shared subagent context contains text only.]\n");
             truncated |= AppendTail(context, Environment.NewLine);
         }
 
@@ -51,7 +53,7 @@ internal static class SubagentConversationContextBuilder
 
     private static bool IsRelevant(ModelMessage message) =>
         message.Role is ModelRole.User or ModelRole.Assistant or ModelRole.ToolObservation
-        && !string.IsNullOrWhiteSpace(message.Content);
+        && (!string.IsNullOrWhiteSpace(message.Content) || !message.Images.IsDefaultOrEmpty);
 
     private static bool AppendTail(StringBuilder context, ReadOnlySpan<char> value)
     {

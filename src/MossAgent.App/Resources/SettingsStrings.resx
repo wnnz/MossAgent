@@ -58,7 +58,7 @@
   <data name="SubagentDuplicateName" xml:space="preserve"><value>子代理名称不能重复。</value></data>
   <data name="SubagentMaximumProfiles" xml:space="preserve"><value>最多配置 16 个子代理。</value></data>
   <data name="SubagentInvalidModel" xml:space="preserve"><value>请选择有效模型和思考强度。</value></data>
-  <data name="ProxyDeleteInUse" xml:space="preserve"><value>该代理仍被提供商、浏览器或 MCP 配置使用，请先修改关联配置，再删除代理。</value></data>
+  <data name="ProxyDeleteInUse" xml:space="preserve"><value>该代理仍被提供商、浏览器、MCP 或源代码账号配置使用，请先修改关联配置，再删除代理。</value></data>
   <data name="ProjectCreateTitle" xml:space="preserve"><value>创建项目</value></data>
   <data name="ProjectEditTitle" xml:space="preserve"><value>编辑项目</value></data>
   <data name="ProjectCreateAction" xml:space="preserve"><value>添加项目</value></data>

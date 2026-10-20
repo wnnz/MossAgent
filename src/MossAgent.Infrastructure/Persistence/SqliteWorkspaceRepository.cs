@@ -2,14 +2,43 @@ using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
+using MossAgent.Application.Attachments;
 
 namespace MossAgent.Infrastructure.Persistence;
 
-public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connections)
-    : IWorkspaceRepository
+public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connections,
+    AppDataPaths? paths = null, IAttachmentImageDecoder? images = null)
+    : IWorkspaceRepository, IConversationSubmissionRepository
 {
     private readonly SqliteWorkspaceWriter _writer = new(connections);
     private readonly SqliteTaskRenameWriter _renameWriter = new(connections);
+    private readonly SqliteConversationDraftWriter _draftWriter = new(paths, images);
+
+    public bool SupportsDrafts(IConversationDraftRepository drafts) =>
+        drafts is SqliteConversationDraftRepository sqlite && sqlite.UsesConnections(connections);
+
+    public Task SaveSubmissionAsync(AgentTask task, ConversationMessage message,
+        IReadOnlyList<ConversationDraftUpdate> drafts, CancellationToken cancellationToken)
+    {
+        var snapshot = drafts.Select(update => update with { Attachments = update.AttachmentItems.ToArray() }).ToArray();
+        _draftWriter.Validate(snapshot);
+        var target = new ConversationDraftScope(task.ProjectId, task.Id);
+        if (message.TaskId != task.Id || message.Role != MessageRole.User || snapshot.Length is < 1 or > 2
+            || snapshot.Any(update => update.Scope.ProjectId != task.ProjectId
+                || update.Scope.TaskId is { } id && id != task.Id)
+            || !snapshot.Any(update => update.Scope == target))
+            throw new ArgumentException("Invalid conversation submission scope.");
+        return Task.Run(async () =>
+        {
+            using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            deadline.CancelAfter(TimeSpan.FromSeconds(30));
+            await _writer.SaveAsync(task, [message], deadline.Token, async (connection, transaction, token) =>
+            {
+                if (!await _draftWriter.WriteAsync(connection, transaction, snapshot, token))
+                    throw new ConversationDraftConflictException();
+            });
+        }, cancellationToken);
+    }
 
     public async Task<IReadOnlyList<ProjectProfile>> GetProjectsAsync(CancellationToken cancellationToken)
     {
@@ -63,6 +92,7 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
             LEFT JOIN pinned_agent_tasks pinned ON pinned.task_id=task.id
             LEFT JOIN agent_task_failures failure ON failure.task_id=task.id
             WHERE task.project_id IS $project
+              AND NOT EXISTS (SELECT 1 FROM source_review_sessions review_session WHERE review_session.task_id=task.id)
               AND NOT EXISTS (
                   SELECT 1 FROM archived_agent_tasks archived
                   WHERE archived.task_id=task.id)
@@ -88,6 +118,7 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
             LEFT JOIN pinned_agent_tasks pinned ON pinned.task_id=task.id
             LEFT JOIN agent_task_failures failure ON failure.task_id=task.id
             WHERE task.project_id IS $project
+              AND NOT EXISTS (SELECT 1 FROM source_review_sessions review_session WHERE review_session.task_id=task.id)
             ORDER BY archived.archived_at DESC;
             """;
         command.Parameters.AddWithValue("$project", (object?)projectId?.ToString() ?? DBNull.Value);
@@ -107,6 +138,7 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
             LEFT JOIN agent_task_failures failure ON failure.task_id=task.id
             WHERE NOT EXISTS (
                 SELECT 1 FROM archived_agent_tasks archived WHERE archived.task_id=task.id)
+              AND NOT EXISTS (SELECT 1 FROM source_review_sessions review_session WHERE review_session.task_id=task.id)
             ORDER BY pinned.pinned_at DESC;
             """;
         return await SqliteWorkspaceTaskReader.ReadAsync(command, cancellationToken);
@@ -171,24 +203,27 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
     {
         await using var connection = connections.Create();
         await connection.OpenAsync(cancellationToken);
+        await using var transaction = connection.BeginTransaction(deferred: true);
         await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = """
             SELECT id,task_id,role,content,created_at,tool_call_id
             FROM messages WHERE task_id=$task ORDER BY created_at,rowid;
             """;
         command.Parameters.AddWithValue("$task", taskId.ToString());
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var results = new List<ConversationMessage>();
-        while (await reader.ReadAsync(cancellationToken))
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
         {
-            results.Add(new ConversationMessage(
-                Guid.Parse(reader.GetString(0)), Guid.Parse(reader.GetString(1)),
-                (MessageRole)reader.GetInt32(2), reader.GetString(3),
-                DateTimeOffset.Parse(reader.GetString(4)),
-                reader.IsDBNull(5) ? null : reader.GetString(5)));
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                results.Add(new ConversationMessage(
+                    Guid.Parse(reader.GetString(0)), Guid.Parse(reader.GetString(1)),
+                    (MessageRole)reader.GetInt32(2), reader.GetString(3),
+                    DateTimeOffset.Parse(reader.GetString(4)),
+                    reader.IsDBNull(5) ? null : reader.GetString(5)));
+            }
         }
-
-        return results;
+        return await SqliteConversationAttachments.RestoreAsync(connection, transaction, taskId, results, cancellationToken);
     }
 
     public Task AppendMessageAsync(

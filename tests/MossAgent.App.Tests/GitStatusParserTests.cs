@@ -23,6 +23,7 @@ public sealed class GitStatusParserTests
             file =>
             {
                 Assert.Equal("new.txt", file.Path);
+                Assert.Equal("old.txt", file.OriginalPath);
                 Assert.True(file.HasStagedChange);
                 Assert.False(file.HasUnstagedChange);
             },
@@ -39,8 +40,20 @@ public sealed class GitStatusParserTests
         var files = GitStatusParser.Parse("R  old.txt -> new.txt\nMM changed.cs\n");
 
         Assert.Equal("new.txt", files[1].Path);
+        Assert.Equal("old.txt", files[1].OriginalPath);
         Assert.Equal("changed.cs", files[0].Path);
         Assert.True(files[0].HasStagedChange);
         Assert.True(files[0].HasUnstagedChange);
+    }
+
+    [Fact]
+    public void CopySourcesArePreservedAsMetadataButLiteralArrowsAreNotRenames()
+    {
+        var copy = Assert.Single(GitStatusParser.Parse("C  copy.txt\0source.txt\0"));
+        Assert.Equal("copy.txt", copy.Path);
+        Assert.Equal("source.txt", copy.OriginalPath);
+        var literal = Assert.Single(GitStatusParser.Parse("?? source -> destination.txt\n"));
+        Assert.Equal("source -> destination.txt", literal.Path);
+        Assert.Null(literal.OriginalPath);
     }
 }

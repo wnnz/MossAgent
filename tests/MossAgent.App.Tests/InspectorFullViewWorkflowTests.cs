@@ -125,7 +125,7 @@ public sealed class InspectorFullViewWorkflowTests : IAsyncLifetime
         finally { window.Close(); }
     }, TestContext.Current.CancellationToken);
 
-    private Task WithWindow(bool dark, int width, Action<MainWindow, MainWindowViewModel> action) => _session.Dispatch<Task>(async () =>
+    private Task WithWindow(bool dark, int width, Action<MainWindow, MainWindowViewModel> action) => _session.DispatchAsync(async () =>
     {
         var root = Directory.CreateTempSubdirectory("MossAgent-full-view-").FullName;
         try
@@ -156,7 +156,7 @@ public sealed class InspectorFullViewWorkflowTests : IAsyncLifetime
             finally { window.Close(); }
         }
         finally { SqliteTestPool.Clear(root); await DeleteRootAsync(root); }
-    }, TestContext.Current.CancellationToken).Unwrap();
+    }, TestContext.Current.CancellationToken);
 
     private static async Task DeleteRootAsync(string root)
     {

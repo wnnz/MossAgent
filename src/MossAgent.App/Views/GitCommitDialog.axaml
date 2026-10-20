@@ -1,0 +1,30 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="using:MossAgent.App.Controls" xmlns:vm="using:MossAgent.App.ViewModels"
+                   xmlns:text="using:MossAgent.App.Resources" x:Class="MossAgent.App.Views.GitCommitDialog"
+                   x:DataType="vm:GitCommitViewModel">
+  <ui:AppSettingsDialog IsOpen="{Binding IsOpen}" Title="{x:Static text:GitCommitLabels.Title}"
+                        CloseLabel="{x:Static text:GitCommitLabels.Cancel}" CloseCommand="{Binding CloseCommand}"
+                        IsCloseButtonVisible="{Binding !IsBusy}">
+    <StackPanel Spacing="8">
+      <ui:AppText Text="{Binding BranchSummary}" Classes="muted type-12" TextWrapping="Wrap" IsVisible="{Binding HasPreview}" />
+      <ui:AppText Text="{Binding PreviewSummary}" Classes="weight-semibold type-12" TextWrapping="Wrap" IsVisible="{Binding HasPreview}" />
+      <ui:AppText Text="{x:Static text:GitCommitLabels.Warning}" Classes="muted type-12" TextWrapping="Wrap" />
+      <ui:AppText Text="{x:Static text:GitCommitLabels.Message}" Classes="type-12" />
+      <ui:AppInput x:Name="CommitMessageInput" Text="{Binding Message}" AcceptsReturn="True" TextWrapping="Wrap"
+                   Classes="field-prompt" MaxLength="8192" IsEnabled="{Binding IsEditorEnabled}"
+                   PlaceholderText="{x:Static text:GitCommitLabels.MessageHint}"
+                   AutomationProperties.Name="{x:Static text:GitCommitLabels.Message}" />
+    </StackPanel>
+    <ui:AppSettingsDialog.Footer>
+      <StackPanel Spacing="8">
+        <WrapPanel>
+          <ui:AppButton x:Name="ConfirmCommitButton" Classes="primary" Content="{x:Static text:GitCommitLabels.Confirm}" Command="{Binding CommitCommand}" />
+          <ui:AppButton Content="{x:Static text:GitCommitLabels.Refresh}" Command="{Binding RefreshPreviewCommand}" />
+          <ui:AppButton Content="{x:Static text:GitCommitLabels.Cancel}" Command="{Binding CloseCommand}" IsVisible="{Binding !IsBusy}" />
+          <ui:AppButton x:Name="StopCommitButton" Content="{x:Static text:GitCommitLabels.Stop}" Command="{Binding CancelCommand}" IsVisible="{Binding IsBusy}" />
+        </WrapPanel>
+        <ui:AppText Text="{Binding Status}" Classes="subtle type-11" TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />
+      </StackPanel>
+    </ui:AppSettingsDialog.Footer>
+  </ui:AppSettingsDialog>
+</ui:AppUserControl>

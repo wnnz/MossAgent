@@ -5,4 +5,5 @@ public sealed record TaskProcessStartRequest(
     string WorkingDirectory,
     IReadOnlyList<string> Arguments,
     bool RedirectStandardInput = false,
-    IReadOnlyDictionary<string, string?>? Environment = null);
+    IReadOnlyDictionary<string, string?>? Environment = null,
+    IReadOnlyList<string>? RemovedEnvironmentPrefixes = null);

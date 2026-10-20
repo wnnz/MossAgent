@@ -18,6 +18,8 @@ public sealed class WorkspaceWorktreeCleanupService(
             throw new InvalidOperationException("当前任务没有托管 worktree。");
         }
 
+        if (task.ProjectId != project.Id) throw new UnauthorizedAccessException("The worktree's project does not match its task.");
+        await worktrees.ValidateAsync(project, task.Id, task.WorktreePath, cancellationToken);
         await worktrees.RemoveAsync(project, task.WorktreePath, cancellationToken);
         var updated = task with
         {

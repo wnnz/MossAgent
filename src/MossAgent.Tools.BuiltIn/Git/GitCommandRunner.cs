@@ -11,11 +11,11 @@ public sealed class GitCommandRunner(ITaskProcessLauncher processes)
         IReadOnlyList<string> arguments,
         ToolExecutionContext context,
         CancellationToken cancellationToken,
-        bool acceptDiffExitCode = false)
+        bool acceptExitCodeOne = false)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var output = new BoundedTextBuffer(context.MaximumOutputCharacters);
-        await using var process = processes.Start(new TaskProcessStartRequest("git", repository, arguments), cancellationToken);
+        await using var process = processes.Start(new TaskProcessStartRequest("git", repository, arguments, RemovedEnvironmentPrefixes: ["GIT_"]), cancellationToken);
         var stdout = PumpAsync(process.StandardOutput, output, cancellationToken);
         var stderr = PumpAsync(process.StandardError, output, cancellationToken);
         var readers = Task.WhenAll((Task)stdout, stderr);
@@ -32,7 +32,7 @@ public sealed class GitCommandRunner(ITaskProcessLauncher processes)
         cancellationToken.ThrowIfCancellationRequested();
 
         var content = output.ToString();
-        return process.ExitCode == 0 || acceptDiffExitCode && process.ExitCode == 1 && !stderr.Result
+        return process.ExitCode == 0 || acceptExitCodeOne && process.ExitCode == 1 && !stderr.Result
             ? ToolResult.Success("Git 命令执行完成。", content)
             : ToolResult.Failure($"Git 命令失败，退出码 {process.ExitCode}。\n{content}", "git_failed");
     }

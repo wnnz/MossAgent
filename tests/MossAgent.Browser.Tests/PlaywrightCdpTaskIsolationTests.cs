@@ -81,6 +81,7 @@ public sealed class PlaywrightCdpTaskIsolationTests
         var probe = new PlaywrightCdpSessionProbe();
         var token = TestContext.Current.CancellationToken;
         await using var session = await probe.ConnectAsync(token);
+        await using var surviving = await probe.ConnectAsync(token);
         var handoff = new TaskCompletionSource<IPage>(TaskCreationOptions.RunContinuationsAsynchronously);
         probe.CreatePageOverride = () => handoff.Task;
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
@@ -96,7 +97,12 @@ public sealed class PlaywrightCdpTaskIsolationTests
         Assert.Equal(cancellation.Token, error.CancellationToken);
         Assert.True(page.IsClosed);
         Assert.False(probe.Existing.IsClosed);
-        Assert.Single(await session.ListTabsAsync(token));
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => session.ListTabsAsync(token));
+        Assert.Single(await surviving.ListTabsAsync(token));
+        await surviving.NavigateAsync(new Uri("https://still-running.example/"), token);
+        Assert.Equal(new Uri("https://still-running.example/"), surviving.CurrentUri);
+        Assert.Equal(1, probe.RuntimeDisposeCount);
+        Assert.Equal(0, probe.ContextCloseCount);
     }
 
     [Fact]

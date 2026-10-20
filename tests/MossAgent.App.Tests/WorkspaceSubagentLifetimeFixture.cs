@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Avalonia.Threading;
 using MossAgent.App.ViewModels;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
@@ -92,8 +93,12 @@ internal sealed class WorkspaceSubagentLifetimeFixture : IAsyncDisposable
         Workspace.ComposerText = "请使用审查子代理检查代码。";
         Assert.True(Workspace.PrimaryActionCommand.CanExecute(null));
         Workspace.PrimaryActionCommand.Execute(null);
-        await WaitUntilAsync(() => Workspace.Messages.Any(message => message.IsToolRunning
-            && message.Tool?.Dialogue?.Any(entry => entry.IsPartial && entry.Content == SubagentLifetimeModelServer.PartialReply) == true));
+        await WaitUntilAsync(() =>
+        {
+            Assert.True(Dispatcher.UIThread.CheckAccess());
+            return Workspace.Messages.Any(message => message.IsToolRunning
+                && message.Tool?.Dialogue?.Any(entry => entry.IsPartial && entry.Content == SubagentLifetimeModelServer.PartialReply) == true);
+        });
     }
 
     public async Task ReopenAsync(Guid taskId)

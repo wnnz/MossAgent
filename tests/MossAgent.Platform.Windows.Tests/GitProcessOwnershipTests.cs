@@ -1,3 +1,4 @@
+using MossAgent.Application.Git;
 using MossAgent.Domain;
 using MossAgent.Testing;
 using Xunit;
@@ -23,7 +24,13 @@ public sealed class GitProcessOwnershipTests
 
         if (cancel) cancellation.Cancel();
         else await fixture.ReleaseAsync(token);
-        if (infrastructure && cancel) await Assert.ThrowsAnyAsync<OperationCanceledException>(() => execution);
+        if (infrastructure && cancel)
+        {
+            var failure = await Assert.ThrowsAsync<GitWorktreeCreationException>(() => execution);
+            Assert.Equal(fixture.ManagedWorktreePath, failure.WorktreePath);
+            Assert.True(Directory.Exists(failure.WorktreePath));
+            Assert.Equal(cancellation.Token, Assert.IsType<OperationCanceledException>(failure.InnerException).CancellationToken);
+        }
         else
         {
             await execution;
@@ -77,7 +84,13 @@ public sealed class GitProcessOwnershipTests
         await fixture.BindDescendantAsync(token);
 
         clock.Advance(TimeSpan.FromSeconds(30));
-        if (infrastructure) await Assert.ThrowsAsync<TimeoutException>(() => execution);
+        if (infrastructure)
+        {
+            var failure = await Assert.ThrowsAsync<GitWorktreeCreationException>(() => execution);
+            Assert.Equal(fixture.ManagedWorktreePath, failure.WorktreePath);
+            Assert.True(Directory.Exists(failure.WorktreePath));
+            Assert.IsType<TimeoutException>(failure.InnerException);
+        }
         else
         {
             await execution;

@@ -9,8 +9,10 @@ namespace MossAgent.App.Tests;
 
 public sealed class WorkspaceAgentSelectionTests
 {
-    [Fact]
-    public async Task SelectingAgent_UsesItsModelAndThinkingAndManualModelChoiceClearsIt()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SelectingAgent_UsesItsModelAndThinkingAndManualModelChoiceClearsIt(bool concurrentRefresh)
     {
         var root = Path.Combine(Path.GetTempPath(), "MossAgent.Tests", Guid.NewGuid().ToString("N"));
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -34,7 +36,9 @@ public sealed class WorkspaceAgentSelectionTests
                 .SaveAsync(profile, cancellationToken);
 
             var workspace = services.GetRequiredService<WorkspaceViewModel>();
-            await workspace.LoadAsync();
+            if (concurrentRefresh) await Task.WhenAll(workspace.LoadAsync(), workspace.LoadAsync());
+            else await workspace.LoadAsync();
+            Assert.True(workspace.AgentPicker.CanChoose);
             workspace.SelectAgentCommand.Execute(Assert.Single(workspace.Agents));
 
             Assert.Equal(profile.Id, workspace.SelectedAgent?.Id);

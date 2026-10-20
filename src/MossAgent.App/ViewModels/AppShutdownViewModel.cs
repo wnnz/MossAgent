@@ -23,6 +23,7 @@ public sealed class AppShutdownViewModel : ObservableObject
     public event Action? RetryExitRequested;
     public IRelayCommand ForceExitCommand { get; }
     public IRelayCommand RetryExitCommand { get; }
+    public WorkspaceComposerDraftsViewModel? Drafts { get; init; }
     public bool IsPending => _isPending;
     public bool HasError => _hasError;
     public bool IsVisible => IsPending || HasError;

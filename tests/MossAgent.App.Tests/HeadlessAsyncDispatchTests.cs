@@ -1,4 +1,6 @@
 using Avalonia.Headless;
+using MossAgent.App.ViewModels;
+using MossAgent.Domain;
 using Xunit;
 
 namespace MossAgent.App.Tests;
@@ -47,6 +49,23 @@ public sealed class HeadlessAsyncDispatchTests : IAsyncLifetime
 
         await dispatched;
         Assert.True(completed);
+    }
+
+    [Fact]
+    public async Task DelayedDraftFlushCompletesBeforeTheHeadlessCallbackReturns()
+    {
+        var repository = new TestConversationDraftRepository();
+        var scope = new ConversationDraftScope(null, null);
+        await _session.DispatchAsync(async () =>
+        {
+            using var drafts = new WorkspaceComposerDraftsViewModel(repository, saveDelay: TimeSpan.FromMilliseconds(50));
+            await drafts.LoadCurrentAsync();
+            drafts.Text = "pending headless draft";
+            await drafts.StopAsync();
+        }, TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        Assert.Equal("pending headless draft", (await repository.GetAsync(scope, TestContext.Current.CancellationToken))!.Text);
+        await _session.DispatchAsync(() => Task.CompletedTask, TestContext.Current.CancellationToken);
     }
 
     [Fact]

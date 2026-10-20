@@ -66,6 +66,9 @@ internal static class WorkspaceAgentEventPresenter
             case AgentStatusEvent status:
                 setActivity(status.Status);
                 break;
+            case AgentSteeringAppliedEvent input:
+                nextAssistant = ApplySteering(input, assistant, messages);
+                break;
             case AgentFailureEvent failure:
                 var failureHint = WorkspaceFailureText.Get(TaskFailureClassifier.FromCode(failure.Code));
                 agentEvent = new AgentFailureEvent(TaskFailureClassifier.SafeCode(failure.Code), failureHint);
@@ -88,6 +91,15 @@ internal static class WorkspaceAgentEventPresenter
 
         afterPresent(agentEvent);
         return nextAssistant;
+    }
+
+    private static ChatMessageViewModel ApplySteering(AgentSteeringAppliedEvent input, ChatMessageViewModel assistant,
+        ObservableCollection<ChatMessageViewModel> messages)
+    {
+        if (!assistant.HasContent) messages.Remove(assistant);
+        else if (input.Application.PrecedingAssistant is { } previous) assistant.SetCreatedAt(previous.CreatedAt);
+        foreach (var message in input.Application.Messages) messages.Add(WorkspaceConversationMapper.ToChatMessage(message));
+        return new ChatMessageViewModel("MossAgent", string.Empty);
     }
 
     private static void FinishRunningTools(

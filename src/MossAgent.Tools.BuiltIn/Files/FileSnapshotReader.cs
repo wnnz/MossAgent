@@ -62,7 +62,7 @@ public static class FileSnapshotReader
     }
 
     public static FileStream Open(string path) => new(
-        path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920,
+        path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete, 81920,
         FileOptions.Asynchronous | FileOptions.SequentialScan);
 
     public static async Task<FileSnapshot> HashAsync(Stream stream, CancellationToken cancellationToken) =>

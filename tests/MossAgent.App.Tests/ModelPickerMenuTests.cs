@@ -52,7 +52,9 @@ public sealed class ModelPickerMenuTests
             await using var services = AppComposition.CreateServices(root);
             await services.GetRequiredService<IDatabaseInitializer>()
                 .InitializeAsync(TestContext.Current.CancellationToken);
-            var picker = services.GetRequiredService<WorkspaceViewModel>().ModelPicker;
+            var workspace = services.GetRequiredService<WorkspaceViewModel>();
+            await workspace.LoadAsync();
+            var picker = workspace.ModelPicker;
             await picker.ReloadAsync();
 
             Assert.True(picker.HasNoModels);
@@ -94,7 +96,9 @@ public sealed class ModelPickerMenuTests
                 16_000, 2_000, "medium", null, null, false, false, true, true, "{}");
             await repository.SaveProviderAsync(provider, cancellationToken);
             await repository.SaveModelAsync(model, cancellationToken);
-            var picker = services.GetRequiredService<WorkspaceViewModel>().ModelPicker;
+            var workspace = services.GetRequiredService<WorkspaceViewModel>();
+            await workspace.LoadAsync();
+            var picker = workspace.ModelPicker;
             await picker.ReloadAsync();
 
             Assert.True(picker.HasModels);

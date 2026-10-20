@@ -31,18 +31,20 @@ public sealed class SqliteDatabaseInitializer(
         await ApplyVersionAsync(connection, 10, TaskFailureDatabaseSchema.VersionTen, cancellationToken);
         await ApplyVersionAsync(connection, 11, ConversationPreferenceDatabaseSchema.VersionEleven, cancellationToken);
         await ProjectlessChatMigration.ApplyAsync(connection, cancellationToken);
-
-        await using var recover = connection.CreateCommand();
-        recover.CommandText = """
-            UPDATE agent_tasks
-            SET status = $interrupted, updated_at = $updated
-            WHERE status IN ($running, $waiting);
-            """;
-        recover.Parameters.AddWithValue("$interrupted", (int)Domain.AgentTaskStatus.Interrupted);
-        recover.Parameters.AddWithValue("$running", (int)Domain.AgentTaskStatus.Running);
-        recover.Parameters.AddWithValue("$waiting", (int)Domain.AgentTaskStatus.WaitingForApproval);
-        recover.Parameters.AddWithValue("$updated", DateTimeOffset.UtcNow.ToString("O"));
-        await recover.ExecuteNonQueryAsync(cancellationToken);
+        await ApplyVersionAsync(connection, 13, ConversationDraftDatabaseSchema.VersionThirteen, cancellationToken);
+        await ApplyVersionAsync(connection, 14, ConversationAttachmentDatabaseSchema.VersionFourteen, cancellationToken);
+        await ApplyVersionAsync(connection, 15, ConversationDraftAttachmentDatabaseSchema.VersionFifteen, cancellationToken);
+        await ApplyVersionAsync(connection, 16, ImageAttachmentDatabaseSchema.VersionSixteen, cancellationToken);
+        await ApplyVersionAsync(connection, 17, ProjectlessAttachmentDatabaseSchema.VersionSeventeen, cancellationToken);
+        await ApplyVersionAsync(connection, 18, SourceAccountDatabaseSchema.VersionEighteen, cancellationToken);
+        await ApplyVersionAsync(connection, 19, SourceRepositoryDatabaseSchema.VersionNineteen, cancellationToken);
+        await ApplyVersionAsync(connection, 20, SourceReviewChatDatabaseSchema.VersionTwenty, cancellationToken);
+        await ApplyVersionAsync(connection, 21, ModelContextFailureDatabaseSchema.VersionTwentyOne, cancellationToken);
+        await ApplyVersionAsync(connection, 22, SourceReviewReadModeDatabaseSchema.VersionTwentyTwo, cancellationToken);
+        await ApplyVersionAsync(connection, 23, ConversationFollowupDatabaseSchema.VersionTwentyThree, cancellationToken);
+        await ApplyVersionAsync(connection, 24, ToolInterruptionDatabaseSchema.VersionTwentyFour, cancellationToken);
+        await ApplyVersionAsync(connection, 25, ConversationSteeringDatabaseSchema.VersionTwentyFive, cancellationToken);
+        await SqliteInterruptedWorkRecovery.RecoverAsync(connection, cancellationToken);
     }
 
     private static async Task ApplyVersionNineAsync(SqliteConnection connection, CancellationToken cancellationToken)

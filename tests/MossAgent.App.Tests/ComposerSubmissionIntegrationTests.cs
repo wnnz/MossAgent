@@ -43,10 +43,8 @@ public sealed class ComposerSubmissionIntegrationTests : IAsyncLifetime
             Assert.Single(fixture.Server.Requests);
         });
 
-    [Theory]
-    [InlineData(RawInputModifiers.None)]
-    [InlineData(RawInputModifiers.Control)]
-    public Task EnterDuringActiveRunPreservesDraftAndDoesNotStop(RawInputModifiers modifiers) =>
+    [Fact]
+    public Task EnterDuringActiveRunQueuesTheMessageWithoutStoppingAndPreservesTheNextDraft() =>
         WithWindow(false, false, true, async (window, fixture, input) =>
         {
             fixture.Workspace.PrimaryActionCommand.Execute(null);
@@ -54,13 +52,60 @@ public sealed class ComposerSubmissionIntegrationTests : IAsyncLifetime
             fixture.Workspace.ComposerText = "下一条草稿，不应误触停止。";
             Flush(window);
             Assert.True(input.Focus());
-            Press(window, modifiers);
-            Assert.Equal("下一条草稿，不应误触停止。", fixture.Workspace.ComposerText);
+            Press(window, RawInputModifiers.None);
+            await fixture.WaitUntilAsync(() => fixture.Workspace.Queue.Items.Count == 1 && !fixture.Workspace.Queue.IsBusy);
+            Assert.Equal("下一条草稿，不应误触停止。", Assert.Single(fixture.Workspace.Queue.Items).Prompt);
+            Assert.Equal(string.Empty, fixture.Workspace.ComposerText);
             Assert.True(fixture.Workspace.HasActiveRun);
+            fixture.Workspace.ComposerText = "队列提交之后的未发送草稿。";
             fixture.Server.ReleaseResponses();
-            await fixture.WaitUntilAsync(() => !fixture.Workspace.IsRunning);
+            await fixture.WaitUntilAsync(() => fixture.Server.Requests.Count == 2 && !fixture.Workspace.IsRunning);
             await fixture.AssertPersistedAsync(AgentTaskStatus.Completed);
-            Assert.Single(fixture.Server.Requests);
+            Assert.Equal("队列提交之后的未发送草稿。", fixture.Workspace.ComposerText);
+            Assert.Empty(fixture.Workspace.Queue.Items);
+        });
+
+    [Fact]
+    public Task ControlEnterDuringActiveRunSteersTheSameRunAndPreservesTheNextDraft() =>
+        WithWindow(true, true, true, async (window, fixture, input) =>
+        {
+            var workspace = fixture.Workspace;
+            workspace.PrimaryActionCommand.Execute(null);
+            await fixture.WaitUntilAsync(() => fixture.Server.Requests.Count == 1);
+            var taskId = workspace.Catalog.SelectedTask!.Id;
+            Assert.True(fixture.Runs.TryGet(taskId, out var original));
+            var runId = original!.Steering!.RunId;
+            const string guidance = "继续当前运行，不取消也不加入队列。";
+            workspace.ComposerText = guidance;
+            Flush(window);
+            Assert.True(input.Focus());
+
+            Press(window, RawInputModifiers.Control);
+
+            await fixture.WaitUntilAsync(() => workspace.Steering.History.Items.Count == 1 && !workspace.Steering.IsBusy);
+            var accepted = Assert.Single((await fixture.Steering.GetInputsAsync(taskId, long.MaxValue, 64, fixture.Token)).Items);
+            Assert.Equal(guidance, accepted.Text);
+            Assert.Equal(runId, accepted.RunId);
+            Assert.Equal(ConversationSteeringInputState.Pending, accepted.State);
+            Assert.True(fixture.Runs.TryGet(taskId, out var current));
+            Assert.Same(original, current);
+            Assert.False(original.IsCancellationRequested);
+            Assert.Empty(workspace.Queue.Items);
+            Assert.Equal(string.Empty, workspace.ComposerText);
+            workspace.ComposerText = "引导提交之后的未发送草稿。";
+            fixture.Server.ReleaseResponses();
+            await fixture.WaitUntilAsync(() => fixture.Server.Requests.Count == 2 && !workspace.IsRunning);
+            await fixture.AssertPersistedAsync(AgentTaskStatus.Completed);
+            Assert.Equal(taskId, workspace.Catalog.SelectedTask!.Id);
+            Assert.Equal("引导提交之后的未发送草稿。", workspace.ComposerText);
+            Assert.Contains(fixture.Server.Requests[1].GetProperty("input").EnumerateArray(),
+                item => item.TryGetProperty("content", out var content) && content.ValueKind == System.Text.Json.JsonValueKind.String
+                    && content.GetString() == guidance);
+            var applied = Assert.Single((await fixture.Steering.GetInputsAsync(taskId, long.MaxValue, 64, fixture.Token)).Items);
+            Assert.Equal(ConversationSteeringInputState.AppliedAtBoundary, applied.State);
+            Assert.Equal(accepted.Id, applied.Id);
+            Assert.Single(await fixture.Tasks.GetMessagesAsync(taskId, fixture.Token), message => message.Id == accepted.Id);
+            Assert.Empty(workspace.Queue.Items);
         });
 
     [Fact]

@@ -9,6 +9,22 @@ namespace MossAgent.Agent.Tests;
 public sealed class SubagentToolGatewayTests
 {
     [Fact]
+    public async Task ChildCannotReplaceOrDropTheParentsSourceScope()
+    {
+        var parent = Context() with { SourceScope = new(Guid.NewGuid(), Guid.NewGuid(), 1, "fixture", "repo") };
+        var catalog = new DescriptorProbeToolCatalog([Descriptor("source.pr_get"), Descriptor("file.read")]);
+        ToolExecutionContext? forwarded = null;
+        var gateway = new SubagentToolGateway(catalog, new ToolProgressProbeExecutor((_, context, _) =>
+        { forwarded = context; return Task.FromResult(ToolResult.Success("ok")); }), parent);
+        Assert.Equal("source.pr_get", Assert.Single(gateway.Descriptors).Name);
+        await gateway.ExecuteAsync(Request("source.pr_get"), Context() with
+        { SourceScope = parent.SourceScope with { AccountId = Guid.NewGuid(), Repository = "other" } }, TestContext.Current.CancellationToken);
+        Assert.Equal(parent.SourceScope, forwarded!.SourceScope);
+        Assert.False(forwarded.IsToolAllowed("file.read"));
+        Assert.True(forwarded.IsToolAllowed("SOURCE.PR_GET"));
+    }
+
+    [Fact]
     public void Descriptors_KeepOrderDuplicatesAndPublishedSnapshotsWithoutDelegation()
     {
         var first = Descriptor("test.first");
@@ -131,6 +147,41 @@ public sealed class SubagentToolGatewayTests
 
         Assert.True(executionBytes < projectionBytes / 2,
             $"Execution allocated {executionBytes} bytes; the redundant projection allocated {projectionBytes} bytes.");
+    }
+
+    [Fact]
+    public async Task ParentAndChildScopesIntersectAndCannotBeWidenedThroughTheGateway()
+    {
+        var catalog = new DescriptorProbeToolCatalog([Descriptor("test.read"), Descriptor("shell.run")]);
+        var parent = Context() with { AllowedToolNames = new HashSet<string> { "test.read" } };
+        ToolExecutionContext? forwarded = null;
+        var gateway = new SubagentToolGateway(catalog, new ToolProgressProbeExecutor((_, child, _) =>
+        { forwarded = child; return Task.FromResult(ToolResult.Success("fixture")); }), parent);
+        Assert.Equal("test.read", Assert.Single(gateway.Descriptors).Name);
+        await gateway.ExecuteAsync(Request("test.read"), Context(), TestContext.Current.CancellationToken);
+        Assert.True(forwarded!.IsToolAllowed("test.read"));
+        Assert.False(forwarded.IsToolAllowed("shell.run"));
+        await gateway.ExecuteAsync(Request("test.read"), Context() with { AllowedToolNames = new HashSet<string> { "shell.run" } }, TestContext.Current.CancellationToken);
+        Assert.Empty(forwarded!.AllowedToolNames!);
+        await gateway.ExecuteAsync(Request("test.read"), Context(), TestContext.Current.CancellationToken);
+        Assert.True(forwarded!.IsToolAllowed("test.read"));
+        Assert.Single(parent.AllowedToolNames!);
+    }
+
+    [Fact]
+    public async Task ScopedGatewayStillDeniesThroughTheRealExecutionPipelineAndCannotReenableDisabledParent()
+    {
+        var tool = new CountingAgentTool();
+        var registry = new ToolRegistry([tool]);
+        var executor = new ToolExecutor(registry, new FixedToolApprovalService(true));
+        var parent = Context() with { AllowedToolNames = new HashSet<string>() };
+        var gateway = new SubagentToolGateway(registry, executor, parent);
+        Assert.Empty(gateway.Descriptors);
+        Assert.Equal("tool_scope_denied", (await gateway.ExecuteAsync(Request(tool.Descriptor.Name), Context(), TestContext.Current.CancellationToken)).ErrorCode);
+        gateway = new SubagentToolGateway(registry, executor, Context() with { ToolsEnabled = false });
+        Assert.Empty(gateway.Descriptors);
+        Assert.Equal("capability_denied", (await gateway.ExecuteAsync(Request(tool.Descriptor.Name), Context(), TestContext.Current.CancellationToken)).ErrorCode);
+        Assert.Equal(0, tool.Calls);
     }
 
     private static long AllocatedBytes(Action action)

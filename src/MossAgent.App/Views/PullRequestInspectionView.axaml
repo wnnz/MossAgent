@@ -1,0 +1,86 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   xmlns:views="clr-namespace:MossAgent.App.Views"
+                   x:Class="MossAgent.App.Views.PullRequestInspectionView" x:CompileBindings="False">
+  <StackPanel Spacing="8">
+    <ui:AppText Text="{x:Static text:PullRequestText.Inspection}" Classes="type-14 weight-semibold" />
+    <ui:AppComboBox ItemsSource="{Binding Sections}" SelectedItem="{Binding SelectedSection, Mode=TwoWay}"
+                    HorizontalAlignment="Stretch" AutomationProperties.Name="{x:Static text:PullRequestText.Inspection}">
+      <ComboBox.ItemTemplate><DataTemplate><ui:AppText Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate>
+    </ui:AppComboBox>
+    <ui:AppText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />
+    <StackPanel DataContext="{Binding CurrentPage}" Spacing="8">
+      <WrapPanel>
+        <ui:AppButton Content="{x:Static text:PullRequestText.ReadSection}" Command="{Binding LoadCommand}" Classes="ghost button-sm" />
+        <ui:AppButton Content="{x:Static text:PullRequestText.Previous}" Command="{Binding PreviousCommand}" Classes="ghost button-sm" />
+        <ui:AppButton Content="{x:Static text:PullRequestText.Next}" Command="{Binding NextCommand}" Classes="ghost button-sm" />
+        <ui:AppButton Content="{x:Static text:PullRequestText.Cancel}" Command="{Binding CancelCommand}" Classes="ghost button-sm" IsVisible="{Binding IsBusy}" />
+      </WrapPanel>
+      <ui:AppText Text="{Binding PageLabel}" Classes="type-12 muted" />
+      <ui:AppText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />
+      <ui:AppText Text="{x:Static text:PullRequestText.PageLimited}" Classes="type-12 muted" TextWrapping="Wrap" IsVisible="{Binding IsLimited}" />
+      <ui:AppText Text="{x:Static text:PullRequestText.SectionEmpty}" Classes="type-12 muted" TextWrapping="Wrap" IsVisible="{Binding IsEmpty}" />
+    </StackPanel>
+    <StackPanel IsVisible="{Binding IsFiles}" Spacing="8">
+      <ui:AppListBox ItemsSource="{Binding Files.Items}" SelectedItem="{Binding Files.SelectedItem, Mode=TwoWay}" AutoScrollToSelectedItem="False">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <StackPanel Spacing="4">
+              <ui:AppText Text="{Binding Path}" Classes="type-12 weight-semibold" TextWrapping="Wrap" />
+              <ui:AppText Text="{Binding PreviousPath}" Classes="type-12 muted" TextWrapping="Wrap" />
+              <WrapPanel>
+                <ui:AppText Text="{Binding Status}" Classes="type-12 muted" />
+                <ui:AppText Text="{Binding Additions, StringFormat=' +{0}'}" Classes="type-12 muted" />
+                <ui:AppText Text="{Binding Deletions, StringFormat=' −{0}'}" Classes="type-12 muted" />
+              </WrapPanel>
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ui:AppListBox>
+      <ui:AppText Text="{Binding PatchHint}" Classes="type-12 muted" TextWrapping="Wrap" />
+      <ui:AppText Text="{x:Static text:PullRequestText.AnnotationHint}" Classes="type-12 muted" TextWrapping="Wrap" />
+      <ui:AppCodePreview Code="{Binding Files.SelectedItem.Patch}" FilePath="{Binding Files.SelectedItem.Path}" IsDiff="True"
+                         Annotations="{Binding Annotations.FileAnnotations}" AnnotationSelection="{Binding Annotations.Selection}" />
+    </StackPanel>
+    <StackPanel IsVisible="{Binding IsDiscussion}" Spacing="8">
+      <ui:AppText Text="{x:Static text:PullRequestText.CommentHint}" Classes="type-12 muted" TextWrapping="Wrap" />
+      <ui:AppItemsControl ItemsSource="{Binding CurrentComments.Items}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <ui:AppCard Classes="card card-inset-compact">
+              <StackPanel Spacing="8">
+                <ui:AppText Text="{Binding Author}" Classes="type-12 weight-semibold" TextWrapping="Wrap" />
+                <ui:AppSelectableText Text="{Binding Body}" TextWrapping="Wrap" />
+                <ui:AppText Text="{Binding Path}" Classes="type-12 muted" TextWrapping="Wrap" />
+                <WrapPanel>
+                  <ui:AppText Text="{Binding Line}" Classes="type-12 muted" />
+                  <ui:AppText Text="{Binding Side}" Classes="type-12 muted" />
+                </WrapPanel>
+                <ui:AppSelectableText Text="{Binding CommitRevision}" TextWrapping="Wrap" />
+              </StackPanel>
+            </ui:AppCard>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ui:AppItemsControl>
+    </StackPanel>
+    <StackPanel IsVisible="{Binding IsInline}">
+      <views:PullRequestInlineCommentsView DataContext="{Binding Annotations}" />
+    </StackPanel>
+    <ui:AppItemsControl ItemsSource="{Binding CurrentChecks.Items}" IsVisible="{Binding IsChecks}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <ui:AppCard Classes="card card-inset-compact">
+            <StackPanel Spacing="4">
+              <ui:AppText Text="{Binding Name}" Classes="type-12 weight-semibold" TextWrapping="Wrap" />
+              <ui:AppText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap" />
+              <ui:AppText Text="{Binding Conclusion}" Classes="type-12 muted" TextWrapping="Wrap" />
+            </StackPanel>
+          </ui:AppCard>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ui:AppItemsControl>
+    <ui:AppText Text="{x:Static text:PullRequestText.VersionHint}" Classes="type-11 subtle" TextWrapping="Wrap" />
+  </StackPanel>
+</ui:AppUserControl>

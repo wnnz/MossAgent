@@ -52,7 +52,9 @@ public sealed class AppSettingsNavButtonTests
             .Where(element => element.Name.LocalName == "AppSettingsNavButton")
             .ToArray();
 
-        Assert.Equal(7, buttons.Length);
+        Assert.Equal(new[] { "0", "1", "2", "3", "4", "5", "6", "7" },
+            buttons.Select(button => button.Attribute("CommandParameter")?.Value).Order(StringComparer.Ordinal));
+        Assert.Contains(buttons, button => button.Attribute("Label")?.Value == "{x:Static labels:SourceAccountText.Title}");
         Assert.DoesNotContain(document.Descendants(), element =>
             element.Name.LocalName == "AppToggleButton"
             && element.Attribute("Classes")?.Value.Split(' ').Contains("settings-nav") == true);

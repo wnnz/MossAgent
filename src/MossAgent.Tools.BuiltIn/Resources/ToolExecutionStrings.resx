@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
+  <data name="SourceListDescription" xml:space="preserve"><value>只读获取明确授权仓库的开放 PR 列表；不授予本地目录或远端写入权限。</value></data>
+  <data name="SourceGetDescription" xml:space="preserve"><value>只读获取明确授权仓库内指定 PR 的描述和版本，不读取外部链接。</value></data>
+  <data name="SourceReadCompleted" xml:space="preserve"><value>PR 读取完成。</value></data>
+  <data name="SourceReadFailed" xml:space="preserve"><value>PR 读取失败，请检查账号、仓库授权和网络连接。</value></data>
+  <data name="SourceRevisionChanged" xml:space="preserve"><value>PR 提交版本已变化，本次数据未返回。请刷新 PR 并明确打开对应版本的对话，不要自动重试。</value></data>
+  <data name="SourceScopeDenied" xml:space="preserve"><value>此查询超出对话绑定的 PR、提交版本或有效仓库授权，未返回数据。请检查账号和授权后手动继续。</value></data>
+  <data name="SourceOutputLimit" xml:space="preserve"><value>本页 PR 数据超出工具输出上限，未返回不完整内容。请调整输出上限后手动继续，不要声称已读取该页。</value></data>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
@@ -12,4 +19,34 @@
   <data name="CommandCompleted" xml:space="preserve"><value>命令执行完成，退出码 {0}。</value></data>
   <data name="CommandFailed" xml:space="preserve"><value>命令执行失败，退出码 {0}。</value></data>
   <data name="ProjectlessToolsDenied" xml:space="preserve"><value>无项目聊天未授予工具权限，请选择项目后再执行操作。</value></data>
+  <data name="TaskToolScopeDenied" xml:space="preserve"><value>当前任务未授权调用此工具，请在对应功能中明确授权后重试。</value></data>
+  <data name="WorkspaceAccessDenied" xml:space="preserve"><value>工作树授权校验未通过。请检查任务对应的工作树、项目授权目录及 Git 元数据，确认路径未被移动或替换后重试。</value></data>
+  <data name="GitStageDescription" xml:space="preserve"><value>仅暂存指定文件及其重命名来源，不提交或推送；仓库过滤器可能执行外部程序。</value></data>
+  <data name="GitUnstageDescription" xml:space="preserve"><value>仅取消指定文件及其重命名来源的暂存，不提交或推送；Git 操作本身不改写工作文件，但仓库钩子可能执行外部程序。</value></data>
+  <data name="GitIndexPathDenied" xml:space="preserve"><value>只能操作授权仓库内的明确文件；不允许目录、Git 元数据、链接或路径别名。</value></data>
+  <data name="GitCommitPreviewDescription" xml:space="preserve"><value>只读检查当前分支、HEAD 与暂存区，返回提交确认令牌和已暂存文件数；不暂存、不提交。</value></data>
+  <data name="GitCommitDescription" xml:space="preserve"><value>在重新校验确认令牌后，仅提交当前已暂存更改；保留仓库钩子和签名设置，可能执行外部程序。不自动暂存、修改身份、变基、修订或推送。</value></data>
+  <data name="GitCommitPreviewReady" xml:space="preserve"><value>提交预览已就绪，请核对暂存变更后确认。</value></data>
+  <data name="GitCommitReadFailed" xml:space="preserve"><value>无法完整读取 Git 提交状态，请检查仓库、权限及输出规模后重试。</value></data>
+  <data name="GitCommitStateChanged" xml:space="preserve"><value>分支、HEAD 或暂存区已变化，未执行提交。请刷新预览并重新确认。</value></data>
+  <data name="GitCommitConflicts" xml:space="preserve"><value>索引存在未解决的冲突，请解决冲突并暂存后再提交。</value></data>
+  <data name="GitCommitNothingStaged" xml:space="preserve"><value>没有已暂存的更改，请先暂存需要提交的文件。</value></data>
+  <data name="GitCommitMessageInvalid" xml:space="preserve"><value>请输入有效提交说明，不允许无效控制字符。</value></data>
+  <data name="GitPushSelectionInvalid" xml:space="preserve"><value>远端名称或目标分支无效，请检查格式后重新预览。</value></data>
+  <data name="GitPushPreviewDescription" xml:space="preserve"><value>只读检查本地 HEAD、分支、Git 配置与单一推送目标，返回普通单分支推送确认令牌，不连接或写入远端。</value></data>
+  <data name="GitPushDescription" xml:space="preserve"><value>确认状态后将预览的提交推送至指定远端分支；不强推、不附带标签或子模块、不设置上游。Git 钩子、凭据或签名程序可能运行，取消不保证远端未更新。</value></data>
+  <data name="GitPushPreviewReady" xml:space="preserve"><value>推送预览已就绪，请核对远端、目标分支与提交后确认。</value></data>
+  <data name="GitPushStateChanged" xml:space="preserve"><value>HEAD、分支、配置或目标已变化，未执行推送。请刷新预览并重新确认。</value></data>
+  <data name="GitPushReadFailed" xml:space="preserve"><value>无法完整读取推送状态，请检查仓库、远端配置、权限及输出规模。</value></data>
+  <data name="GitPushNoHead" xml:space="preserve"><value>当前没有可推送的提交，请先创建提交。</value></data>
+  <data name="GitPushNoRemote" xml:space="preserve"><value>没有找到选定的已配置远端，请检查 Git 远端配置或填写有效远端名称。</value></data>
+  <data name="GitPushBranchRequired" xml:space="preserve"><value>请输入有效目标分支；游离 HEAD 需要明确填写目标分支。</value></data>
+  <data name="GitPushTransportUnsupported" xml:space="preserve"><value>此目标不是受支持的标准 Git 传输；请使用 HTTP(S)、SSH、git 或明确授权的本地仓库，不使用自定义远端助手。</value></data>
+  <data name="GitPushMultipleUrls" xml:space="preserve"><value>该远端配置了多个推送地址，尚不支持一次写入多个目标。请明确配置单一推送地址后重新预览。</value></data>
+  <data name="GitPushLocalDestination" xml:space="preserve"><value>明确授权的本地 Git 仓库</value></data>
+  <data name="GitPushSucceeded" xml:space="preserve"><value>普通单分支推送已完成，未强推或修改上游配置。</value></data>
+  <data name="GitPushFailed" xml:space="preserve"><value>无法确认推送完成。请检查远端分支是否已更新、访问凭据、非快进冲突及钩子/签名配置；不要直接重复操作。原始输出可能含凭据，未显示。</value></data>
+  <data name="SourceFilesDescription" xml:space="preserve"><value>只读获取明确授权 PR 在已展示提交版本下的变更文件和有界补丁，缺失或不完整补丁明确标记。</value></data>
+  <data name="SourceCommentsDescription" xml:space="preserve"><value>只读获取已展示版本 PR 的讨论或行内评论，不跟随外部链接、不发布评论。</value></data>
+  <data name="SourceChecksDescription" xml:space="preserve"><value>只读获取 PR 来源提交的检查运行或传统提交状态，不读取第三方日志。</value></data>
 </root>

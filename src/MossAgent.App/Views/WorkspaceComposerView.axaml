@@ -6,7 +6,7 @@
              x:Class="MossAgent.App.Views.WorkspaceComposerView"
              x:CompileBindings="False">
   <Grid x:Name="ComposerRoot" Classes="composer-root" MaxWidth="736" HorizontalAlignment="Stretch"
-        RowDefinitions="Auto,Auto,Auto">
+        RowDefinitions="Auto,Auto,Auto,Auto">
     <ui:AppComposerContextBar Grid.Row="0" Project="{Binding Catalog.SelectedProject}"
                               BranchLabel="{Binding RepositoryStatus.BranchLabel}"
                               AgentName="{Binding SelectedAgentLabel}" Agents="{Binding Agents}"
@@ -16,6 +16,9 @@
       <ui:AppComposerContextBar.ProjectPickerContent>
           <views:ProjectPickerFlyoutView />
       </ui:AppComposerContextBar.ProjectPickerContent>
+      <ui:AppComposerContextBar.EnvironmentPickerContent>
+        <views:WorkspaceTaskEnvironmentView DataContext="{Binding Catalog.Environment}" />
+      </ui:AppComposerContextBar.EnvironmentPickerContent>
     </ui:AppComposerContextBar>
 
       <ui:AppCard Grid.Row="1" Classes="composer-surface card-inset-composer">
@@ -28,6 +31,7 @@
         <ItemsControl.ItemTemplate>
           <DataTemplate>
             <ui:AppAttachmentChip DisplayPath="{Binding DisplayPath}" SizeLabel="{Binding SizeLabel}"
+                                   Thumbnail="{Binding Thumbnail}"
                                    RemoveCommand="{Binding RemoveCommand}" />
           </DataTemplate>
         </ItemsControl.ItemTemplate>
@@ -38,18 +42,27 @@
 
       <ui:AppComposerInput Grid.Row="2" Classes="composer-input" Text="{Binding ComposerText}"
                 PlaceholderText="随心输入"
-                 SubmitCommand="{Binding PrimaryActionCommand}" IsSubmissionEnabled="{Binding !IsRunning}"
+                 SubmitCommand="{Binding ComposerSubmitCommand}"
+                 AlternateSubmitCommand="{Binding Steering.AlternateSubmitCommand}"
                  ToolTip.Tip="{x:Static resources:ComposerInputText.Hint}"
-                 AcceptsReturn="True" />
+                 AcceptsReturn="True">
+        <ui:AppComposerInput.IsSubmissionEnabled>
+          <MultiBinding Converter="{x:Static BoolConverters.Or}">
+            <Binding Path="!IsRunning" />
+            <Binding Path="Queue.CanEnqueueMessage" />
+            <Binding Path="Steering.CanSubmit" />
+          </MultiBinding>
+        </ui:AppComposerInput.IsSubmissionEnabled>
+      </ui:AppComposerInput>
 
       <Grid x:Name="ComposerToolbar" Grid.Row="3" Classes="composer-toolbar"
-            ColumnDefinitions="Auto,Auto,*,Auto" RowDefinitions="Auto,Auto"
+            ColumnDefinitions="Auto,Auto,*,Auto,Auto" RowDefinitions="Auto,Auto"
             SizeChanged="HandleToolbarSizeChanged">
         <ui:AppIconButton Classes="composer-attach"
-                IsVisible="{Binding Catalog.SelectedProject, Converter={x:Static ObjectConverters.IsNotNull}}"
                 Command="{Binding Attachments.AddFilesCommand}"
                 CommandParameter="{Binding Catalog.SelectedProject}"
-                Label="附加项目内的文本文件" IconData="{StaticResource UiIconPlus}" />
+                Label="{Binding Attachments.AddFilesLabel}" ToolTip.Tip="{Binding Attachments.SelectionHint}"
+                IconData="{StaticResource UiIconPlus}" />
 
         <ui:AppApprovalPolicyButton x:Name="ApprovalPolicyButton" Grid.Column="1"
                                     IsVisible="{Binding Catalog.SelectedProject, Converter={x:Static ObjectConverters.IsNotNull}}"
@@ -71,12 +84,20 @@
           </Button.Flyout>
         </ui:AppActionButton>
 
-        <ui:AppIconButton x:Name="SendButton" Grid.Column="3" Classes="primary composer-send"
+        <ui:AppButton x:Name="QueueButton" Grid.Column="3" Classes="ghost menu-option" Content="{Binding Queue.EnqueueLabel}"
+                      Command="{Binding Queue.EnqueueCommand}">
+          <ui:AppButton.IsVisible>
+            <MultiBinding Converter="{x:Static BoolConverters.And}">
+              <Binding Path="HasActiveRun" /><Binding Path="Queue.IsAvailable" />
+            </MultiBinding>
+          </ui:AppButton.IsVisible>
+        </ui:AppButton>
+        <ui:AppIconButton x:Name="SendButton" Grid.Column="4" Classes="primary composer-send"
                           Command="{Binding PrimaryActionCommand}" Label="{Binding PrimaryActionLabel}"
                           IconData="{StaticResource UiIconSend}"
                           AlternateIconData="{StaticResource UiIconStop}"
-                          IsAlternateIcon="{Binding HasActiveRun}"
-                          IsFilledIcon="{Binding HasActiveRun}" />
+                          IsAlternateIcon="{Binding IsRunning}"
+                          IsFilledIcon="{Binding IsRunning}" />
       </Grid>
       </Grid>
     </ui:AppCard>
@@ -87,6 +108,7 @@
           <Binding Path="HasSendPreparationError" />
           <Binding Path="AgentPicker.HasCatalogNotice" />
           <Binding Path="ModelPicker.HasReasoningError" />
+          <Binding Path="Drafts.HasNotice" />
         </MultiBinding>
       </StackPanel.IsVisible>
     <ui:AppText Classes="type-11 status-warning"
@@ -99,7 +121,19 @@
       </Grid>
       <ui:AppText Classes="type-11 status-warning" Text="{Binding ModelPicker.ReasoningNotice}"
                   IsVisible="{Binding ModelPicker.HasReasoningError}" TextWrapping="Wrap" />
+      <StackPanel Spacing="4" IsVisible="{Binding Drafts.HasNotice}">
+        <ui:AppText Classes="type-11 status-warning" Text="{Binding Drafts.Notice}" TextWrapping="Wrap" />
+        <WrapPanel Orientation="Horizontal">
+          <ui:AppButton Classes="ghost menu-option" Content="{Binding Drafts.RetryLabel}" Command="{Binding Drafts.RetryCommand}" />
+          <ui:AppButton Classes="ghost menu-option" Content="{Binding Drafts.KeepLocalLabel}"
+                        Command="{Binding Drafts.KeepLocalCommand}" IsVisible="{Binding Drafts.HasConflicts}" />
+        </WrapPanel>
+      </StackPanel>
     </StackPanel>
+      <StackPanel Grid.Row="3">
+        <views:WorkspaceFollowupQueueView Margin="0,6,0,0" DataContext="{Binding Queue}" IsVisible="{Binding IsVisible}" />
+        <views:WorkspaceSteeringView Margin="0,6,0,0" DataContext="{Binding Steering}" IsVisible="{Binding IsVisible}" />
+      </StackPanel>
 
   </Grid>
 </ui:AppUserControl>

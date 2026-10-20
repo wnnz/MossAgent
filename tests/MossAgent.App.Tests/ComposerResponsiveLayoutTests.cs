@@ -53,6 +53,12 @@ public sealed class ComposerResponsiveLayoutTests : IAsyncLifetime
             Flush(window);
             AssertToolbar(view, false);
             Assert.False(Assert.Single(view.GetVisualDescendants().OfType<AppApprovalPolicyButton>()).IsVisible);
+            foreach (var width in new[] { 320, 800, 360 })
+            {
+                window.Width = width;
+                Flush(window);
+                AssertToolbar(view, false);
+            }
             workspace.Catalog.SelectedProject = project;
             Flush(window);
             AssertToolbar(view, true);
@@ -67,6 +73,9 @@ public sealed class ComposerResponsiveLayoutTests : IAsyncLifetime
         var toolbar = view.FindControl<Grid>("ComposerToolbar")!;
         var model = view.FindControl<AppActionButton>("ModelPickerButton")!;
         var send = view.FindControl<AppIconButton>("SendButton")!;
+        var attach = Assert.Single(view.GetVisualDescendants().OfType<AppIconButton>(), button => button.Classes.Contains("composer-attach"));
+        Assert.True(attach.IsEffectivelyVisible);
+        Assert.True(attach.IsEffectivelyEnabled);
         Assert.Equal(stacked, toolbar.Classes.Contains("stacked"));
         Assert.Equal(stacked ? 1 : 0, Grid.GetRow(model));
         Assert.Equal(Grid.GetRow(model), Grid.GetRow(send));

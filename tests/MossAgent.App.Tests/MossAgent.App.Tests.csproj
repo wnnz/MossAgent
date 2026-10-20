@@ -4,6 +4,7 @@
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Shared/PullRequestTestData.cs" Link="Testing/PullRequestTestData.cs" />
     <PackageReference Include="Avalonia.Headless" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
@@ -13,8 +14,13 @@
     <ProjectReference Include="../../src/MossAgent.App.Analyzers/MossAgent.App.Analyzers.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="../Shared/SourceAccountHttpProbe.cs" Link="Testing/SourceAccountHttpProbe.cs" />
+    <Compile Include="../Shared/SourceAccountHttpServer.cs" Link="Testing/SourceAccountHttpServer.cs" />
+    <Compile Include="../Shared/SourceAccountProbeHandler.cs" Link="Testing/SourceAccountProbeHandler.cs" />
     <Compile Include="../Shared/SharedVisualTestApplication.cs" Link="Testing/SharedVisualTestApplication.cs" />
     <Compile Include="../Shared/SqliteTestPool.cs" Link="Testing/SqliteTestPool.cs" />
+    <Compile Include="../Shared/ManualToolTimeProvider.cs" Link="Testing/ManualToolTimeProvider.cs" />
+    <Compile Include="../Shared/OneShotToolTestTimer.cs" Link="Testing/OneShotToolTestTimer.cs" />
     <Compile Include="../Shared/Socks5TestHandshake.cs" Link="Testing/Socks5TestHandshake.cs" />
     <Compile Include="../Shared/AuthenticatedProxyTestServer.cs" Link="Testing/AuthenticatedProxyTestServer.cs" />
     <Compile Include="../Shared/ProxyTestRequestReader.cs" Link="Testing/ProxyTestRequestReader.cs" />

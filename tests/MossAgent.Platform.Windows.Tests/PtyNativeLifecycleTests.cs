@@ -53,9 +53,8 @@ public sealed class PtyNativeLifecycleTests
         await fixture.WriteAsync(task, PtyNativeFixture.PublishPid("second.pid"));
         var second = await fixture.BindAsync("second.pid");
         Assert.False(second.HasExited);
-        await fixture.WriteAsync(task, "[IO.File]::WriteAllText('executed.txt', '中文🚀')");
-        await fixture.WaitForFileAsync("executed.txt");
-        Assert.Equal("中文🚀", await File.ReadAllTextAsync(Path.Combine(fixture.Root, "executed.txt"), TestContext.Current.CancellationToken));
+        await fixture.WriteAsync(task, "[IO.File]::WriteAllText('executed.txt', '中文🚀'); [IO.File]::WriteAllText('executed.txt.ready', '')");
+        Assert.Equal("中文🚀", await fixture.ReadPublishedFileAsync("executed.txt"));
         await fixture.StopAsync(task);
         await PtyNativeFixture.AssertExitedAsync(second);
     }
@@ -90,9 +89,8 @@ public sealed class PtyNativeLifecycleTests
         await PtyNativeFixture.AssertExitedAsync(first);
         await PtyNativeFixture.AssertExitedAsync(child);
         Assert.False(second.HasExited);
-        await fixture.WriteAsync(secondTask, "[IO.File]::WriteAllText('retained.txt', 'retained')");
-        await fixture.WaitForFileAsync("retained.txt");
-        Assert.Equal("retained", await File.ReadAllTextAsync(Path.Combine(fixture.Root, "retained.txt"), TestContext.Current.CancellationToken));
+        await fixture.WriteAsync(secondTask, "[IO.File]::WriteAllText('retained.txt', 'retained'); [IO.File]::WriteAllText('retained.txt.ready', '')");
+        Assert.Equal("retained", await fixture.ReadPublishedFileAsync("retained.txt"));
         await fixture.StopAsync(secondTask);
         await PtyNativeFixture.AssertExitedAsync(second);
     }

@@ -18,7 +18,7 @@ public sealed class AgentRunner(
         AgentRunRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var enabledSubagents = !request.ToolContext.ToolsEnabled ? [] : (await subagents.GetAllAsync(cancellationToken))
+        var enabledSubagents = !request.ToolContext.IsToolAllowed(SubagentTool.ToolName) ? [] : (await subagents.GetAllAsync(cancellationToken))
             .Where(static profile => profile.IsEnabled)
             .Take(16)
             .ToArray();
@@ -39,16 +39,24 @@ public sealed class AgentRunner(
         bool hasSubagents,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        var required = new List<ModelMessage>();
         for (var turn = 1; turn <= request.MaximumTurns; turn++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var state = new ModelTurnState();
-            var descriptors = request.ToolContext.ToolsEnabled ? GetDescriptors(hasSubagents) : [];
+            var descriptors = request.ToolContext.ToolsEnabled ? GetDescriptors(hasSubagents, request.ToolContext) : [];
+            var boundary = await AgentSteeringBoundary.ApplyAsync(request, messages, descriptors, null, false, cancellationToken);
+            if (boundary is not null)
+            {
+                required.AddRange(boundary.RequiredMessages);
+                yield return new AgentSteeringAppliedEvent(boundary.Application);
+            }
             await foreach (var agentEvent in StreamTurnAsync(
-                               request, messages, descriptors, turn, state, cancellationToken))
+                               request, messages, descriptors, turn, state, required, cancellationToken))
             {
                 yield return agentEvent;
             }
+            required.Clear();
 
             if (state.Failed)
             {
@@ -57,6 +65,13 @@ public sealed class AgentRunner(
 
             if (state.Calls.Count == 0)
             {
+                boundary = await AgentSteeringBoundary.ApplyAsync(request, messages, descriptors, state, true, cancellationToken);
+                if (boundary is not null)
+                {
+                    required.AddRange(boundary.RequiredMessages);
+                    yield return new AgentSteeringAppliedEvent(boundary.Application);
+                    continue;
+                }
                 yield return new AgentCompletedEvent();
                 yield break;
             }
@@ -74,7 +89,7 @@ public sealed class AgentRunner(
                     ? null
                     : SubagentConversationContextBuilder.Build(messages),
                 SubagentTools = hasSubagents
-                    ? new SubagentToolGateway(tools, executor)
+                    ? new SubagentToolGateway(tools, executor, request.ToolContext)
                     : null
             };
             await foreach (var agentEvent in ExecuteCallsAsync(
@@ -87,13 +102,11 @@ public sealed class AgentRunner(
         yield return new AgentFailureEvent("turn_limit", "Agent 已达到最大工具轮次限制。");
     }
 
-    private IReadOnlyList<ToolDescriptor> GetDescriptors(bool hasSubagents)
+    private IReadOnlyList<ToolDescriptor> GetDescriptors(bool hasSubagents, ToolExecutionContext context)
     {
-        var descriptors = tools.Descriptors;
-        return hasSubagents
-            ? descriptors.ToArray()
-            : descriptors.Where(static tool => !tool.Name.Equals(
-                SubagentTool.ToolName, StringComparison.OrdinalIgnoreCase)).ToArray();
+        var descriptors = tools.GetModelDescriptors(context);
+        return descriptors.Where(tool => context.IsToolAllowed(tool.Name)
+            && (hasSubagents || !tool.Name.Equals(SubagentTool.ToolName, StringComparison.OrdinalIgnoreCase))).ToArray();
     }
 
     private async IAsyncEnumerable<AgentEvent> StreamTurnAsync(
@@ -102,11 +115,13 @@ public sealed class AgentRunner(
         IReadOnlyList<ToolDescriptor> descriptors,
         int turn,
         ModelTurnState state,
+        IReadOnlyList<ModelMessage> required,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         yield return new AgentStatusEvent($"模型处理中 · 第 {turn} 轮");
-        var contextMessages = ModelContextWindowBuilder.Build(messages, descriptors, request.Model);
+        var contextMessages = ModelContextWindowBuilder.Build(messages, descriptors, request.Model, request.PinnedUserContext, required);
         var modelRequest = new ModelRequest(request.Provider, request.Model, contextMessages, descriptors);
+        ModelImageRequestValidation.Validate(modelRequest);
         var provider = providers.Get(request.Provider.Protocol);
 
         await foreach (var modelEvent in provider.StreamAsync(modelRequest, cancellationToken))

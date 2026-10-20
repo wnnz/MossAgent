@@ -1,6 +1,7 @@
 using System.Net.Http;
 using MossAgent.App.ViewModels;
 using MossAgent.Application.Agent;
+using MossAgent.Application.Models;
 using MossAgent.Domain;
 using Xunit;
 
@@ -15,6 +16,8 @@ public sealed class WorkspaceFailureReasonTests
     [InlineData("output_limit", TaskFailureReason.ProviderOutputLimit)]
     [InlineData("proxy_authentication_failed", TaskFailureReason.ProxyAuthentication)]
     [InlineData("unsupported_reasoning_effort", TaskFailureReason.UnsupportedReasoningEffort)]
+    [InlineData("attachment_history_unavailable", TaskFailureReason.AttachmentHistory)]
+    [InlineData("model_context_capacity", TaskFailureReason.ModelContextCapacity)]
     [InlineData("Bearer synthetic-secret", TaskFailureReason.Unknown)]
     public async Task FailureReason_PersistsWithoutRawProviderMessagesOrCodes(string code, TaskFailureReason reason)
     {
@@ -40,6 +43,7 @@ public sealed class WorkspaceFailureReasonTests
     [InlineData("remote-cancellation", TaskFailureReason.ProviderTimeout)]
     [InlineData("unknown", TaskFailureReason.Unknown)]
     [InlineData("proxy-authentication", TaskFailureReason.ProxyAuthentication)]
+    [InlineData("model-context", TaskFailureReason.ModelContextCapacity)]
     public async Task ExceptionCategories_PersistWhileMessagesStaySafe(string kind, TaskFailureReason reason)
     {
         await using var fixture = await WorkspacePersistenceFixture.CreateAsync();
@@ -51,6 +55,7 @@ public sealed class WorkspaceFailureReasonTests
                 System.Net.HttpStatusCode.ProxyAuthenticationRequired),
             "timeout" => new TimeoutException("Bearer synthetic-secret"),
             "remote-cancellation" => new OperationCanceledException("Bearer synthetic-secret"),
+            "model-context" => new PinnedModelContextException(),
             _ => new InvalidOperationException("Bearer synthetic-secret")
         };
         await RunAsync(fixture, state, new TaskFailureProbeRunner("unused", exception));

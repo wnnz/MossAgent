@@ -2,6 +2,7 @@ using System.Windows.Input;
 using Avalonia;
 using Avalonia.Automation;
 using MossAgent.App.Resources;
+using MossAgent.App.Services;
 
 namespace MossAgent.App.Controls;
 
@@ -15,6 +16,10 @@ public sealed partial class AppAttachmentChip : AppUserControl
         AvaloniaProperty.Register<AppAttachmentChip, ICommand?>(nameof(RemoveCommand));
     public static readonly DirectProperty<AppAttachmentChip, bool> HasRemoveActionProperty =
         AvaloniaProperty.RegisterDirect<AppAttachmentChip, bool>(nameof(HasRemoveAction), chip => chip.HasRemoveAction);
+    public static readonly StyledProperty<AttachmentThumbnailSource?> ThumbnailProperty =
+        AvaloniaProperty.Register<AppAttachmentChip, AttachmentThumbnailSource?>(nameof(Thumbnail));
+    public static readonly DirectProperty<AppAttachmentChip, bool> HasThumbnailRequestProperty =
+        AvaloniaProperty.RegisterDirect<AppAttachmentChip, bool>(nameof(HasThumbnailRequest), chip => chip.HasThumbnailRequest);
 
     public AppAttachmentChip() => InitializeComponent();
 
@@ -37,6 +42,13 @@ public sealed partial class AppAttachmentChip : AppUserControl
     }
 
     public bool HasRemoveAction => RemoveCommand is not null;
+    public bool HasThumbnailRequest => Thumbnail is not null;
+
+    public AttachmentThumbnailSource? Thumbnail
+    {
+        get => GetValue(ThumbnailProperty);
+        set => SetValue(ThumbnailProperty, value);
+    }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
@@ -45,5 +57,7 @@ public sealed partial class AppAttachmentChip : AppUserControl
             AutomationProperties.SetName(this, AttachmentChipText.AccessibleName(DisplayPath, SizeLabel));
         if (change.Property == RemoveCommandProperty)
             RaisePropertyChanged(HasRemoveActionProperty, change.OldValue is not null, change.NewValue is not null);
+        if (change.Property == ThumbnailProperty)
+            RaisePropertyChanged(HasThumbnailRequestProperty, change.OldValue is not null, change.NewValue is not null);
     }
 }

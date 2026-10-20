@@ -3,12 +3,14 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.Application.Persistence;
+using MossAgent.App.Services;
 using MossAgent.Domain;
 namespace MossAgent.App.ViewModels;
 
 public sealed class WorkspaceCatalogViewModel : ObservableObject
 {
     private readonly IWorkspaceRepository _workspaces;
+    private readonly ConversationAttachmentThumbnailFactory? _thumbnails;
     private readonly WorkspaceWorktreeCleanupService _worktreeCleanup;
     private ProjectProfile? _selectedProject;
     private AgentTask? _selectedTask;
@@ -25,9 +27,10 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public WorkspaceCatalogViewModel(
         IWorkspaceRepository workspaces,
         WorkspaceWorktreeCleanupService worktreeCleanup,
-        WorkspaceProjectService projectService)
+        WorkspaceProjectService projectService, ConversationAttachmentThumbnailFactory? thumbnails = null)
     {
         _workspaces = workspaces;
+        _thumbnails = thumbnails;
         _worktreeCleanup = worktreeCleanup;
         ProjectEditor = new WorkspaceProjectEditorViewModel(projectService);
         ProjectEditor.ProjectCreated += AddProject;
@@ -71,6 +74,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public WorkspaceTaskSearchViewModel TaskSearch { get; }
     public WorkspaceRecentTasksViewModel RecentTasks { get; }
     public WorkspaceTaskManagementViewModel TaskManagement { get; }
+    public WorkspaceTaskEnvironmentViewModel Environment { get; } = new();
     public IRelayCommand NewTaskCommand { get; }
     public IRelayCommand NewChatCommand { get; }
     public string ProjectlessChatLabel => WorkspaceText.Get(nameof(ProjectlessChatLabel));
@@ -105,7 +109,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
                     group.IsExpanded = true;
                 }
             }
-            SelectionChanged?.Invoke();
+            NotifySelectionChanged();
             _ = LoadTasksAsync(value, Interlocked.Increment(ref _loadVersion));
         }
     }
@@ -124,6 +128,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         {
             if (SetProperty(ref _isLocked, value))
             {
+                Environment.SetLocked(value);
                 NewTaskCommand.NotifyCanExecuteChanged();
                 NewChatCommand.NotifyCanExecuteChanged();
                 EditProjectCommand.NotifyCanExecuteChanged();
@@ -180,10 +185,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     }
     public void StartNewTask()
     {
-        if (_isLocked)
-        {
-            return;
-        }
+        if (_isLocked) return;
         ConversationRequested?.Invoke();
         _navigation.Record((SelectedProject?.Id, null));
         StartNewTaskCore();
@@ -371,22 +373,13 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
             : tasks.FindTask(requestedTaskId) ?? Tasks.FirstOrDefault();
         SetSelectedTask(selectedTask, loadMessages: selectedTask is not null);
     }
-    private async Task LoadMessagesAsync(AgentTask task)
+    internal async Task LoadMessagesAsync(AgentTask task)
     {
-        if (TryShowActiveMessages(task.Id))
-        {
-            return;
-        }
+        if (TryShowActiveMessages(task.Id)) return;
         var messages = await _workspaces.GetMessagesAsync(task.Id, CancellationToken.None);
-        if (task.Id != SelectedTask?.Id)
-        {
-            return;
-        }
-        if (TryShowActiveMessages(task.Id))
-        {
-            return;
-        }
-        Messages.ReplaceWith(messages.Select(WorkspaceConversationMapper.ToChatMessage));
+        if (task.Id != SelectedTask?.Id) return;
+        if (TryShowActiveMessages(task.Id)) return;
+        Messages.ReplaceWith(messages.Select(message => WorkspaceConversationMapper.ToChatMessage(message, _thumbnails)));
     }
     private void SetSelectedTask(AgentTask? task, bool loadMessages)
     {
@@ -403,11 +396,16 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         RecentTasks.SetSelectedTask(task?.Id);
         TaskManagement.SelectedTask = task;
         CleanupWorktreeCommand.NotifyCanExecuteChanged();
-        SelectionChanged?.Invoke();
+        NotifySelectionChanged();
         if (loadMessages && task is not null)
         {
             _ = LoadMessagesAsync(task);
         }
+    }
+    private void NotifySelectionChanged()
+    {
+        Environment.SetContext(SelectedProject, SelectedTask);
+        SelectionChanged?.Invoke();
     }
     private bool CanCleanupWorktree() =>
         !_isLocked
@@ -458,9 +456,9 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
             UpsertTask(updated);
             Status = "任务 worktree 已安全移除，任务历史仍保留。";
         }
-        catch (Exception exception)
+        catch (Exception)
         {
-            Status = exception.Message;
+            Status = WorkspaceText.Get("TaskEnvironmentCleanupFailure");
         }
         finally
         {

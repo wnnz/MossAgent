@@ -1,5 +1,7 @@
 using MossAgent.Application.Agent;
+using MossAgent.Application.Conversations;
 using MossAgent.Domain;
+using MossAgent.App.Resources;
 
 namespace MossAgent.App.ViewModels;
 
@@ -8,6 +10,8 @@ public sealed class WorkspaceRunController(
     WorkspaceRunTracker runs,
     WorkspaceTaskFactory taskFactory)
 {
+    public event Func<WorkspaceRunState, bool, Task>? RunFinished;
+
     public async Task RunAsync(
         WorkspaceRunState state,
         WorkspaceTaskPanelCoordinator panels,
@@ -16,6 +20,7 @@ public sealed class WorkspaceRunController(
         Action<AgentTask> applyTaskUpdate,
         Action runStateChanged)
     {
+        var released = false;
         try
         {
             var context = panels.CreateContext(state.Task, state.Project);
@@ -35,9 +40,14 @@ public sealed class WorkspaceRunController(
         }
         catch (Exception exception)
         {
+            state.AuthorizationChanged = IsAuthorizationChange(exception);
             var code = TaskFailureClassifier.CodeFromException(exception);
             var reason = TaskFailureClassifier.FromCode(code);
-            var message = WorkspaceFailureText.Get(reason);
+            var message = exception switch
+            {
+                SourceReviewException source => PullRequestText.Failure(source.ErrorCode),
+                _ => WorkspaceFailureText.Get(reason)
+            };
             await present(state, new AgentFailureEvent(code, message));
             setActivity(state, message);
             await SetTerminalStatusAsync(state, AgentTaskStatus.Failed, applyTaskUpdate, reason);
@@ -47,6 +57,7 @@ public sealed class WorkspaceRunController(
             try
             {
                 await panels.ReleaseBrowserAsync(state.Task.Id);
+                released = true;
             }
             catch (Exception)
             {
@@ -56,10 +67,19 @@ public sealed class WorkspaceRunController(
             finally
             {
                 runs.Remove(state.Task.Id);
-                runStateChanged();
+                try
+                {
+                    foreach (var callback in RunFinished?.GetInvocationList().Cast<Func<WorkspaceRunState, bool, Task>>() ?? [])
+                        await callback(state, released);
+                }
+                finally { runStateChanged(); }
             }
         }
     }
+
+    private static bool IsAuthorizationChange(Exception exception) => exception is
+        ConversationSteeringException { Code: "SteeringScopeChanged" }
+        or SourceReviewException { ErrorCode: "source_scope_denied" };
 
     private async Task SetTerminalStatusAsync(
         WorkspaceRunState state,

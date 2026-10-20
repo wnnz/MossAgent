@@ -6,6 +6,9 @@ using MossAgent.Domain;
 using MossAgent.Infrastructure.Persistence;
 using MossAgent.Application.Automations;
 using MossAgent.Application.Settings;
+using MossAgent.Application.Attachments;
+using MossAgent.App.Services;
+using MossAgent.Application.SourceControl;
 using Xunit;
 
 namespace MossAgent.App.Tests;
@@ -27,40 +30,72 @@ internal sealed class WorkspaceModelSelectionFixture : IAsyncDisposable
     public IConfigurationRepository Configurations => _services!.GetRequiredService<IConfigurationRepository>();
     public IAgentConfigurationRepository AgentProfiles => _services!.GetRequiredService<IAgentConfigurationRepository>();
     public IWorkspaceRepository Tasks => _services!.GetRequiredService<IWorkspaceRepository>();
+    public IConversationDraftRepository Drafts => _services!.GetRequiredService<IConversationDraftRepository>();
+    public IConversationFollowupRepository Followups => _services!.GetRequiredService<IConversationFollowupRepository>();
+    public IConversationSteeringRepository Steering => _services!.GetRequiredService<IConversationSteeringRepository>();
+    public ISourceAccountRepository SourceAccounts => _services!.GetRequiredService<ISourceAccountRepository>();
+    public ISourceRepositoryGrants SourceGrants => _services!.GetRequiredService<ISourceRepositoryGrants>();
+    public ISourceReviewChats SourceChats => _services!.GetRequiredService<ISourceReviewChats>();
+    public IConversationAttachmentStore AttachmentStore => _services!.GetRequiredService<IConversationAttachmentStore>();
+    public WorkspaceFollowupServices FollowupServices(IConversationFollowupRepository repository,
+        IConversationAttachmentStore? preparationAttachments = null) => new(repository,
+        preparationAttachments is null ? _services!.GetRequiredService<MossAgent.Application.Conversations.ConversationFollowupPreparer>()
+            : ActivatorUtilities.CreateInstance<MossAgent.Application.Conversations.ConversationFollowupPreparer>(_services!, preparationAttachments),
+        _services!.GetRequiredService<ConversationAttachmentThumbnailFactory>());
     public WorkspaceRunTracker Runs => _services!.GetRequiredService<WorkspaceRunTracker>();
     public AutomationScheduler Scheduler => _services!.GetRequiredService<AutomationScheduler>();
     public IAutomationRepository Automations => _services!.GetRequiredService<IAutomationRepository>();
+    public MossAgent.Infrastructure.Git.GitProcessRunner Git => _services!.GetRequiredService<MossAgent.Infrastructure.Git.GitProcessRunner>();
+    public WorkspaceTaskPanelCoordinator Panels => _services!.GetRequiredService<WorkspaceTaskPanelCoordinator>();
+    public MossAgent.Tools.Abstractions.IToolExecutor Tools => _services!.GetRequiredService<MossAgent.Tools.Abstractions.IToolExecutor>();
+    public MossAgent.Tools.Abstractions.IToolExecutionAuditReader ToolAudits => _services!.GetRequiredService<MossAgent.Tools.Abstractions.IToolExecutionAuditReader>();
     public ModelProfile SelectedModel { get; private set; } = null!;
     public ModelProfile AlternativeModel { get; private set; } = null!;
     public AiProvider SelectedProvider { get; private set; } = null!;
     public CancellationToken Token => _timeout.Token;
+    public string DataRoot => Path.Combine(_root, "data");
 
     public WorkspaceViewModel CreateWorkspace(IWorkspaceRepository repository, WorkspaceRunTracker runs,
         IAgentConfigurationRepository? agents = null, IWorkspaceRepository? catalogRepository = null,
-        IConversationPreferenceRepository? conversationPreferences = null, ISidebarPreferenceStore? sidebarPreferences = null)
+        IConversationPreferenceRepository? conversationPreferences = null, ISidebarPreferenceStore? sidebarPreferences = null,
+        IFilePickerService? attachmentPicker = null, IWorkspaceAttachmentReader? attachmentReader = null,
+        IConversationDraftRepository? conversationDrafts = null, IConversationAttachmentStore? attachmentStore = null,
+        ISelectedAttachmentReader? selectedAttachmentReader = null, WorkspaceFollowupServices? followups = null,
+        Action<WorkspaceRunController>? configureRunController = null)
     {
         var services = _services!;
-        var factory = new WorkspaceTaskFactory(repository, services.GetRequiredService<MossAgent.Application.Git.IGitWorktreeService>());
-        var executor = new WorkspaceRunExecutor(repository, services.GetRequiredService<MossAgent.Application.Agent.IAgentRunner>(), factory);
+        attachmentStore ??= services.GetRequiredService<IConversationAttachmentStore>();
+        var factory = new WorkspaceTaskFactory(repository, services.GetRequiredService<MossAgent.Application.Git.IGitWorktreeService>(), attachmentStore);
+        var executor = new WorkspaceRunExecutor(repository, services.GetRequiredService<MossAgent.Application.Agent.IAgentRunner>(), factory, attachmentStore);
         var controller = new WorkspaceRunController(executor, runs, factory);
+        configureRunController?.Invoke(controller);
         var catalog = catalogRepository is null
             ? ActivatorUtilities.CreateInstance<WorkspaceCatalogViewModel>(services)
             : ActivatorUtilities.CreateInstance<WorkspaceCatalogViewModel>(services, catalogRepository);
-        var attachments = ActivatorUtilities.CreateInstance<WorkspaceAttachmentManagerViewModel>(services);
+        var attachments = new WorkspaceAttachmentManagerViewModel(
+            attachmentPicker ?? services.GetRequiredService<IFilePickerService>(),
+            attachmentReader ?? services.GetRequiredService<IWorkspaceAttachmentReader>(),
+            selectedReader: selectedAttachmentReader ?? services.GetRequiredService<ISelectedAttachmentReader>(),
+            thumbnailRenderer: services.GetRequiredService<IAttachmentThumbnailRenderer>());
         var repositoryStatus = ActivatorUtilities.CreateInstance<WorkspaceRepositoryStatusViewModel>(services);
         var arguments = new List<object> { factory, runs, controller, catalog, attachments, repositoryStatus, agents ?? AgentProfiles };
         if (conversationPreferences is not null) arguments.Add(conversationPreferences);
         if (sidebarPreferences is not null) arguments.Add(sidebarPreferences);
+        arguments.Add(conversationDrafts ?? new TestConversationDraftRepository());
+        if (followups is not null) arguments.Add(followups);
         return ActivatorUtilities.CreateInstance<WorkspaceViewModel>(services, arguments.ToArray());
     }
 
-    public static async Task<WorkspaceModelSelectionFixture> CreateAsync(bool pauseResponse = false, bool withProject = true)
+    public static async Task<WorkspaceModelSelectionFixture> CreateAsync(bool pauseResponse = false, bool withProject = true,
+        Action<IServiceCollection>? configure = null)
     {
         var fixture = new WorkspaceModelSelectionFixture();
         try
         {
             Directory.CreateDirectory(fixture._root);
-            fixture._services = AppComposition.CreateServices(Path.Combine(fixture._root, "data"));
+            var services = AppComposition.CreateServiceCollection(Path.Combine(fixture._root, "data"));
+            configure?.Invoke(services);
+            fixture._services = services.BuildServiceProvider(validateScopes: true);
             await fixture._services.GetRequiredService<IDatabaseInitializer>().InitializeAsync(fixture.Token);
             fixture._server = new ModelSelectionResponseServer(fixture.Token, pauseResponse);
             fixture._workspace = fixture.Workspace;

@@ -15,7 +15,7 @@ public sealed class GitProcessRunner(ITaskProcessLauncher processes, TimeProvide
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, deadline.Token);
         try
         {
-            await using var process = processes.Start(new TaskProcessStartRequest("git", directory, arguments), cancellation.Token);
+            await using var process = processes.Start(new TaskProcessStartRequest("git", directory, arguments, RemovedEnvironmentPrefixes: ["GIT_"]), cancellation.Token);
             var stdout = ReadAsync(process.StandardOutput, cancellation.Token);
             var stderr = ReadAsync(process.StandardError, cancellation.Token);
             var readers = Task.WhenAll((Task)stdout, stderr);

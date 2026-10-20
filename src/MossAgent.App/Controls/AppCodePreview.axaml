@@ -8,8 +8,9 @@
         <DataTemplate>
           <ui:AppBorder Classes="file-code-row" Classes.added="{Binding IsAdded}"
                         Classes.removed="{Binding IsRemoved}" Classes.hunk="{Binding IsHeader}"
+                        Classes.annotation-target="{Binding IsAnnotationTarget}"
                         Classes.search-match="{Binding IsSearchMatch}" Classes.current-match="{Binding IsCurrentSearchMatch}">
-            <Grid ColumnDefinitions="Auto,*">
+            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
               <ui:AppBorder Classes="file-code-gutter">
                 <Grid ColumnDefinitions="Auto,42,Auto">
                   <ui:AppText Text="{Binding OldNumber}" Classes="file-code-number file-code-old code-font"
@@ -21,6 +22,18 @@
               </ui:AppBorder>
               <ui:SyntaxHighlightedSelectableTextBlock Grid.Column="1" Code="{Binding Code}"
                                                        Language="{Binding Language}" Classes="file-code-text code-font" />
+              <ui:AppItemsControl Grid.Row="1" Grid.ColumnSpan="2" ItemsSource="{Binding Annotations}" IsVisible="{Binding HasAnnotations}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <ui:AppCard Classes="card card-inset-compact code-annotation-card" Focusable="True" AutomationProperties.Name="{Binding Content}">
+                      <StackPanel Spacing="4">
+                        <ui:AppText Text="{Binding Author}" Classes="type-12 weight-semibold" TextWrapping="Wrap" />
+                        <ui:AppSelectableText Text="{Binding Content}" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </ui:AppCard>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ui:AppItemsControl>
             </Grid>
           </ui:AppBorder>
         </DataTemplate>

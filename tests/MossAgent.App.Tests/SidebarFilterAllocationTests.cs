@@ -5,6 +5,7 @@ using Xunit;
 
 namespace MossAgent.App.Tests;
 
+[Collection(AllocationMeasurementCollection.Name)]
 public sealed class SidebarFilterAllocationTests(ITestOutputHelper output)
 {
     [Theory]
@@ -26,11 +27,10 @@ public sealed class SidebarFilterAllocationTests(ITestOutputHelper output)
         var notifications = 0;
         rows.CollectionChanged += (_, _) => notifications++;
         for (var index = 0; index < 100; index++) filter(query);
-        var before = GC.GetAllocatedBytesForCurrentThread();
-
-        for (var index = 0; index < 10_000; index++) filter(query);
-
-        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        var allocated = AllocationMeasurement.Measure(() =>
+        {
+            for (var index = 0; index < 10_000; index++) filter(query);
+        });
         output.WriteLine($"{kind}, noMatches={noMatches} (10,000 filters): {allocated} bytes");
         Assert.Equal(noMatches ? 0 : tasks.Length, rows.Count);
         for (var index = 0; index < original.Length; index++) Assert.Same(original[index], rows[index]);

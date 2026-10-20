@@ -8,13 +8,17 @@ internal sealed class WindowsProcessEnvironment : IDisposable
     private readonly char[]? _characters;
     private GCHandle _pinned;
 
-    public WindowsProcessEnvironment(IReadOnlyDictionary<string, string?>? overrides)
+    public WindowsProcessEnvironment(IReadOnlyDictionary<string, string?>? overrides, IReadOnlyList<string>? removedPrefixes = null)
     {
-        if (overrides is null) return;
+        if (overrides is null && removedPrefixes is not { Count: > 0 }) return;
+        var prefixes = removedPrefixes?.ToArray() ?? [];
+        if (prefixes.Length > 32 || prefixes.Any(prefix => string.IsNullOrEmpty(prefix) || prefix.Length > 128
+            || prefix.Contains('=') || prefix.Any(char.IsControl)))
+            throw new ArgumentException("Invalid process environment prefix.", nameof(removedPrefixes));
         var variables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
             variables[(string)entry.Key] = (string)entry.Value!;
-        foreach (var pair in overrides)
+        foreach (var pair in overrides ?? new Dictionary<string, string?>())
         {
             if (string.IsNullOrEmpty(pair.Key) || pair.Key.Contains('=') || pair.Key.Contains('\0')
                 || pair.Value?.Contains('\0') == true)
@@ -22,6 +26,9 @@ internal sealed class WindowsProcessEnvironment : IDisposable
             if (pair.Value is null) variables.Remove(pair.Key);
             else variables[pair.Key] = pair.Value;
         }
+
+        foreach (var name in variables.Keys.Where(name => prefixes.Any(prefix => name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))).ToArray())
+            variables.Remove(name);
 
         var block = string.Join('\0', variables.OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
             .Select(pair => $"{pair.Key}={pair.Value}")) + "\0\0";

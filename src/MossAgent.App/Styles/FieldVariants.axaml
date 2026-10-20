@@ -30,4 +30,20 @@
     <Setter Property="MaxHeight" Value="180" />
     <Setter Property="VerticalContentAlignment" Value="Top" />
   </Style>
+  <Style Selector=".app-input.followup-editor" x:SetterTargetType="controls:AppInput">
+    <Setter Property="MinHeight" Value="60" />
+    <Setter Property="MaxHeight" Value="100" />
+  </Style>
+  <Style Selector=".app-scroll-viewer.followup-queue" x:SetterTargetType="controls:AppScrollViewer">
+    <Setter Property="MaxHeight" Value="240" />
+  </Style>
+  <Style Selector="Grid.compact-composer .app-scroll-viewer.followup-queue" x:SetterTargetType="controls:AppScrollViewer">
+    <Setter Property="MaxHeight" Value="160" />
+  </Style>
+  <Style Selector=".app-scroll-viewer.steering-history" x:SetterTargetType="controls:AppScrollViewer">
+    <Setter Property="MaxHeight" Value="160" />
+  </Style>
+  <Style Selector="Grid.compact-composer .app-scroll-viewer.steering-history" x:SetterTargetType="controls:AppScrollViewer">
+    <Setter Property="MaxHeight" Value="100" />
+  </Style>
 </Styles>

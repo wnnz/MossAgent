@@ -48,9 +48,9 @@ public sealed class WorkspaceSendDraftTests
         workspace.PrimaryActionCommand.Execute(null);
 
         Assert.Equal("发送第一条消息。", workspace.ComposerText);
-        Assert.False(workspace.PrimaryActionCommand.CanExecute(null));
+        Assert.True(workspace.PrimaryActionCommand.CanExecute(null));
         Assert.False(workspace.HasActiveRun);
-        Assert.Equal("正在保存消息", workspace.PrimaryActionLabel);
+        Assert.Equal("取消发送准备", workspace.PrimaryActionLabel);
         workspace.ComposerText = "为下一条消息准备的新草稿。";
         var next = AddAttachment(workspace, "next.txt");
         release.SetResult();
@@ -65,7 +65,8 @@ public sealed class WorkspaceSendDraftTests
     private static WorkspaceAttachmentViewModel AddAttachment(WorkspaceViewModel workspace, string path)
     {
         var attachment = new WorkspaceAttachmentViewModel(new WorkspaceAttachmentContent(
-            Path.Combine(workspace.Catalog.SelectedProject!.PrimaryDirectory, path), path, "synthetic content", 17), _ => { });
+            Path.Combine(workspace.Catalog.SelectedProject!.PrimaryDirectory, path), path, "synthetic content", 17), _ => { },
+            authorizationStamp: WorkspaceAttachmentAuthorization.Create(workspace.Catalog.SelectedProject));
         workspace.Attachments.Items.Add(attachment);
         return attachment;
     }

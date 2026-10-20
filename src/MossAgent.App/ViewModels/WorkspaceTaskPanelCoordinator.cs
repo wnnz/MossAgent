@@ -39,13 +39,17 @@ public sealed class WorkspaceTaskPanelCoordinator(
             throw new InvalidOperationException("Task project does not match the selected context.");
         if (project is null)
             return new(task.Id, string.Empty, [], ApprovalPolicy.ReadOnly) { ToolsEnabled = false };
+        var roots = taskFactory.GetAuthorizedRoots(project, task);
         return new(
             task.Id,
             task.WorktreePath ?? project.PrimaryDirectory,
-            taskFactory.GetAuthorizedRoots(project, task),
+            roots,
             task.ApprovalPolicy,
             ArtifactDirectory: artifacts.GetTaskDirectory(task.Id),
-            BrowserSession: browserSessions.GetLazySession(task.Id));
+            BrowserSession: browserSessions.GetLazySession(task.Id))
+        {
+            WorkspaceGuard = taskFactory.CreateWorkspaceGuard(project, task, roots)
+        };
     }
 
     public void ShowDiff(string content) => diff.Show(content);

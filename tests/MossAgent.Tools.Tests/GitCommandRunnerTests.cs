@@ -39,6 +39,7 @@ public sealed class GitCommandRunnerTests
         Assert.Equal(context.WorkingDirectory, request.WorkingDirectory);
         Assert.Equal(arguments, request.Arguments);
         Assert.False(request.RedirectStandardInput);
+        Assert.Equal(new[] { "GIT_" }, request.RemovedEnvironmentPrefixes);
         Assert.Equal(success, result.IsSuccess);
         if (success) Assert.Contains(stdout, result.Content);
         else Assert.Equal("git_failed", result.ErrorCode);

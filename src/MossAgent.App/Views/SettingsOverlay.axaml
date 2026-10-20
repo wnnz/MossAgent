@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:MossAgent.App.Controls"
              xmlns:views="clr-namespace:MossAgent.App.Views"
+             xmlns:labels="clr-namespace:MossAgent.App.Resources"
              x:Class="MossAgent.App.Views.SettingsOverlay"
              x:Name="Root" Classes="settings-shell"
              x:CompileBindings="False">
@@ -61,6 +62,11 @@
 
             <ui:AppText Text="集成" Classes="subtle settings-navigation-heading"
                         IsVisible="{Binding IsIntegrationSettingsMatch}" />
+            <ui:AppSettingsNavButton HorizontalAlignment="Stretch"
+                          IsVisible="{Binding IsSourceAccountSettingsMatch}"
+                          IsChecked="{Binding IsSourceAccountSettingsSelected, Mode=OneWay}"
+                          Command="{Binding SelectSettingsTabCommand}" CommandParameter="7"
+                          Label="{x:Static labels:SourceAccountText.Title}" IconData="{StaticResource UiIconSources}" />
             <ui:AppSettingsNavButton
                           HorizontalAlignment="Stretch"
                           IsVisible="{Binding IsMcpSettingsMatch}"
@@ -120,6 +126,9 @@
           </ui:AppBorder>
           <ui:AppBorder IsVisible="{Binding IsMcpSettingsSelected}">
             <views:McpSettingsPane DataContext="{Binding Mcp}" />
+          </ui:AppBorder>
+          <ui:AppBorder IsVisible="{Binding IsSourceAccountSettingsSelected}">
+            <views:SourceAccountSettingsPane DataContext="{Binding SourceAccounts}" />
           </ui:AppBorder>
         </Grid>
     </ui:AppBorder>

@@ -11,6 +11,8 @@ public sealed class AppComposerInput : AppInput
 {
     public static readonly StyledProperty<ICommand?> SubmitCommandProperty =
         AvaloniaProperty.Register<AppComposerInput, ICommand?>(nameof(SubmitCommand));
+    public static readonly StyledProperty<ICommand?> AlternateSubmitCommandProperty =
+        AvaloniaProperty.Register<AppComposerInput, ICommand?>(nameof(AlternateSubmitCommand));
 
     public static readonly StyledProperty<bool> IsSubmissionEnabledProperty =
         AvaloniaProperty.Register<AppComposerInput, bool>(nameof(IsSubmissionEnabled));
@@ -28,6 +30,12 @@ public sealed class AppComposerInput : AppInput
     {
         get => GetValue(IsSubmissionEnabledProperty);
         set => SetValue(IsSubmissionEnabledProperty, value);
+    }
+
+    public ICommand? AlternateSubmitCommand
+    {
+        get => GetValue(AlternateSubmitCommandProperty);
+        set => SetValue(AlternateSubmitCommandProperty, value);
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs eventArgs)
@@ -54,9 +62,10 @@ public sealed class AppComposerInput : AppInput
         }
 
         eventArgs.Handled = true;
+        var command = eventArgs.KeyModifiers == KeyModifiers.Control ? AlternateSubmitCommand ?? SubmitCommand : SubmitCommand;
         if (!wasHeld && IsFocused && IsEffectivelyVisible && IsEffectivelyEnabled && !IsReadOnly
             && VisualRoot is not null && IsSubmissionEnabled && !string.IsNullOrWhiteSpace(Text)
-            && string.IsNullOrEmpty(_presenter?.PreeditText) && SubmitCommand is { } command
+            && string.IsNullOrEmpty(_presenter?.PreeditText) && command is not null
             && command.CanExecute(null))
             command.Execute(null);
     }

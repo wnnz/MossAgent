@@ -93,6 +93,23 @@ public sealed class AgentDescriptorProjectionTests
         Assert.Equal(2, catalog.Reads);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RunAsync_RestrictsAdvertisedToolsAndDelegationToTheTaskScope(bool delegateAllowed)
+    {
+        var read = Descriptor("test.read");
+        var delegation = Descriptor(SubagentTool.ToolName);
+        var catalog = new DescriptorProbeToolCatalog([read, Descriptor("shell.run"), delegation]);
+        var fixture = Create(catalog, true, _ => [new TextDelta("done")]);
+        var allowed = new HashSet<string> { "test.read" };
+        if (delegateAllowed) allowed.Add(SubagentTool.ToolName);
+        var request = fixture.Request with { ToolContext = fixture.Request.ToolContext with { AllowedToolNames = allowed } };
+        await ConsumeAsync(fixture.Runner, request);
+        Assert.Equal(delegateAllowed ? new[] { read, delegation } : [read], fixture.Provider.LastRequest!.Tools);
+        Assert.Equal(1, catalog.Reads);
+    }
+
     private static (AgentRunner Runner, AgentRunRequest Request, StubModelProvider Provider) Create(
         IToolCatalog catalog, bool enabled, Func<ModelRequest, IReadOnlyList<ModelEvent>> response)
     {

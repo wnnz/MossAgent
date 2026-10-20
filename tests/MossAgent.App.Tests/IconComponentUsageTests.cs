@@ -97,8 +97,8 @@ public sealed class IconComponentUsageTests
             && element.Attribute("Classes")?.Value.Contains("composer-send", StringComparison.Ordinal) == true);
         Assert.Equal("{StaticResource UiIconSend}", sendButton.Attribute("IconData")?.Value);
         Assert.Equal("{StaticResource UiIconStop}", sendButton.Attribute("AlternateIconData")?.Value);
-        Assert.Equal("{Binding HasActiveRun}", sendButton.Attribute("IsAlternateIcon")?.Value);
-        Assert.Equal("{Binding HasActiveRun}", sendButton.Attribute("IsFilledIcon")?.Value);
+        Assert.Equal("{Binding IsRunning}", sendButton.Attribute("IsAlternateIcon")?.Value);
+        Assert.Equal("{Binding IsRunning}", sendButton.Attribute("IsFilledIcon")?.Value);
         Assert.Equal("{Binding PrimaryActionLabel}", sendButton.Attribute("Label")?.Value);
 
         var disclosure = Assert.Single(chat.Descendants(), element => element.Name.LocalName == "AppToolActivityRow"

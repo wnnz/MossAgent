@@ -5,6 +5,8 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
   <data name="TaskFailureHint" xml:space="preserve"><value>任务失败。请检查 AI 提供商连接、模型设置或工具执行记录后重试。</value></data>
+  <data name="TaskFailureModelContextCapacity" xml:space="preserve"><value>固定上下文无法放入当前模型的可用上下文。请增大上下文长度、减少输出上限或切换模型后手动重试。</value></data>
+  <data name="TaskFailureAttachmentHistory" xml:space="preserve"><value>历史附件快照缺失、损坏或无法读取，已停止请求。请恢复应用数据中的附件快照后重试，或新建对话重新添加附件。</value></data>
   <data name="TaskFailureStreamLineLimit" xml:space="preserve"><value>响应中的单行超过安全上限，任务已停止。请检查 AI 提供商的流式输出，调整后重新发送。</value></data>
   <data name="TaskFailureStreamEventLimit" xml:space="preserve"><value>单个响应事件超过安全上限，任务已停止。请检查 AI 提供商的流式输出，调整后重新发送。</value></data>
   <data name="TaskFailureInvalidStreamEncoding" xml:space="preserve"><value>AI 提供商的流式响应不是有效的 UTF-8，任务已停止。请检查接口编码后重试。</value></data>
@@ -62,7 +64,6 @@
   <data name="BrowserDevToolsLabel" xml:space="preserve"><value>打开开发工具</value></data>
   <data name="SendPreparationError" xml:space="preserve"><value>无法保存并发送消息，请重试。输入内容和附件已保留。</value></data>
   <data name="SendRunLabel" xml:space="preserve"><value>发送消息</value></data>
-  <data name="PreparingRunLabel" xml:space="preserve"><value>正在保存消息</value></data>
   <data name="StopRunLabel" xml:space="preserve"><value>停止执行</value></data>
   <data name="DefaultAgentLabel" xml:space="preserve"><value>默认代理</value></data>
   <data name="UnavailableAgentLabelFormat" xml:space="preserve"><value>{0}（不可用）</value></data>
@@ -124,6 +125,96 @@
   <data name="TimelineHours" xml:space="preserve"><value>用时 {0}小时 {1}分钟 {2}秒</value></data>
   <data name="TimelineRunning" xml:space="preserve"><value>正在处理</value></data>
   <data name="TimelineActivities" xml:space="preserve"><value>执行过程</value></data>
-  <data name="ComposerInputHint" xml:space="preserve"><value>Enter 或 Ctrl+Enter 发送，Shift+Enter 换行。运行时请点击停止按钮。</value></data>
+  <data name="ComposerInputHint" xml:space="preserve"><value>Enter 或 Ctrl+Enter 发送，运行中加入队列；Shift+Enter 换行。停止按钮可取消当前运行。</value></data>
   <data name="ComposerNewlineLabel" xml:space="preserve"><value>输入框换行</value></data>
+  <data name="AddFilesLabel" xml:space="preserve"><value>添加文本或图像附件</value></data>
+  <data name="AttachmentSelectionHint" xml:space="preserve"><value>仅发送所选文件的快照，不会授予模型额外的文件访问权限。</value></data>
+  <data name="AttachmentProjectRequired" xml:space="preserve"><value>当前无法读取手动选择的文件，请重试或选择项目后添加附件。</value></data>
+  <data name="AttachmentContextChanged" xml:space="preserve"><value>项目已切换。请在当前对话中重新选择附件。</value></data>
+  <data name="AttachmentTimedOut" xml:space="preserve"><value>附件选择或读取已超时，请重新添加附件。</value></data>
+  <data name="AttachmentCancelled" xml:space="preserve"><value>已取消添加附件，可重新选择文件。</value></data>
+  <data name="AttachmentUnauthorized" xml:space="preserve"><value>附件路径未经授权或包含不受支持的链接。请选择可读取的普通文件；项目附件须位于授权目录内。</value></data>
+  <data name="AttachmentMissing" xml:space="preserve"><value>所选附件已不存在，请重新选择文件。</value></data>
+  <data name="AttachmentFailed" xml:space="preserve"><value>无法添加附件。请选择 UTF-8 文本或静态 PNG、JPEG、GIF、WebP 图像，并检查文件大小和读取权限。</value></data>
+  <data name="AttachmentImageInvalid" xml:space="preserve"><value>图像已损坏或内容与类型不符，请重新导出后选择。</value></data>
+  <data name="AttachmentImageUnsupported" xml:space="preserve"><value>暂不支持此图像格式，请转换为静态 PNG、JPEG、GIF 或 WebP 后选择。</value></data>
+  <data name="AttachmentImageAnimated" xml:space="preserve"><value>暂不支持动态图像，请明确导出所需静态帧后重新选择。</value></data>
+  <data name="AttachmentImageSizeLimit" xml:space="preserve"><value>图像超出限制：单张最多 5 MiB、合计 10 MiB，宽高不超过 8192，像素不超过 16777216。请缩小后重试。</value></data>
+  <data name="AttachmentImageDecoderUnavailable" xml:space="preserve"><value>图像解码器不可用，请检查应用安装后重试。</value></data>
+  <data name="AttachmentImageModelUnsupported" xml:space="preserve"><value>当前模型不支持图像，请选择支持图像的模型或移除图像附件；草稿会保留。</value></data>
+  <data name="ImageConversationTitle" xml:space="preserve"><value>图像对话</value></data>
+  <data name="AttachmentFileLimit" xml:space="preserve"><value>每次最多附加 {0} 个文件，请移除部分附件后重试。</value></data>
+  <data name="DraftLoading" xml:space="preserve"><value>正在读取此对话的草稿，输入内容不会被覆盖。</value></data>
+  <data name="DraftLoadFailed" xml:space="preserve"><value>无法读取此对话的草稿，已暂停发送。当前输入已保留，请重试。</value></data>
+  <data name="DraftSaveFailed" xml:space="preserve"><value>草稿尚未保存，当前输入仍保留在此窗口。请重试，保存成功后再关闭应用。</value></data>
+  <data name="DraftConflict" xml:space="preserve"><value>已保存的草稿发生变化，本窗口内容已保留，不会自动覆盖。确认后可用本窗口的草稿替换全部冲突。</value></data>
+  <data name="DraftOtherSaveFailed" xml:space="preserve"><value>其他对话的草稿尚未保存。请重试；若存在冲突，可明确选择用本窗口的草稿替换全部冲突后再关闭应用。</value></data>
+  <data name="DraftTooLong" xml:space="preserve"><value>草稿超出 262144 个字符的保存限制。请先将内容另存，再缩短输入；当前内容未被截断。</value></data>
+  <data name="DraftRetry" xml:space="preserve"><value>重试草稿保存或读取</value></data>
+  <data name="DraftKeepLocal" xml:space="preserve"><value>用本窗口草稿替换全部冲突</value></data>
+  <data name="DraftAttachmentUnavailable" xml:space="preserve"><value>草稿附件快照已丢失或损坏，已暂停发送。请移除不可用附件后重新选择，再保存草稿。</value></data>
+  <data name="DraftAttachmentUnauthorized" xml:space="preserve"><value>项目授权目录已变化，已暂停发送旧附件。请移除旧附件，并从当前授权目录重新选择。</value></data>
+  <data name="DraftAttachmentUnavailableLabel" xml:space="preserve"><value>快照不可用</value></data>
+  <data name="DraftRemoveUnavailableAttachments" xml:space="preserve"><value>从已打开草稿移除不可用附件，保留其余内容</value></data>
+  <data name="TaskEnvironmentProjectLabel" xml:space="preserve"><value>项目目录</value></data>
+  <data name="TaskEnvironmentWorktreeLabel" xml:space="preserve"><value>独立工作树</value></data>
+  <data name="TaskEnvironmentHint" xml:space="preserve"><value>仅新对话可选择。独立工作树需要已有提交的 Git 项目。可输入本地已有分支、标签或提交后选择独立工作树；留空使用 HEAD。不复制未提交改动，也不会提高工具权限。</value></data>
+  <data name="TaskEnvironmentBaseReferenceLabel" xml:space="preserve"><value>工作树基准（可选）</value></data>
+  <data name="TaskEnvironmentBaseReferencePlaceholder" xml:space="preserve"><value>HEAD、分支、标签或提交</value></data>
+  <data name="TaskEnvironmentBaseReferenceFailure" xml:space="preserve"><value>工作树基准无效或无法解析为本地提交，消息尚未发送。请检查分支、标签或提交；留空使用 HEAD。不会自动拉取或改用其他基准。</value></data>
+  <data name="TaskEnvironmentExistingHint" xml:space="preserve"><value>对话开始后执行目录固定；如需切换项目目录或独立工作树，请创建新对话。</value></data>
+  <data name="TaskEnvironmentRecoveryNotice" xml:space="preserve"><value>工作树未被强制删除，位置：{0}。请先刷新任务，检查任务是否已保存及目录中的改动，再手动恢复；不要反复发送来重试创建。</value></data>
+  <data name="TaskEnvironmentCleanupFailure" xml:space="preserve"><value>无法完成工作树清理。请刷新任务并检查目录中的未提交改动或文件占用，然后再确认重试；不会强制删除工作树。</value></data>
+  <data name="CancelPreparationLabel" xml:space="preserve"><value>取消发送准备</value></data>
+  <data name="CancellingPreparationLabel" xml:space="preserve"><value>正在取消发送准备</value></data>
+  <data name="PreparationCancelled" xml:space="preserve"><value>已取消发送准备，输入内容和附件已保留。</value></data>
+  <data name="TaskEnvironmentAuthorizationFailure" xml:space="preserve"><value>工作树授权校验未通过，消息尚未发送。请检查任务对应的工作树、项目授权目录和 Git 元数据，确认路径未被移动或替换后重试。</value></data>
+  <data name="PreparationFinalizationFailure" xml:space="preserve"><value>消息可能已经保存，但取消状态尚未确认（任务：{0}）。请先刷新并检查该对话，再决定是否继续；不要重复发送。</value></data>
+  <data name="PreparationCommittedCancelled" xml:space="preserve"><value>消息已保存，执行已取消；如需继续，请手动发送后续消息。</value></data>
+<data name="FollowupTitle" xml:space="preserve"><value>待发送（{0}）</value></data>
+<data name="FollowupEnqueue" xml:space="preserve"><value>加入队列</value></data>
+<data name="FollowupContinue" xml:space="preserve"><value>继续队列</value></data>
+<data name="FollowupRefresh" xml:space="preserve"><value>刷新队列</value></data>
+<data name="FollowupSave" xml:space="preserve"><value>保存修改</value></data>
+<data name="FollowupCancelEdit" xml:space="preserve"><value>取消编辑</value></data>
+<data name="FollowupEdit" xml:space="preserve"><value>编辑</value></data>
+<data name="FollowupUp" xml:space="preserve"><value>上移</value></data>
+<data name="FollowupDown" xml:space="preserve"><value>下移</value></data>
+<data name="FollowupDelete" xml:space="preserve"><value>移除</value></data>
+<data name="FollowupAttachmentCount" xml:space="preserve"><value>{0} 个已保存附件</value></data>
+<data name="FollowupHint" xml:space="preserve"><value>队列使用加入时保存的模型、参数及授权。当前运行正常结束后依次发送；失败、取消或重启后需手动继续。</value></data>
+<data name="FollowupPaused" xml:space="preserve"><value>队列已暂停，请检查内容后手动继续。</value></data>
+<data name="FollowupConflict" xml:space="preserve"><value>队列或草稿已发生变化，未覆盖已有内容。请刷新核对；编辑中的文字已保留。</value></data>
+<data name="FollowupTaskUnavailable" xml:space="preserve"><value>该对话已不可用，请刷新任务列表。</value></data>
+<data name="FollowupTaskRunning" xml:space="preserve"><value>任务状态已变化，请等待当前运行结束后重试。</value></data>
+<data name="FollowupModelUnavailable" xml:space="preserve"><value>保存的模型或提供商不可用，或模型标识、思考参数不再兼容。请恢复对应配置，或移除条目后重新加入。</value></data>
+<data name="FollowupAgentUnavailable" xml:space="preserve"><value>保存的代理已停用或删除。请恢复该代理，或移除条目后重新加入。</value></data>
+<data name="FollowupScopeChanged" xml:space="preserve"><value>项目、工作树或授权目录已变化，消息未续发。请检查授权，或移除条目后重新加入。</value></data>
+<data name="FollowupFull" xml:space="preserve"><value>队列已达 16 项上限，请先移除或发送已有条目。</value></data>
+<data name="FollowupEmpty" xml:space="preserve"><value>队列中没有待发送消息。</value></data>
+<data name="FollowupAttachmentUnavailable" xml:space="preserve"><value>保存的附件无法校验或读取，消息未续发。请移除该条目并重新选择附件。</value></data>
+<data name="FollowupCommittedFailed" xml:space="preserve"><value>消息已进入对话，但执行未启动。请刷新历史确认状态；已保存消息不会重新入队。</value></data>
+<data name="FollowupFailed" xml:space="preserve"><value>队列操作未能完成，请刷新核对后重试；没有自动重试。</value></data>
+<data name="FollowupInvalidPrompt" xml:space="preserve"><value>请保留有效消息文字；文字不能超过草稿长度上限。仅图片附件可以单独发送。</value></data>
+<data name="SteeringSubmit" xml:space="preserve"><value>引导当前运行</value></data>
+<data name="SteeringReceiving" xml:space="preserve"><value>正在接收…</value></data>
+<data name="SteeringBusy" xml:space="preserve"><value>本对话已有引导正在接收，请等待确认。草稿已保留。</value></data>
+<data name="SteeringHint" xml:space="preserve"><value>Ctrl+Enter 引导当前运行：在下一次模型请求前加入；Enter 加入下一轮队列。保留当前运行的模型和权限。</value></data>
+<data name="SteeringTextOnly" xml:space="preserve"><value>当前引导仅接收文字。请移除附件，或将完整消息加入下一轮队列；附件不会被丢弃。</value></data>
+<data name="SteeringTooLong" xml:space="preserve"><value>引导文字不能超过 32,768 个 UTF-16 单元，请缩短后重试。</value></data>
+<data name="SteeringInvalid" xml:space="preserve"><value>引导文字为空、过长或包含无效字符，草稿已保留。请编辑后重试。</value></data>
+<data name="SteeringScopeChanged" xml:space="preserve"><value>项目、工作树或源审阅授权已变化，未继续接收或注入指导。请检查授权；草稿及已接收记录保留。</value></data>
+<data name="SteeringRunUnavailable" xml:space="preserve"><value>该次运行已停止接收或标识发生变化，草稿已保留；未创建新运行或自动入队。</value></data>
+<data name="SteeringRefused" xml:space="preserve"><value>当前运行未能接收指导，可能已结束、授权变化或待处理容量已满。请检查引导记录；草稿已保留。</value></data>
+<data name="SteeringStopped" xml:space="preserve"><value>接收操作已停止，请核对引导记录。未确认的草稿已保留，没有自动重试。</value></data>
+<data name="SteeringFailed" xml:space="preserve"><value>接收结果未确认，请检查引导记录后重试。同一草稿的确认重试会保留原接收标识，不会重复接收。</value></data>
+<data name="SteeringAlreadyAccepted" xml:space="preserve"><value>已确认先前接收，未重复执行。请核对引导记录；确认期间新输入的草稿不会被覆盖。</value></data>
+<data name="SteeringHistoryTitle" xml:space="preserve"><value>引导记录</value></data>
+<data name="SteeringHistoryRefresh" xml:space="preserve"><value>刷新到最新</value></data>
+<data name="SteeringHistoryEarlier" xml:space="preserve"><value>更早记录</value></data>
+<data name="SteeringHistoryLoading" xml:space="preserve"><value>正在读取引导记录…</value></data>
+<data name="SteeringHistoryFailed" xml:space="preserve"><value>引导记录读取失败，请刷新重试。没有重新执行已接收指导。</value></data>
+<data name="SteeringPending" xml:space="preserve"><value>已接收，等待当前请求和工具批次结束</value></data>
+<data name="SteeringApplied" xml:space="preserve"><value>已加入本地模型输入；不代表服务端接收或处理成功</value></data>
+<data name="SteeringInterrupted" xml:space="preserve"><value>已中断，未自动加入后续运行</value></data>
 </root>

@@ -16,6 +16,10 @@ public sealed partial class AppNavigationRail : AppUserControl
         AvaloniaProperty.Register<AppNavigationRail, ICommand?>(nameof(InspectorCommand));
     public static readonly StyledProperty<ICommand?> AutomationsCommandProperty =
         AvaloniaProperty.Register<AppNavigationRail, ICommand?>(nameof(AutomationsCommand));
+    public static readonly StyledProperty<ICommand?> PullRequestsCommandProperty =
+        AvaloniaProperty.Register<AppNavigationRail, ICommand?>(nameof(PullRequestsCommand));
+    public static readonly StyledProperty<bool> IsPullRequestsSelectedProperty =
+        AvaloniaProperty.Register<AppNavigationRail, bool>(nameof(IsPullRequestsSelected));
     public static readonly StyledProperty<bool> IsAutomationsSelectedProperty =
         AvaloniaProperty.Register<AppNavigationRail, bool>(nameof(IsAutomationsSelected));
     public static readonly StyledProperty<bool> IsSettingsSelectedProperty =
@@ -37,6 +41,9 @@ public sealed partial class AppNavigationRail : AppUserControl
     public ICommand? NewConversationCommand { get => GetValue(NewConversationCommandProperty); set => SetValue(NewConversationCommandProperty, value); }
     public ICommand? InspectorCommand { get => GetValue(InspectorCommandProperty); set => SetValue(InspectorCommandProperty, value); }
     public ICommand? AutomationsCommand { get => GetValue(AutomationsCommandProperty); set => SetValue(AutomationsCommandProperty, value); }
+    public ICommand? PullRequestsCommand { get => GetValue(PullRequestsCommandProperty); set => SetValue(PullRequestsCommandProperty, value); }
+    public bool IsPullRequestsSelected { get => GetValue(IsPullRequestsSelectedProperty); set => SetValue(IsPullRequestsSelectedProperty, value); }
+    public string PullRequestsLabel => PullRequestText.Title;
     public bool IsAutomationsSelected { get => GetValue(IsAutomationsSelectedProperty); set => SetValue(IsAutomationsSelectedProperty, value); }
     public bool IsSettingsSelected { get => GetValue(IsSettingsSelectedProperty); set => SetValue(IsSettingsSelectedProperty, value); }
     public ICommand? ToggleInspectorCommand { get => GetValue(ToggleInspectorCommandProperty); set => SetValue(ToggleInspectorCommandProperty, value); }
@@ -59,6 +66,7 @@ public sealed partial class AppNavigationRail : AppUserControl
         if (change.Property == NewConversationCommandProperty || change.Property == InspectorCommandProperty
             || change.Property == AutomationsCommandProperty || change.Property == IsAutomationsSelectedProperty
             || change.Property == IsSettingsSelectedProperty
+            || change.Property == PullRequestsCommandProperty || change.Property == IsPullRequestsSelectedProperty
             || change.Property == ToggleInspectorCommandProperty || change.Property == SettingsCommandProperty
             || change.Property == HelpContentProperty || change.Property == DataContextProperty
             || (change.Property == IsVisibleProperty && !IsVisible)
@@ -100,7 +108,9 @@ public sealed partial class AppNavigationRail : AppUserControl
     private void UpdateAvailability()
     {
         HomeButton.Label = NavigationRailText.Get(IsSettingsSelected ? "ReturnToWorkspace" : "NewConversation");
-        HomeButton.Classes.Set("selected", !IsSettingsSelected && !IsAutomationsSelected);
+        HomeButton.Classes.Set("selected", !IsSettingsSelected && !IsAutomationsSelected && !IsPullRequestsSelected);
+        PullRequestsButton.Classes.Set("selected", !IsSettingsSelected && IsPullRequestsSelected);
+        PullRequestsButton.IsVisible = PullRequestsCommand is not null;
         AutomationButton.Classes.Set("selected", !IsSettingsSelected && IsAutomationsSelected);
         HomeButton.IsEnabled = NewConversationCommand is not null;
         AutomationButton.IsEnabled = AutomationsCommand is not null;

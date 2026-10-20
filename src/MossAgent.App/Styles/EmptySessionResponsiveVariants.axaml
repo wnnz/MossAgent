@@ -1,0 +1,16 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MossAgent.App.Controls">
+  <Style Selector="controls|AppEmptySessionLayout.short-viewport > controls|AppIcon.empty-agent-offset">
+    <Setter Property="Size" Value="32" />
+  </Style>
+  <Style Selector="controls|AppEmptySessionLayout.short-viewport > controls|AppText">
+    <Setter Property="FontSize" Value="24" />
+  </Style>
+  <Style Selector="controls|AppEmptySessionLayout.short-viewport controls|AppText.project-prompt-fragment">
+    <Setter Property="FontSize" Value="24" />
+  </Style>
+  <Style Selector="controls|AppEmptySessionLayout.short-viewport controls|AppText.empty-project-name">
+    <Setter Property="FontSize" Value="24" />
+  </Style>
+</Styles>

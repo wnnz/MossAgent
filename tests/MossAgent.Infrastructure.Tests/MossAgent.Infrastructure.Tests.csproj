@@ -1,12 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><IsTestProject>true</IsTestProject></PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Shared/PullRequestTestData.cs" Link="Testing/PullRequestTestData.cs" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <ProjectReference Include="../../src/MossAgent.Infrastructure/MossAgent.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="../Shared/SourceAccountHttpProbe.cs" Link="Testing/SourceAccountHttpProbe.cs" />
+    <Compile Include="../Shared/SourceAccountHttpServer.cs" Link="Testing/SourceAccountHttpServer.cs" />
+    <Compile Include="../Shared/SourceAccountProbeHandler.cs" Link="Testing/SourceAccountProbeHandler.cs" />
     <Compile Include="../Shared/SqliteTestPool.cs" Link="Testing/SqliteTestPool.cs" />
     <Compile Include="../Shared/Socks5TestHandshake.cs" Link="Testing/Socks5TestHandshake.cs" />
     <Compile Include="../Shared/FixtureTaskProcessLauncher.cs" Link="Testing/FixtureTaskProcessLauncher.cs" />

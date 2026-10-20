@@ -27,6 +27,12 @@ public sealed class SettingsConversationNavigationTests : IAsyncLifetime
     {
         var draft = fixture.Workspace.ComposerText;
         var project = fixture.Workspace.Catalog.SelectedProject;
+        var task = fixture.Workspace.Catalog.SelectedTask!;
+        await fixture.Workspace.Drafts.FlushAsync();
+        var newScope = new ConversationDraftScope(project!.Id, null);
+        var newDraft = await fixture.Drafts.GetAsync(newScope, fixture.Token);
+        Assert.NotNull(newDraft);
+        Assert.NotEqual(draft, newDraft.Text);
         if (entry == "shortcut")
         {
             Assert.True(Search(window).Focus(NavigationMethod.Tab));
@@ -45,12 +51,25 @@ public sealed class SettingsConversationNavigationTests : IAsyncLifetime
         Assert.False(fixture.Main.IsSettingsOpen);
         Assert.Null(fixture.Workspace.Catalog.SelectedTask);
         Assert.Same(project, fixture.Workspace.Catalog.SelectedProject);
-        Assert.Equal(draft, fixture.Workspace.ComposerText);
+        await fixture.Workspace.Drafts.LoadCurrentAsync();
+        Assert.Equal(newScope, fixture.Workspace.Drafts.Scope);
+        Assert.Equal(newDraft.Text, fixture.Workspace.ComposerText);
         Assert.True(Assert.Single(window.GetVisualDescendants().OfType<WorkspaceChatView>()).IsEffectivelyVisible);
         Assert.False(Assert.Single(window.GetVisualDescendants().OfType<SettingsOverlay>()).IsEffectivelyVisible);
         Assert.False(fixture.Workspace.IsRunning);
         Assert.Empty(fixture.Server.Requests);
         Assert.Single(await fixture.Tasks.GetTasksAsync(project!.Id, fixture.Token));
+        fixture.Workspace.ComposerText = "新对话也需要独立保存的草稿。";
+        await fixture.Workspace.Drafts.FlushAsync();
+        Assert.Equal(draft, (await fixture.Drafts.GetAsync(new(project.Id, task.Id), fixture.Token))!.Text);
+        fixture.Workspace.Catalog.SelectTaskCommand.Execute(task);
+        await fixture.Workspace.Drafts.LoadCurrentAsync();
+        Assert.Equal(draft, fixture.Workspace.ComposerText);
+        fixture.Workspace.Catalog.NewTaskCommand.Execute(null);
+        await fixture.Workspace.Drafts.LoadCurrentAsync();
+        Assert.Equal("新对话也需要独立保存的草稿。", fixture.Workspace.ComposerText);
+        Assert.Null(fixture.Workspace.Catalog.SelectedTask);
+        Assert.Empty(fixture.Server.Requests);
     });
 
     [Theory]

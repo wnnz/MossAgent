@@ -7,6 +7,7 @@ public sealed class PlaywrightBrowserSession : IBrowserSession
 {
     private readonly IPlaywright _playwright;
     private readonly PlaywrightBrowserTabSet _tabs;
+    private readonly PlaywrightBrowserOperation _operations;
     private readonly object _lifetimeSync = new();
     private Task? _disposeTask;
     private IPage _page;
@@ -21,27 +22,28 @@ public sealed class PlaywrightBrowserSession : IBrowserSession
         _playwright = playwright;
         _page = page;
         _tabs = new PlaywrightBrowserTabSet(context, page, closeContext, ownsInitialPage);
+        _operations = new(DisposeAsync);
     }
 
     public string Id { get; } = Guid.NewGuid().ToString("N");
 
     public Uri? CurrentUri => Uri.TryCreate(_page.Url, UriKind.Absolute, out var uri) ? uri : null;
 
-    public async Task<IReadOnlyList<BrowserTabInfo>> ListTabsAsync(
-        CancellationToken cancellationToken)
+    public Task<IReadOnlyList<BrowserTabInfo>> ListTabsAsync(
+        CancellationToken cancellationToken) => _operations.RunAsync<IReadOnlyList<BrowserTabInfo>>(async () =>
     {
         var tabs = new List<BrowserTabInfo>();
         foreach (var pair in _tabs.Snapshot())
         {
-            var title = await pair.Key.TitleAsync().WaitAsync(cancellationToken);
+            var title = await pair.Key.TitleAsync();
             var uri = Uri.TryCreate(pair.Key.Url, UriKind.Absolute, out var value) ? value : null;
             tabs.Add(new BrowserTabInfo(pair.Value, title, uri, ReferenceEquals(pair.Key, _page)));
         }
 
         return tabs;
-    }
+    }, cancellationToken);
 
-    public async Task<string> NewTabAsync(Uri? uri, CancellationToken cancellationToken)
+    public Task<string> NewTabAsync(Uri? uri, CancellationToken cancellationToken) => _operations.RunAsync(async () =>
     {
         var created = await _tabs.CreateAsync(cancellationToken);
         _page = created.Page;
@@ -51,15 +53,15 @@ public sealed class PlaywrightBrowserSession : IBrowserSession
         }
 
         return created.Id;
-    }
+    }, cancellationToken);
 
-    public Task SwitchTabAsync(string tabId, CancellationToken cancellationToken)
+    public Task SwitchTabAsync(string tabId, CancellationToken cancellationToken) => _operations.RunAsync(() =>
     {
         _page = _tabs.Find(tabId);
-        return _page.BringToFrontAsync().WaitAsync(cancellationToken);
-    }
+        return _page.BringToFrontAsync();
+    }, cancellationToken);
 
-    public async Task CloseTabAsync(string tabId, CancellationToken cancellationToken)
+    public Task CloseTabAsync(string tabId, CancellationToken cancellationToken) => _operations.RunAsync(async () =>
     {
         if (_tabs.Snapshot().Length <= 1)
         {
@@ -67,72 +69,70 @@ public sealed class PlaywrightBrowserSession : IBrowserSession
         }
 
         var page = _tabs.Find(tabId);
-        await page.CloseAsync().WaitAsync(cancellationToken);
+        await page.CloseAsync();
         _tabs.Remove(page);
         if (ReferenceEquals(page, _page))
         {
             _page = _tabs.Snapshot().First().Key;
-            await _page.BringToFrontAsync().WaitAsync(cancellationToken);
+            await _page.BringToFrontAsync();
         }
-    }
+    }, cancellationToken);
 
-    public async Task NavigateAsync(Uri uri, CancellationToken cancellationToken)
-    {
-        await _page.GotoAsync(uri.ToString(), new PageGotoOptions
+    public Task NavigateAsync(Uri uri, CancellationToken cancellationToken) =>
+        _operations.RunAsync(() => _page.GotoAsync(uri.ToString(), new PageGotoOptions
         {
             WaitUntil = WaitUntilState.DOMContentLoaded,
             Timeout = 60_000
-        }).WaitAsync(cancellationToken);
-    }
+        }), cancellationToken);
 
-    public async Task GoBackAsync(CancellationToken cancellationToken) =>
-        await _page.GoBackAsync(new PageGoBackOptions
+    public Task GoBackAsync(CancellationToken cancellationToken) =>
+        _operations.RunAsync(() => _page.GoBackAsync(new PageGoBackOptions
         {
             WaitUntil = WaitUntilState.DOMContentLoaded,
             Timeout = 60_000
-        }).WaitAsync(cancellationToken);
+        }), cancellationToken);
 
-    public async Task GoForwardAsync(CancellationToken cancellationToken) =>
-        await _page.GoForwardAsync(new PageGoForwardOptions
+    public Task GoForwardAsync(CancellationToken cancellationToken) =>
+        _operations.RunAsync(() => _page.GoForwardAsync(new PageGoForwardOptions
         {
             WaitUntil = WaitUntilState.DOMContentLoaded,
             Timeout = 60_000
-        }).WaitAsync(cancellationToken);
+        }), cancellationToken);
 
-    public async Task ReloadAsync(CancellationToken cancellationToken) =>
-        await _page.ReloadAsync(new PageReloadOptions
+    public Task ReloadAsync(CancellationToken cancellationToken) =>
+        _operations.RunAsync(() => _page.ReloadAsync(new PageReloadOptions
         {
             WaitUntil = WaitUntilState.DOMContentLoaded,
             Timeout = 60_000
-        }).WaitAsync(cancellationToken);
+        }), cancellationToken);
 
-    public async Task<string> GetPageTextAsync(CancellationToken cancellationToken) =>
-        await _page.Locator("body").InnerTextAsync().WaitAsync(cancellationToken);
+    public Task<string> GetPageTextAsync(CancellationToken cancellationToken) =>
+        _operations.RunAsync(() => _page.Locator("body").InnerTextAsync(), cancellationToken);
 
-    public async Task<string> GetSnapshotAsync(CancellationToken cancellationToken) =>
-        await _page.Locator("body").AriaSnapshotAsync().WaitAsync(cancellationToken);
+    public Task<string> GetSnapshotAsync(CancellationToken cancellationToken) =>
+        _operations.RunAsync(() => _page.Locator("body").AriaSnapshotAsync(), cancellationToken);
 
-    public async Task ClickAsync(string selector, CancellationToken cancellationToken) =>
-        await _page.Locator(selector).ClickAsync().WaitAsync(cancellationToken);
+    public Task ClickAsync(string selector, CancellationToken cancellationToken) =>
+        _operations.RunAsync(() => _page.Locator(selector).ClickAsync(), cancellationToken);
 
-    public async Task TypeAsync(
+    public Task TypeAsync(
         string selector,
         string text,
         CancellationToken cancellationToken) =>
-        await _page.Locator(selector).FillAsync(text).WaitAsync(cancellationToken);
+        _operations.RunAsync(() => _page.Locator(selector).FillAsync(text), cancellationToken);
 
-    public async Task SelectOptionAsync(
+    public Task SelectOptionAsync(
         string selector,
         string value,
         CancellationToken cancellationToken) =>
-        await _page.Locator(selector).SelectOptionAsync(value).WaitAsync(cancellationToken);
+        _operations.RunAsync(() => _page.Locator(selector).SelectOptionAsync(value), cancellationToken);
 
-    public async Task WaitForAsync(
+    public Task WaitForAsync(
         string selector,
         BrowserElementState state,
         TimeSpan timeout,
         CancellationToken cancellationToken) =>
-        await _page.Locator(selector).WaitForAsync(new LocatorWaitForOptions
+        _operations.RunAsync(() => _page.Locator(selector).WaitForAsync(new LocatorWaitForOptions
         {
             State = state switch
             {
@@ -142,55 +142,54 @@ public sealed class PlaywrightBrowserSession : IBrowserSession
                 _ => WaitForSelectorState.Visible
             },
             Timeout = (float)timeout.TotalMilliseconds
-        }).WaitAsync(cancellationToken);
+        }), cancellationToken);
 
-    public async Task ScrollAsync(
+    public Task ScrollAsync(
         string? selector,
         double deltaX,
         double deltaY,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken) => _operations.RunAsync(async () =>
     {
         if (string.IsNullOrWhiteSpace(selector))
         {
-            await _page.EvaluateAsync("([x,y]) => window.scrollBy(x,y)", new[] { deltaX, deltaY })
-                .WaitAsync(cancellationToken);
+            await _page.EvaluateAsync("([x,y]) => window.scrollBy(x,y)", new[] { deltaX, deltaY });
             return;
         }
 
         await _page.Locator(selector).EvaluateAsync(
             "(element, value) => element.scrollBy(value.x, value.y)",
-            new { x = deltaX, y = deltaY }).WaitAsync(cancellationToken);
-    }
+            new { x = deltaX, y = deltaY });
+    }, cancellationToken);
 
-    public async Task<byte[]> ScreenshotAsync(bool fullPage, CancellationToken cancellationToken) =>
-        await _page.ScreenshotAsync(new PageScreenshotOptions
+    public Task<byte[]> ScreenshotAsync(bool fullPage, CancellationToken cancellationToken) =>
+        _operations.RunAsync(() => _page.ScreenshotAsync(new PageScreenshotOptions
         {
             FullPage = fullPage,
             Type = ScreenshotType.Png
-        }).WaitAsync(cancellationToken);
+        }), cancellationToken);
 
-    public async Task<BrowserDownloadInfo> DownloadAsync(
+    public Task<BrowserDownloadInfo> DownloadAsync(
         string selector,
         Stream destination,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken) => _operations.RunAsync(async () =>
     {
         var download = await _page.RunAndWaitForDownloadAsync(
             () => _page.Locator(selector).ClickAsync(),
-            new PageRunAndWaitForDownloadOptions { Timeout = 60_000 })
-            .WaitAsync(cancellationToken);
-        var failure = await download.FailureAsync().WaitAsync(cancellationToken);
+            new PageRunAndWaitForDownloadOptions { Timeout = 60_000 });
+        var failure = await download.FailureAsync();
         if (!string.IsNullOrWhiteSpace(failure))
         {
             throw new InvalidOperationException($"浏览器下载失败：{failure}");
         }
 
-        await using var source = await download.CreateReadStreamAsync().WaitAsync(cancellationToken);
+        await using var source = await download.CreateReadStreamAsync();
         await source.CopyToAsync(destination, cancellationToken);
         return new BrowserDownloadInfo(download.SuggestedFilename);
-    }
+    }, cancellationToken);
 
     public ValueTask DisposeAsync()
     {
+        _operations.Stop();
         lock (_lifetimeSync) return new ValueTask(_disposeTask ??= DisposeCoreAsync());
     }
 

@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Headless;
+using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using MossAgent.App.Controls;
@@ -51,16 +52,14 @@ public sealed class ComposerContextOverflowTests : IAsyncLifetime
             AssertContained(branch, surface);
             AssertContained(agent, surface);
             Assert.True(branch.Bounds.Width >= 24, $"Branch has no usable space: {branch.Bounds}");
-            var projectEnd = project.TranslatePoint(default, surface)!.Value.X + project.Bounds.Width;
-            var branchStart = branch.TranslatePoint(default, surface)!.Value.X;
-            var branchEnd = branchStart + branch.Bounds.Width;
-            var agentStart = agent.TranslatePoint(default, surface)!.Value.X;
-            Assert.True(projectEnd <= branchStart, $"Project {projectEnd} overlaps branch {branchStart}");
-            Assert.True(branchEnd <= agentStart, $"Branch {branchEnd} overlaps agent {agentStart}");
+            AssertSeparate(project, branch, surface);
+            AssertSeparate(branch, agent, surface);
+            AssertSeparate(project, agent, surface);
             Assert.Equal(fixture.Workspace.Catalog.SelectedProject!.Name, project.Label);
             Assert.Equal(fixture.Workspace.SelectedAgentLabel, agent.Label);
             Assert.True(project.IsEffectivelyEnabled);
             Assert.True(agent.IsEffectivelyEnabled);
+            SaveEvidence(window, $"context-dark-{dark}-width-{width}");
         }
         finally { window.Close(); }
     }, TestContext.Current.CancellationToken);
@@ -104,13 +103,17 @@ public sealed class ComposerContextOverflowTests : IAsyncLifetime
             var bar = Assert.Single(window.GetVisualDescendants().OfType<AppComposerContextBar>());
             var surface = Assert.Single(bar.GetVisualDescendants().OfType<AppBorder>());
             var actions = surface.GetVisualDescendants().OfType<AppActionButton>().ToArray();
-            Assert.Equal(2, actions.Length);
+            Assert.Equal(3, actions.Length);
             Assert.All(actions, action => AssertContained(action, surface));
             var branch = Assert.Single(surface.GetVisualDescendants().OfType<AppIconLabel>(),
                 label => label.Classes.Contains("composer-context-label"));
             AssertContained(branch, surface);
             Assert.True(branch.Bounds.Width >= 24);
+            foreach (var action in actions) AssertSeparate(action, branch, surface);
+            foreach (var pair in actions.SelectMany((first, index) => actions.Skip(index + 1).Select(second => (first, second))))
+                AssertSeparate(pair.first, pair.second, surface);
             Assert.InRange(bar.Bounds.Width, 290, 350);
+            SaveEvidence(window, $"context-docked-dark-{dark}");
         }
         finally { window.Close(); }
     }, TestContext.Current.CancellationToken);
@@ -123,5 +126,22 @@ public sealed class ComposerContextOverflowTests : IAsyncLifetime
         Assert.InRange(position.X + control.Bounds.Width, 0, surface.Bounds.Width);
         Assert.InRange(position.Y, 0, surface.Bounds.Height);
         Assert.InRange(position.Y + control.Bounds.Height, 0, surface.Bounds.Height);
+    }
+
+    private static void AssertSeparate(Avalonia.Controls.Control first, Avalonia.Controls.Control second, AppBorder surface)
+    {
+        var firstBounds = new Rect(first.TranslatePoint(default, surface)!.Value, first.Bounds.Size);
+        var secondBounds = new Rect(second.TranslatePoint(default, surface)!.Value, second.Bounds.Size);
+        Assert.False(firstBounds.Intersects(secondBounds), $"{firstBounds} overlaps {secondBounds}");
+    }
+
+    private static void SaveEvidence(AppWindow window, string name)
+    {
+        var directory = Environment.GetEnvironmentVariable("MOSSAGENT_PREPARATION_EVIDENCE_DIRECTORY");
+        if (string.IsNullOrWhiteSpace(directory)) return;
+        Directory.CreateDirectory(directory);
+        using var frame = window.CaptureRenderedFrame();
+        Assert.NotNull(frame);
+        frame.Save(Path.Combine(directory, $"{name}.png"), PngBitmapEncoderOptions.Default);
     }
 }

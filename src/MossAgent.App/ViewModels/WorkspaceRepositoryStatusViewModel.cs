@@ -6,7 +6,7 @@ using MossAgent.Domain;
 namespace MossAgent.App.ViewModels;
 
 public sealed class WorkspaceRepositoryStatusViewModel(
-    IGitRepositoryInfoService gitRepositoryInfo) : ObservableObject, IDisposable, IAsyncDisposable
+    IGitRepositoryInfoService gitRepositoryInfo, IGitWorktreeService? worktrees = null) : ObservableObject, IDisposable, IAsyncDisposable
 {
     private readonly object _gate = new();
     private readonly SettingsOperationLifetime _operations = new();
@@ -75,6 +75,11 @@ public sealed class WorkspaceRepositoryStatusViewModel(
         string? branch;
         try
         {
+            if (task?.WorktreePath is not null)
+            {
+                if (worktrees is null || task.ProjectId != project.Id) return;
+                await worktrees.ValidateAsync(project, task.Id, task.WorktreePath, token).ConfigureAwait(false);
+            }
             Task<string?> read;
             lock (_gate)
             {

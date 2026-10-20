@@ -1,0 +1,26 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Views.PullRequestInlineCommentsView" x:CompileBindings="False">
+  <StackPanel Spacing="8">
+    <ui:AppText Text="{x:Static text:PullRequestText.AnnotationHint}" Classes="type-12 muted" TextWrapping="Wrap" />
+    <ui:AppItemsControl ItemsSource="{Binding Comments}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <ui:AppCard Classes="card card-inset-compact">
+            <StackPanel Spacing="8">
+              <ui:AppText Text="{Binding Comment.Author}" Classes="type-12 weight-semibold" TextWrapping="Wrap" />
+              <ui:AppSelectableText Text="{Binding Comment.Body}" TextWrapping="Wrap" />
+              <ui:AppText Text="{Binding Comment.Path}" Classes="type-12 muted" TextWrapping="Wrap" />
+              <ui:AppText Text="{Binding LocationLabel}" Classes="type-12 muted" TextWrapping="Wrap" />
+              <ui:AppSelectableText Text="{Binding Comment.CommitRevision}" TextWrapping="Wrap" />
+              <ui:AppText Text="{Binding LocationHint}" Classes="type-12 muted" TextWrapping="Wrap" />
+              <ui:AppButton Content="{x:Static text:PullRequestText.LocateComment}" Command="{Binding LocateCommand}" Classes="ghost button-sm" />
+            </StackPanel>
+          </ui:AppCard>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ui:AppItemsControl>
+  </StackPanel>
+</ui:AppUserControl>

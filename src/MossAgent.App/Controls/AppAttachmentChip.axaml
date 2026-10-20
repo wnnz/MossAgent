@@ -7,8 +7,15 @@
                    ToolTip.Tip="{Binding DisplayPath, ElementName=Chip}">
   <ui:AppBorder Classes="attachment-chip-surface">
     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="7">
-      <ui:AppIcon x:Name="FileIcon" Classes="ui-icon attachment-file-icon"
-                   Data="{DynamicResource UiIconDocument}" IsHitTestVisible="False" />
+      <Grid>
+        <ui:AppAttachmentThumbnail x:Name="ThumbnailImage" Classes="attachment-thumbnail"
+                                   Thumbnail="{Binding Thumbnail, ElementName=Chip}"
+                                   IsVisible="{Binding HasThumbnailRequest, ElementName=Chip}"
+                                   IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw" />
+        <ui:AppIcon x:Name="FileIcon" Classes="ui-icon attachment-file-icon"
+                     Data="{DynamicResource UiIconDocument}" IsHitTestVisible="False"
+                     IsVisible="{Binding !HasThumbnail, ElementName=ThumbnailImage}" />
+      </Grid>
       <StackPanel x:Name="FileDetails" Grid.Column="1" Spacing="1" VerticalAlignment="Center">
         <ui:AppText x:Name="PathLabel" Classes="attachment-path"
                      Text="{Binding DisplayPath, ElementName=Chip}" TextTrimming="CharacterEllipsis" />

@@ -1,0 +1,16 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="using:MossAgent.App.Controls"
+                   xmlns:vm="using:MossAgent.App.ViewModels"
+                   x:Class="MossAgent.App.Views.GitIndexActionsView"
+                   x:DataType="vm:GitIndexActionsViewModel">
+  <StackPanel Spacing="4" IsVisible="{Binding HasContext}">
+    <WrapPanel>
+      <ui:AppButton x:Name="IndexActionButton" Classes="compact" Content="{Binding ActionLabel}" Command="{Binding ExecuteCommand}"
+                    AutomationProperties.Name="{Binding ActionLabel}" />
+      <ui:AppButton x:Name="IndexCancelButton" Classes="compact" Content="{Binding CancelLabel}" Command="{Binding CancelCommand}"
+                    IsVisible="{Binding IsBusy}" AutomationProperties.Name="{Binding CancelLabel}" />
+    </WrapPanel>
+    <ui:AppText x:Name="IndexStatus" Classes="subtle type-10" Text="{Binding Status}" TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />
+  </StackPanel>
+</ui:AppUserControl>
