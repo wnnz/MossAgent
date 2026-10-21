@@ -20,9 +20,10 @@ internal static class SqliteConversationSteeringAuthorization
         await RequireAsync(command, token);
         if (authorization.Project is { } project)
         {
-            command.CommandText = "SELECT COUNT(*) FROM projects WHERE id=$project AND primary_directory=$primary AND authorized_directories_json=$roots;";
+            command.CommandText = "SELECT COUNT(*) FROM projects WHERE id=$project AND primary_directory=$primary AND authorized_directories_json=$roots AND authorization_revision=$projectRevision;";
             command.Parameters.AddWithValue("$primary", project.PrimaryDirectory);
             command.Parameters.AddWithValue("$roots", JsonSerializer.Serialize(project.AuthorizedDirectories));
+            command.Parameters.AddWithValue("$projectRevision", project.AuthorizationRevision);
             await RequireAsync(command, token);
         }
         await ValidateSourceAsync(command, taskId, authorization.SourceReview, token);

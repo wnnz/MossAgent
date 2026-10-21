@@ -14,7 +14,7 @@ public sealed class WorkspaceSteeringRootExpansionTests : IAsyncLifetime
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public Task AddingRootsPreservesFrozenOrdinaryRunButCannotAuthorizeNewOrPendingGuidance(bool pending) => _session.DispatchAsync(async () =>
+    public Task AddingRootsRevokesOldRunAndCannotApplyNewOrPendingGuidance(bool pending) => _session.DispatchAsync(async () =>
     {
         await using var fixture = await WorkspaceModelSelectionFixture.CreateAsync(pauseResponse: true);
         var workspace = fixture.Workspace;
@@ -41,7 +41,8 @@ public sealed class WorkspaceSteeringRootExpansionTests : IAsyncLifetime
         await fixture.WaitUntilAsync(() => !workspace.IsRunning);
 
         Assert.Single(fixture.Server.Requests);
-        Assert.Equal(pending ? AgentTaskStatus.Failed : AgentTaskStatus.Completed, workspace.Catalog.SelectedTask!.Status);
+        Assert.Equal(AgentTaskStatus.Failed, workspace.Catalog.SelectedTask!.Status);
+        Assert.Equal(TaskFailureReason.WorkspaceAuthorizationChanged, workspace.Catalog.SelectedTask.FailureReason);
         Assert.Equal("preserved guidance after root addition", workspace.ComposerText);
         Assert.Empty(workspace.Queue.Items);
         var receipts = (await fixture.Steering.GetInputsAsync(taskId, long.MaxValue, 64, fixture.Token)).Items;

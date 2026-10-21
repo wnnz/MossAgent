@@ -39,11 +39,12 @@ internal static class SqliteConversationFollowupAuthorization
         command.Transaction = transaction;
         command.CommandText = """
             SELECT COUNT(*) FROM projects WHERE id=$id AND primary_directory=$primary
-              AND authorized_directories_json=$roots;
+              AND authorized_directories_json=$roots AND authorization_revision=$revision;
             """;
         command.Parameters.AddWithValue("$id", project.Id.ToString());
         command.Parameters.AddWithValue("$primary", project.PrimaryDirectory);
         command.Parameters.AddWithValue("$roots", JsonSerializer.Serialize(project.AuthorizedDirectories));
+        command.Parameters.AddWithValue("$revision", project.AuthorizationRevision);
         if (Convert.ToInt64(await command.ExecuteScalarAsync(cancellationToken)) != 1)
             throw new ConversationFollowupException("FollowupScopeChanged");
     }

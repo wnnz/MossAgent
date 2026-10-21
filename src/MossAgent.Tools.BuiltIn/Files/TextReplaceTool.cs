@@ -33,7 +33,7 @@ public sealed class TextReplaceTool(AuthorizedPathResolver paths, AtomicTextFile
         var expectedHash = request.Arguments.GetOptionalString("expectedSha256");
         FileSnapshotReader.ValidateExpectedHash(expectedHash);
         TextFileSnapshot snapshot;
-        try { snapshot = await FileSnapshotReader.ReadTextAsync(path, cancellationToken); }
+        try { snapshot = await FileSnapshotReader.ReadTextAsync(path, cancellationToken, context); }
         catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException)
         {
             FileSnapshotReader.ValidateForEdit(path, context, new FileSnapshot(null), expectedHash);

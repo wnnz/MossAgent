@@ -1,15 +1,85 @@
 # MossAgent 阶段交付清单与后续实施方案
 
-日期：2026-10-20。分支：`feature/initial-mossagent`。
+阶段收尾日期：2026-10-20，后续增量更新至 2026-10-21。分支：`feature/initial-mossagent`。
 
 本次收尾保存此前尚未提交的产品代码、测试和文档，不推送、不发布。下文描述的是
 当前仓库的累计能力，并非每项都在本次新增。提交前基线为 `991b796`；提交身份以
 Git 历史为准。原始测试、诊断、数据库副本和冻结候选保留在被忽略的 `artifacts/`
 或各专项文档注明的临时目录，不加入源码提交。
 
+2026-10-21 后续提交范围为文件句柄安全、共享产物会话、项目授权撤销及项目/工作树
+对象身份的累计增量，提交前基线为 `be767de7b6fd0c483adc1ab34a06265f472320a6`。
+包含对应测试、schema 26–28 向前迁移和下列专项文档；历史检查点中的未提交状态
+仅描述当时状态。当前验证范围与未关闭的安全缺口保留，提交本身不表示产品验收完成。
+
 **这是阶段交付，整个产品目标尚未完成。命令能够访问任务授权根目录之外的文件，
 是已确认且尚未修复的安全阻断。** 工作目录校验、审批和 Job Object 不能证明文件系统隔离。
 另有功能缺失和当前版本原生实机验收缺口，不能用测试数量表示产品完成度。
+
+后续增量：用户已选择在支持原生 MXC 的独立 Windows 环境验收命令隔离。本机只读复检
+仍为 AppContainerDacl；用户已确认独立环境尚未就绪，先继续本地安全修复。
+原子文本写入已增加目录句柄租约、相对提交和同句柄快照，当前证据、支持限制及剩余
+竞态见 [WRITE_HANDLE_PATH_SAFETY_ACCEPTANCE.md](WRITE_HANDLE_PATH_SAFETY_ACCEPTANCE.md)。
+文件读取的打开后句柄校验及其检查点证据见
+[READ_HANDLE_PATH_SAFETY_ACCEPTANCE.md](READ_HANDLE_PATH_SAFETY_ACCEPTANCE.md)；这只推进
+R02 的一部分，不关闭 R01，也不把下列历史全量结果视为该增量的验证。
+2026-10-21 的普通删除、递归目录及撤销新建文件句柄化增量和剩余方案见
+[DELETE_HANDLE_PATH_SAFETY_ACCEPTANCE.md](DELETE_HANDLE_PATH_SAFETY_ACCEPTANCE.md)。
+后续复制文件/目录树和显式创建目录已接入源树句柄预检、目标目录租约和原子文件提交，
+反例及当前验证边界见 [COPY_HANDLE_PATH_SAFETY_ACCEPTANCE.md](COPY_HANDLE_PATH_SAFETY_ACCEPTANCE.md)。
+同卷移动与重命名继续接入源对象和目标父目录句柄；跨卷明确拒绝，实际链路、
+证据及未完成方案见 [MOVE_HANDLE_PATH_SAFETY_ACCEPTANCE.md](MOVE_HANDLE_PATH_SAFETY_ACCEPTANCE.md)。
+任务产物读取及文件预览缓存的原生写入/清理边界继续推进，详见
+[ARTIFACT_HANDLE_PATH_SAFETY_ACCEPTANCE.md](ARTIFACT_HANDLE_PATH_SAFETY_ACCEPTANCE.md)；
+编辑快照、预览和最终补丁的共享会话已继续实现：内容完成与调用方成功保留分离，
+编辑提交失败会清理 before/after，复制后核对 hash；真实清理拒绝不阻断其他流释放。
+链路、证据和下一步见 [OWNED_ARTIFACT_SESSION_ACCEPTANCE.md](OWNED_ARTIFACT_SESSION_ACCEPTANCE.md)。
+浏览器截图和下载已继续接入共享产物会话；审批后才创建文件，下载有界暂存后复制、
+hash，暂存清理与最终复核通过后才保留。实际 Chrome 的截图/文本及二进制下载、
+并发、取消/超时和显式会话恢复见
+[BROWSER_ARTIFACT_SESSION_ACCEPTANCE.md](BROWSER_ARTIFACT_SESSION_ACCEPTANCE.md)。
+超时时 SDK 缓存清理可能未获确认，错误保留该状态；网络/缓存配额和崩溃回收尚未完成。
+Git diff/numstat 临时输入也已接入专用会话，输入文件和父目录持续固定，真实 Git 可读而
+外部写入/替换被拒绝，进程结束和输出读取后按原句柄清理；注入失败不回退。
+详见 [GIT_DIFF_INPUT_SESSION_ACCEPTANCE.md](GIT_DIFF_INPUT_SESSION_ACCEPTANCE.md)。
+该检查点尚未包括任务工作树对象身份；后续 schema 28 增量见下文。Git 进程隔离和崩溃发布/回收仍需分别处理。
+项目配置现已增加持久授权版本及条件保存；Agent、统一工具管线和长驻终端持有撤销
+租约，保存授权变更会结束旧运行/审批并暂停 Queue，跨实例通过有界轮询发现。
+保存返回本次事务提交的快照，防止跨窗口重读借用较高版本覆盖外部授权；终端已补
+专用撤权提示。Debug/Release 完整构建零警告/错误，各 2,506 项分层相关回归通过
+（五套完整基础测试 2,196 项 + 修正后 App 310 项），各 2,641 项输入前后无漂移。
+此前首轮 4 项失败、Release 统计观察的 2 项失败及确定性修复证据完整保留；这不等于
+全解决方案测试、原生窗口或真实提供商验收。
+当前生产组合、真实 ConPTY、Headless 恢复及剩余方案见
+[PROJECT_AUTHORIZATION_REVOCATION_ACCEPTANCE.md](PROJECT_AUTHORIZATION_REVOCATION_ACCEPTANCE.md)。
+以上版本撤销检查点不构成同步撤销屏障或命令隔离完成。
+后续 schema 27 已保存项目主根/附加根的卷和目录文件 ID，并登记每次明确授权的
+grant ID。旧项目保持待确认；普通改名不能接受同路径替换对象；明确重新授权更新
+版本并撤销旧运行。生产任务、工具和长驻终端的根目录链持续持有至所属清理结束；
+项目授权快照原位刷新，保留当前任务、编辑名称和前台草稿。
+链路、迁移/失败边界和当前验证见
+[ROOT_OBJECT_AUTHORIZATION_ACCEPTANCE.md](ROOT_OBJECT_AUTHORIZATION_ACCEPTANCE.md)。
+后续工作树身份增量见下文；严格排空、最终名称竞争、崩溃恢复及原生实机仍需分别验收。
+根对象切片最终 R4 的 Debug/Release 完整构建均零警告/错误，各 713 项定向回归通过
+（完整 Windows 422、App 授权/根对象/统计/终端精选 291），该检查点两配置的 2,670 项输入一致。
+修复前 R2 的扩大回归为 Debug 2,912 通过、Release 2,911 通过及 1 项 PTY 撤权状态失败；
+真实租约的受控反例复现后已修正分类，并修复额外纳入的 5 项旧取消测试的保存快照准备。
+所有失败和定向修复记录保留；R4 不是又一次六套基础及 App 扩大回归，也不是原生/真实提供商验收。
+后续 schema 28 已登记任务工作树自身的 task/project/grant/卷/文件 ID，恢复及统一管线
+拒绝同路径替换，组合租约让 Agent/工具/长驻 PTY 持有工作树根链。旧工作树输入区显示
+完整路径，空闲时可明确确认；确认不消费草稿、不续跑、不重放，也不能认领已登记对象的
+替换目录。10 项持久化/迁移/取消专项和 8 项生产 App 专项通过。最终 Debug/Release
+完整解决方案构建均零警告/错误，各 3,558 项相关回归通过（七套完整 3,144 + App 精选 414），
+两配置和当前 2,688 项输入一致。首轮 App 全套使用修复前程序集，停止前报告 5,074 通过、
+28 失败；28 项均在最终两配置逐名核对通过，未再次完整运行 App 全套，原失败和中止记录保留。
+真实 NTFS/Git/ConPTY、Headless 键盘操作与 loopback 模型分别记录；不等于原生桌面或真实提供商验收。
+链路、证据和详细剩余方案见 [WORKTREE_OBJECT_AUTHORIZATION_ACCEPTANCE.md](WORKTREE_OBJECT_AUTHORIZATION_ACCEPTANCE.md)。
+Git 临时输入会话检查点的扩大回归另发现审批待处理标志先于请求 ID 发布；现已调整为最后发布标志，
+确定性覆盖即时批准/拒绝，策略和超时不变。原 Release 超时、未改源码复验和修复前后
+证据均保留在 `GIT_DIFF_INPUT_SESSION_ACCEPTANCE.md`，不能只用复验通过抹去原失败。
+2026-10-21 Git 临时输入会话检查点的最终 Debug/Release 完整构建均零警告/错误，各 2,559 项相关回归
+通过（含 App 精选 552 项，非全解决方案测试全套）。两配置和当前 2,611 项输入一致，
+生产 CLI 的 8 个模块身份匹配；专项文档保留范围、失败记录及待验事项。
 
 ## 状态和证据如何阅读
 
@@ -32,7 +102,7 @@ Git 历史为准。原始测试、诊断、数据库副本和冻结候选保留�
 | 并发、取消和中断 | 每任务运行控制器持有取消、事件、进程及浏览器资源；发送准备也可取消，提交后取消有可查看终态；启动将未完成任务标记中断，不自动重放 | [SEND_PREPARATION_CANCELLATION_ACCEPTANCE.md](SEND_PREPARATION_CANCELLATION_ACCEPTANCE.md)、[SHUTDOWN_RECOVERY_ACCEPTANCE.md](SHUTDOWN_RECOVERY_ACCEPTANCE.md)；不是所有副作用时序的崩溃验收 |
 | 独立草稿与原子发送 | 任务/项目新会话/无项目草稿各自保存；版本冲突保护，后台保存串行；消息提交与草稿消费使用同一 SQLite 事务，保留发送期间的新输入 | [CONVERSATION_DRAFT_ACCEPTANCE.md](CONVERSATION_DRAFT_ACCEPTANCE.md)、[DRAFT_BACKGROUND_PERSISTENCE_ACCEPTANCE.md](DRAFT_BACKGROUND_PERSISTENCE_ACCEPTANCE.md)、[CONVERSATION_SUBMISSION_ACCEPTANCE.md](CONVERSATION_SUBMISSION_ACCEPTANCE.md) |
 | Queue 续发 | 活动对话 Enter 入队；可编辑、排序、移除、手动继续。保存模型/强度/代理提示词/授权和附件快照；准备校验后事务复核并分派至原任务。仅成功的活动链自动续发，取消、失败或重启后需手动继续 | schema 23；[CONVERSATION_FOLLOWUP_RUNTIME_ACCEPTANCE.md](CONVERSATION_FOLLOWUP_RUNTIME_ACCEPTANCE.md)、[CONVERSATION_FOLLOWUP_DISPATCH_ACCEPTANCE.md](CONVERSATION_FOLLOWUP_DISPATCH_ACCEPTANCE.md)、[CONVERSATION_FOLLOWUP_PROCESS_RECOVERY.md](CONVERSATION_FOLLOWUP_PROCESS_RECOVERY.md) |
-| 文本 Steer | 活动 Ctrl+Enter/“引导当前运行” → `ConversationSteeringSession` → 草稿/receipt 原子接收 → 当前工具批次结束后的模型边界注入。保持原模型、提示词、工具根和审批策略；有界 mailbox、幂等 ID、可查历史及中断状态 | schema 25；[CONVERSATION_STEERING_ACCEPTANCE.md](CONVERSATION_STEERING_ACCEPTANCE.md)。接收和应用均复核授权；仅空边界兼容追加目录且不扩大原工具根。附件和用户默认行为配置尚缺 |
+| 文本 Steer | 活动 Ctrl+Enter/“引导当前运行” → `ConversationSteeringSession` → 草稿/receipt 原子接收 → 当前工具批次结束后的模型边界注入。保持原模型、提示词、工具根和审批策略；有界 mailbox、幂等 ID、可查历史及中断状态 | schema 25；[CONVERSATION_STEERING_ACCEPTANCE.md](CONVERSATION_STEERING_ACCEPTANCE.md)。接收和应用均复核授权；schema 26 后任何项目目录变更均撤销旧运行，包括空边界。附件和用户默认行为配置尚缺 |
 | 项目与授权目录 | 项目设置保存 → 仓库端口 → 任务授权快照 → 工具路径守卫；多授权根、路径穿越、链接/重解析点及恢复任务归属检查已有实现 | [PROJECT_AUTHORIZATION_UI_ACCEPTANCE.md](PROJECT_AUTHORIZATION_UI_ACCEPTANCE.md)、[RESTORED_WORKTREE_AUTHORIZATION_ACCEPTANCE.md](RESTORED_WORKTREE_AUTHORIZATION_ACCEPTANCE.md)；句柄级竞态及即时撤权仍见 R02 |
 | 文件编码工具 | 文件搜索/查找、读取、写入、编辑、复制、移动、删除 → 统一工具管线 → 授权路径验证与有界结果；写入使用原子替换和先前读取版本冲突检查 | [FILE_EDITING_ACCEPTANCE.md](FILE_EDITING_ACCEPTANCE.md)、[FILE_SNAPSHOT_SHARING_ACCEPTANCE.md](FILE_SNAPSHOT_SHARING_ACCEPTANCE.md)；已修复内部读句柄阻断原子编辑的问题 |
 | 工具过程、审批及审计 | `ToolExecutor` 统一处理查找、schema、能力/路径、风险、审批、取消/超时、输出/产物和审计；共享界面显示等待/执行/结果；主/子代理均受工具 allowlist 限制 | [TOOL_SCHEMA_ACCEPTANCE.md](TOOL_SCHEMA_ACCEPTANCE.md)、[TOOL_SCOPE_ACCEPTANCE.md](TOOL_SCOPE_ACCEPTANCE.md)、[GLOBAL_APPROVAL_PRESENTATION_ACCEPTANCE.md](GLOBAL_APPROVAL_PRESENTATION_ACCEPTANCE.md) |
@@ -51,7 +121,7 @@ Git 历史为准。原始测试、诊断、数据库副本和冻结候选保留�
 | GitHub PR 只读链路 | 独立来源账号/token/代理、显式仓库只读授权 → 开放 PR/URL → 描述/分页补丁/讨论/行内评论/checks。评论按当前 commit、路径和有效差异行定位；有固定快照审阅对话及独立只读按需查询对话 | [SOURCE_ACCOUNT_CONNECTION_ACCEPTANCE.md](SOURCE_ACCOUNT_CONNECTION_ACCEPTANCE.md)、[SOURCE_PR_INLINE_COMMENTS_ACCEPTANCE.md](SOURCE_PR_INLINE_COMMENTS_ACCEPTANCE.md)、[SOURCE_PR_ON_DEMAND_READING_ACCEPTANCE.md](SOURCE_PR_ON_DEMAND_READING_ACCEPTANCE.md)、[SOURCE_PR_URL_ACCEPTANCE.md](SOURCE_PR_URL_ACCEPTANCE.md)；撤权/版本变化拒绝后续查询，不隐式启用本地工具 |
 | UI 与工程基础 | Avalonia/.NET 10，共享包装控件、集中主题/样式、本地化资源、编译期组件约束、模块依赖检查、SQLite 向前迁移；普通构建 JIT，Windows x64 自包含单文件方案保持，无 AOT/裁剪 | [UI_COMPONENTS.md](UI_COMPONENTS.md)、[ARCHITECTURE.md](ARCHITECTURE.md)、[../scripts/publish.ps1](../scripts/publish.ps1)；界面整体可用性和当前单文件发布验收仍见 R23/R24 |
 
-## 二、当前版本的验证结果
+## 二、2026-10-20 阶段收尾检查点的验证结果
 
 冻结候选：`artifacts/conversation-steering-20261020/candidate-r4`。该候选不再重建。
 
@@ -120,7 +190,7 @@ Queue 选择/草稿断言失败的精确原因未证明，不能归因于负载�
 取消/超时 → 执行 → 输出限制/产物 → 审计的顺序运行，不能直接互调绕过管线。
 默认未知外部工具有副作用，不因名称或不可信元数据自动判为只读。
 
-新增状态通过当前 schema 25 之后的向前迁移保存；消息/配置/产物归属和版本关系明确，
+新增状态通过当前 schema 28 之后的向前迁移保存；消息/配置/产物归属和版本关系明确，
 不删除或重解释旧数据。每任务独立取消、事件、进程树和浏览器会话；取消后等待实际
 资源结束，结果未知时保留状态，恢复不重放。文件型大输出只存元数据与有界预览到 SQLite。
 诊断不保存密钥、授权头、代理凭据或 Cookie。拆分类型和方法，继续执行单文件单类型、
@@ -135,17 +205,20 @@ Queue 选择/草稿断言失败的精确原因未证明，不能归因于负载�
 
 - **缺口与已否决路线：** 生产普通用户令牌可读根外标记；AppContainer/LPAC 的包组暴露不满足严格 allowlist。KnownDlls 的 44 个对象在真实管理员预检仍全部拒绝 WRITE_DAC，已确认 WinTcb-Light；临时改系统 ACL 路线否决。此前两次单次管理员授权均已消费，不能复用。
 - **模块与契约：** Tools.Abstractions 增加不可变任务执行范围：task/run、规范化授权根、明确只读运行时依赖、任务私有 temp/cache、网络策略及后端身份。Platform.Windows 实现隔离适配器；复用现有进程和终端端口、Job/管道/审计。盘点 Git hooks、凭据 helpers、stdio MCP 等代码执行入口，避免只修 shell。
-- **后端方案：** 优先在真正支持原生 MXC ProcessContainer 的独立 Windows 环境验证 SDK；必须按每次请求的实际 tier 强制隔离，拒绝 AppContainerDacl 等弱回退，不仅检查 IsSupported。现有 23H2 只检测到 DACL fallback；若保留该系统完整命令能力，需要独立 Windows Hyper-V 容器或 VM 后端，明确镜像/运行时/工具链、逐任务实例、授权目录映射、宿主与来宾路径、网络和凭据供给。现有 Linux Docker、单实例 Windows Sandbox 不能算替代完成。
+- **后端方案（用户已选定）：** 在真正支持原生 MXC ProcessContainer 的独立 Windows 环境验证 SDK；必须按每次请求的实际 tier 强制隔离，拒绝 AppContainerDacl 等弱回退，不仅检查 IsSupported。现有 23H2 只检测到 DACL fallback；本轮不预置容器/VM，不升级本机，不移除现有入口，不把弱回退视为完成。现有 Linux Docker、单实例 Windows Sandbox 不能算替代完成。
 - **实施步骤：** 先做 pwsh7/.NET SDK/Git/ConPTY 的正常命令兼容探针；再落实 launch 与 capability 变化间的竞态、真实存活句柄/晚启动回收、取消后 drain。SDK 的停止等待不能等同终止进程；PTY 若落到要求无限网络的隔离层必须拒绝并另实现合格桥接。所需系统预置拆成可审阅、可清理的一次安装步骤，失败显式报告，不改全盘 ACL、不自动切换后端。
-- **验收：** 同一生产管线复现必须变为根内读写成功、绝对/相对路径/链接/子进程/继承句柄访问根外失败，外部标记不变；多根、多任务互相拒绝；测试启动失败、后端消失、超时/取消、崩溃恢复、正常 Git/SDK 和原生终端。决策依赖是可用的受支持 MXC 验收机，以及是否为 23H2 预置 Windows 容器/VM；未决不代表放弃 23H2。
+- **验收：** 同一生产管线复现必须变为根内读写成功、绝对/相对路径/链接/子进程/继承句柄访问根外失败，外部标记不变；多根、多任务互相拒绝；测试启动失败、后端消失、超时/取消、崩溃恢复、正常 Git/SDK 和原生终端。当前依赖是可访问的受支持 MXC 验收机；后端优先路线已确认，不表示放弃 23H2 或已授权系统变更。
 
 详见 [COMMAND_FILESYSTEM_ISOLATION_PLAN.md](COMMAND_FILESYSTEM_ISOLATION_PLAN.md)、
 [WINDOWS_ISOLATION_BACKEND_DECISION.md](WINDOWS_ISOLATION_BACKEND_DECISION.md)。
 
 ### R02：授权撤销、路径竞态与统一执行边界
 
+- **产物会话增量：** 普通预览、编辑 before/after 和最终审阅补丁已接入保留所有权至调用方成功的原生会话，失败按句柄清理。详见 [OWNED_ARTIFACT_SESSION_ACCEPTANCE.md](OWNED_ARTIFACT_SESSION_ACCEPTANCE.md)。浏览器截图/下载继续接入受控会话与 SDK 原对象清理，范围和剩余方案见 [BROWSER_ARTIFACT_SESSION_ACCEPTANCE.md](BROWSER_ARTIFACT_SESSION_ACCEPTANCE.md)。Git 临时 diff/numstat 输入已接入仅共享读取、相对创建与原句柄清理的专用会话，证据及后续方案见 [GIT_DIFF_INPUT_SESSION_ACCEPTANCE.md](GIT_DIFF_INPUT_SESSION_ACCEPTANCE.md)。后续分别处理浏览器缓存未知状态/配额、持久授权代际、崩溃阶段记录与引用回收；不把输入固定或最终补丁写入保护当作 Git 进程隔离完成。
+- **本轮增量：** Windows 读取守卫接入生产工具执行器，文件读取/预览、编辑前哈希、快照捕获/审阅和复制源在读取前校验已打开句柄。真实 junction 切换复现、管线和生产 DI 证据及限制见 [READ_HANDLE_PATH_SAFETY_ACCEPTANCE.md](READ_HANDLE_PATH_SAFETY_ACCEPTANCE.md)。其余 R02 方案继续有效。
+- **后续写入增量：** 生产原子文本写入器使用 Windows 目录租约、独占暂存句柄及相对目录句柄提交；变更后快照直接读取暂存流，失败按句柄清理。普通权限/属性保留和不支持元数据的拒绝已有负例。只覆盖本地常规 NTFS；最终名称条件替换、其他文件入口、授权代际及崩溃清理仍未关闭，详见 [WRITE_HANDLE_PATH_SAFETY_ACCEPTANCE.md](WRITE_HANDLE_PATH_SAFETY_ACCEPTANCE.md)。
 - Infrastructure/Platform.Windows 将字符串检查延伸到打开后的句柄、最终路径、文件/目录身份及 Git 元数据；原子替换前再验证目标和父目录，复用当前授权/工作树端口，不在 UI 增加 I/O。
-- Application 给授权快照增加可比版本/代际，撤销时让匹配任务停止接受新工具并取消所属操作；审批后、执行前及长 I/O 返回后复核。已发生的外部副作用显示未知/需检查，不能声称撤销等于回滚。
+- Application 的项目配置版本、保存冲突保护和撤销租约已实现，详见 `PROJECT_AUTHORIZATION_REVOCATION_ACCEPTANCE.md`；schema 27 登记主根/附加根，schema 28 继续登记任务工作树独立对象身份，详见两份对象授权专项文档。下一步完善项目删除/重建与同路径 ABA、创建认领/清理句柄交接、资源 drain/未确认状态、不可取消原生调用 worker、跨实例聚合订阅和规模测试。继续保留审批后/执行边界复核；已发生的外部副作用需检查，不能声称撤销等于回滚。
 - 审计所有内置、浏览器、MCP、子代理和辅助统计入口的 schema/范围/风险/审批顺序，防止后台 UI 查询或子工具走旁路；评估可撤销资源是否需要更细的能力租约。
 - 用确定性 gate 在检查/打开/替换/审批间替换 junction、父目录和元数据，验证根外不读不写、保留并发外部修改；增加撤销与工具执行、终端及另一任务并发负例，再做原生恢复。
 
@@ -158,6 +231,7 @@ Queue 选择/草稿断言失败的精确原因未证明，不能归因于负载�
 
 ### R04：工作树完整生命周期
 
+- **已做增量：** schema 28 的不可变工作树目录 grant、旧工作树明确确认、恢复拒绝替换和执行租约已实现；不代表下面创建 intent、清理最终边界、崩溃和原生验收已经完成。详见 `WORKTREE_OBJECT_AUTHORIZATION_ACCEPTANCE.md`。
 - Infrastructure 通过现有受管 Git runner 做有界本地分支/标签查询和分页搜索，App 显示实际候选、解析 commit 及错误，不用自由输入框冒充发现。远端 ref 获取必须是另一个显式动作。
 - 在创建前落库 intent/task/仓库/基准 commit/目标目录身份，成功后原子认领；启动只核对未完成 intent 并展示人工恢复/清理，不自动重建或删除归属未知目录。迁移不修改既有工作树。
 - 复用 R02 处理句柄竞态和即时撤权；在创建和清理前后校验 `.git` 指针、外部元数据、双向归属及链接祖先。两任务同时创建时各自取消和清理，保留另一任务成功结果。

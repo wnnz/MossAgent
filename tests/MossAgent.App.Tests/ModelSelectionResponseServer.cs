@@ -96,6 +96,7 @@ internal sealed class ModelSelectionResponseServer : IAsyncDisposable
         _listener.Stop();
         try { await _serving; }
         catch (OperationCanceledException) when (_stopping.IsCancellationRequested) { }
+        catch (IOException) when (_stopping.IsCancellationRequested) { }
         _stopping.Dispose();
     }
 }

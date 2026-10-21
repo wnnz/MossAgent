@@ -22,10 +22,18 @@ internal static class FileChangeSnapshotStorage
     }
 
     public static async Task<ToolFileSnapshot?> CaptureAsync(
-        string sourcePath, string expectedHash, string directory, CancellationToken cancellationToken)
+        string sourcePath, string expectedHash, string directory, ToolExecutionContext context,
+        CancellationToken cancellationToken)
     {
-        await using var source = FileSnapshotReader.Open(sourcePath);
+        await using var source = FileSnapshotReader.Open(sourcePath, context);
+        return await CaptureAsync(source, expectedHash, directory, cancellationToken);
+    }
+
+    public static async Task<ToolFileSnapshot?> CaptureAsync(
+        FileStream source, string expectedHash, string directory, CancellationToken cancellationToken)
+    {
         if (source.Length > ToolFileSnapshot.MaximumBytes) return null;
+        source.Position = 0;
         var version = await FileSnapshotReader.HashAsync(source, cancellationToken);
         if (!string.Equals(version.Sha256, expectedHash, StringComparison.OrdinalIgnoreCase))
             throw new FileEditException("file_changed", "FileChanged");

@@ -23,7 +23,13 @@ public sealed class TerminalStartTool(
         CancellationToken cancellationToken)
     {
         var workingDirectory = paths.Resolve(context.WorkingDirectory, context);
-        await terminals.StartAsync(context.TaskId, workingDirectory, cancellationToken);
+        if (context.WorkspaceGuard is ITaskWorkspaceLeaseProvider)
+        {
+            if (terminals is not IAuthorizedTerminalSessionManager authorized)
+                throw new MossAgent.Domain.WorkspaceAuthorizationException();
+            await authorized.StartAuthorizedAsync(context, cancellationToken);
+        }
+        else await terminals.StartAsync(context.TaskId, workingDirectory, cancellationToken);
         return ToolResult.Success("交互式终端已启动。");
     }
 }

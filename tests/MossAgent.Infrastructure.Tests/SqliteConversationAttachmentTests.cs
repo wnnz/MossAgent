@@ -101,7 +101,7 @@ public sealed class SqliteConversationAttachmentTests
             DROP TABLE conversation_draft_attachments;
             DROP TABLE conversation_attachments;
             DROP INDEX ix_messages_identity;
-            DELETE FROM schema_versions WHERE version>=14;
+            DROP TRIGGER project_authorization_changed; ALTER TABLE projects DROP COLUMN authorization_revision; DELETE FROM schema_versions WHERE version>=14;
             CREATE TRIGGER reject_version_fourteen BEFORE INSERT ON schema_versions
             WHEN NEW.version=14 BEGIN SELECT RAISE(FAIL,'synthetic migration failure'); END;
             """);
@@ -113,7 +113,7 @@ public sealed class SqliteConversationAttachmentTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_fourteen;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(25, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(28, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(message, Assert.Single(await fixture.Repository.GetMessagesAsync(fixture.Task.Id, fixture.Token)));
         await fixture.Repository.SaveTaskAsync(fixture.Task with { FailureReason = TaskFailureReason.AttachmentHistory }, fixture.Token);
         Assert.Equal(15, await fixture.CountAsync("SELECT reason FROM agent_task_failures;"));

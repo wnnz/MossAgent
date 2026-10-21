@@ -14,11 +14,14 @@ internal sealed class ProjectAuthorizationModelServer : IAsyncDisposable
     private readonly IReadOnlyList<IReadOnlyList<string>> _paths;
     private readonly string _expectedHash;
     private readonly Task _serving;
+    private readonly bool _cancelFirst;
 
-    public ProjectAuthorizationModelServer(IReadOnlyList<IReadOnlyList<string>> paths, string expectedHash, CancellationToken token)
+    public ProjectAuthorizationModelServer(IReadOnlyList<IReadOnlyList<string>> paths, string expectedHash, CancellationToken token,
+        bool cancelFirst = false)
     {
         _paths = paths;
         _expectedHash = expectedHash;
+        _cancelFirst = cancelFirst;
         _stopping = CancellationTokenSource.CreateLinkedTokenSource(token);
         _listener.Start();
         BaseUri = new Uri($"http://127.0.0.1:{((IPEndPoint)_listener.LocalEndpoint).Port}/v1/");
@@ -35,7 +38,8 @@ internal sealed class ProjectAuthorizationModelServer : IAsyncDisposable
     {
         for (var conversation = 0; conversation < _paths.Count; conversation++)
         {
-            for (var step = 0; step <= _paths[conversation].Count; step++)
+            var steps = _cancelFirst && conversation == 0 ? 1 : _paths[conversation].Count + 1;
+            for (var step = 0; step < steps; step++)
             {
                 using var client = await _listener.AcceptTcpClientAsync(token).ConfigureAwait(false);
                 await using var stream = client.GetStream();

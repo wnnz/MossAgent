@@ -29,6 +29,7 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
         CloseCommand = new RelayCommand(Close, CanDismiss);
         AddCommand = new GuardedAsyncRelayCommand(AddAsync, CanMutate);
         AddDirectoryCommand = new GuardedAsyncRelayCommand(AddDirectoryAsync, CanMutate);
+        ConfirmRootObjectsCommand = new GuardedAsyncRelayCommand(ConfirmRootObjectsAsync, CanConfirmRootObjects);
         Directories.CollectionChanged += HandleDirectoriesChanged;
     }
 
@@ -43,6 +44,10 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
     public IRelayCommand OpenCommand { get; }
 
     public IAsyncRelayCommand AddDirectoryCommand { get; }
+    public IAsyncRelayCommand ConfirmRootObjectsCommand { get; }
+    public bool ShowRootConfirmation => _editingProject is not null && _projectService.CanConfirmRootObjects;
+    public string RootConfirmationLabel => SettingsText.Get("ProjectConfirmRootObjects");
+    public string RootConfirmationHint => SettingsText.Get("ProjectConfirmRootObjectsHint");
 
     public IRelayCommand CloseCommand { get; }
 
@@ -91,6 +96,7 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
         }
         Status = string.Empty;
         HasStatusError = false;
+        if (ShowRootConfirmation && project.RootAuthorizations.Count == 0) SetStatus("ProjectRootsNeedConfirmation", false);
         NotifyEditorModeChanged();
         IsOpen = true;
     }
@@ -148,6 +154,14 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
                 SetStatus(exception.Failure == WorkspaceProjectValidationFailure.RequiredFields
                     ? "ProjectRequiredFields" : "ProjectInvalidDirectories", true);
         }
+        catch (ProjectRootAuthorizationException)
+        {
+            if (IsCurrent(version)) SetStatus("ProjectRootIdentityFailed", true);
+        }
+        catch (ProjectAuthorizationConflictException)
+        {
+            if (IsCurrent(version)) SetStatus("ProjectAuthorizationConflict", true);
+        }
         catch (OperationCanceledException) when (operation.IsCancellationRequested)
         {
             if (IsCurrent(version)) SetStatus(cancellationToken.IsCancellationRequested
@@ -156,6 +170,32 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
         catch (Exception) { if (IsCurrent(version)) SetStatus("ProjectSaveFailed", true); }
         finally { IsSaving = false; }
     }
+
+    private async Task ConfirmRootObjectsAsync(CancellationToken cancellationToken)
+    {
+        if (!CanConfirmRootObjects()) return;
+        var expected = _editingProject!;
+        var version = _editorVersion;
+        using var operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
+        operation.CancelAfter(TimeSpan.FromSeconds(30));
+        IsSaving = true;
+        try
+        {
+            var saved = await _projectService.ConfirmRootObjectsAsync(expected, operation.Token);
+            if (!IsCurrent(version) || operation.IsCancellationRequested) return;
+            _editingProject = saved;
+            ProjectUpdated?.Invoke(saved);
+            SetStatus("ProjectRootObjectsConfirmed", false);
+        }
+        catch (ProjectAuthorizationConflictException) { if (IsCurrent(version)) SetStatus("ProjectAuthorizationConflict", true); }
+        catch (OperationCanceledException) { if (IsCurrent(version)) SetStatus("ProjectSaveCancelled", true); }
+        catch (Exception) { if (IsCurrent(version)) SetStatus("ProjectRootIdentityFailed", true); }
+        finally { IsSaving = false; }
+    }
+
+    private bool CanConfirmRootObjects() => CanMutate() && ShowRootConfirmation
+        && _editingProject!.AuthorizedDirectories.SequenceEqual(Directories.Select(item => item.Path),
+            OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
 
     private async Task AddDirectoryAsync(CancellationToken cancellationToken)
     {
@@ -201,6 +241,7 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
         if (!IsCurrent(version)) return;
         if (revision != _draftRevision)
         {
+            if (_editingProject?.Id == project.Id) _editingProject = project;
             SetStatus("ProjectPreviousDraftSaved", false);
             return;
         }
@@ -240,6 +281,7 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
     {
         OnPropertyChanged(nameof(EditorTitle));
         OnPropertyChanged(nameof(SubmitLabel));
+        OnPropertyChanged(nameof(ShowRootConfirmation));
     }
 
     public void NotifyAvailabilityChanged()
@@ -247,6 +289,7 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
         if (!_disposed && IsOpen && !CanSave()) SetStatus("ProjectMutationLocked", true);
         AddCommand.NotifyCanExecuteChanged();
         AddDirectoryCommand.NotifyCanExecuteChanged();
+        ConfirmRootObjectsCommand.NotifyCanExecuteChanged();
         OpenCommand.NotifyCanExecuteChanged();
         CloseCommand.NotifyCanExecuteChanged();
     }
@@ -271,6 +314,7 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
     {
         _draftRevision++;
         OnPropertyChanged(nameof(HasDirectories));
+        ConfirmRootObjectsCommand.NotifyCanExecuteChanged();
     }
 
     public void Dispose()
@@ -282,6 +326,7 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
         _lifetime.Dispose();
         ((IDisposable)AddCommand).Dispose();
         ((IDisposable)AddDirectoryCommand).Dispose();
+        ((IDisposable)ConfirmRootObjectsCommand).Dispose();
         NotifyAvailabilityChanged();
     }
 }

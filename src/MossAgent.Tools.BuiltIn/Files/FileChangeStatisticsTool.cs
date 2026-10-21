@@ -1,12 +1,13 @@
 using System.Globalization;
 using System.Text.Json;
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Files;
 using MossAgent.Tools.BuiltIn.Git;
 using MossAgent.Tools.BuiltIn.Resources;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class FileChangeStatisticsTool(AuthorizedPathResolver paths, GitCommandRunner git)
+public sealed class FileChangeStatisticsTool(AuthorizedPathResolver paths, GitCommandRunner git, IDiffInputFileSessionFactory? diffInputs = null)
     : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
@@ -22,7 +23,7 @@ public sealed class FileChangeStatisticsTool(AuthorizedPathResolver paths, GitCo
     {
         var change = FileChangeRequest.Validate(request, context, paths);
         var (before, after) = await new FileChangeSnapshotReader().ReadChangeAsync(change, context, cancellationToken);
-        var output = await new FileChangeDiffRunner(git).RunAsync(before, after, true, context, cancellationToken);
+        var output = await new FileChangeDiffRunner(git, diffInputs).RunAsync(before, after, true, context, cancellationToken);
         var statistics = Parse(output);
         paths.Resolve(change.Path, context);
         cancellationToken.ThrowIfCancellationRequested();

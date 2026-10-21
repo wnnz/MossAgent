@@ -12,6 +12,7 @@ public sealed class WorkspaceFileChangeStatisticsViewModel(WorkspaceFileChangeSt
     private readonly object _gate = new();
     private WorkspaceFileChangeViewModel[] _files = [];
     private ToolExecutionContext? _context;
+    private long _authorizationRevision;
     private CancellationTokenSource? _cancellation;
     private Task _work = Task.CompletedTask;
     private bool _incomplete;
@@ -34,10 +35,12 @@ public sealed class WorkspaceFileChangeStatisticsViewModel(WorkspaceFileChangeSt
         () => { if (!_disposed && !_stopped && !_isBusy && HasError) Schedule(true); },
         () => !_disposed && !_stopped && !_isBusy && HasError);
 
-    internal void Update(IReadOnlyList<WorkspaceFileChangeViewModel> files, ToolExecutionContext? context, bool incomplete)
+    internal void Update(IReadOnlyList<WorkspaceFileChangeViewModel> files, ToolExecutionContext? context, bool incomplete,
+        long authorizationRevision = 0)
     {
         if (_disposed || _stopped || service is null) return;
-        var sameContext = _context?.TaskId == context?.TaskId && _context?.WorkingDirectory == context?.WorkingDirectory
+        var sameContext = _authorizationRevision == authorizationRevision
+            && _context?.TaskId == context?.TaskId && _context?.WorkingDirectory == context?.WorkingDirectory
             && _context?.ArtifactDirectory == context?.ArtifactDirectory
             && _context?.ApprovalPolicy == context?.ApprovalPolicy
             && (_context?.AuthorizedRoots ?? []).SequenceEqual(context?.AuthorizedRoots ?? []);
@@ -47,6 +50,7 @@ public sealed class WorkspaceFileChangeStatisticsViewModel(WorkspaceFileChangeSt
             foreach (var file in files) file.SetStatistics(null, false);
         if (!sameFiles) _files = files.ToArray();
         _context = context;
+        _authorizationRevision = authorizationRevision;
         _incomplete = incomplete;
         Schedule(false);
     }

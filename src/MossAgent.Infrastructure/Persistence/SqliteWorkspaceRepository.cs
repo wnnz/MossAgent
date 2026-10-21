@@ -3,16 +3,24 @@ using Microsoft.Data.Sqlite;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 using MossAgent.Application.Attachments;
+using MossAgent.Application.Authorization;
+using MossAgent.Tools.Abstractions.Files;
 
 namespace MossAgent.Infrastructure.Persistence;
 
 public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connections,
-    AppDataPaths? paths = null, IAttachmentImageDecoder? images = null)
-    : IWorkspaceRepository, IConversationSubmissionRepository
+    AppDataPaths? paths = null, IAttachmentImageDecoder? images = null, IProjectAuthorizationChanges? authorizationChanges = null,
+    IRootIdentitySessionFactory? rootIdentities = null)
+    : IWorkspaceRepository, IConversationSubmissionRepository, IProjectAuthorizationReader, IProjectAuthorizationWriter, IProjectAuthorizationConfirmation
 {
     private readonly SqliteWorkspaceWriter _writer = new(connections);
     private readonly SqliteTaskRenameWriter _renameWriter = new(connections);
     private readonly SqliteConversationDraftWriter _draftWriter = new(paths, images);
+    private readonly SqliteProjectAuthorization _projects = new(connections, authorizationChanges, rootIdentities);
+    public bool CanConfirmRootObjects => rootIdentities is not null;
+
+    public Task<ProjectProfile> ConfirmRootObjectsAsync(ProjectProfile expected, CancellationToken cancellationToken) =>
+        _projects.SaveAsync(expected, cancellationToken, confirm: true);
 
     public bool SupportsDrafts(IConversationDraftRepository drafts) =>
         drafts is SqliteConversationDraftRepository sqlite && sqlite.UsesConnections(connections);
@@ -45,7 +53,10 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
         await using var connection = connections.Create();
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id,name,primary_directory,authorized_directories_json,created_at FROM projects ORDER BY name";
+        command.CommandText = """
+            SELECT p.id,p.name,p.primary_directory,p.authorized_directories_json,p.created_at,p.authorization_revision,r.roots_json
+            FROM projects p LEFT JOIN project_root_authorizations r ON r.project_id=p.id AND r.authorization_revision=p.authorization_revision ORDER BY p.name;
+            """;
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var results = new List<ProjectProfile>();
         while (await reader.ReadAsync(cancellationToken))
@@ -53,29 +64,20 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
             results.Add(new ProjectProfile(
                 Guid.Parse(reader.GetString(0)), reader.GetString(1), reader.GetString(2),
                 JsonSerializer.Deserialize<string[]>(reader.GetString(3)) ?? [],
-                DateTimeOffset.Parse(reader.GetString(4))));
+                DateTimeOffset.Parse(reader.GetString(4)))
+            { AuthorizationRevision = reader.GetInt64(5), RootAuthorizations = SqliteProjectRootAuthorizations.Read(reader, 6) });
         }
 
         return results;
     }
 
-    public async Task SaveProjectAsync(ProjectProfile project, CancellationToken cancellationToken)
-    {
-        await using var connection = connections.Create();
-        await connection.OpenAsync(cancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText = """
-            INSERT INTO projects(id,name,primary_directory,authorized_directories_json,created_at)
-            VALUES($id,$name,$primary,$roots,$created)
-            ON CONFLICT(id) DO UPDATE SET name=$name,primary_directory=$primary,authorized_directories_json=$roots;
-            """;
-        command.Parameters.AddWithValue("$id", project.Id.ToString());
-        command.Parameters.AddWithValue("$name", project.Name);
-        command.Parameters.AddWithValue("$primary", project.PrimaryDirectory);
-        command.Parameters.AddWithValue("$roots", JsonSerializer.Serialize(project.AuthorizedDirectories));
-        command.Parameters.AddWithValue("$created", project.CreatedAt.ToString("O"));
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
+    public Task SaveProjectAsync(ProjectProfile project, CancellationToken cancellationToken) => _projects.SaveAsync(project, cancellationToken);
+
+    public Task<ProjectProfile> SaveAuthorizationAsync(ProjectProfile project, CancellationToken cancellationToken) =>
+        _projects.SaveAsync(project, cancellationToken);
+
+    public Task<ProjectProfile?> ReadAuthorizationAsync(Guid projectId, CancellationToken cancellationToken) =>
+        _projects.ReadAsync(projectId, cancellationToken);
 
     public async Task<IReadOnlyList<AgentTask>> GetTasksAsync(
         Guid? projectId,

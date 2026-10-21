@@ -137,7 +137,7 @@ public sealed class SqliteConversationDraftAttachmentTests
         Assert.True(await Repository(fixture).SaveAsync([new(scope, "preserved draft", 0)], fixture.Token));
         await fixture.ExecuteAsync("""
             DROP TABLE conversation_draft_attachments;
-            DELETE FROM schema_versions WHERE version>=15;
+            DROP TRIGGER project_authorization_changed; ALTER TABLE projects DROP COLUMN authorization_revision; DELETE FROM schema_versions WHERE version>=15;
             CREATE TRIGGER reject_version_fifteen BEFORE INSERT ON schema_versions
             WHEN NEW.version=15 BEGIN SELECT RAISE(FAIL,'synthetic migration failure'); END;
             """);
@@ -148,7 +148,7 @@ public sealed class SqliteConversationDraftAttachmentTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_fifteen;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(25, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(28, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(new("preserved draft", 1), await Repository(fixture).GetAsync(scope, fixture.Token));
         Assert.Equal(fixture.Task, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)));
     }

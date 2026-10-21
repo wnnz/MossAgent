@@ -25,7 +25,7 @@ public sealed class WorkspaceFollowupSafetyTests
         }
         else await fixture.SetSelectedModelEnabledAsync(false);
         fixture.Server.ReleaseResponses();
-        await fixture.WaitUntilAsync(() => !workspace.IsRunning && workspace.Queue.HasNotice);
+        await fixture.WaitUntilAsync(() => !workspace.IsRunning && workspace.Queue.HasNotice && workspace.Queue.Items.Count == 1);
         Assert.Single(fixture.Server.Requests);
         Assert.Single(workspace.Queue.Items);
         Assert.Equal("保留前台草稿", workspace.ComposerText);

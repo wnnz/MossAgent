@@ -62,6 +62,61 @@ public sealed class FileChangeStatisticsStateTests : IAsyncLifetime
     }, TestContext.Current.CancellationToken);
 
     [Fact]
+    public Task ErrorWhileAnotherRowIsPendingDoesNotPermitOverlappingRetry() => _session.DispatchAsync(async () =>
+    {
+        var pending = new TaskCompletionSource<ToolResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var calls = 0;
+        var executor = new FileStatisticsTestExecutor { Handler = (_, _, token) =>
+        {
+            var call = Interlocked.Increment(ref calls);
+            if (call == 1) return Task.FromResult(new ToolResult(false, "unavailable"));
+            if (call == 2) { started.TrySetResult(); return pending.Task.WaitAsync(token); }
+            return Task.FromResult(new ToolResult(true, "statistics", "{\"Added\":1,\"Removed\":0}"));
+        } };
+        using var statistics = new WorkspaceFileChangeStatisticsViewModel(new(executor));
+        var first = Row();
+        var second = new WorkspaceFileChangeViewModel(first.Change with { Path = Path.Combine(Path.GetTempPath(), "other.cs") }, "other.cs");
+        statistics.Update([first, second], Context(), false);
+        try
+        {
+            await started.Task.WaitAsync(TestContext.Current.CancellationToken);
+            Assert.True(statistics.HasError);
+            Assert.False(statistics.RetryCommand.CanExecute(null));
+            statistics.RetryCommand.Execute(null);
+            Assert.Equal(2, executor.Contexts.Count);
+        }
+        finally { pending.TrySetResult(new(true, "statistics", "{\"Added\":1,\"Removed\":0}")); }
+        await WaitAsync(() => statistics.RetryCommand.CanExecute(null));
+        statistics.RetryCommand.Execute(null);
+        await WaitAsync(() => statistics.HasTotals);
+        Assert.Equal(3, executor.Contexts.Count);
+        Assert.Equal("+2", statistics.AddedLabel);
+        await statistics.StopAsync();
+    }, TestContext.Current.CancellationToken);
+
+    [Fact]
+    public Task NewAuthorizationRevisionRequeriesSamePathsAndDoesNotReuseOldFailure() => _session.DispatchAsync(async () =>
+    {
+        var executor = new FileStatisticsTestExecutor { Handler = (_, _, _) => Task.FromResult(new ToolResult(false, "old authorization")) };
+        using var statistics = new WorkspaceFileChangeStatisticsViewModel(new(executor));
+        var row = Row();
+        var context = Context();
+        statistics.Update([row], context, false, 1);
+        await WaitAsync(() => statistics.RetryCommand.CanExecute(null));
+        statistics.Update([row], context with { }, false, 1);
+        Assert.Single(executor.Contexts);
+        executor.Handler = (_, _, _) => Task.FromResult(new ToolResult(true, "new authorization", "{\"Added\":3,\"Removed\":2}"));
+        var replacement = context with { FileSnapshots = new(context.TaskId) };
+        statistics.Update([row], replacement, false, 2);
+        await WaitAsync(() => statistics.HasTotals);
+        Assert.Equal(2, executor.Contexts.Count);
+        Assert.Same(replacement.FileSnapshots, executor.Contexts.Last().FileSnapshots);
+        Assert.False(statistics.HasError);
+        await statistics.StopAsync();
+    }, TestContext.Current.CancellationToken);
+
+    [Fact]
     public Task ChangedTask_CancelsOldWorkAndRejectsItsLateResult() => _session.DispatchAsync(async () =>
     {
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

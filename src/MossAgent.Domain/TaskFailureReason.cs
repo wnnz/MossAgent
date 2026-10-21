@@ -18,5 +18,6 @@ public enum TaskFailureReason
     UnsupportedReasoningEffort = 13,
     ProxyAuthentication = 14,
     AttachmentHistory = 15,
-    ModelContextCapacity = 16
+    ModelContextCapacity = 16,
+    WorkspaceAuthorizationChanged = 17
 }

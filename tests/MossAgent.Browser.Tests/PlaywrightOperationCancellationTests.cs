@@ -1,3 +1,4 @@
+using MossAgent.Tools.Abstractions.Files;
 using Xunit;
 
 namespace MossAgent.Browser.Tests;
@@ -86,7 +87,11 @@ public sealed class PlaywrightOperationCancellationTests
         await probe.Started.Task.WaitAsync(TestContext.Current.CancellationToken);
         await cancellation.CancelAsync();
         close.SetException(new IOException("controlled close failure"));
-        Assert.Equal("controlled close failure", (await Assert.ThrowsAsync<IOException>(() => running)).Message);
+        var error = await Assert.ThrowsAsync<FileMutationSessionException>(() => running);
+        Assert.Equal("browser_session_cleanup_failed", error.ErrorCode);
+        Assert.True(error.HasSideEffects);
+        Assert.Contains("任务浏览器关闭未获确认", error.Message);
+        Assert.DoesNotContain("controlled close failure", error.Message);
         Assert.Equal(1, probe.RuntimeDisposals);
         await Assert.ThrowsAsync<IOException>(async () => await session.DisposeAsync());
     }

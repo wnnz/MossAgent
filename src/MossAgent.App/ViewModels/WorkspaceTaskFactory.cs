@@ -3,6 +3,7 @@ using MossAgent.Application.Agent;
 using MossAgent.Application.Persistence;
 using MossAgent.Application.Attachments;
 using MossAgent.Application.SourceControl;
+using MossAgent.Application.Authorization;
 using MossAgent.Domain;
 using MossAgent.Tools.Abstractions;
 
@@ -13,7 +14,7 @@ public sealed class WorkspaceTaskFactory(
     IGitWorktreeService worktrees,
     IConversationAttachmentStore? attachments = null,
     TimeProvider? timeProvider = null,
-    SourceReviewChatAccess? reviewChats = null)
+    SourceReviewChatAccess? reviewChats = null, ProjectAuthorizationMonitor? authorizations = null)
 {
     public IConversationSubmissionRepository? Submissions => workspaces as IConversationSubmissionRepository;
 
@@ -117,8 +118,13 @@ public sealed class WorkspaceTaskFactory(
             .ToArray();
     }
 
-    public ITaskWorkspaceGuard? CreateWorkspaceGuard(ProjectProfile project, AgentTask task, IReadOnlyList<string> roots) =>
-        task.WorktreePath is null ? null : new ManagedWorktreeWorkspaceGuard(worktrees, project, task.Id, task.WorktreePath, roots);
+    public ITaskWorkspaceGuard? CreateWorkspaceGuard(ProjectProfile project, AgentTask task, IReadOnlyList<string> roots)
+    {
+        var environment = task.WorktreePath is null ? null
+            : new ManagedWorktreeWorkspaceGuard(worktrees, project, task.Id, task.WorktreePath, roots);
+        return authorizations is null ? environment
+            : new ProjectWorkspaceGuard(authorizations, project, task.Id, task.WorktreePath ?? project.PrimaryDirectory, roots, environment);
+    }
 
     public async Task<AgentTask> ResumeAsync(
         AgentTask task,

@@ -1,4 +1,5 @@
 using MossAgent.Tools.Abstractions.Terminal;
+using MossAgent.Tools.Abstractions;
 
 namespace MossAgent.Platform.Windows.Terminal;
 
@@ -15,17 +16,27 @@ internal sealed class PtyTerminalOwner
     private PtyTerminalSession? _session;
     private readonly TaskCompletionSource _handoff = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private TerminalSessionState? _finalState;
+    private CancellationTokenRegistration _authorizationRegistration;
 
     public PtyTerminalOwner(string workingDirectory,
-        Func<string, Action<string>, CancellationToken, Task<PtyTerminalSession>> factory, Action<string> output)
+        Func<string, Action<string>, CancellationToken, Task<PtyTerminalSession>> factory, Action<string> output,
+        ITaskWorkspaceLease? authorization = null)
     {
         WorkingDirectory = workingDirectory;
         _factory = factory;
         _output = output;
         _token = _shutdown.Token;
+        Authorization = authorization;
     }
 
     public string WorkingDirectory { get; }
+    public ITaskWorkspaceLease? Authorization { get; }
+
+    public void ObserveAuthorization(Func<Task> stop)
+    {
+        if (Authorization is not null)
+            _authorizationRegistration = Authorization.Revocation.Register(() => _ = Task.Run(stop, CancellationToken.None));
+    }
     public Guid SessionId { get; } = Guid.NewGuid();
     public Task Observation { get; set; } = Task.CompletedTask;
     public Task Handoff => _handoff.Task;
@@ -45,6 +56,7 @@ internal sealed class PtyTerminalOwner
     }
     public void ThrowIfStopping()
     {
+        if (Authorization?.IsRevoked == true) throw new MossAgent.Domain.WorkspaceAuthorizationException();
         if (IsStopping) throw new OperationCanceledException(_token);
     }
 
@@ -132,7 +144,12 @@ internal sealed class PtyTerminalOwner
                     lock (_resizeSync) return session.DisposeAsync().AsTask();
                 }, CancellationToken.None).ConfigureAwait(false);
             }
-            finally { _shutdown.Dispose(); }
+            finally
+            {
+                _authorizationRegistration.Dispose();
+                try { if (Authorization is not null) await Authorization.DisposeAsync().ConfigureAwait(false); }
+                finally { _shutdown.Dispose(); }
+            }
             completion.SetResult();
         }
         catch (Exception exception) { completion.SetException(exception); }

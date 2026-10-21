@@ -27,6 +27,7 @@ public static class TaskFailureClassifier
         "unsupported_reasoning_effort" => TaskFailureReason.UnsupportedReasoningEffort,
         "attachment_history_unavailable" => TaskFailureReason.AttachmentHistory,
         "model_context_capacity" => TaskFailureReason.ModelContextCapacity,
+        "workspace_authorization_changed" => TaskFailureReason.WorkspaceAuthorizationChanged,
         _ => TaskFailureReason.Unknown
     };
 
@@ -36,6 +37,7 @@ public static class TaskFailureClassifier
     {
         ConversationAttachmentUnavailableException => "attachment_history_unavailable",
         PinnedModelContextException => "model_context_capacity",
+        WorkspaceAuthorizationException => "workspace_authorization_changed",
         HttpRequestException { StatusCode: HttpStatusCode.ProxyAuthenticationRequired } => "proxy_authentication_failed",
         HttpRequestException => "provider_connection",
         TimeoutException or OperationCanceledException => "provider_timeout",

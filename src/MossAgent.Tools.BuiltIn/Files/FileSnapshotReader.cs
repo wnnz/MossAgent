@@ -16,21 +16,24 @@ public static class FileSnapshotReader
             throw new ArgumentException(FileToolText.Get("InvalidHash"));
     }
 
-    public static async Task<FileSnapshot> ReadAsync(string path, CancellationToken cancellationToken)
+    public static async Task<FileSnapshot> ReadAsync(
+        string path, CancellationToken cancellationToken, ToolExecutionContext? context = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
         try
         {
-            await using var stream = Open(path);
+            await using var stream = Open(path, context);
             return await HashAsync(stream, cancellationToken);
         }
         catch (FileNotFoundException) { return new FileSnapshot(null); }
         catch (DirectoryNotFoundException) { return new FileSnapshot(null); }
     }
 
-    public static async Task<TextFileSnapshot> ReadTextAsync(string path, CancellationToken cancellationToken)
+    public static async Task<TextFileSnapshot> ReadTextAsync(
+        string path, CancellationToken cancellationToken, ToolExecutionContext? context = null)
     {
-        await using var stream = Open(path);
+        cancellationToken.ThrowIfCancellationRequested();
+        await using var stream = Open(path, context);
         if (stream.Length > 16 * 1024 * 1024)
             throw new FileEditException("file_too_large", "FileTooLarge");
         var version = await HashAsync(stream, cancellationToken);
@@ -44,7 +47,7 @@ public static class FileSnapshotReader
         string path, ToolExecutionContext context, string? expectedHash, CancellationToken cancellationToken)
     {
         ValidateExpectedHash(expectedHash);
-        var version = await ReadAsync(path, cancellationToken);
+        var version = await ReadAsync(path, cancellationToken, context);
         ValidateForEdit(path, context, version, expectedHash);
         return version;
     }
@@ -61,9 +64,17 @@ public static class FileSnapshotReader
         context.FileSnapshots.Record(context.TaskId, key, version);
     }
 
-    public static FileStream Open(string path) => new(
-        path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete, 81920,
-        FileOptions.Asynchronous | FileOptions.SequentialScan);
+    public static FileStream Open(string path, ToolExecutionContext? context = null)
+    {
+        var stream = new FileStream(path, FileMode.Open, FileAccess.Read,
+            FileShare.Read | FileShare.Delete, 81920, FileOptions.Asynchronous | FileOptions.SequentialScan);
+        try
+        {
+            context?.ReadHandleValidator?.Validate(stream, context.AuthorizedRoots);
+            return stream;
+        }
+        catch { stream.Dispose(); throw; }
+    }
 
     public static async Task<FileSnapshot> HashAsync(Stream stream, CancellationToken cancellationToken) =>
         new(Convert.ToHexString(await SHA256.HashDataAsync(stream, cancellationToken)));

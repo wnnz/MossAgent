@@ -22,11 +22,12 @@ public sealed class FileChangeSnapshotReader
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (!snapshot.IsValid) throw new FileEditException("snapshot_invalid", "SnapshotInvalid");
-        var path = Path.Combine(FileChangeSnapshotStorage.DirectoryFor(context), snapshot.FileName);
+        var directory = FileChangeSnapshotStorage.DirectoryFor(context);
+        var path = Path.Combine(directory, snapshot.FileName);
         FileChangeSnapshotStorage.RejectLinks(path);
         try
         {
-            await using var stream = FileSnapshotReader.Open(path);
+            await using var stream = FileSnapshotReader.Open(path, context with { AuthorizedRoots = [directory] });
             if (stream.Length != snapshot.Length) throw new FileEditException("snapshot_invalid", "SnapshotInvalid");
             var bytes = new byte[checked((int)snapshot.Length)];
             await stream.ReadExactlyAsync(bytes, cancellationToken);

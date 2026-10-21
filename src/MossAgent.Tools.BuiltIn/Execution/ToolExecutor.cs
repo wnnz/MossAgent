@@ -1,6 +1,7 @@
 using MossAgent.Tools.Abstractions;
 using MossAgent.Tools.BuiltIn.Files;
 using MossAgent.Tools.BuiltIn.Resources;
+using MossAgent.Domain;
 
 namespace MossAgent.Tools.BuiltIn.Execution;
 
@@ -8,7 +9,8 @@ public sealed class ToolExecutor(
     ToolRegistry registry,
     IToolApprovalService approvalService,
     IToolExecutionAuditSink? auditSink = null,
-    TimeProvider? timeProvider = null) : IToolExecutor
+    TimeProvider? timeProvider = null,
+    MossAgent.Tools.Abstractions.Files.IFileReadHandleValidator? readHandleValidator = null) : IToolExecutor
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
@@ -17,7 +19,12 @@ public sealed class ToolExecutor(
         ToolExecutionContext context,
         CancellationToken cancellationToken)
     {
-        if (context.WorkspaceGuard is not null) context = context with { AuthorizedRoots = context.AuthorizedRoots.ToArray() };
+        var capturedRoots = new CapturedToolRoots(context.AuthorizedRoots);
+        context = context with
+        {
+            AuthorizedRoots = capturedRoots,
+            ReadHandleValidator = readHandleValidator ?? context.ReadHandleValidator
+        };
         ReportProgress(request, context, ToolExecutionPhase.Validating);
         registry.TryGet(request.ToolName, out var tool);
         var executionId = await StartAuditAsync(
@@ -62,22 +69,50 @@ public sealed class ToolExecutor(
             return preflightResult;
         }
 
-        ReportProgress(request, context, ToolExecutionPhase.AwaitingApproval);
-        var approved = await RequestApprovalAsync(
-            tool, request, context, cancellationToken);
-        if (approved != true)
-        {
-            var approvalResult = cancellationToken.IsCancellationRequested
-                ? ToolResult.Failure(ToolExecutionText.Get("ApprovalCancelled"), "tool_cancelled")
-                : approved == false
-                ? ToolResult.Failure("用户或策略拒绝了工具调用。", "approval_denied")
-                : ToolResult.Failure(ToolExecutionText.Get("ApprovalFailed"), "approval_failed");
-            return await CompleteAuditAsync(executionId, approved, approvalResult, context, request);
-        }
-
-        var result = await ExecuteToolAsync(tool, request, context, cancellationToken);
-        return await CompleteAuditAsync(executionId, true, result, context, request);
+        return await ExecuteAuthorizedAsync(executionId, tool, request, context, capturedRoots, cancellationToken);
     }
+
+    private async Task<ToolResult> ExecuteAuthorizedAsync(Guid? executionId, IAgentTool tool, ToolRequest request,
+        ToolExecutionContext context, CapturedToolRoots roots, CancellationToken cancellationToken)
+    {
+        TaskWorkspaceOperation operation;
+        try { operation = await TaskWorkspaceOperation.EnterAsync(context, cancellationToken); }
+        catch (WorkspaceAuthorizationException)
+        { return await CompleteAuditAsync(executionId, false, AuthorizationChanged(null), context, request); }
+        catch (OperationCanceledException)
+        { return await CompleteAuditAsync(executionId, null, InterruptedResult(true), context, request); }
+        catch (Exception)
+        { return await CompleteAuditAsync(executionId, false, ToolResult.Failure(ToolExecutionText.Get("WorkspaceAccessDenied"), "workspace_denied"), context, request); }
+        await using (operation)
+        {
+            ReportProgress(request, context, ToolExecutionPhase.AwaitingApproval);
+            var approved = await RequestApprovalAsync(tool, request, context, operation.Token);
+            ToolResult result;
+            if (approved != true)
+                result = operation.Token.IsCancellationRequested
+                    ? ToolResult.Failure(ToolExecutionText.Get("ApprovalCancelled"), "tool_cancelled")
+                    : approved == false ? ToolResult.Failure("用户或策略拒绝了工具调用。", "approval_denied")
+                    : ToolResult.Failure(ToolExecutionText.Get("ApprovalFailed"), "approval_failed");
+            else
+            {
+                result = await ExecuteToolAsync(tool, request, context, roots, operation.Token);
+                if (context.WorkspaceGuard is ITaskWorkspaceLeaseProvider && !operation.IsRevoked)
+                {
+                    var validation = await ToolWorkspaceValidation.ValidateAsync(context, operation.Token, _timeProvider);
+                    if (validation is not null && !operation.IsRevoked)
+                        result = validation with { Artifacts = result.Artifacts, FileChanges = result.FileChanges,
+                            FileChangesTruncated = result.FileChangesTruncated, Dialogue = result.Dialogue ?? validation.Dialogue };
+                }
+            }
+            if (operation.IsRevoked) result = AuthorizationChanged(result);
+            return await CompleteAuditAsync(executionId, approved, result, context, request);
+        }
+    }
+
+    private static ToolResult AuthorizationChanged(ToolResult? result) => ToolResult.Failure(
+        ToolExecutionText.Get("WorkspaceAuthorizationChanged") + (result is null ? "" : " " + result.Summary),
+        "workspace_authorization_changed", result?.Dialogue) with
+        { Artifacts = result?.Artifacts, FileChanges = result?.FileChanges, FileChangesTruncated = result?.FileChangesTruncated == true };
 
     private static ToolResult? ValidateArguments(IAgentTool tool, ToolRequest request, CancellationToken cancellationToken)
     {
@@ -135,6 +170,7 @@ public sealed class ToolExecutor(
         IAgentTool tool,
         ToolRequest request,
         ToolExecutionContext context,
+        CapturedToolRoots capturedRoots,
         CancellationToken cancellationToken)
     {
         var duration = context.Timeout ?? TimeSpan.FromMinutes(2);
@@ -144,6 +180,7 @@ public sealed class ToolExecutor(
         try
         {
             timeout.Token.ThrowIfCancellationRequested();
+            capturedRoots.Validate();
             var workspaceResult = await ToolWorkspaceValidation.ValidateAsync(context, timeout.Token, _timeProvider);
             if (timeout.IsCancellationRequested) return InterruptedResult(cancellationToken.IsCancellationRequested);
             if (workspaceResult is not null) return workspaceResult;
@@ -156,9 +193,10 @@ public sealed class ToolExecutor(
             ReportProgress(request, context, ToolExecutionPhase.Executing);
             timeout.Token.ThrowIfCancellationRequested();
             if (HasDeadlineElapsed(started, duration)) return InterruptedResult(false);
+            capturedRoots.Validate();
             var result = await tool.ExecuteAsync(request, context, timeout.Token);
             return timeout.IsCancellationRequested || HasDeadlineElapsed(started, duration)
-                ? InterruptedResult(cancellationToken.IsCancellationRequested, result.Dialogue) with
+                ? InterruptedResult(cancellationToken.IsCancellationRequested, result.Dialogue, result.Summary) with
                 {
                     Artifacts = result.Artifacts,
                     FileChanges = result.FileChanges,
@@ -183,6 +221,13 @@ public sealed class ToolExecutor(
         {
             return ToolResult.Failure(exception.Message, exception.ErrorCode);
         }
+        catch (MossAgent.Tools.Abstractions.Files.FileMutationSessionException exception)
+        {
+            return timeout.IsCancellationRequested || HasDeadlineElapsed(started, duration)
+                ? InterruptedResult(cancellationToken.IsCancellationRequested,
+                    completedSummary: exception.HasSideEffects ? exception.Message : null)
+                : ToolResult.Failure(exception.Message, exception.ErrorCode);
+        }
         catch (Exception)
         {
             return ToolResult.Failure("工具执行失败，请检查工具配置和运行环境。", "tool_failed");
@@ -192,8 +237,10 @@ public sealed class ToolExecutor(
     private bool HasDeadlineElapsed(long started, TimeSpan duration) =>
         duration != Timeout.InfiniteTimeSpan && _timeProvider.GetElapsedTime(started) >= duration;
 
-    private static ToolResult InterruptedResult(bool cancelled, IReadOnlyList<ToolDialogueMessage>? dialogue = null) =>
-        ToolResult.Failure(ToolExecutionText.Get(cancelled ? "ExecutionCancelled" : "ExecutionTimedOut"),
+    private static ToolResult InterruptedResult(bool cancelled, IReadOnlyList<ToolDialogueMessage>? dialogue = null,
+        string? completedSummary = null) =>
+        ToolResult.Failure(ToolExecutionText.Get(cancelled ? "ExecutionCancelled" : "ExecutionTimedOut")
+            + (completedSummary is null ? "" : " " + completedSummary),
             cancelled ? "tool_cancelled" : "tool_timeout", dialogue);
 
     private async Task<bool?> RequestApprovalAsync(

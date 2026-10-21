@@ -43,6 +43,7 @@ using MossAgent.Application.SourceControl;
 using MossAgent.Infrastructure.SourceControl;
 using MossAgent.Tools.Abstractions.SourceControl;
 using MossAgent.Tools.BuiltIn.SourceControl;
+using MossAgent.Application.Authorization;
 
 namespace MossAgent.App;
 
@@ -90,6 +91,11 @@ internal static class AppComposition
         services.AddSingleton<IPullRequestInspectionClient, GitHubPullRequestInspectionClient>();
         services.AddSingleton<ISourcePullRequestInspection, SourcePullRequestInspection>();
         services.AddSingleton<IWorkspaceRepository, SqliteWorkspaceRepository>();
+        services.AddSingleton<IProjectAuthorizationChanges, ProjectAuthorizationChanges>();
+        services.AddSingleton<IProjectAuthorizationReader>(static provider =>
+            provider.GetRequiredService<IWorkspaceRepository>() as IProjectAuthorizationReader
+            ?? new WorkspaceProjectAuthorizationReader(provider.GetRequiredService<IWorkspaceRepository>()));
+        services.AddSingleton<ProjectAuthorizationMonitor>();
         services.AddSingleton<IConversationPreferenceRepository, SqliteConversationPreferenceRepository>();
         services.AddSingleton<IConversationDraftRepository, SqliteConversationDraftRepository>();
         services.AddSingleton<IConversationFollowupRepository, SqliteConversationFollowupRepository>();
@@ -129,6 +135,15 @@ internal static class AppComposition
     private static void RegisterFileAndAgentTools(IServiceCollection services)
     {
         services.AddSingleton<AuthorizedPathResolver>();
+        services.AddSingleton<IFileReadHandleValidator, WindowsFileReadHandleValidator>();
+        services.AddSingleton<IRootIdentitySessionFactory, WindowsRootIdentitySessionFactory>();
+        services.AddSingleton<IAtomicFileWriteSessionFactory, WindowsAtomicFileWriteSessionFactory>();
+        services.AddSingleton<IPathDeleteSessionFactory, WindowsPathDeleteSessionFactory>();
+        services.AddSingleton<IPathMoveSessionFactory, WindowsPathMoveSessionFactory>();
+        services.AddSingleton<IFileTreeReadSessionFactory, WindowsFileTreeReadSessionFactory>();
+        services.AddSingleton<IAuthorizedDirectoryCreator, WindowsAuthorizedDirectoryCreator>();
+        services.AddSingleton<IArtifactFileSessionFactory, WindowsArtifactFileSessionFactory>();
+        services.AddSingleton<IDiffInputFileSessionFactory, WindowsDiffInputFileSessionFactory>();
         services.AddSingleton<IAuthorizedPathResolver>(
             static provider => provider.GetRequiredService<AuthorizedPathResolver>());
         services.AddSingleton<GitCommandRunner>();

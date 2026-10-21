@@ -28,8 +28,10 @@
                 <ui:AppBorder Classes="directory-row project-directory-row">
                   <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
                     <ui:AppIcon Classes="ui-icon" Data="{StaticResource UiIconFolder}" VerticalAlignment="Center" />
-                    <ui:AppText Grid.Column="1" Text="{Binding DisplayName}" ToolTip.Tip="{Binding Path}"
-                                 TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                      <ui:AppText Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
+                      <ui:AppText Text="{Binding Path}" Classes="subtle type-11" TextWrapping="Wrap" />
+                    </StackPanel>
                     <ui:AppBorder Grid.Column="2" IsVisible="{Binding IsPrimary}"
                                    Classes="directory-primary-badge project-directory-badge">
                       <ui:AppText Text="{x:Static text:ProjectEditorText.Primary}" Classes="subtle type-11" />
@@ -52,6 +54,10 @@
                             Classes="ghost align-leading" HorizontalAlignment="Stretch" Command="{Binding AddDirectoryCommand}" />
         <ui:AppText Text="{Binding Status}" Classes="subtle type-11" IsVisible="{Binding HasStatus}"
                      Classes.status-error="{Binding HasStatusError}" TextWrapping="Wrap" />
+        <StackPanel IsVisible="{Binding ShowRootConfirmation}" Spacing="4">
+          <ui:AppText Text="{Binding RootConfirmationHint}" Classes="subtle type-11" TextWrapping="Wrap" />
+          <ui:AppButton Content="{Binding RootConfirmationLabel}" Command="{Binding ConfirmRootObjectsCommand}" />
+        </StackPanel>
         <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
           <ui:AppButton Grid.Column="1" Content="{x:Static text:ProjectEditorText.Cancel}" Command="{Binding CloseCommand}" />
           <ui:AppButton Grid.Column="2" Content="{Binding SubmitLabel}" Classes="primary" Command="{Binding AddCommand}" />

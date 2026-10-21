@@ -59,7 +59,7 @@ internal sealed class ProjectAuthorizationUiFixture : IAsyncDisposable
                 ? [[fixture.PrimaryFile, fixture.AdditionalFile], [fixture.AdditionalFile]]
                 : [[fixture.PrimaryFile], [fixture.PrimaryFile], [fixture.PrimaryFile]];
             fixture._server = new ProjectAuthorizationModelServer(paths,
-                Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(InitialContent))), fixture.Token);
+                Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(InitialContent))), fixture.Token, cancelFirst: expansion);
             fixture._services = fixture.CreateServices();
             await fixture._services.GetRequiredService<IDatabaseInitializer>().InitializeAsync(fixture.Token);
             await fixture.ConfigureModelAsync();

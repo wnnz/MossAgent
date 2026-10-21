@@ -13,7 +13,7 @@ public sealed class SqliteSourceAccountRepositoryTests
     public async Task VersionSeventeenMigrationRollsBackThenReopensWithoutLosingUserData()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
-        await fixture.ExecuteAsync("DROP TABLE source_accounts; DELETE FROM schema_versions WHERE version>=18;");
+        await fixture.ExecuteAsync("DROP TABLE source_accounts; DROP TRIGGER project_authorization_changed; ALTER TABLE projects DROP COLUMN authorization_revision; DELETE FROM schema_versions WHERE version>=18;");
         await fixture.ExecuteAsync("""
             CREATE TRIGGER reject_eighteen BEFORE INSERT ON schema_versions
             WHEN NEW.version=18 BEGIN SELECT RAISE(FAIL,'fixture migration failure'); END;
@@ -32,7 +32,7 @@ public sealed class SqliteSourceAccountRepositoryTests
         Assert.Equal(saved.AccessToken, restored.AccessToken);
         Assert.Equal(saved.ApiEndpoint, restored.ApiEndpoint);
         Assert.Equal(1, restored.Revision);
-        Assert.Equal(25, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(28, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(fixture.Project.Id, Assert.Single(await fixture.Repository.GetProjectsAsync(fixture.Token)).Id);
         Assert.Equal(fixture.Task.Id, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)).Id);
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM pragma_foreign_key_check;"));

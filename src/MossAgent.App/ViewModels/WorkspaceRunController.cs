@@ -79,7 +79,7 @@ public sealed class WorkspaceRunController(
 
     private static bool IsAuthorizationChange(Exception exception) => exception is
         ConversationSteeringException { Code: "SteeringScopeChanged" }
-        or SourceReviewException { ErrorCode: "source_scope_denied" };
+        or SourceReviewException { ErrorCode: "source_scope_denied" } or WorkspaceAuthorizationException;
 
     private async Task SetTerminalStatusAsync(
         WorkspaceRunState state,

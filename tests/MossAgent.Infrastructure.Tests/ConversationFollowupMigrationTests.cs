@@ -19,7 +19,7 @@ public sealed class ConversationFollowupMigrationTests
         await fixture.ExecuteAsync("""
             DROP TABLE conversation_followups;
             DROP TABLE conversation_followup_queues;
-            DELETE FROM schema_versions WHERE version>=23;
+            DROP TRIGGER project_authorization_changed; ALTER TABLE projects DROP COLUMN authorization_revision; DELETE FROM schema_versions WHERE version>=23;
             CREATE TRIGGER reject_followup_version BEFORE INSERT ON schema_versions
             WHEN NEW.version=23 BEGIN SELECT RAISE(ABORT,'synthetic follow-up migration failure'); END;
             """);
@@ -31,7 +31,7 @@ public sealed class ConversationFollowupMigrationTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_followup_version;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(25, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(28, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(2, await fixture.CountAsync("SELECT COUNT(*) FROM sqlite_master WHERE name IN ('conversation_followups','conversation_followup_queues');"));
         Assert.Equal(fixture.Task, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Task.ProjectId, fixture.Token)));
         Assert.Equal(message, Assert.Single(await fixture.Repository.GetMessagesAsync(fixture.Task.Id, fixture.Token)));

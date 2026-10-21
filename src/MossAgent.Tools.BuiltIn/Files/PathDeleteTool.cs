@@ -1,12 +1,14 @@
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Files;
+using MossAgent.Tools.BuiltIn.Resources;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class PathDeleteTool(AuthorizedPathResolver paths) : IAgentTool, IToolRequestPrevalidator
+public sealed class PathDeleteTool(AuthorizedPathResolver paths, IPathDeleteSessionFactory? sessions = null) : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "filesystem.delete_path",
-        "删除授权目录内的文件或目录；递归删除必须显式启用。",
+        ToolExecutionText.Get("DeleteDescription"),
         """{"type":"object","required":["path"],"properties":{"path":{"type":"string"},"recursive":{"type":"boolean"}}}""",
         ToolRiskLevel.HighRisk,
         ToolCapability.FileWrite);
@@ -17,7 +19,7 @@ public sealed class PathDeleteTool(AuthorizedPathResolver paths) : IAgentTool, I
         paths.RejectAuthorizedRootMutation(path, context);
     }
 
-    public Task<ToolResult> ExecuteAsync(
+    public async Task<ToolResult> ExecuteAsync(
         ToolRequest request,
         ToolExecutionContext context,
         CancellationToken cancellationToken)
@@ -26,21 +28,8 @@ public sealed class PathDeleteTool(AuthorizedPathResolver paths) : IAgentTool, I
         var path = paths.Resolve(request.Arguments.GetRequiredString("path"), context);
         paths.RejectAuthorizedRootMutation(path, context);
 
-        if (File.Exists(path))
-        {
-            File.Delete(path);
-            context.FileSnapshots.Forget(context.TaskId, FileSnapshotReader.CacheKey(path));
-            return Task.FromResult(ToolResult.Success($"已删除文件：{path}"));
-        }
-
-        if (!Directory.Exists(path))
-        {
-            return Task.FromResult(ToolResult.Failure("目标路径不存在。", "path_not_found"));
-        }
-
         var recursive = request.Arguments.GetOptionalBoolean("recursive") ?? false;
-        Directory.Delete(path, recursive);
-        context.FileSnapshots.Forget(context.TaskId, FileSnapshotReader.CacheKey(path));
-        return Task.FromResult(ToolResult.Success($"已删除目录：{path}"));
+        var count = await new PathDeletion(paths, sessions).DeleteAsync(path, recursive, null, context, cancellationToken);
+        return ToolResult.Success(ToolExecutionText.Format("DeleteCompleted", count));
     }
 }

@@ -5,7 +5,7 @@ namespace MossAgent.Application.Git;
 
 public sealed class ManagedWorktreeWorkspaceGuard(
     IGitWorktreeService worktrees, ProjectProfile project, Guid ownerTaskId, string worktreePath,
-    IReadOnlyList<string> authorizedRoots) : ITaskWorkspaceGuard
+    IReadOnlyList<string> authorizedRoots) : ITaskWorkspaceLeaseProvider
 {
     private readonly ProjectProfile _project = project with { AuthorizedDirectories = project.AuthorizedDirectories.ToArray() };
     private readonly string[] _roots = authorizedRoots.ToArray();
@@ -19,9 +19,26 @@ public sealed class ManagedWorktreeWorkspaceGuard(
         ValidateContext(context);
     }
 
+    public async Task<ITaskWorkspaceLease> AcquireAsync(ToolExecutionContext context, CancellationToken cancellationToken)
+    {
+        ValidateContext(context);
+        var lease = worktrees is IGitWorktreeAuthorizationService authorization
+            ? await authorization.AcquireAsync(_project, ownerTaskId, worktreePath, cancellationToken).ConfigureAwait(false)
+            : await AcquireCompatibilityAsync(context, cancellationToken).ConfigureAwait(false);
+        try { ValidateContext(context); cancellationToken.ThrowIfCancellationRequested(); return lease; }
+        catch { await lease.DisposeAsync().ConfigureAwait(false); throw; }
+    }
+
+    private async Task<ITaskWorkspaceLease> AcquireCompatibilityAsync(ToolExecutionContext context, CancellationToken token)
+    {
+        await ValidateAsync(context, token).ConfigureAwait(false);
+        return new WorktreeRootLease(_project.Id, _project.AuthorizationRevision, null);
+    }
+
     private void ValidateContext(ToolExecutionContext context)
     {
-        if (!Comparer.Equals(context.WorkingDirectory, worktreePath) || !_roots.SequenceEqual(context.AuthorizedRoots, Comparer))
+        if (context.TaskId != ownerTaskId || !Comparer.Equals(context.WorkingDirectory, worktreePath)
+            || !_roots.SequenceEqual(context.AuthorizedRoots, Comparer))
             throw new UnauthorizedAccessException("The tool context no longer matches its managed workspace authorization.");
     }
 }

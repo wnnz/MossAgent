@@ -50,7 +50,7 @@ public sealed class RestoredWorktreeAuthorizationTests
         Assert.NotNull(context.WorkspaceGuard);
         var result = await reopened.GetRequiredService<IToolExecutor>().ExecuteAsync(new("forged-root", "filesystem.read_file",
             JsonSerializer.SerializeToElement(new { path = "README.md" })), context, fixture.Token);
-        Assert.Equal("workspace_denied", result.ErrorCode);
+        Assert.Equal(location == "revoked" ? "workspace_authorization_changed" : "workspace_denied", result.ErrorCode);
         Assert.DoesNotContain("committed baseline", result.Content ?? string.Empty);
         var previews = reopened.GetRequiredService<FilePreviewPaneViewModel>();
         await previews.OpenAsync("README.md", fixture.Token);
@@ -62,7 +62,7 @@ public sealed class RestoredWorktreeAuthorizationTests
         var terminal = reopened.GetRequiredService<TerminalPaneViewModel>();
         Assert.True(terminal.StartCommand.CanExecute(null));
         await terminal.StartCommand.ExecuteAsync(null);
-        Assert.Equal(InspectorText.Get("TerminalPathDenied"), terminal.Status);
+        Assert.Equal(InspectorText.Get(location == "revoked" ? "TerminalAuthorizationChanged" : "TerminalPathDenied"), terminal.Status);
         var terminalStates = Assert.IsAssignableFrom<ITerminalStateSource>(reopened.GetRequiredService<ITerminalSessionManager>());
         Assert.Null(terminalStates.GetSnapshot(task.Id));
         using var branchProbe = new RepositoryStatusProbe();
@@ -109,8 +109,7 @@ public sealed class RestoredWorktreeAuthorizationTests
     {
         var fixture = owner.Fixture;
         var taskId = Guid.NewGuid();
-        var path = await new GitWorktreeService(new AppDataPaths(fixture.DataRoot), fixture.Git)
-            .CreateAsync(owner.Project, taskId, fixture.Token);
+        var path = await fixture.Worktrees.CreateAsync(owner.Project, taskId, fixture.Token);
         var now = DateTimeOffset.UtcNow;
         var task = new AgentTask(taskId, owner.Project.Id, "restored fixture", approvalPolicy,
             AgentTaskStatus.Completed, now, now, path);

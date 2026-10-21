@@ -112,12 +112,12 @@ public sealed class SqliteConversationPreferenceTests
         var message = new ConversationMessage(Guid.NewGuid(), fixture.Task.Id, MessageRole.Assistant, "preserved", DateTimeOffset.UtcNow);
         await fixture.Repository.AppendMessageAsync(message, fixture.Token);
         await fixture.Repository.SetTaskPinnedAsync(fixture.Task.Id, true, fixture.Token);
-        await fixture.ExecuteAsync("DROP TABLE conversation_model_preferences; DELETE FROM schema_versions WHERE version>=11;");
+        await fixture.ExecuteAsync("DROP TABLE conversation_model_preferences; DROP TRIGGER project_authorization_changed; ALTER TABLE projects DROP COLUMN authorization_revision; DELETE FROM schema_versions WHERE version>=11;");
 
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(25, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(28, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(fixture.Task with { IsPinned = true }, Assert.Single(await fixture.Repository.GetPinnedTasksAsync(fixture.Token)));
         Assert.Equal(message, Assert.Single(await fixture.Repository.GetMessagesAsync(fixture.Task.Id, fixture.Token)));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_model_preferences;"));
@@ -129,7 +129,7 @@ public sealed class SqliteConversationPreferenceTests
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
         await fixture.ExecuteAsync("""
             DROP TABLE conversation_model_preferences;
-            DELETE FROM schema_versions WHERE version>=11;
+            DROP TRIGGER project_authorization_changed; ALTER TABLE projects DROP COLUMN authorization_revision; DELETE FROM schema_versions WHERE version>=11;
             CREATE TRIGGER reject_version_eleven BEFORE INSERT ON schema_versions
             WHEN NEW.version=11 BEGIN SELECT RAISE(FAIL, 'synthetic migration failure'); END;
             """);
@@ -140,6 +140,6 @@ public sealed class SqliteConversationPreferenceTests
         Assert.Equal(fixture.Task, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)));
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_eleven;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(25, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(28, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
     }
 }

@@ -49,10 +49,7 @@ public sealed class WorkspaceFollowupStatisticsLifetimeTests : IAsyncLifetime
             && approval.CurrentRequestId is { } id && approval.ApproveCommand.CanExecute(id));
         approval.ApproveCommand.Execute(approval.CurrentRequestId);
         await fixture.WaitUntilAsync(() => fixture.Server.Requests.Count == 4 && !workspace.IsRunning && !workspace.Queue.IsBusy);
-        var superseded = Assert.Single(Assert.IsAssignableFrom<IReadOnlyList<ToolExecutionAuditRecord>>(replaced),
-            item => item.ToolName == "filesystem.change_statistics");
-        Assert.False(superseded.IsSuccess);
-        Assert.Equal("tool_cancelled", superseded.ErrorCode);
+        var superseded = AssertSupersededSnapshot(Assert.IsAssignableFrom<IReadOnlyList<ToolExecutionAuditRecord>>(replaced), taskId);
         if (failCurrent)
         {
             var error = await Assert.ThrowsAsync<EqualException>(() => WorkspaceFollowupAuditAssertions.ReadWriteAsync(fixture, taskId, true));
@@ -74,6 +71,32 @@ public sealed class WorkspaceFollowupStatisticsLifetimeTests : IAsyncLifetime
         await workspace.ShutdownAsync();
     }, TestContext.Current.CancellationToken);
 
+    private static ToolExecutionAuditRecord AssertSupersededSnapshot(IReadOnlyList<ToolExecutionAuditRecord> audits, Guid taskId)
+    {
+        Assert.Equal(3, audits.Count);
+        Assert.Equal(3, audits.Select(item => item.Id).Distinct().Count());
+        Assert.Equal(3, audits.Select(item => item.CallId).Distinct().Count());
+        Assert.All(audits, item => { Assert.Equal(taskId, item.TaskId); Assert.Null(item.InterruptedAt); });
+        var write = Assert.Single(audits, item => item.ToolName == "filesystem.write_file");
+        Assert.True(write.IsSuccess);
+        Assert.NotNull(write.CompletedAt);
+        var statistics = audits.Where(item => item.Id != write.Id).ToArray();
+        Assert.All(statistics, item =>
+        {
+            Assert.Equal("filesystem.change_statistics", item.ToolName);
+            Assert.StartsWith("statistics-", item.CallId, StringComparison.Ordinal);
+            Assert.Equal(ToolRiskLevel.ReadOnly, item.RiskLevel);
+            Assert.Equal(ApprovalPolicy.AskEveryTime, item.ApprovalPolicy);
+        });
+        var superseded = Assert.Single(statistics, item => item.ErrorCode == "tool_cancelled");
+        Assert.False(superseded.IsSuccess);
+        Assert.True(superseded.ApprovalGranted);
+        Assert.NotNull(superseded.CompletedAt);
+        var current = Assert.Single(statistics, item => item.Id != superseded.Id);
+        Assert.True(superseded.CompletedAt <= current.StartedAt);
+        return superseded;
+    }
+
     private static void AssertInvalidSnapshotsFail(IReadOnlyList<ToolExecutionAuditRecord> audits, Guid taskId,
         ToolExecutionAuditRecord superseded)
     {
@@ -90,7 +113,8 @@ public sealed class WorkspaceFollowupStatisticsLifetimeTests : IAsyncLifetime
         while (true)
         {
             var audits = fixture.ToolAudits.GetRecentAsync(fixture.Workspace.Catalog.SelectedTask!.Id, 10, fixture.Token).GetAwaiter().GetResult();
-            if (audits.Any(item => item.ErrorCode == "tool_cancelled")) return audits;
+            if (audits.Any(item => item.ErrorCode == "tool_cancelled")
+                && audits.Count(item => item.ToolName == "filesystem.change_statistics") >= 2) return audits;
             Task.Delay(1, fixture.Token).GetAwaiter().GetResult();
         }
     }

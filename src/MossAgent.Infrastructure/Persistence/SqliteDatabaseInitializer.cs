@@ -44,6 +44,9 @@ public sealed class SqliteDatabaseInitializer(
         await ApplyVersionAsync(connection, 23, ConversationFollowupDatabaseSchema.VersionTwentyThree, cancellationToken);
         await ApplyVersionAsync(connection, 24, ToolInterruptionDatabaseSchema.VersionTwentyFour, cancellationToken);
         await ApplyVersionAsync(connection, 25, ConversationSteeringDatabaseSchema.VersionTwentyFive, cancellationToken);
+        await ApplyVersionAsync(connection, 26, ProjectAuthorizationDatabaseSchema.VersionTwentySix, cancellationToken);
+        await ApplyVersionAsync(connection, 27, RootObjectAuthorizationDatabaseSchema.VersionTwentySeven, cancellationToken);
+        await ApplyVersionAsync(connection, 28, WorktreeRootAuthorizationDatabaseSchema.VersionTwentyEight, cancellationToken);
         await SqliteInterruptedWorkRecovery.RecoverAsync(connection, cancellationToken);
     }
 
@@ -74,6 +77,8 @@ public sealed class SqliteDatabaseInitializer(
         migration.Transaction = transaction;
         migration.CommandText = schema;
         await migration.ExecuteNonQueryAsync(cancellationToken);
+        if (Convert.ToInt64(await existing.ExecuteScalarAsync(cancellationToken)) != 1)
+            throw new InvalidOperationException("Workspace migration did not persist its version.");
         await transaction.CommitAsync(cancellationToken);
     }
 }

@@ -1,14 +1,17 @@
 using System.Security.Cryptography;
+using MossAgent.Browser.Artifacts;
+using MossAgent.Browser.Resources;
 using MossAgent.Tools.Abstractions;
 using MossAgent.Tools.Abstractions.Browser;
+using MossAgent.Tools.Abstractions.Files;
 
 namespace MossAgent.Browser.Tools;
 
-public sealed class BrowserDownloadTool : IAgentTool
+public sealed class BrowserDownloadTool(IArtifactFileSessionFactory? artifactSessions = null) : IAgentTool
 {
     public ToolDescriptor Descriptor { get; } = new(
         "browser.download",
-        "点击页面元素并将浏览器下载保存为任务产物。",
+        BrowserToolText.Get("DownloadDescription"),
         """{"type":"object","required":["selector"],"properties":{"selector":{"type":"string"}}}""",
         ToolRiskLevel.ExternalSideEffect,
         ToolCapability.Network | ToolCapability.FileWrite | ToolCapability.BrowserWrite);
@@ -18,6 +21,12 @@ public sealed class BrowserDownloadTool : IAgentTool
         ToolExecutionContext context,
         CancellationToken cancellationToken)
     {
+        if (artifactSessions is not null)
+        {
+            var artifact = await new BrowserArtifactWriter(artifactSessions).DownloadAsync(context,
+                request.Arguments.GetRequiredString("selector"), cancellationToken);
+            return new(true, BrowserToolText.Get("DownloadSaved"), Artifacts: [artifact]);
+        }
         var session = context.BrowserSession
             ?? throw new InvalidOperationException("当前任务没有绑定浏览器会话。");
         var directory = context.ArtifactDirectory

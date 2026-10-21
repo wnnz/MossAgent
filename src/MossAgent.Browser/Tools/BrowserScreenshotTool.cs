@@ -1,13 +1,16 @@
 using System.Security.Cryptography;
+using MossAgent.Browser.Artifacts;
+using MossAgent.Browser.Resources;
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Files;
 
 namespace MossAgent.Browser.Tools;
 
-public sealed class BrowserScreenshotTool : IAgentTool
+public sealed class BrowserScreenshotTool(IArtifactFileSessionFactory? artifactSessions = null) : IAgentTool
 {
     public ToolDescriptor Descriptor { get; } = new(
         "browser.screenshot",
-        "截取当前浏览器页面并保存为任务产物。",
+        BrowserToolText.Get("ScreenshotDescription"),
         """{"type":"object","properties":{"fullPage":{"type":"boolean"}}}""",
         ToolRiskLevel.ReadOnly,
         ToolCapability.BrowserRead | ToolCapability.ScreenCapture);
@@ -17,6 +20,12 @@ public sealed class BrowserScreenshotTool : IAgentTool
         ToolExecutionContext context,
         CancellationToken cancellationToken)
     {
+        if (artifactSessions is not null)
+        {
+            var ownedArtifact = await new BrowserArtifactWriter(artifactSessions).ScreenshotAsync(context,
+                request.Arguments.GetOptionalBoolean("fullPage") ?? false, cancellationToken);
+            return new(true, BrowserToolText.Get("ScreenshotSaved"), Artifacts: [ownedArtifact]);
+        }
         var session = context.BrowserSession
             ?? throw new InvalidOperationException("当前任务没有绑定浏览器会话。");
         var directory = context.ArtifactDirectory

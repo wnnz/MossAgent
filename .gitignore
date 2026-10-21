@@ -8,6 +8,8 @@ TestResults/
 artifacts/
 !src/MossAgent.Application/Artifacts/
 src/MossAgent.Application/Artifacts/*/
+!src/MossAgent.Browser/Artifacts/
+src/MossAgent.Browser/Artifacts/*/
 publish/
 *.db
 *.db-shm

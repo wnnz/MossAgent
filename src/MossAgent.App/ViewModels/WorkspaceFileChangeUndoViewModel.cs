@@ -72,6 +72,7 @@ public sealed class WorkspaceFileChangeUndoViewModel : ObservableObject, IDispos
         && !_catalog.IsLocked && !_summary.IsIncomplete && _summary.Files.Count > 0
         && _catalog.SelectedTask is { } task && _catalog.SelectedProject?.Id == task.ProjectId
         && _catalog.IsTaskRunning?.Invoke(task.Id) != true && !_catalog.TaskManagement.BlocksTaskStart(task.Id)
+        && !_catalog.WorktreeAuthorization.BlocksTaskStart(task.Id)
         && _summary.Files.All(file => file.Change.IsValid
             && (file.Change.BeforeSha256 is null || file.Change.BeforeSnapshot is not null)
             && (file.Change.AfterSha256 is null || file.Change.AfterSnapshot is not null))

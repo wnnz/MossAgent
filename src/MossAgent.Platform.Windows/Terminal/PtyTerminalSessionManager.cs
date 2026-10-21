@@ -1,8 +1,10 @@
 using MossAgent.Tools.Abstractions.Terminal;
+using MossAgent.Tools.Abstractions;
+using MossAgent.Domain;
 
 namespace MossAgent.Platform.Windows.Terminal;
 
-public sealed class PtyTerminalSessionManager : ITerminalSessionManager, ITerminalStateSource, ITerminalSessionControl
+public sealed class PtyTerminalSessionManager : ITerminalSessionManager, ITerminalStateSource, ITerminalSessionControl, IAuthorizedTerminalSessionManager
 {
     private readonly object _sync = new();
     private readonly Dictionary<Guid, PtyTerminalOwner> _sessions = [];
@@ -19,7 +21,27 @@ public sealed class PtyTerminalSessionManager : ITerminalSessionManager, ITermin
     { add => _states.StateChanged += value; remove => _states.StateChanged -= value; }
     public TerminalSessionSnapshot? GetSnapshot(Guid taskId) => _states.GetSnapshot(taskId);
 
-    public async Task StartAsync(Guid taskId, string workingDirectory, CancellationToken cancellationToken)
+    public Task StartAsync(Guid taskId, string workingDirectory, CancellationToken cancellationToken) =>
+        StartCoreAsync(taskId, workingDirectory, cancellationToken, null);
+
+    public async Task StartAuthorizedAsync(ToolExecutionContext context, CancellationToken cancellationToken)
+    {
+        if (context.WorkspaceGuard is not ITaskWorkspaceLeaseProvider provider) throw new WorkspaceAuthorizationException();
+        var lease = await provider.AcquireAsync(context, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            using var startup = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lease.Revocation);
+            await StartCoreAsync(context.TaskId, context.WorkingDirectory, startup.Token, lease).ConfigureAwait(false);
+        }
+        finally
+        {
+            bool retained;
+            lock (_sync) retained = ReferenceEquals(_sessions.GetValueOrDefault(context.TaskId)?.Authorization, lease);
+            if (!retained) await lease.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
+    private async Task StartCoreAsync(Guid taskId, string workingDirectory, CancellationToken cancellationToken, ITaskWorkspaceLease? authorization)
     {
         cancellationToken.ThrowIfCancellationRequested();
         ArgumentException.ThrowIfNullOrWhiteSpace(workingDirectory);
@@ -36,12 +58,15 @@ public sealed class PtyTerminalSessionManager : ITerminalSessionManager, ITermin
             if (created)
             {
                 PtyTerminalOwner? captured = null;
-                owner = new PtyTerminalOwner(workingDirectory, _start, output => Publish(taskId, captured!, output));
+                owner = new PtyTerminalOwner(workingDirectory, _start, output => Publish(taskId, captured!, output), authorization);
                 captured = owner;
                 _sessions.Add(taskId, owner);
+                owner.ObserveAuthorization(() => StopRevokedAsync(taskId, owner));
                 snapshot = _states.Record(taskId, owner.SessionId, TerminalSessionState.Starting);
             }
             else owner = existing!;
+            if (authorization is not null && (owner.Authorization?.ProjectId != authorization.ProjectId
+                || owner.Authorization.Revision != authorization.Revision)) throw new WorkspaceAuthorizationException();
             if (!string.Equals(owner.WorkingDirectory, workingDirectory, StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException(nameof(workingDirectory));
             starting = owner.Start(cancellationToken);
@@ -67,8 +92,10 @@ public sealed class PtyTerminalSessionManager : ITerminalSessionManager, ITermin
             {
                 try
                 {
+                    // Lease revocation can precede delivery to the linked startup token.
+                    var stopped = cancellationToken.IsCancellationRequested || owner.IsStopping || owner.Authorization?.IsRevoked == true;
                     await RetireAsync(taskId, owner,
-                        cancellationToken.IsCancellationRequested || owner.IsStopping ? TerminalSessionState.Stopped : TerminalSessionState.Failed).ConfigureAwait(false);
+                        stopped ? TerminalSessionState.Stopped : TerminalSessionState.Failed).ConfigureAwait(false);
                 }
                 finally { await owner.Observation.ConfigureAwait(false); }
             }
@@ -124,6 +151,12 @@ public sealed class PtyTerminalSessionManager : ITerminalSessionManager, ITermin
         PtyTerminalOwner? owner;
         lock (_sync) _sessions.TryGetValue(taskId, out owner);
         if (owner is not null) await StopAndObserveAsync(taskId, owner).ConfigureAwait(false);
+    }
+
+    private async Task StopRevokedAsync(Guid taskId, PtyTerminalOwner owner)
+    {
+        try { await StopAndObserveAsync(taskId, owner).ConfigureAwait(false); }
+        catch (Exception) { /* Retirement retains CleanupFailed in the task-owned state registry. */ }
     }
 
     public ValueTask DisposeAsync()

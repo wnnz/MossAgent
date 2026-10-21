@@ -52,7 +52,11 @@ public sealed class WorkspaceFollowupDispatchRaceTests
         Assert.Equal(AgentTaskStatus.Completed, workspace.Catalog.SelectedTask?.Status);
         Assert.Contains(changeProject ? "授权目录已变化" : "模型或提供商不可用", workspace.Queue.Notice);
         probe.Dispatching = null;
-        if (changeProject) await fixture.Tasks.SaveProjectAsync(originalProject!, fixture.Token);
+        if (changeProject)
+        {
+            var current = Assert.Single(await fixture.Tasks.GetProjectsAsync(fixture.Token), project => project.Id == originalProject!.Id);
+            await fixture.Tasks.SaveProjectAsync(originalProject! with { AuthorizationRevision = current.AuthorizationRevision }, fixture.Token);
+        }
         else await fixture.SetSelectedModelEnabledAsync(true);
         await workspace.Queue.ContinueCommand.ExecuteAsync(null);
         await fixture.WaitUntilAsync(() => !workspace.IsRunning && fixture.Server.Requests.Count == 2

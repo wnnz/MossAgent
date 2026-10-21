@@ -46,6 +46,7 @@ internal sealed class WorkspaceModelSelectionFixture : IAsyncDisposable
     public AutomationScheduler Scheduler => _services!.GetRequiredService<AutomationScheduler>();
     public IAutomationRepository Automations => _services!.GetRequiredService<IAutomationRepository>();
     public MossAgent.Infrastructure.Git.GitProcessRunner Git => _services!.GetRequiredService<MossAgent.Infrastructure.Git.GitProcessRunner>();
+    public MossAgent.Application.Git.IGitWorktreeService Worktrees => _services!.GetRequiredService<MossAgent.Application.Git.IGitWorktreeService>();
     public WorkspaceTaskPanelCoordinator Panels => _services!.GetRequiredService<WorkspaceTaskPanelCoordinator>();
     public MossAgent.Tools.Abstractions.IToolExecutor Tools => _services!.GetRequiredService<MossAgent.Tools.Abstractions.IToolExecutor>();
     public MossAgent.Tools.Abstractions.IToolExecutionAuditReader ToolAudits => _services!.GetRequiredService<MossAgent.Tools.Abstractions.IToolExecutionAuditReader>();

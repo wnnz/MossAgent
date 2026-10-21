@@ -18,7 +18,7 @@ public sealed class SourceRepositoryGrantTests
         await fixture.ExecuteAsync("""
             DROP TABLE source_review_sessions; DROP TABLE source_repository_grants; DROP TABLE source_repository_revocations;
             DROP TABLE source_review_chats; DROP TRIGGER source_review_chat_environment;
-            DELETE FROM schema_versions WHERE version>=19;
+            DROP TRIGGER project_authorization_changed; ALTER TABLE projects DROP COLUMN authorization_revision; DELETE FROM schema_versions WHERE version>=19;
             CREATE TRIGGER reject_nineteen BEFORE INSERT ON schema_versions WHEN NEW.version=19
             BEGIN SELECT RAISE(FAIL,'fixture failure'); END;
             """);
@@ -27,7 +27,7 @@ public sealed class SourceRepositoryGrantTests
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM sqlite_master WHERE name='source_repository_grants';"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_nineteen;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(25, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(28, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(account.AccessToken, (await accounts.GetAsync(account.Id, fixture.Token))!.AccessToken);
         Assert.Equal(fixture.Task.Id, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)).Id);
     }

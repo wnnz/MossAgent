@@ -168,7 +168,15 @@
   <data name="CancelPreparationLabel" xml:space="preserve"><value>取消发送准备</value></data>
   <data name="CancellingPreparationLabel" xml:space="preserve"><value>正在取消发送准备</value></data>
   <data name="PreparationCancelled" xml:space="preserve"><value>已取消发送准备，输入内容和附件已保留。</value></data>
-  <data name="TaskEnvironmentAuthorizationFailure" xml:space="preserve"><value>工作树授权校验未通过，消息尚未发送。请检查任务对应的工作树、项目授权目录和 Git 元数据，确认路径未被移动或替换后重试。</value></data>
+  <data name="TaskEnvironmentAuthorizationFailure" xml:space="preserve"><value>工作树授权校验未通过，消息尚未发送。请检查项目授权、工作树及 Git 注册关系后重试。</value></data>
+  <data name="WorktreeObjectConfirm" xml:space="preserve"><value>确认授权此旧工作树目录</value></data>
+  <data name="WorktreeObjectRefresh" xml:space="preserve"><value>刷新工作树授权</value></data>
+  <data name="WorktreeObjectChecking" xml:space="preserve"><value>正在核对工作树授权…</value></data>
+  <data name="WorktreeObjectEnrolled" xml:space="preserve"><value>已登记工作树目录对象；执行时仍会核对。若目录对象已替换，请恢复原对象或新建任务。</value></data>
+  <data name="WorktreeObjectLegacyNotice" xml:space="preserve"><value>此旧工作树尚未登记目录对象。核对上方完整路径后，可明确授权当前目录；确认不会继续任务或重放命令。</value></data>
+  <data name="WorktreeObjectFailure" xml:space="preserve"><value>无法确认工作树。请停止任务并刷新；核对项目授权与 Git 注册关系。已登记目录不可重新认领替换对象，应恢复原对象或新建任务。</value></data>
+  <data name="WorktreeObjectCancelled" xml:space="preserve"><value>工作树授权检查已取消或超时。请刷新授权状态；不会自动继续任务。</value></data>
+  <data name="WorktreeObjectRunFailure" xml:space="preserve"><value>工作树未确认或目录对象已变更，消息尚未发送。旧工作树请在输入区下方核对路径并确认；已登记对象变更时请恢复原对象或新建任务。</value></data>
   <data name="PreparationFinalizationFailure" xml:space="preserve"><value>消息可能已经保存，但取消状态尚未确认（任务：{0}）。请先刷新并检查该对话，再决定是否继续；不要重复发送。</value></data>
   <data name="PreparationCommittedCancelled" xml:space="preserve"><value>消息已保存，执行已取消；如需继续，请手动发送后续消息。</value></data>
 <data name="FollowupTitle" xml:space="preserve"><value>待发送（{0}）</value></data>
@@ -217,4 +225,5 @@
 <data name="SteeringPending" xml:space="preserve"><value>已接收，等待当前请求和工具批次结束</value></data>
 <data name="SteeringApplied" xml:space="preserve"><value>已加入本地模型输入；不代表服务端接收或处理成功</value></data>
 <data name="SteeringInterrupted" xml:space="preserve"><value>已中断，未自动加入后续运行</value></data>
+<data name="TaskFailureWorkspaceAuthorizationChanged" xml:space="preserve"><value>项目目录授权已变更，本次运行已停止。已发生的操作不会自动撤销或重跑；请核实结果、刷新项目后手动继续。</value></data>
 </root>

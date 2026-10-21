@@ -6,7 +6,6 @@ using MossAgent.Application.Persistence;
 using MossAgent.App.Services;
 using MossAgent.Domain;
 namespace MossAgent.App.ViewModels;
-
 public sealed class WorkspaceCatalogViewModel : ObservableObject
 {
     private readonly IWorkspaceRepository _workspaces;
@@ -19,7 +18,6 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     private Guid? _cleanupConfirmationTaskId;
     private readonly WorkspaceNavigationController _navigation;
     private readonly Dictionary<Guid, AgentTask> _projectlessTasks = [];
-    /// <summary>跨项目导航时，待目标项目任务载入后需要选中的任务。</summary>
     private Guid? _pendingTaskId;
     private bool _pendingEmptySession;
     private int _loadVersion;
@@ -32,6 +30,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         _workspaces = workspaces;
         _thumbnails = thumbnails;
         _worktreeCleanup = worktreeCleanup;
+        WorktreeAuthorization = new(worktreeCleanup.Authorizations);
         ProjectEditor = new WorkspaceProjectEditorViewModel(projectService);
         ProjectEditor.ProjectCreated += AddProject;
         ProjectEditor.ProjectUpdated += UpdateProject;
@@ -41,7 +40,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         TaskSearch.PropertyChanged += HandleTaskSearchPropertyChanged;
         TaskManagement = new WorkspaceTaskManagementViewModel(workspaces)
         {
-            IsTaskRunning = taskId => IsTaskRunning?.Invoke(taskId) == true
+            IsTaskRunning = taskId => IsTaskRunning?.Invoke(taskId) == true || WorktreeAuthorization.BlocksTaskStart(taskId)
         };
         TaskManagement.TaskRenamed += task => UpsertTask(task, select: SelectedTask?.Id == task.Id);
         TaskManagement.TaskArchived += ArchiveTask;
@@ -65,7 +64,6 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public Func<Guid, IReadOnlyList<ChatMessageViewModel>?>? ActiveMessagesProvider { get; set; }
     public Func<Guid, bool>? IsTaskRunning { get; set; }
     public ObservableCollection<ProjectProfile> Projects { get; } = [];
-    /// <summary>侧栏中各项目与其未归档任务的连续导航列表。</summary>
     public ObservableCollection<WorkspaceProjectNavigationViewModel> ProjectNavigation { get; } = [];
     public ObservableCollection<AgentTask> Tasks => TaskSearch.Results;
     public ObservableCollection<ChatMessageViewModel> Messages { get; } = [];
@@ -75,13 +73,12 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public WorkspaceRecentTasksViewModel RecentTasks { get; }
     public WorkspaceTaskManagementViewModel TaskManagement { get; }
     public WorkspaceTaskEnvironmentViewModel Environment { get; } = new();
+    public WorkspaceWorktreeAuthorizationViewModel WorktreeAuthorization { get; }
     public IRelayCommand NewTaskCommand { get; }
     public IRelayCommand NewChatCommand { get; }
     public string ProjectlessChatLabel => WorkspaceText.Get(nameof(ProjectlessChatLabel));
-    /// <summary>在侧栏切换当前项目的命令。</summary>
     public IRelayCommand<ProjectProfile> SelectProjectCommand { get; }
     public IRelayCommand<WorkspaceProjectNavigationViewModel> EditProjectCommand { get; }
-    /// <summary>从任意项目的侧栏条目打开任务的命令。</summary>
     public IRelayCommand<AgentTask> SelectTaskCommand { get; }
     public IRelayCommand NavigateBackCommand { get; }
     public IRelayCommand NavigateForwardCommand { get; }
@@ -136,6 +133,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
                 _navigation.NotifyAvailabilityChanged();
                 CleanupWorktreeCommand.NotifyCanExecuteChanged();
                 TaskManagement.NotifyTaskRunStateChanged();
+                RefreshWorktreeAuthorization();
             }
         }
     }
@@ -338,7 +336,8 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         if (index < 0) return;
         Projects[index] = project;
         ProjectNavigation.FindProjectGroup(project.Id)?.UpdateProject(project);
-        if (SelectedProject?.Id == project.Id) SelectedProject = project;
+        if (SelectedProject?.Id == project.Id &&
+            SetProperty(ref _selectedProject, project, nameof(SelectedProject))) NotifySelectionChanged();
     }
     private async Task LoadTasksAsync(ProjectProfile? project, int version)
     {
@@ -405,18 +404,23 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     private void NotifySelectionChanged()
     {
         Environment.SetContext(SelectedProject, SelectedTask);
+        RefreshWorktreeAuthorization();
         SelectionChanged?.Invoke();
     }
     private bool CanCleanupWorktree() =>
         !_isLocked
         && !string.IsNullOrWhiteSpace(SelectedTask?.WorktreePath)
+        && (SelectedTask is null || !WorktreeAuthorization.BlocksTaskStart(SelectedTask.Id))
         && (SelectedTask is null || IsTaskRunning?.Invoke(SelectedTask.Id) != true);
     public void NotifyTaskRunStateChanged()
     {
+        RefreshWorktreeAuthorization();
         CleanupWorktreeCommand.NotifyCanExecuteChanged();
         TaskManagement.NotifyTaskRunStateChanged();
         TaskRunStateChanged?.Invoke();
     }
+    private void RefreshWorktreeAuthorization() => WorktreeAuthorization.SetContext(SelectedProject, SelectedTask,
+        !IsLocked && (SelectedTask is null || IsTaskRunning?.Invoke(SelectedTask.Id) != true));
     public void ShowActiveMessages(Guid taskId)
     {
         if (SelectedTask?.Id == taskId)

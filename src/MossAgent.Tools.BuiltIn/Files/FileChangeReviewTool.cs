@@ -1,10 +1,12 @@
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Files;
 using MossAgent.Tools.BuiltIn.Git;
 using MossAgent.Tools.BuiltIn.Resources;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class FileChangeReviewTool(AuthorizedPathResolver paths, GitCommandRunner git)
+public sealed class FileChangeReviewTool(AuthorizedPathResolver paths, GitCommandRunner git,
+    IArtifactFileSessionFactory? artifactSessions = null, IDiffInputFileSessionFactory? diffInputs = null)
     : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
@@ -20,7 +22,13 @@ public sealed class FileChangeReviewTool(AuthorizedPathResolver paths, GitComman
     {
         var change = FileChangeRequest.Validate(request, context, paths);
         var (before, after) = await new FileChangeSnapshotReader().ReadChangeAsync(change, context, cancellationToken);
-        var patch = await new FileChangePatchBuilder(git).BuildAsync(change.Path, before, after, context, cancellationToken);
+        if (artifactSessions is not null)
+        {
+            var ownedPatch = await new FileChangePatchBuilder(git, diffInputs).BuildOwnedAsync(change.Path, before, after, context,
+                artifactSessions, token => ValidateFinalAsync(change.Path, context, token), cancellationToken);
+            return new(true, FileToolText.Get("ReviewChangeSummary"), Artifacts: [ownedPatch]);
+        }
+        var patch = await new FileChangePatchBuilder(git, diffInputs).BuildAsync(change.Path, before, after, context, cancellationToken);
         try
         {
             paths.Resolve(change.Path, context);
@@ -28,5 +36,12 @@ public sealed class FileChangeReviewTool(AuthorizedPathResolver paths, GitComman
             return new(true, FileToolText.Get("ReviewChangeSummary"), Artifacts: [patch]);
         }
         catch { FileChangeSnapshotStorage.Delete(Path.GetDirectoryName(patch.Path)!, Path.GetFileName(patch.Path)); throw; }
+    }
+
+    private async Task ValidateFinalAsync(string path, ToolExecutionContext context, CancellationToken token)
+    {
+        await context.ValidateWorkspaceAsync(token);
+        paths.Resolve(path, context);
+        token.ThrowIfCancellationRequested();
     }
 }

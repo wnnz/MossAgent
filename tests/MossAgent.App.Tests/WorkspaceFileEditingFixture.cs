@@ -36,7 +36,9 @@ internal sealed class WorkspaceFileEditingFixture : IAsyncDisposable
     public FileEditingModelServer Server => _server!;
     public Guid TaskId => Workspace.Catalog.SelectedTask!.Id;
 
-    public static async Task<WorkspaceFileEditingFixture> CreateAsync(bool replace, string content, bool escape = false)
+    public static async Task<WorkspaceFileEditingFixture> CreateAsync(
+        bool replace, string content, bool escape = false, Action<IServiceCollection>? configure = null, bool delete = false,
+        Func<string, string, FileEditingMutation>? mutationFactory = null)
     {
         var fixture = new WorkspaceFileEditingFixture();
         try
@@ -44,8 +46,11 @@ internal sealed class WorkspaceFileEditingFixture : IAsyncDisposable
             await File.WriteAllTextAsync(fixture.FilePath, "alpha\n", fixture.Token);
             await File.WriteAllTextAsync(fixture.OutsidePath, "outside sentinel", fixture.Token);
             fixture._server = new FileEditingModelServer(fixture.FilePath,
-                escape ? fixture.OutsidePath : fixture.FilePath, replace, content, fixture.Token);
-            fixture._services = AppComposition.CreateServices(Path.Combine(fixture.Root, "data"));
+                escape ? fixture.OutsidePath : fixture.FilePath, replace, content, fixture.Token, delete,
+                mutationFactory?.Invoke(fixture.ProjectRoot, fixture.FilePath));
+            var services = AppComposition.CreateServiceCollection(Path.Combine(fixture.Root, "data"));
+            configure?.Invoke(services);
+            fixture._services = services.BuildServiceProvider(validateScopes: true);
             await fixture._services.GetRequiredService<IDatabaseInitializer>().InitializeAsync(fixture.Token);
             await fixture.ConfigureModelAsync();
             await fixture._services.GetRequiredService<WorkspaceProjectService>().CreateAsync("File Flow", [fixture.ProjectRoot]);

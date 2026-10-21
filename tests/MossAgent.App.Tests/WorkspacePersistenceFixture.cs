@@ -47,6 +47,8 @@ internal sealed class WorkspacePersistenceFixture : IAsyncDisposable
             await fixture._services.GetRequiredService<IDatabaseInitializer>().InitializeAsync(fixture.Token);
             fixture.Project = new ProjectProfile(Guid.NewGuid(), "atomic fixture", fixture._root, [fixture._root], DateTimeOffset.UtcNow);
             await fixture.Repository.SaveProjectAsync(fixture.Project, fixture.Token);
+            fixture.Project = Assert.Single(await fixture.Repository.GetProjectsAsync(fixture.Token));
+            Assert.Single(fixture.Project.RootAuthorizations);
             fixture.Task = await fixture.Factory.CreateAsync(fixture.Project, "initial prompt", ApprovalPolicy.ReadOnly, false, fixture.Token);
             return fixture;
         }

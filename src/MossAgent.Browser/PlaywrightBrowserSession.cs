@@ -171,21 +171,8 @@ public sealed class PlaywrightBrowserSession : IBrowserSession
     public Task<BrowserDownloadInfo> DownloadAsync(
         string selector,
         Stream destination,
-        CancellationToken cancellationToken) => _operations.RunAsync(async () =>
-    {
-        var download = await _page.RunAndWaitForDownloadAsync(
-            () => _page.Locator(selector).ClickAsync(),
-            new PageRunAndWaitForDownloadOptions { Timeout = 60_000 });
-        var failure = await download.FailureAsync();
-        if (!string.IsNullOrWhiteSpace(failure))
-        {
-            throw new InvalidOperationException($"浏览器下载失败：{failure}");
-        }
-
-        await using var source = await download.CreateReadStreamAsync();
-        await source.CopyToAsync(destination, cancellationToken);
-        return new BrowserDownloadInfo(download.SuggestedFilename);
-    }, cancellationToken);
+        CancellationToken cancellationToken) => _operations.RunAsync(
+            () => PlaywrightDownloadTransfer.RunAsync(_page, selector, destination, cancellationToken), cancellationToken);
 
     public ValueTask DisposeAsync()
     {

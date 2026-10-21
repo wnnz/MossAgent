@@ -13,7 +13,7 @@ public sealed class SqliteAutomationMigrationTests
             DROP TABLE automation_runs;
             DROP TABLE automation_schedules;
             DROP TABLE conversation_model_preferences;
-            DELETE FROM schema_versions WHERE version>=9;
+            DROP TRIGGER project_authorization_changed; ALTER TABLE projects DROP COLUMN authorization_revision; DELETE FROM schema_versions WHERE version>=9;
             CREATE TRIGGER reject_version_nine BEFORE INSERT ON schema_versions
             WHEN NEW.version=9 BEGIN SELECT RAISE(FAIL, 'synthetic migration failure'); END;
             """);
@@ -28,7 +28,7 @@ public sealed class SqliteAutomationMigrationTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(25, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(28, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(2, await fixture.CountAsync("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name LIKE 'automation_%';"));
         Assert.Equal(fixture.Task, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)));
     }

@@ -8,6 +8,7 @@ public sealed class WorkspaceWorktreeCleanupService(
     IWorkspaceRepository workspaces,
     IGitWorktreeService worktrees)
 {
+    public IGitWorktreeAuthorizationService? Authorizations => worktrees as IGitWorktreeAuthorizationService;
     public async Task<AgentTask> CleanupAsync(
         ProjectProfile project,
         AgentTask task,

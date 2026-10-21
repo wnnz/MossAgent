@@ -78,6 +78,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         OpenProjectPickerCommand = new RelayCommand(OpenProjectPicker);
         SetApprovalPolicyCommand = new RelayCommand<ApprovalPolicy>(policy => ApprovalPolicy = policy);
         Catalog.TaskManagement.PropertyChanged += HandleTaskMutationChanged;
+        Catalog.WorktreeAuthorization.PropertyChanged += HandleTaskMutationChanged;
         ConversationPreferences = conversationPreferences is null ? null
             : new WorkspaceConversationPreferences(conversationPreferences, catalog, ModelPicker, AgentPicker);
         _sender = new(taskFactory, runs, runController, panels, catalog, attachments, Drafts, _preparation,
@@ -86,7 +87,8 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         Queue = followups?.Create(this, taskFactory, runs, runController, panels,
             new(PresentEventAsync, SetActivity, ApplyTaskUpdate, NotifyRunStateChanged), () => HasActiveRun && CanSend(true),
             () => !_disposed && Startup.IsReady && !IsRunning && !IsShuttingDown && !FileChanges.Undo.IsBusy
-                && Catalog.SelectedTask is { } task && !Catalog.TaskManagement.BlocksTaskStart(task.Id))
+                && Catalog.SelectedTask is { } task && !Catalog.TaskManagement.BlocksTaskStart(task.Id)
+                && !Catalog.WorktreeAuthorization.BlocksTaskStart(task.Id))
             ?? new(null, catalog, () => WorkspaceSendRequest.Capture(this), () => false, () => false, () => HasActiveRun, PrimaryActionCommand);
         Queue.StateChanged += NotifyRunStateChanged;
         Steering = new(steering, runs, runController, catalog, Drafts, PrimaryActionCommand, Queue.SubmitCommand,
@@ -252,12 +254,17 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         && ModelPicker.SelectedItem.Model.Id == SelectedModel.Id && (!string.IsNullOrWhiteSpace(ComposerText) || Attachments.HasImageItems)
         && (Catalog.SelectedTask is null || (Catalog.SelectedTask.ProjectId == Catalog.SelectedProject?.Id && (allowRunning || !_runs.IsRunning(Catalog.SelectedTask.Id))
             && Queue?.IsPreparing(Catalog.SelectedTask.Id) != true
-            && !Catalog.TaskManagement.BlocksTaskStart(Catalog.SelectedTask.Id)));
+            && !Catalog.TaskManagement.BlocksTaskStart(Catalog.SelectedTask.Id)
+            && !Catalog.WorktreeAuthorization.BlocksTaskStart(Catalog.SelectedTask.Id)));
 
     private void HandleTaskMutationChanged(object? sender, PropertyChangedEventArgs args)
     {
         if (args.PropertyName == nameof(WorkspaceTaskManagementViewModel.IsBusy))
+        {
             PrimaryActionCommand.NotifyCanExecuteChanged();
+            Queue?.NotifyStateChanged();
+            Catalog.TaskManagement.NotifyTaskRunStateChanged();
+        }
     }
 
     private void HandleStartupChanged(object? sender, PropertyChangedEventArgs args)
@@ -292,6 +299,8 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         Catalog.SelectionChanged -= HandleSelectionChanged;
         Catalog.Messages.CollectionChanged -= HandleMessagesChanged;
         Catalog.TaskManagement.PropertyChanged -= HandleTaskMutationChanged;
+        Catalog.WorktreeAuthorization.PropertyChanged -= HandleTaskMutationChanged;
+        Catalog.WorktreeAuthorization.Dispose();
         Startup.PropertyChanged -= HandleStartupChanged;
         ModelPicker.PropertyChanged -= HandleModelPickerChanged;
         ModelPicker.ModelSelected -= HandleModelSelected;
@@ -317,6 +326,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     public async ValueTask DisposeAsync()
     {
         _isShuttingDown = true; await Queue.StopAsync(); await Steering.StopAsync(); await _preparation.StopAsync();
+        await Catalog.WorktreeAuthorization.StopAsync();
         await Task.WhenAll(RepositoryStatus.StopAsync(), FileChanges.Statistics.StopAsync(), SidebarProjects.StopAsync());
         if (ConversationPreferences is not null) await ConversationPreferences.StopAsync();
         await Drafts.StopAsync();
@@ -330,6 +340,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         OnPropertyChanged(nameof(IsShuttingDown));
         NotifyRunStateChanged();
         _runs.CancelAll();
+        await Catalog.WorktreeAuthorization.StopAsync();
         try { await Queue.StopAsync(); await Steering.StopAsync(); await _preparation.StopAsync(); }
         finally
         {

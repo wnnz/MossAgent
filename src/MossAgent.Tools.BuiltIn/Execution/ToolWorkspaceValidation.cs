@@ -1,5 +1,6 @@
 using MossAgent.Tools.Abstractions;
 using MossAgent.Tools.BuiltIn.Resources;
+using MossAgent.Domain;
 
 namespace MossAgent.Tools.BuiltIn.Execution;
 
@@ -19,6 +20,10 @@ internal static class ToolWorkspaceValidation
             await context.ValidateWorkspaceAsync(operation.Token).ConfigureAwait(false);
             operation.Token.ThrowIfCancellationRequested();
             return null;
+        }
+        catch (WorkspaceAuthorizationException)
+        {
+            return ToolResult.Failure(ToolExecutionText.Get("WorkspaceAuthorizationChanged"), "workspace_authorization_changed");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

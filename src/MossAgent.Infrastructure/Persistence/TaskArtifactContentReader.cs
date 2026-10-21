@@ -1,12 +1,17 @@
 using System.Security.Cryptography;
 using MossAgent.Application.Artifacts;
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Files;
 
 namespace MossAgent.Infrastructure.Persistence;
 
-public sealed class TaskArtifactContentReader(ITaskArtifactPaths paths) : ITaskArtifactContentReader
+public sealed class TaskArtifactContentReader(ITaskArtifactPaths paths,
+    IFileReadHandleValidator? readHandleValidator = null) : ITaskArtifactContentReader
 {
-    public async Task<byte[]> ReadAsync(Guid taskId, ToolArtifact artifact, CancellationToken cancellationToken)
+    public Task<byte[]> ReadAsync(Guid taskId, ToolArtifact artifact, CancellationToken cancellationToken) =>
+        Task.Run(() => ReadCoreAsync(taskId, artifact, cancellationToken), cancellationToken);
+
+    private async Task<byte[]> ReadCoreAsync(Guid taskId, ToolArtifact artifact, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(paths.GetTaskDirectory(taskId)));
@@ -15,6 +20,8 @@ public sealed class TaskArtifactContentReader(ITaskArtifactPaths paths) : ITaskA
         if (artifact.Length is < 0 or > FilePreviewFormat.MaximumBytes) throw new InvalidDataException();
         await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read,
             81920, FileOptions.Asynchronous | FileOptions.SequentialScan);
+        readHandleValidator?.Validate(stream, [root]);
+        cancellationToken.ThrowIfCancellationRequested();
         if (stream.Length != artifact.Length) throw new InvalidDataException();
         var bytes = new byte[checked((int)stream.Length)];
         await stream.ReadExactlyAsync(bytes, cancellationToken);

@@ -74,8 +74,8 @@ remain authoritative on supported hosts.
 | Linux WSL/Docker/Hyperlight | Linux Docker available; others not exercised | Useful for an explicitly selected Linux environment. Does not preserve the requested native Windows workflow by default. |
 | AppContainer/LPAC or global KnownDll ACL grants | Insufficient / rejected | Retain experiments as evidence; do not weaken isolation, change trust labels or escalate around system protection. |
 
-Proposed first implementation target is **native MXC**, with execution kept in
-Windows and a separately confirmed supported acceptance environment. This is not
+The confirmed first implementation target is **native MXC**, with execution kept
+in Windows on a separate supported acceptance environment. This is not
 approval to upgrade this computer, remove 23H2 support or disable its existing
 entries. If full 23H2 execution is required, select and provision the separate
 Windows container/VM route instead. No automatic backend downgrade is acceptable.
@@ -113,7 +113,20 @@ Windows container/VM route instead. No automatic backend downgrade is acceptable
    build, plus Release/single-file validation before release. Recovery never replays
    unknown side effects.
 
-## Evidence boundaries and next input
+## Confirmed route and evidence boundaries
+
+On 2026-10-20 the user selected **native MXC on a separate Windows acceptance
+environment which supports it**. This settles the backend priority; do not ask
+the same route question again. It does not authorize upgrading this host,
+provisioning a VM, changing ACLs, reusing consumed elevation permissions or
+silently accepting AppContainerDacl. ConPTY integration remains a separate gate.
+
+An ordinary-user repeat probe, without starting a workload, still reports
+AppContainerDacl and BaseContainerApiPresent=false. Its output is preserved in
+`artifacts/read-handle-safety-20261020/mxc-readonly-recheck.json`. The current host
+therefore cannot supply native MXC acceptance evidence. Implementing and proving
+the strict adapter requires the supported independent host; the command
+filesystem-isolation blocker stays open.
 
 The research diagnostic builds with zero warnings/errors. Its initial central
 package-management conflict is retained in diagnostic-build.log; only the isolated
@@ -129,8 +142,12 @@ integration and separate runtime checks are recorded in
 `WORKTREE_BASE_REFERENCE_ACCEPTANCE.md`; its historical statistics failure still
 lacks the original error code and remains unclassified.
 
-Before changing the supported execution baseline or provisioning a Windows
-container/VM, obtain the user's choice: prioritize MXC with a supported test
-environment, or retain complete native execution on 23H2 via a separately managed
-Windows environment. Preparation is reviewable; system changes are not authorized
-by this document or by the consumed diagnostic permissions.
+The next environment input is the actual supported acceptance host, not another
+backend preference. Preparation is reviewable; changes to the supported execution
+baseline or system provisioning require their own explicit scope and authorization.
+
+The user subsequently confirmed that this independent host is not ready and asked
+to continue local file safety work. Do not repeat backend/environment questions
+or provision this machine. The read and atomic-write increments are recorded in
+`READ_HANDLE_PATH_SAFETY_ACCEPTANCE.md` and `WRITE_HANDLE_PATH_SAFETY_ACCEPTANCE.md`;
+neither closes command confinement.

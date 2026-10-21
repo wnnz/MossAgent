@@ -189,4 +189,10 @@
   <data name="ProjectRemoveDirectory" xml:space="preserve"><value>移除目录</value></data>
   <data name="ProjectAddDirectory" xml:space="preserve"><value>添加文件夹</value></data>
   <data name="ProjectCancelEditing" xml:space="preserve"><value>取消</value></data>
+<data name="ProjectAuthorizationConflict" xml:space="preserve"><value>项目授权已被其他操作修改。当前输入已保留，请刷新项目后重新编辑并保存。</value></data>
+  <data name="ProjectConfirmRootObjects" xml:space="preserve"><value>确认并重新授权这些目录</value></data>
+  <data name="ProjectConfirmRootObjectsHint" xml:space="preserve"><value>接受已保存路径当前指向的目录对象，并使旧运行授权失效。尚未确认或目录已被替换时，请先核对并确认，再修改目录列表；已修改列表可关闭后重新打开。</value></data>
+  <data name="ProjectRootsNeedConfirmation" xml:space="preserve"><value>这些目录尚未登记对象身份。请核对目录后明确确认授权，历史与草稿已保留。</value></data>
+  <data name="ProjectRootIdentityFailed" xml:space="preserve"><value>目录对象已变化、尚未确认或无法安全验证。请重新打开项目编辑器，核对目录后明确确认授权。</value></data>
+  <data name="ProjectRootObjectsConfirmed" xml:space="preserve"><value>已登记当前目录对象。旧运行不会恢复，请手动开始新运行。</value></data>
 </root>

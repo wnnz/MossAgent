@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="ReadHandleDenied" xml:space="preserve"><value>无法确认已打开文件属于任务授权目录。请检查目录授权及链接后重试。</value></data>
+  <data name="WriteHandleDenied" xml:space="preserve"><value>无法安全锁定目录或提交文件。当前仅支持本地 NTFS 大小写不敏感的普通目录；请检查目录授权、链接、文件占用及权限后重试。</value></data>
+  <data name="WriteMetadataDenied" xml:space="preserve"><value>无法安全保留文件元数据。只读、加密、稀疏或包含附加数据流及扩展属性的文件暂不支持此编辑方式，请另行处理后重试。</value></data>
+  <data name="DeleteHandleDenied" xml:space="preserve"><value>无法安全锁定删除目标。仅支持本地 NTFS 大小写不敏感的普通目录；请检查链接、只读属性、文件占用及权限，核实目标后手动重试。</value></data>
+  <data name="DeleteFileRequired" xml:space="preserve"><value>撤销新建文件仅允许删除内容匹配的普通文件，目录不能作为替代目标。</value></data>
+  <data name="DeleteRecursiveRequired" xml:space="preserve"><value>目录不为空。删除目录内容必须显式启用 recursive。</value></data>
+  <data name="DeleteTreeLimit" xml:space="preserve"><value>删除预检超过 4096 项或 64 层限制，尚未提交删除。请缩小范围后重试。</value></data>
+  <data name="DeleteNotFound" xml:space="preserve"><value>目标路径不存在，尚未提交删除。请核实目标。</value></data>
+  <data name="DeleteMetadataDenied" xml:space="preserve"><value>撤销新建文件时发现附加数据流或不支持的扩展元数据。为保护外部改动已拒绝删除，请人工核实。</value></data>
+  <data name="DirectoryCreateDenied" xml:space="preserve"><value>无法安全创建目录。仅支持授权根内的本地 NTFS 大小写不敏感普通目录；请检查链接、权限和占用后重试。</value></data>
+  <data name="DirectoryCreateIncomplete" xml:space="preserve"><value>目录创建未完整完成，已新建 {0} 个目录。请人工核实剩余目录，不会自动重试。</value></data>
+  <data name="CopyTreeLimit" xml:space="preserve"><value>复制源预检超过 4096 项或 64 级子节点限制，尚未创建目标。请缩小复制范围。</value></data>
+  <data name="CopySourceDenied" xml:space="preserve"><value>无法安全固定复制源。请检查授权、链接、文件占用和附加数据流/扩展属性；当前只支持本地 NTFS 大小写不敏感的普通目录树，不会跳过无法读取的内容。</value></data>
+  <data name="MoveDenied" xml:space="preserve"><value>无法安全移动目标。请检查授权、链接、文件占用和权限；仅支持同一本地 NTFS 卷内的普通目录或文件，不会回退到路径复制或删除。</value></data>
+  <data name="MoveCrossVolume" xml:space="preserve"><value>当前安全移动仅支持同卷重命名，尚未移动源或创建目标。跨卷复制后删除需要独立恢复支持，请保留源并人工核实。</value></data>
+  <data name="MoveNotFound" xml:space="preserve"><value>移动源不存在，尚未创建目标。请核实源路径。</value></data>
+  <data name="ArtifactScopeDenied" xml:space="preserve"><value>产物目录与当前任务不匹配或文件名称无效，已拒绝创建。请检查任务后重试。</value></data>
+  <data name="ArtifactConflict" xml:space="preserve"><value>产物目标名称已存在，已保留原内容。请核实任务目录后重试。</value></data>
+  <data name="ArtifactCleanupFailed" xml:space="preserve"><value>产物清理未能完成或句柄释放失败。请人工核实当前任务的产物目录和文件占用，不会按路径自动重试。</value></data>
+  <data name="DiffInputCleanupFailed" xml:space="preserve"><value>差异临时输入清理未获确认。请核实任务产物目录和文件占用，不会按路径自动重试或重放差异操作。</value></data>
+  <data name="DiffInputTooLarge" xml:space="preserve"><value>解码后的差异输入超过 4 MiB 限额，尚未创建输入文件。请缩小变更范围。</value></data>
+</root>

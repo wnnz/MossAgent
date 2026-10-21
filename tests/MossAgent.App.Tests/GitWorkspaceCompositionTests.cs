@@ -26,8 +26,10 @@ public sealed class GitWorkspaceCompositionTests
             await services.GetRequiredService<IDatabaseInitializer>().InitializeAsync(token);
             Assert.IsType<WindowsTaskProcessLauncher>(services.GetRequiredService<ITaskProcessLauncher>());
             var repository = services.GetRequiredService<IWorkspaceRepository>();
-            var project = new ProjectProfile(Guid.NewGuid(), "synthetic Git", directory, [root], DateTimeOffset.UtcNow);
+            var project = new ProjectProfile(Guid.NewGuid(), "synthetic Git", directory, [directory, root], DateTimeOffset.UtcNow);
             await repository.SaveProjectAsync(project, token);
+            project = Assert.Single(await repository.GetProjectsAsync(token));
+            Assert.Equal(2, project.RootAuthorizations.Count);
             var task = new AgentTask(Guid.NewGuid(), project.Id, "synthetic Git workflow", ApprovalPolicy.FullAccess,
                 AgentTaskStatus.Completed, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, null);
             await repository.SaveTaskAsync(task, token);

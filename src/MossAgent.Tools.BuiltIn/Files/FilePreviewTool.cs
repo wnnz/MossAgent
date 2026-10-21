@@ -1,10 +1,13 @@
 using System.Security.Cryptography;
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Files;
 using MossAgent.Tools.BuiltIn.Resources;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class FilePreviewTool(AuthorizedPathResolver paths) : IAgentTool, IToolRequestPrevalidator
+public sealed class FilePreviewTool(AuthorizedPathResolver paths,
+    IAtomicFileWriteSessionFactory? sessions = null, IAuthorizedDirectoryCreator? directories = null,
+    IArtifactFileSessionFactory? artifactSessions = null) : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "filesystem.preview_file", FileToolText.Get("PreviewDescription"),
@@ -20,7 +23,7 @@ public sealed class FilePreviewTool(AuthorizedPathResolver paths) : IAgentTool, 
     public async Task<ToolResult> ExecuteAsync(ToolRequest request, ToolExecutionContext context, CancellationToken cancellationToken)
     {
         var path = paths.Resolve(request.Arguments.GetRequiredString("path"), context);
-        await using var source = FileSnapshotReader.Open(path);
+        await using var source = FileSnapshotReader.Open(path, context);
         if (source.Length > FilePreviewFormat.MaximumBytes)
             return ToolResult.Failure(FileToolText.Get("PreviewTooLarge"), "preview_too_large");
         var bytes = new byte[checked((int)source.Length)];
@@ -32,6 +35,17 @@ public sealed class FilePreviewTool(AuthorizedPathResolver paths) : IAgentTool, 
         paths.Resolve(path, context);
         cancellationToken.ThrowIfCancellationRequested();
         var directory = context.ArtifactDirectory ?? throw new InvalidOperationException();
+        if (artifactSessions is not null || sessions is not null || directories is not null)
+        {
+            if (artifactSessions is null && (sessions is null || directories is null)) throw new InvalidOperationException();
+            var artifact = artifactSessions is null
+                ? await new FilePreviewArtifactWriter(paths, sessions!, directories!).WriteAsync(path, bytes, mediaType, context, cancellationToken)
+                : await new OwnedArtifactPayloadWriter(artifactSessions).WriteAsync(Path.GetFileName(path), bytes, mediaType,
+                    "preview", ".snapshot", context, token => ValidateSourceAsync(path, context, token), cancellationToken);
+            context.FileSnapshots.Record(context.TaskId, FileSnapshotReader.CacheKey(path), new FileSnapshot(artifact.Sha256));
+            return new ToolResult(true, FileToolText.Get("PreviewSummary"), Artifacts: [artifact]);
+        }
+        // Compatibility hosts without native ports retain their existing implementation.
         RejectArtifactLinks(directory);
         Directory.CreateDirectory(directory);
         RejectArtifactLinks(directory);
@@ -58,5 +72,12 @@ public sealed class FilePreviewTool(AuthorizedPathResolver paths) : IAgentTool, 
     {
         for (var current = new DirectoryInfo(directory); current is not null; current = current.Parent)
             if (current.LinkTarget is not null) throw new UnauthorizedAccessException();
+    }
+
+    private async Task ValidateSourceAsync(string path, ToolExecutionContext context, CancellationToken token)
+    {
+        await context.ValidateWorkspaceAsync(token);
+        paths.Resolve(path, context);
+        token.ThrowIfCancellationRequested();
     }
 }

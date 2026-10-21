@@ -18,19 +18,24 @@ public sealed class AgentRunner(
         AgentRunRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var enabledSubagents = !request.ToolContext.IsToolAllowed(SubagentTool.ToolName) ? [] : (await subagents.GetAllAsync(cancellationToken))
-            .Where(static profile => profile.IsEnabled)
-            .Take(16)
-            .ToArray();
-        var messages = request.Messages.ToList();
-        var systemPrompt = AgentSystemPromptBuilder.Build(request.ToolContext, request.AgentInstructions)
-            + SubagentCatalogPromptBuilder.Build(enabledSubagents);
-        messages.Insert(0, new ModelMessage(ModelRole.System, systemPrompt));
-        await foreach (var agentEvent in RunTurnsAsync(
-                           request, messages, enabledSubagents.Length > 0, cancellationToken))
+        await using var workspace = await TaskWorkspaceOperation.EnterAsync(request.ToolContext, cancellationToken);
+        try
         {
-            yield return agentEvent;
+            var enabledSubagents = !request.ToolContext.IsToolAllowed(SubagentTool.ToolName) ? [] : (await subagents.GetAllAsync(workspace.Token))
+                .Where(static profile => profile.IsEnabled)
+                .Take(16)
+                .ToArray();
+            var messages = request.Messages.ToList();
+            var systemPrompt = AgentSystemPromptBuilder.Build(request.ToolContext, request.AgentInstructions)
+                + SubagentCatalogPromptBuilder.Build(enabledSubagents);
+            messages.Insert(0, new ModelMessage(ModelRole.System, systemPrompt));
+            await foreach (var agentEvent in RunTurnsAsync(
+                               request, messages, enabledSubagents.Length > 0, workspace.Token))
+            {
+                yield return agentEvent;
+            }
         }
+        finally { workspace.ThrowIfRevoked(); }
     }
 
     private async IAsyncEnumerable<AgentEvent> RunTurnsAsync(

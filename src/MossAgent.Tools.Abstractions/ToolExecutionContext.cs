@@ -24,6 +24,7 @@ public sealed record ToolExecutionContext(
     public ToolFileChange? ReviewedChange { get; init; }
     public bool ToolsEnabled { get; init; } = true;
     public ITaskWorkspaceGuard? WorkspaceGuard { get; init; }
+    public Files.IFileReadHandleValidator? ReadHandleValidator { get; init; }
     public SourceRepositoryScope? SourceScope { get; init; }
     public PullRequestRevision? SourceReviewRevision { get; init; }
     public IReadOnlySet<string>? AllowedToolNames

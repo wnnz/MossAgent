@@ -4,6 +4,53 @@
 [阶段交付清单与后续实施方案](DELIVERY_STATUS_AND_ROADMAP.md)。
 该文档不将未关闭的命令隔离阻断或其他缺口标为完成；以下专项历史记录继续保留。
 
+2026-10-20 后续增量：生产文件工具的打开后句柄校验、可控 junction 竞态复现和
+证据边界见 [READ_HANDLE_PATH_SAFETY_ACCEPTANCE.md](READ_HANDLE_PATH_SAFETY_ACCEPTANCE.md)。
+后续原子文本写入的目录句柄租约、相对创建/提交及失败清理见
+[WRITE_HANDLE_PATH_SAFETY_ACCEPTANCE.md](WRITE_HANDLE_PATH_SAFETY_ACCEPTANCE.md)。
+2026-10-21 删除与撤销增量见
+[DELETE_HANDLE_PATH_SAFETY_ACCEPTANCE.md](DELETE_HANDLE_PATH_SAFETY_ACCEPTANCE.md)：普通删除、
+递归目录及撤销新建文件接入相对句柄删除、有界预检和部分完成反馈。
+复制文件/目录树及显式目录创建的目标替换反例、源树预检和父目录租约见
+[COPY_HANDLE_PATH_SAFETY_ACCEPTANCE.md](COPY_HANDLE_PATH_SAFETY_ACCEPTANCE.md)。
+同卷文件/目录移动的句柄会话与跨卷限制见
+[MOVE_HANDLE_PATH_SAFETY_ACCEPTANCE.md](MOVE_HANDLE_PATH_SAFETY_ACCEPTANCE.md)。
+任务产物读取和文件预览产物原子写入的增量见
+[ARTIFACT_HANDLE_PATH_SAFETY_ACCEPTANCE.md](ARTIFACT_HANDLE_PATH_SAFETY_ACCEPTANCE.md)，
+编辑 before/after 快照、预览和最终审阅补丁已共用明确 Complete/Retain 的产物会话；
+项目提交或最终检查失败时按原句柄清理，复制后 hash、真实清理拒绝和并发隔离见
+[OWNED_ARTIFACT_SESSION_ACCEPTANCE.md](OWNED_ARTIFACT_SESSION_ACCEPTANCE.md)。
+浏览器截图和下载也已接入该会话，最终保留前清理暂存并复核工作区/取消；
+SDK 原对象清理、32 MiB 导出限制、失败反馈及各层验证范围见
+[BROWSER_ARTIFACT_SESSION_ACCEPTANCE.md](BROWSER_ARTIFACT_SESSION_ACCEPTANCE.md)。
+实际 Chrome 超时场景可报告 SDK 缓存清理未确认；不等于缓存配额或崩溃回收完成。
+Git diff/numstat 的临时输入已增加生产 Windows 专用会话：固定目录和文件句柄、
+只共享读取、Git 终止及输出读取后按原句柄清理；真实 Git、生产 App CLI 和
+Headless 的证据及后续方案见
+[GIT_DIFF_INPUT_SESSION_ACCEPTANCE.md](GIT_DIFF_INPUT_SESSION_ACCEPTANCE.md)。
+项目授权持久版本（schema 26）、保存冲突保护及 Agent/工具/长驻终端的撤销租约已继续实现，
+新建/编辑保存返回自己的事务快照；跨窗口抢先保存不会被旧草稿借用版本。当前切片的
+Debug/Release 完整构建通过，各 2,506 项分层相关回归通过（基础完整套件 2,196 + App
+选择 310），2,641 项输入在配置内及配置间无漂移。旧失败记录保留，不声称全量或实机验收。
+生产保存、队列暂停、并发草稿、真实 ConPTY 退出及 Headless 恢复的证据和剩余方案见
+[PROJECT_AUTHORIZATION_REVOCATION_ACCEPTANCE.md](PROJECT_AUTHORIZATION_REVOCATION_ACCEPTANCE.md)。
+以上是 schema 26 检查点。后续 schema 27 的项目主根/附加根对象身份、旧项目待确认、
+明确重新授权及持续根句柄已接入生产；具体链路、当前验证和剩余方案见
+[ROOT_OBJECT_AUTHORIZATION_ACCEPTANCE.md](ROOT_OBJECT_AUTHORIZATION_ACCEPTANCE.md)。
+该切片最终 Debug/Release 完整构建均零警告/错误，各 713 项定向回归通过
+（完整 Windows 422、App 精选 291），两配置与当前 2,670 项输入一致；先前 R2 Release
+的 PTY 状态失败、受控反例和 R3 旧测试快照失败均保留在专项文档，不标为全量或原生验收。
+以上是 schema 27 检查点；后续 schema 28 已增加工作树自身的不可变对象 grant、旧任务明确
+确认和 Agent/工具/PTY 的组合租约。恢复会拒绝同路径替换，即使 Git 注册文件被复制。
+10 项持久化/迁移/取消专项及 8 项生产 App 专项通过。最终 Debug/Release 完整解决方案
+构建均零警告/错误，各 3,558 项相关回归通过（七套完整 + App 精选 414），
+两配置与当前 2,688 项输入一致；首轮 App 全套的 28 项失败和手动中止记录保留，
+最终逐名验证修复，未再次完整执行 App 全套。证据和范围见
+[WORKTREE_OBJECT_AUTHORIZATION_ACCEPTANCE.md](WORKTREE_OBJECT_AUTHORIZATION_ACCEPTANCE.md)。
+创建认领/清理最终交接、替换对象重新授权、Git 进程隔离及崩溃发布/回收仍未完成。
+这些增量只推进明确入口；最终写入目录项替换竞争、其他文件操作、严格即时撤销屏障和 R01 仍未完成。
+R01 已由用户选定原生 MXC + 受支持独立 Windows 验收环境；环境尚未就绪，先推进本地修复。
+
 ## 当前目标（2026-10-19）
 
 MossAgent 的目标改为还原 Codex Desktop 的功能和主要工作流，不要求界面一比一。
@@ -56,25 +103,27 @@ Debug/Release 实际 Chrome 恢复检查通过，模型服务是本地模拟，�
 信任标签，临时修改 KnownDll 系统 ACL 的实验路线已否决，未修改系统保护或生产启动器。
 `WINDOWS_ISOLATION_BACKEND_DECISION.md` 补充公开 MXC .NET SDK 的实际普通权限探测：
 本机 23H2 仅提供 AppContainerDacl 回退层，原生 BaseContainer 不可用，未执行任何系统
-准备或命令。下一步需确定支持 MXC 的验收环境，或保留 23H2 的独立 Windows 容器/VM
-路线；不能以 IsSupported=true、Linux 容器或单实例 Windows Sandbox 宣称修复。
+准备或命令。用户已选择原生 MXC 独立验收环境，尚未就绪；不自动改选其他后端。
+不能以 IsSupported=true、Linux 容器或单实例 Windows Sandbox 宣称修复。
 
 | 能力 | 当前状态、入口和链路 | 证据与下一步 |
 | --- | --- | --- |
 | 项目及无项目聊天 | 已有实现：`WorkspaceCatalogViewModel` → `WorkspaceTaskFactory` → Agent；无项目可明确选择文本/静态图片，但不授予目录或工具权限 | `ProjectlessChat*Tests`、`PROJECTLESS_ATTACHMENTS_ACCEPTANCE.md`；已覆盖真实文件/SQLite/loopback，原生交互仍待验 |
 | 流式、多轮、任务切换、并发及取消 | 已有实现；发送准备新增独立取消、保留草稿和提交后安全终结，完整当前版本验收仍未完成：`WorkspaceViewModel` → run controller/executor → provider | `WorkspaceConversationFlowTests`、`WorkspaceCancellationFlowTests`、`WorkspaceHistoryContextTests`、`SEND_PREPARATION_CANCELLATION_ACCEPTANCE.md`；需要当前全套与原生交互检查 |
 | 草稿按对话隔离及恢复 | 已补齐文本、未发送 UTF-8 和静态图像附件的作用域、导航恢复、持久化和共同版本冲突处理；前台消息提交与草稿消费/提升现共用 SQLite 事务，序列化后台保存并保留提交期间的新输入；完整原生交互仍待验 | 原记录保留；新增 `CONVERSATION_SUBMISSION_ACCEPTANCE.md`：四种组合在修复前复现旧草稿，修复后贯通真实 SQLite/模型 loopback，覆盖冲突、回滚、取消及恢复。当前完整 Debug 回归 8,021 项通过，Debug/Release 各 32 项专项通过。四项 CLI 提交确认后强制终止恢复通过；另有同 hash 原生 EXE 的无项目发送、流式请求和终止/重启恢复检查通过，消息只存一次且不自动续跑，见 `NATIVE_SUBMISSION_ACCEPTANCE.md`。黑帧和原生输入访问拒绝使草稿续写/停止/视觉验收未完成；提交瞬间崩溃仍未验收。文件快照/Git 不属于 SQLite 事务 |
-| 项目及授权目录 | 已有编辑/保存/工具授权链路，原生目录选择等分支仍未验证 | `PROJECT_AUTHORIZATION_UI_ACCEPTANCE.md`；以真实工具拒绝跨根目录、授权变更和恢复行为验收 |
-| 文件搜索、读取、写入及编辑 | 已有工具和标准管线实现；已修复 Windows 内部读取句柄阻断原子编辑的问题，完整跨模块及原生交互仍需确认 | `FILE_EDITING_ACCEPTANCE.md`、`FILE_SNAPSHOT_SHARING_ACCEPTANCE.md`；499 项工具测试通过，保留路径、外部锁、版本冲突和取消负例，不据此认定旧授权失败已解决 |
+| 项目及授权目录 | 已有编辑/保存/工具授权链路；schema 26 条件保存及版本租约撤销旧运行，schema 27 绑定主根/附加根的卷与文件对象身份。旧项目必须明确确认，同路径替换与普通改名不能获得授权；确认后保留当前任务和草稿，手动新运行取得新授权 | `PROJECT_AUTHORIZATION_UI_ACCEPTANCE.md`、`PROJECT_AUTHORIZATION_REVOCATION_ACCEPTANCE.md`、`ROOT_OBJECT_AUTHORIZATION_ACCEPTANCE.md`；含真实 SQLite/文件/ConPTY、loopback 和 Headless。工作树对象身份和旧任务明确确认的后续链路见 `WORKTREE_OBJECT_AUTHORIZATION_ACCEPTANCE.md`；同步撤销屏障、原生选择和完整恢复仍未完成或未验证 |
+| 文件搜索、读取、写入及编辑 | 已有工具和标准管线实现；读前最终句柄守卫覆盖读取/预览/编辑校验/快照/复制源；原子文本写入增加本地 NTFS 目录租约、独占暂存及相对句柄提交。最终目录项竞争、其他写入入口、即时撤权及完整原生交互仍未完成 | `READ_HANDLE_PATH_SAFETY_ACCEPTANCE.md`、`WRITE_HANDLE_PATH_SAFETY_ACCEPTANCE.md` 分别记录范围和当前证据；历史 `FILE_EDITING_ACCEPTANCE.md`、`FILE_SNAPSHOT_SHARING_ACCEPTANCE.md` 不代表全部授权边界已关闭 |
 | 终端与命令执行 | 部分实现且存在已确认安全阻断：已有 ConPTY、任务所属进程及取消能力，但命令只验证工作目录，普通用户令牌仍能访问授权根外文件；完整原生交互未验证 | `COMMAND_FILESYSTEM_ISOLATION_PLAN.md` 记录生产 DI/统一管线/临时标记的越界复现及 AppContainer 实验。文件工具拒绝同一路径，ReadOnly/禁用工具也正确拒绝，不能据此宣称命令文件隔离。优先完成真实沙箱及 pwsh/终端/Git 兼容验证；旧 `TERMINAL_INTERACTION_ACCEPTANCE.md`、`COMMAND_EXECUTION_ACCEPTANCE.md` 保留原范围 |
 | Git、差异、审阅及撤销 | 部分实现：状态/diff/log/worktree 工具和变更审阅、撤销已有链路；侧栏支持所选文件暂存/取消暂存、已暂存内容确认提交和单分支预览确认推送，均经过真实 Git 与统一审批审计管线 | `DIFF_REVIEW_ACCEPTANCE.md`、`FILE_CHANGE_UNDO_ACCEPTANCE.md`、`GIT_STAGING_ACCEPTANCE.md`、`GIT_COMMIT_ACCEPTANCE.md`、`GIT_PUSH_ACCEPTANCE.md`；推送冻结候选六组扩大回归 3,607/3,607 通过，完整构建零警告/错误，源码/运行文件/ZIP 身份及路径集合一致；真实 Inspector 写入临时 bare 仓库并保留未提交内容与草稿。不视为完整或原生验收，后续改动另行验证。完整 PR 工作流、整组/区块暂存和远端配置/凭据界面仍未实现，不自动执行远端变更 |
-| 工作树 | 部分实现：项目新对话可显式选择独立工作树，支持手动指定本地分支/标签/提交或默认 HEAD，以解析后的固定提交创建，并贯通连续对话、持久化重开、工具授权和确认清理；准备支持取消并保留归属不明或创建失败的目录供检查。创建/清理校验 GUID 子目录、授权范围、链接祖先和 Git 元数据；恢复任务增加逐操作守卫，清理必须匹配任务归属 | 基准选择及两配置 CLI 并发运行、跨工作树读取拒绝、独立取消和草稿/历史恢复，以及同步并行创建服务级正向检查见 `WORKTREE_BASE_REFERENCE_ACCEPTANCE.md`；原仓库该切片完整 Debug 回归已通过 8,183 项，含 Steer 的冻结候选两配置各通过 8,282 项。`WORKTREE_CONVERSATION_ACCEPTANCE.md` 保留历史结果；取消及失败恢复见 `SEND_PREPARATION_CANCELLATION_ACCEPTANCE.md`；路径边界见 `WORKTREE_PATH_SAFETY_ACCEPTANCE.md`，恢复后工具/侧栏/子代理和清理授权见 `RESTORED_WORKTREE_AUTHORIZATION_ACCEPTANCE.md`。自动分支发现、原生句柄级竞态防护、运行中即时撤权、创建中崩溃恢复、并行创建的取消/部分失败组合及原生重启仍未完成或未验证 |
+| 工作树 | 部分实现：项目新对话可显式选择独立工作树，支持手动指定本地分支/标签/提交或默认 HEAD，以解析后的固定提交创建，并贯通连续对话、持久化重开、工具授权和确认清理；准备支持取消并保留归属不明或创建失败的目录供检查。创建/清理校验 GUID 子目录、授权范围、链接祖先和 Git 元数据；恢复任务增加逐操作守卫，清理必须匹配任务归属；schema 28 继续绑定工作树对象身份并提供旧任务明确确认及持续租约 | 基准选择及两配置 CLI 并发运行、跨工作树读取拒绝、独立取消和草稿/历史恢复，以及同步并行创建服务级正向检查见 `WORKTREE_BASE_REFERENCE_ACCEPTANCE.md`；原仓库该切片完整 Debug 回归已通过 8,183 项，含 Steer 的冻结候选两配置各通过 8,282 项。`WORKTREE_CONVERSATION_ACCEPTANCE.md` 保留历史结果；取消及失败恢复见 `SEND_PREPARATION_CANCELLATION_ACCEPTANCE.md`；路径边界见 `WORKTREE_PATH_SAFETY_ACCEPTANCE.md`，恢复后工具/侧栏/子代理和清理授权见 `RESTORED_WORKTREE_AUTHORIZATION_ACCEPTANCE.md`。对象授权增量、生产入口及当前分层证据见 `WORKTREE_OBJECT_AUTHORIZATION_ACCEPTANCE.md`。自动分支发现、工作树创建/清理的原生句柄级竞态防护、授权撤销的严格排空屏障、创建中崩溃恢复、并行创建的取消/部分失败组合及原生重启仍未完成或未验证 |
 | 提供商、模型与代理 | 已有设置到运行的链路，仍有协议/恢复组合未验证 | `PROVIDER_UI_WORKFLOW_ACCEPTANCE.md`、`AUTHENTICATED_PROVIDER_PROXY_ACCEPTANCE.md`；验证实际请求参数、直连/默认代理、不替换失效模型 |
 | 思考强度及模型能力 | 部分实现：可选/自定义参数和能力数据已有实现；Agent 和四种协议校验图像能力，编辑后的图像能力已贯通草稿禁发/切换恢复及真实 loopback 请求 | `MODEL_REASONING_CAPABILITY_ACCEPTANCE.md`、`IMAGE_ATTACHMENT_WORKFLOW_ACCEPTANCE.md`；继续核验真实提供商的格式支持、图像理解及 PDF 等文件能力，不能只以能力声明验收 |
 | 文本附件 | 已补齐项目/无项目显式选择、已发送快照/历史及未发送 UTF-8 附件草稿恢复；完整附件能力仍部分实现 | `ATTACHMENT_HISTORY_ACCEPTANCE.md`、`ATTACHMENT_DRAFT_ACCEPTANCE.md`、`PROJECTLESS_ATTACHMENTS_ACCEPTANCE.md`；原文件变化不改快照，缺失/篡改拒绝请求。原生 EXE 重启、PDF及安全回收未引用快照仍需完成 |
 | 图像、PDF及原生文件输入 | 部分实现：真实静态图片解码、项目/无项目选择、快照、草稿/历史恢复和原生图片请求块已有链路；输入区、草稿和已发送/历史消息已有后台限额缩略图，JPEG EXIF 八方向已校正 | `IMAGE_ATTACHMENT_WORKFLOW_ACCEPTANCE.md`、`PROJECTLESS_ATTACHMENTS_ACCEPTANCE.md`、`ATTACHMENT_THUMBNAIL_ACCEPTANCE.md`、`IMAGE_ORIENTATION_ACCEPTANCE.md` 记录分阶段结果；PDF、全图查看、其他格式/实机图片方向、子代理图片共享、原生选择/EXE 重启和真实提供商理解仍未完成 |
-| 工具审批、事件、结果及产物 | 已有标准执行管线和共享审批 UI；完整当前交互审计未完成 | `TOOL_SCHEMA_ACCEPTANCE.md`、`GLOBAL_APPROVAL_PRESENTATION_ACCEPTANCE.md`；持续验证身份隔离、拒绝、取消、超时、输出和审计 |
+| 工具审批、事件、结果及产物 | 已有标准执行管线和共享审批 UI；新增修正待处理标志先于请求 ID 发布的竞态，匹配身份和策略不变；完整当前交互审计未完成 | `TOOL_SCHEMA_ACCEPTANCE.md`、`GLOBAL_APPROVAL_PRESENTATION_ACCEPTANCE.md`；`GIT_DIFF_INPUT_SESSION_ACCEPTANCE.md` 记录确定性即时批准/拒绝及修复前后证据。持续验证身份隔离、拒绝、取消、超时、输出和审计 |
 | 浏览器 | 部分实现：内嵌、外部、显式 CDP、任务标签页、截图及接管已有链路；已修复工具超时返回后旧点击仍继续执行的问题 | `CDP_AGENT_WORKFLOW_ACCEPTANCE.md`、`BROWSER_SESSION_OWNERSHIP_RUNTIME_ACCEPTANCE.md` 保留原范围。`BROWSER_OPERATION_CANCELLATION_ACCEPTANCE.md` 记录生产 DI/审批/审计/真实 Chrome 的晚执行复现及原仓库修复复验：取消后清理任务资源并拒绝旧会话，显式重新附着后新审批可恢复；`QUEUE_BROWSER_RUNTIME_ACCEPTANCE.md` 贯通 Queue/Agent、另一任务审批/草稿保留和服务重建后手动继续。另有 `BROWSER_CREATION_CANCELLATION_ACCEPTANCE.md` 的资料目录创建边界取消及 `BROWSER_PROCESS_RECOVERY_ACCEPTANCE.md` 的工具完成后宿主强制终止/进程重启证据，均保留另一任务或实例并要求显式恢复；另有 `AUDIT_INTERRUPTION_RECOVERY_ACCEPTANCE.md` 的 Agent/Queue 执行中导航崩溃恢复，以及 `BROWSER_COMMITTED_EFFECT_RECOVERY_ACCEPTANCE.md` 中原仓库 Debug/Release 已提交 POST 副作用但点击结果未返回的宿主终止/手动续跑检查：副作用保持一次，审计保留未知结果，另一实例和草稿/队列保留。原生 GUI、其他创建/副作用时序、内外切换及人工接管仍待验；借用 context 的 cookie/storage 仍共享，不能声称浏览器配置完全隔离 |
+| 浏览器截图与下载产物 | 已实现生产 Windows 受控导出会话：`BrowserScreenshotTool` / `BrowserDownloadTool` → 统一执行管线 → 任务 SDK 会话 → 原生产物暂存/最终会话 → hash/保留 → 审计；超时和清理未知不会返回成功产物。完整资源配额/恢复仍部分实现 | `BROWSER_ARTIFACT_SESSION_ACCEPTANCE.md` 区分原生临时文件、SDK 代理、模拟模型 + Headless App 和实际 Chrome CLI；已覆盖拒绝、取消/超时、并发和重载。下一步处理网络/缓存配额、SDK 清理未知的持久状态、崩溃阶段及引用回收；原生 GUI、真实提供商和其他浏览器组合仍待验 |
+| Git diff/numstat 临时输入 | 已实现生产 Windows 受控输入会话：`FileChangeReviewTool` / `FileChangeStatisticsTool` → 统一管线 → `FileChangeDiffRunner` → 原生工厂 → 实际 Git → 最终复核 → 原句柄清理；4 MiB 上限、外部写入/替换拒绝，注入失败不回退 | `GIT_DIFF_INPUT_SESSION_ACCEPTANCE.md`：37 项 Windows 专项、3 项模拟模型 + Headless App 专项及生产 App CLI；取消/超时的受控进程端口与真实 Git 正常流程分开标注。兼容宿主旧分支不具有新保证。项目主根/附加根的后续身份登记见 `ROOT_OBJECT_AUTHORIZATION_ACCEPTANCE.md`；工作树自身身份的后续链路见 `WORKTREE_OBJECT_AUTHORIZATION_ACCEPTANCE.md`；下一步处理宿主崩溃、创建/清理交接、严格撤销和环境组合；Git 进程任意文件访问仍由 R01/MXC 解决 |
 | MCP | 部分实现：stdio/HTTP、发现、执行、显式重连已有链路 | `MCP_UI_RECOVERY_ACCEPTANCE.md`；传输恢复、认证及配置竞争仍需逐项盘点，不能将显式重连等同自动续传 |
 | 自定义代理及子代理 | 已有保存、模型/强度/上下文、调用及对话展示链路，部分原生审批分支未验证 | `SUBAGENT_SETTINGS_TO_RUNTIME_ACCEPTANCE.md`、`SUBAGENT_MANUAL_APPROVAL_ACCEPTANCE.md`；核验触发到真实请求、工具审批、取消、并发及恢复 |
 | 定时任务 | 已有编辑、启停、立即运行、停止及历史链路；关闭/恢复分支需当前回归 | `AUTOMATION_UI_WORKFLOW_ACCEPTANCE.md`、`AutomationScheduler`；应用启动跳过过期触发、标记中断，不自动补跑副作用 |
@@ -85,7 +134,7 @@ Debug/Release 实际 Chrome 恢复检查通过，模型服务是本地模拟，�
 文本 Steer 已从生产配置根贯通共享按钮/活动 Ctrl+Enter、草稿原子消费、同一运行
 边界注入及持久记录，并受控合入原仓库 96 个路径（56 新增、40 修改、无删除），
 保留原文件备份。实际接收/应用在 App 与 SQLite 事务中复核项目、grant、账号版本
-和绑定；仅空引导边界允许追加项目目录，原运行工具根不扩张。原有四项授权流程
+和绑定；该历史候选仅空引导边界允许追加项目目录，原运行工具根不扩张。当前 schema 26 已改为任何目录变更撤销旧运行，包括空边界。原有四项授权流程
 断言完整保留。长草稿、Queue 和引导记录并存的滚动/键盘路径有两种尺寸与主题的
 Headless 证据。关闭期间排队等待和迟到读取错误的反例及修复均保留。
 准确的 r4 Debug/Release 全量现已各 8,282 项全部通过，每组八份完整报告、零失败/

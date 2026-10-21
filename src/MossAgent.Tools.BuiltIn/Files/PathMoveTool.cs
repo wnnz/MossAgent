@@ -1,12 +1,15 @@
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Files;
+using MossAgent.Tools.BuiltIn.Resources;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class PathMoveTool(AuthorizedPathResolver paths) : IAgentTool, IToolRequestPrevalidator
+public sealed class PathMoveTool(AuthorizedPathResolver paths, IPathMoveSessionFactory? sessions = null,
+    IAuthorizedDirectoryCreator? directories = null) : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "filesystem.move_path",
-        "在授权目录之间移动或重命名文件、目录。",
+        ToolExecutionText.Get("MoveDescription"),
         """{"type":"object","required":["source","destination"],"properties":{"source":{"type":"string"},"destination":{"type":"string"},"overwrite":{"type":"boolean"}}}""",
         ToolRiskLevel.Mutation,
         ToolCapability.FileRead | ToolCapability.FileWrite);
@@ -14,8 +17,9 @@ public sealed class PathMoveTool(AuthorizedPathResolver paths) : IAgentTool, ITo
     public void ValidateRequest(ToolRequest request, ToolExecutionContext context)
     {
         var source = paths.Resolve(request.Arguments.GetRequiredString("source"), context);
-        paths.Resolve(request.Arguments.GetRequiredString("destination"), context);
+        var destination = paths.Resolve(request.Arguments.GetRequiredString("destination"), context);
         paths.RejectAuthorizedRootMutation(source, context);
+        paths.RejectAuthorizedRootMutation(destination, context);
     }
 
     public Task<ToolResult> ExecuteAsync(
@@ -28,6 +32,12 @@ public sealed class PathMoveTool(AuthorizedPathResolver paths) : IAgentTool, ITo
         var destination = paths.Resolve(request.Arguments.GetRequiredString("destination"), context);
         paths.RejectAuthorizedRootMutation(source, context);
         var overwrite = request.Arguments.GetOptionalBoolean("overwrite") ?? false;
+
+        if (sessions is not null || directories is not null)
+        {
+            if (sessions is null || directories is null) throw new InvalidOperationException();
+            return new PathMoveOperation(paths, sessions, directories).ExecuteAsync(source, destination, overwrite, context, cancellationToken);
+        }
 
         if (File.Exists(source))
         {

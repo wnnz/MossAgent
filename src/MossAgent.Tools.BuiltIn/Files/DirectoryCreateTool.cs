@@ -1,12 +1,15 @@
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Files;
+using MossAgent.Tools.BuiltIn.Resources;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class DirectoryCreateTool(AuthorizedPathResolver paths) : IAgentTool, IToolRequestPrevalidator
+public sealed class DirectoryCreateTool(AuthorizedPathResolver paths, IAuthorizedDirectoryCreator? directories = null)
+    : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "filesystem.create_directory",
-        "在授权目录内创建目录及缺失的父目录。",
+        ToolExecutionText.Get("DirectoryCreateDescription"),
         """{"type":"object","required":["path"],"properties":{"path":{"type":"string"}}}""",
         ToolRiskLevel.Mutation,
         ToolCapability.FileWrite);
@@ -16,14 +19,24 @@ public sealed class DirectoryCreateTool(AuthorizedPathResolver paths) : IAgentTo
         paths.Resolve(request.Arguments.GetRequiredString("path"), context);
     }
 
-    public Task<ToolResult> ExecuteAsync(
+    public async Task<ToolResult> ExecuteAsync(
         ToolRequest request,
         ToolExecutionContext context,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var path = paths.Resolve(request.Arguments.GetRequiredString("path"), context);
-        Directory.CreateDirectory(path);
-        return Task.FromResult(ToolResult.Success($"已创建目录：{path}"));
+        if (directories is null)
+        {
+            Directory.CreateDirectory(path);
+            return ToolResult.Success(ToolExecutionText.Format("DirectoryReady", path));
+        }
+        var count = await directories.CreateAsync(path, context.AuthorizedRoots, async token =>
+        {
+            token.ThrowIfCancellationRequested();
+            await context.ValidateWorkspaceAsync(token);
+            paths.Resolve(path, context);
+        }, cancellationToken);
+        return ToolResult.Success(ToolExecutionText.Format("DirectoryCreateCompleted", count, path));
     }
 }

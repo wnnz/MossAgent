@@ -30,7 +30,7 @@ public sealed class ImageAttachmentMigrationTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_sixteen;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(25, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(28, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var restored = Assert.Single(await fixture.Repository.GetMessagesAsync(fixture.Task.Id, fixture.Token));
         Assert.Equal(message with { Attachments = null }, restored with { Attachments = null });
         Assert.Equal(message.Attachments!.ToArray(), restored.Attachments!.ToArray());
@@ -126,6 +126,6 @@ public sealed class ImageAttachmentMigrationTests
         CREATE TRIGGER validate_draft_attachment_scope BEFORE INSERT ON conversation_draft_attachments
         WHEN NOT EXISTS(SELECT 1 FROM conversation_drafts WHERE scope_key=NEW.scope_key AND project_id IS NOT NULL)
         BEGIN SELECT RAISE(ABORT,'Invalid draft attachment scope.'); END;
-        DELETE FROM schema_versions WHERE version>=16;
+        DROP TRIGGER project_authorization_changed; ALTER TABLE projects DROP COLUMN authorization_revision; DELETE FROM schema_versions WHERE version>=16;
         """);
 }

@@ -131,6 +131,7 @@
       </StackPanel>
     </StackPanel>
       <StackPanel Grid.Row="3">
+        <views:WorkspaceWorktreeAuthorizationView DataContext="{Binding Catalog.WorktreeAuthorization}" />
         <views:WorkspaceFollowupQueueView Margin="0,6,0,0" DataContext="{Binding Queue}" IsVisible="{Binding IsVisible}" />
         <views:WorkspaceSteeringView Margin="0,6,0,0" DataContext="{Binding Steering}" IsVisible="{Binding IsVisible}" />
       </StackPanel>

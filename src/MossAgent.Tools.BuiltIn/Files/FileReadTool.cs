@@ -29,7 +29,7 @@ public sealed class FileReadTool(AuthorizedPathResolver paths) : IAgentTool, ITo
             1,
             1024 * 1024);
 
-        await using var stream = FileSnapshotReader.Open(path);
+        await using var stream = FileSnapshotReader.Open(path, context);
         var version = await FileSnapshotReader.HashAsync(stream, cancellationToken);
         stream.Seek(request.Arguments.GetOptionalInt64("offset") ?? 0, SeekOrigin.Begin);
         var buffer = new char[length];

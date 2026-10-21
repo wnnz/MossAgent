@@ -41,7 +41,7 @@ internal sealed class SourceReviewModeTestFixture(SqliteFailurePersistenceFixtur
         WHEN EXISTS(SELECT 1 FROM source_review_chats WHERE task_id=OLD.id)
           AND (NEW.project_id IS NOT NULL OR NEW.worktree_path IS NOT NULL OR NEW.approval_policy<>0)
         BEGIN SELECT RAISE(ABORT,'Source review chats cannot acquire a local environment.'); END;
-        DELETE FROM schema_versions WHERE version>=22;
+        DROP TRIGGER project_authorization_changed; ALTER TABLE projects DROP COLUMN authorization_revision; DELETE FROM schema_versions WHERE version>=22;
         """);
 
     public ValueTask DisposeAsync() => Storage.DisposeAsync();

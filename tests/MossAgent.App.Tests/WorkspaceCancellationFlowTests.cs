@@ -111,7 +111,10 @@ public sealed class WorkspaceCancellationFlowTests
         ServiceProvider services, string root, CancellationToken cancellationToken)
     {
         var project = new ProjectProfile(Guid.NewGuid(), "fixture", root, [root], DateTimeOffset.UtcNow);
-        await services.GetRequiredService<IWorkspaceRepository>().SaveProjectAsync(project, cancellationToken);
+        var repository = services.GetRequiredService<IWorkspaceRepository>();
+        await repository.SaveProjectAsync(project, cancellationToken);
+        project = Assert.Single(await repository.GetProjectsAsync(cancellationToken));
+        Assert.Single(project.RootAuthorizations);
         var task = await services.GetRequiredService<WorkspaceTaskFactory>()
             .CreateAsync(project, "检查改动", ApprovalPolicy.FullAccess, false, cancellationToken);
         var provider = new AiProvider(Guid.NewGuid(), "fixture", ProviderProtocol.OpenAiResponses,

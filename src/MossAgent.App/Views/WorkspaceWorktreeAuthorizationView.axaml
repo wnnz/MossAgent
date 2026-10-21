@@ -1,0 +1,15 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Views.WorkspaceWorktreeAuthorizationView"
+                   x:CompileBindings="False">
+  <StackPanel Spacing="4" IsVisible="{Binding IsVisible}">
+    <ui:AppText Classes="type-11 muted" Text="{Binding Path}" TextWrapping="Wrap" />
+    <ui:AppText Classes="type-11 status-warning" Text="{Binding Status}" TextWrapping="Wrap" />
+    <WrapPanel>
+      <ui:AppButton x:Name="ConfirmWorktreeObjectButton" Classes="ghost menu-option"
+                    Content="{Binding ConfirmLabel}" Command="{Binding ConfirmCommand}" />
+      <ui:AppButton Classes="ghost menu-option" Content="{Binding RetryLabel}" Command="{Binding RefreshCommand}" />
+    </WrapPanel>
+  </StackPanel>
+</ui:AppUserControl>

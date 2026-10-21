@@ -76,7 +76,7 @@ public sealed class ProjectAuthorizationUiWorkflowTests : IAsyncLifetime
     [InlineData(false, true)]
     [InlineData(true, false)]
     [InlineData(true, true)]
-    public Task AddingDirectoryDuringApproval_DoesNotExpandAnAlreadyRunningTask(bool dark, bool compact) =>
+    public Task AddingDirectoryDuringApproval_RevokesOldRunAndNewRunUsesSavedScope(bool dark, bool compact) =>
         _session.DispatchAsync(async () =>
         {
             await using var fixture = await ProjectAuthorizationUiFixture.CreateAsync(dark, compact, expansion: true);
@@ -89,19 +89,19 @@ public sealed class ProjectAuthorizationUiWorkflowTests : IAsyncLifetime
             await ProjectAuthorizationUiInput.AddDirectoryAsync(fixture, fixture.AdditionalRoot);
             ProjectAuthorizationUiInput.SaveEvidence(fixture, "active-task-root-draft");
             await ProjectAuthorizationUiInput.SaveEditorAsync(fixture);
-            Assert.Equal(requestId, fixture.Main.Approval.CurrentRequestId);
             var saved = Assert.Single(await fixture.Repository.GetProjectsAsync(fixture.Token), item => item.Id == project.Id);
             Assert.Equal(new[] { fixture.PrimaryRoot, fixture.AdditionalRoot }, saved.AuthorizedDirectories);
+            Assert.Equal(2, saved.AuthorizationRevision);
+            await fixture.WaitUntilAsync(() => !fixture.Main.Workspace.HasActiveRun);
+            Assert.NotEqual(requestId, fixture.Main.Approval.CurrentRequestId);
             await ProjectAuthorizationUiInput.SelectTaskAsync(fixture, taskId);
-            SubagentApprovalInteraction.Decide(fixture.Window, fixture.Main.Approval, approve: true, keyboard: true);
-            await fixture.WaitUntilAsync(() => !fixture.Main.Workspace.IsRunning);
-            await fixture.AssertResultAsync(taskId, "project-write-0-0", null, true);
-            await fixture.AssertResultAsync(taskId, "project-write-0-1", "path_denied", false);
-            Assert.Equal(2, (await fixture.Audits.GetRecentAsync(taskId, 10, fixture.Token)).Count(
-                audit => audit.ToolName == "filesystem.write_file"));
-            Assert.Equal(3, fixture.Server.Requests.Count);
+            Assert.Equal(TaskFailureReason.WorkspaceAuthorizationChanged, fixture.Main.Workspace.Catalog.SelectedTask!.FailureReason);
+            await fixture.AssertResultAsync(taskId, "project-write-0-0", "workspace_authorization_changed", null);
+            Assert.Single(await fixture.Audits.GetRecentAsync(taskId, 10, fixture.Token),
+                audit => audit.ToolName == "filesystem.write_file");
+            Assert.Single(fixture.Server.Requests);
             Assert.False(fixture.Main.Approval.IsPending);
-            await fixture.AssertSentinelsAsync(primaryChanged: true);
+            await fixture.AssertSentinelsAsync(primaryChanged: false);
             ProjectAuthorizationUiInput.SaveEvidence(fixture, "active-task-root-not-expanded");
             ProjectAuthorizationUiInput.Start(fixture, newTask: true);
             await fixture.WaitUntilAsync(() => fixture.Main.Approval.IsPending);
@@ -113,12 +113,13 @@ public sealed class ProjectAuthorizationUiWorkflowTests : IAsyncLifetime
             await fixture.WaitUntilAsync(() => !fixture.Main.Workspace.IsRunning);
             await fixture.Server.Completion.WaitAsync(fixture.Token);
             await fixture.AssertResultAsync(nextTask.Id, "project-write-1-0", null, true);
-            await fixture.AssertSentinelsAsync(primaryChanged: true, additionalChanged: true);
-            Assert.Equal(5, fixture.Server.Requests.Count);
-            var recordedAudits = await fixture.CaptureAuditsAsync(taskId);
+            await fixture.AssertSentinelsAsync(primaryChanged: false, additionalChanged: true);
+            Assert.Equal(3, fixture.Server.Requests.Count);
+            var recordedAudits = await fixture.Audits.GetRecentAsync(taskId, 10, fixture.Token);
             await fixture.ReopenAsync(taskId);
-            await fixture.AssertRestoredAuditsAsync(taskId, recordedAudits);
-            Assert.Equal(5, fixture.Server.Requests.Count);
+            Assert.Equal(recordedAudits, await fixture.Audits.GetRecentAsync(taskId, 10, fixture.Token));
+            Assert.Equal(TaskFailureReason.WorkspaceAuthorizationChanged, fixture.Main.Workspace.Catalog.SelectedTask!.FailureReason);
+            Assert.Equal(3, fixture.Server.Requests.Count);
             ProjectAuthorizationUiInput.SaveEvidence(fixture, "original-task-restored-without-replay");
         }, TestContext.Current.CancellationToken);
 }

@@ -127,23 +127,24 @@ Containers/Sandbox disabled, Docker runs Linux. Windows Sandbox's single-instanc
 limit and the reviewed SDK's ProcessContainer PTY/cancellation limitations prevent
 calling either a drop-in fix. A supported MXC acceptance host or a separately
 provisioned Windows container/VM is required before changing the execution baseline.
-No OS upgrade, host setup, backend switch, weaker fallback or feature removal has
-been authorized or performed.
+The user selected native MXC with a separate supported Windows acceptance host
+on 2026-10-20. No OS upgrade, host setup, weaker fallback or feature removal has
+been authorized or performed. The current host's ordinary-user repeat probe still
+selects AppContainerDacl; it starts no workload. The next dependency is access to
+the supported acceptance host, not a repeated backend-choice question.
 
-1. Select a supported isolation backend after the confirmed WinTcb-protected
-   runtime-object boundary. The global KnownDll ACL lease approach is rejected;
-   do not build a setup plan around escalating past that protection. Retain the
-   temporary-volume compatibility and restricted-token experiments as evidence,
-   and compare their actual limits with OS-supported host/container alternatives.
-   AppContainer's pre-existing Windows/package-readable ACLs are not a strict
-   filesystem allowlist: test the default package groups and LPAC behavior before
-   claiming exact root confinement. Document runtime/ancestor traversal grants,
-   privileges and their scope. Do not change real root-volume ACLs in diagnostics.
-2. Define grant ownership/cleanup before integration. Remove only the lease's own
-   ACE, preserving other leases and external edits. Handle protected DACLs,
-   partial grants, cancellation, cleanup failure and crashes. Recovery may remove
-   stale grants but must not replay commands. Any required elevation belongs in
-   reviewable one-time setup.
+1. Implement the selected native MXC route on the supported independent host.
+   Require the effective native tier at launch, including capability changes
+   between probe and launch; reject DACL fallback. The global KnownDll ACL lease
+   approach remains rejected. Retain temporary-volume/restricted-token and
+   package-group exposure experiments as negative evidence, not implementation
+   prerequisites or permission to change real root-volume ACLs.
+2. Define native policy, task scope and cleanup before integration: explicit
+   project roots, declared runtime reads, private temp/cache, process/SDK handle
+   ownership and no inherited secret-bearing environment. Validate partial setup,
+   launch failure, cancellation, late spawn, cleanup errors and crashes. Recovery
+   may clean owned resources but never replay commands. Any genuinely required
+   system preparation needs a separate reviewable scope and authorization.
 3. Wire real shell and terminal scopes through shared process ports. Inventory
    other code execution, including Git hooks/config and configured MCP server
    lifetimes. Fixing shell alone cannot establish the whole boundary.
@@ -157,3 +158,8 @@ been authorized or performed.
 
 This blocker takes priority over Queue/Steer and other additions. Existing command
 and terminal entries remain visible; safety completion is not claimed.
+
+The selected independent native-MXC host is not yet ready. The user explicitly
+requested local file safety work first; the read-handle and atomic-write-directory
+slices are tracked separately and do not substitute for this blocker. No further
+backend choice or local system provisioning is implied.

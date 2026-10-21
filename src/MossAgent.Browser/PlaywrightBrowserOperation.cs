@@ -1,3 +1,6 @@
+using MossAgent.Browser.Resources;
+using MossAgent.Tools.Abstractions.Files;
+
 namespace MossAgent.Browser;
 
 internal sealed class PlaywrightBrowserOperation(Func<ValueTask> closeSession)
@@ -23,8 +26,16 @@ internal sealed class PlaywrightBrowserOperation(Func<ValueTask> closeSession)
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             Stop();
+            var closeFailed = false;
             try { await closeSession().ConfigureAwait(false); }
+            catch (Exception) { closeFailed = true; }
             finally { await ((Task)pending).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing); }
+            if (pending.Exception?.InnerExceptions.OfType<FileMutationSessionException>()
+                .FirstOrDefault(exception => exception.HasSideEffects) is { } cleanupFailure)
+                throw closeFailed ? new FileMutationSessionException(cleanupFailure.Message + " " + BrowserToolText.Get("SessionCleanupFailed"),
+                    cleanupFailure.ErrorCode, true) : cleanupFailure;
+            if (closeFailed)
+                throw new FileMutationSessionException(BrowserToolText.Get("SessionCleanupFailed"), "browser_session_cleanup_failed", true);
             throw;
         }
     }

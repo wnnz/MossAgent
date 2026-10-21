@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Input;
@@ -9,6 +10,7 @@ using MossAgent.App.Controls;
 using MossAgent.App.ViewModels;
 using MossAgent.App.Views;
 using MossAgent.Domain;
+using MossAgent.Tools.Abstractions;
 using Xunit;
 
 namespace MossAgent.App.Tests;
@@ -72,6 +74,41 @@ public sealed class ApprovalDecisionExecutionTests : IAsyncLifetime
             Assert.False(view.IsEffectivelyVisible);
         }
         finally { window.Close(); }
+    }, TestContext.Current.CancellationToken);
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task PendingPublicationAlreadyCarriesTheMatchingDecisionIdentity(bool approve) => _session.DispatchAsync(async () =>
+    {
+        var approval = new ApprovalViewModel();
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        var observed = false;
+        approval.PropertyChanged += (_, change) =>
+        {
+            if (change.PropertyName != nameof(approval.IsPending) || !approval.IsPending) return;
+            observed = true;
+            Assert.NotNull(approval.CurrentRequestId);
+            Assert.Equal("filesystem.write_file", approval.ToolName);
+            Assert.Equal(1, approval.PendingCount);
+            var command = approve ? approval.ApproveCommand : approval.DenyCommand;
+            Assert.True(command.CanExecute(approval.CurrentRequestId));
+            command.Execute(approval.CurrentRequestId);
+        };
+        var descriptor = new ToolDescriptor("filesystem.write_file", "synthetic publication fixture", "{}",
+            ToolRiskLevel.Mutation, ToolCapability.FileWrite);
+        var request = new ToolRequest("publication", descriptor.Name, JsonSerializer.SerializeToElement(new { }));
+        var decision = approval.RequestAsync(descriptor, request, cancellation.Token).AsTask();
+        try
+        {
+            Assert.True(observed);
+            Assert.True(decision.IsCompleted, "The first visible pending state must accept its matching decision.");
+            Assert.Equal(approve, await decision);
+            Assert.False(approval.IsPending);
+            Assert.Null(approval.CurrentRequestId);
+            Assert.Equal(0, approval.PendingCount);
+        }
+        finally { await cancellation.CancelAsync(); }
     }, TestContext.Current.CancellationToken);
 
     private static void Flush(MainWindow window) => HeadlessRenderedFrame.Flush(window);

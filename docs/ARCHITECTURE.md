@@ -44,6 +44,147 @@ Avalonia UI
 
 ## Stable boundaries
 
+- Project configuration now carries a durable authorization revision (schema 26).
+  Conditional saves reject stale revisions and return their own transaction's saved
+  snapshot through the Application writer port, never adopting a later save's
+  revision. Directory changes increment the version
+  and notify instance-scoped leases after commit. Application guards combine this
+  monitor with existing worktree validation. Agent/model streams, standard tools
+  and long-lived PTY owners link their own cancellation to those leases; a bounded
+  polling read detects changes from other instances. Revocation keeps known tool
+  effects/audits and pauses queued continuation. PTY startup retirement also checks
+  the lease's revoked flag before classifying
+  a failed handoff, because linked-token notification may still be pending. Cleanup
+  failures remain visible. Revocation is cooperative; resource draining and command
+  isolation still require separate boundaries.
+  See `PROJECT_AUTHORIZATION_REVOCATION_ACCEPTANCE.md` for evidence and limits.
+
+  Schema 27 adds a separate project-root authorization table. Each explicit grant
+  binds a normalized root to a volume GUID/serial and 128-bit NTFS file ID. Legacy
+  projects remain unconfirmed; startup and ordinary renaming never enroll the
+  current object automatically. New roots enroll on explicit save; retained roots
+  must match the prior object. A separate confirmation port advances the project
+  revision, issues new grant IDs and revokes older leases. Registration holds the
+  no-follow directory chain through its conditional transaction. Production App
+  composition injects the Windows identity-session factory into both repository
+  and monitor; task/tool/PTY leases retain that chain until their cleanup ends.
+  The editor refreshes the selected project in place, preserving task and drafts.
+  File-change statistics also invalidate cached contexts when that authorization
+  revision changes, including reauthorization with unchanged path strings.
+  Hosts without the optional factory retain compatibility behavior and do not
+  establish this boundary. Strict resource draining, final-name CAS and command
+  isolation remain separate gaps. See
+  `ROOT_OBJECT_AUTHORIZATION_ACCEPTANCE.md` for evidence and platform limits.
+
+  Schema 28 adds immutable task/project/worktree directory-object grants in a
+  separate table. Production Git creation enrolls while holding the identity
+  session through its conditional insert. Restored worktrees require that saved
+  object; legacy tasks require an explicit idle-task confirmation with task and
+  project CAS checks. Confirmation never resumes a task or replaces an existing
+  grant. ManagedWorktreeWorkspaceGuard now supplies a directory lease, combined
+  with project revocation for Agent/tools/long-lived PTY cleanup. App's confirmation
+  panel displays the full path and preserves the foreground draft. Creation still
+  has a Git-process-to-enrollment handoff; removal releases the no-delete target
+  handle before Git deletion. These races, Git metadata confinement, crash intents,
+  replacement reauthorization and native GUI acceptance remain separate work.
+  See `WORKTREE_OBJECT_AUTHORIZATION_ACCEPTANCE.md`.
+
+- Built-in file reads now use an optional Tools.Abstractions handle-validation
+  port, injected by the production ToolExecutor. Platform.Windows resolves opened
+  file/root handles before hashing or reading, refuses unmatched physical paths
+  and closes rejected streams. Read/preview, edit verification, change snapshots
+  and copy sources share this path; review snapshots use only the owning artifact
+  directory as their explicit local scope. This is a point-in-time read boundary,
+  not write-target, process or all-filesystem isolation. See
+  `READ_HANDLE_PATH_SAFETY_ACCEPTANCE.md` for regression evidence and remaining
+  alias, revocation, native-call cancellation and concurrent-change limits.
+
+- Atomic text writes use an optional Tools.Abstractions write-session factory,
+  supplied by production DI from Platform.Windows. The session pins the local
+  NTFS directory chain, creates/stages/renames relative to directory handles,
+  and cleans uncommitted staging by its own handle. After snapshots consume the
+  same exclusive staging stream. Existing target hashes and selected security/
+  metadata are rechecked before native replacement; unsupported metadata fails
+  closed before staging and again at commit. Known refusals carry localized safe
+  detail through the port exception and standard tool-result/audit path.
+  Reparse/case-sensitive directories and unsupported volumes are refused.
+  No path-based commit fallback is used when the injected session fails. This
+  does not provide final-name compare-and-swap, all filesystem operations or
+  command isolation. See `WRITE_HANDLE_PATH_SAFETY_ACCEPTANCE.md` for scope,
+  compatibility limits and remaining recovery/concurrency work.
+
+- Explicit path deletion and created-file undo share a Tools.Abstractions delete
+  session port, registered in production from Platform.Windows. Preparation pins
+  the existing NTFS directory chain and a bounded tree of no-follow object handles
+  without write/delete sharing; native directory enumeration and child opens are
+  relative to these handles. Undo hashes the same pinned content before deleting.
+  Each post-order deletion revalidates task authorization; no native failure falls
+  back to a path deletion. Partial completion invalidates task snapshots and is
+  reported through the existing result/cancellation/output/audit pipeline. This is
+  not a tree transaction or crash rollback. See `DELETE_HANDLE_PATH_SAFETY_ACCEPTANCE.md`
+  for compatibility, evidence and remaining limits.
+
+- File and directory copy now compose a handle-pinned source-tree session,
+  authorized directory leases and the existing atomic stream writer. Source
+  enumeration reuses native no-follow directory operations; preflight refuses
+  unsupported entries before destination creation. Destination parent leases
+  remain held through each file commit. Explicit directory creation uses the
+  same port. Mutation exceptions preserve known partial effects across tool
+  cancellation/timeout and the standard audit/result pipeline. See
+  `COPY_HANDLE_PATH_SAFETY_ACCEPTANCE.md`; this is bounded content/structure copy,
+  not a transactional tree clone or complete metadata clone.
+
+- Same-volume path move uses a Tools.Abstractions move session from Platform.Windows.
+  The source parent chain and object stay pinned; file source hashes are checked on
+  that handle against task observations. Destination parents remain leased through
+  relative native rename, with final authorization and destination-content checks.
+  No failure falls back to path copy/delete; cross-volume moves are explicitly
+  refused. This is object rename, not a descendant snapshot, final-name CAS,
+  journaled undo or crash recovery. See `MOVE_HANDLE_PATH_SAFETY_ACCEPTANCE.md`.
+
+- Infrastructure task-artifact content reads now validate the opened stream
+  against only the owning task directory before reading any bytes; preparation
+  runs off the UI thread, retaining size/hash/media and cancellation checks.
+  Production previews, edit snapshots and final review patches now share an
+  artifact-file session built on these directory leases and atomic write sessions.
+  Completion retains exclusive ownership; caller success explicitly retains the
+  file, while failure cleans through the original handle. Edit snapshots stay owned
+  until the project file commits and verify the copied hash. Cleanup failures are
+  visible and do not prevent release of other snapshots. Crash/publication
+  recovery remains a separate gap.
+  See `ARTIFACT_HANDLE_PATH_SAFETY_ACCEPTANCE.md` and
+  `OWNED_ARTIFACT_SESSION_ACCEPTANCE.md` for exact evidence and remaining scope.
+
+  Git diff/numstat temporary inputs now use an injected, dedicated read-only-path
+  session port. Platform.Windows pins the directory chain and creates each file
+  relative to its parent handle with no-follow, read-only sharing and native
+  delete-on-close. Content is bounded to 4 MiB per input and checked on the same
+  handle. Both inputs stay owned until the Git process stops, output drains and
+  workspace/cancellation checks pass; cleanup uses the original handles and a
+  cleanup refusal does not prevent release of the other input. Injected failures
+  never fall back to path creation. Compatibility hosts without the port retain
+  their old behavior. See `GIT_DIFF_INPUT_SESSION_ACCEPTANCE.md` for actual Git,
+  production-App CLI and Headless evidence. This does not isolate the Git process
+  filesystem or complete worktree-root identity, strict revocation or crash recovery.
+
+  App approval presentation publishes request identity and decision metadata
+  before setting IsPending. A newly pending observer can resolve only that
+  matching request; existing stale-identity rejection and policies are unchanged.
+  Deterministic publication regression evidence is recorded alongside the Git
+  input-session checkpoint above.
+
+  Browser screenshots and downloads now use that injected artifact session too.
+  Screenshots validate non-empty bounded bytes; downloads receive the original
+  SDK stream through a write-only 32 MiB wrapper into an uncommitted staging
+  session, then copy/hash into a final session using a sanitized extension.
+  Staging cleanup and final workspace/cancellation checks precede final Retain.
+  SDK cleanup uses the original IDownload object; cancellation drains the pending
+  operation and retains cleanup-unknown detail in the tool error. This limits
+  exported files, not browser network/cache use or screenshot allocation.
+  Compatibility hosts without the optional session port keep the previous path
+  implementation. See `BROWSER_ARTIFACT_SESSION_ACCEPTANCE.md` for native-file,
+  simulated-SDK, Headless App and actual managed-Chrome CLI evidence and limits.
+
 - Conversation follow-ups now connect Queue storage and runtime through App
   composition. Domain owns bounded immutable snapshots; Application revalidates
   saved models/agents, roots/worktrees, source access and attachment snapshots.
@@ -104,8 +245,9 @@ Avalonia UI
   remain captured. App exposes shared controls, active Ctrl+Enter and bounded
   receipt history; Enter retains Queue. Each run owns its gate and acceptance
   lifetime, while draft coordination is per entry. App and SQLite recheck exact
-  authorization for acceptance/application. Only an empty boundary permits added
-  roots while retaining the original tool context. Failure/stop/reconstruction
+  authorization for acceptance/application. Any project directory change now
+  revokes the old run, including an empty steering boundary; new authorization
+  requires a new run. Failure/stop/reconstruction
   close acceptance and mark pending receipts Interrupted without replay. History
   registration, gate waits and late repository errors are contained during stop;
   ordinary failures retain localized manual retry. See
@@ -140,7 +282,9 @@ Avalonia UI
   `WINDOWS_ISOLATION_BACKEND_DECISION.md` records the public MXC SDK review and
   actual ordinary-user probe: this 23H2 host offers AppContainerDacl fallback,
   not BaseContainer. IsSupported alone is insufficient. No SDK adapter, system
-  setup, weaker fallback or supported-platform change is integrated; process and
+  setup, weaker fallback or supported-platform change is integrated. The user has
+  selected native MXC on a separate supported Windows acceptance host; the next
+  dependency is that host, not another backend-choice prompt. Process and
   ConPTY isolation/cancellation remain separate required acceptance gates.
 
 - Source accounts are distinct from AI providers. Domain validates immutable

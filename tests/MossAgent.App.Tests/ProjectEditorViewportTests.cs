@@ -53,8 +53,11 @@ public sealed class ProjectEditorViewportTests : IAsyncLifetime
             fixture.AssertHit(fixture.SaveButton);
             var label = Assert.Single(last.GetVisualDescendants().OfType<AppText>(), text => Equals(text.DataContext, last.DataContext)
                 && text.Text == fixture.Editor.Directories[^1].DisplayName);
+            var path = Assert.Single(last.GetVisualDescendants().OfType<AppText>(), text => text.Text == fixture.Editor.Directories[^1].Path);
+            var textGroup = Assert.IsType<StackPanel>(label.GetVisualParent());
+            Assert.True(textGroup.IsVisualAncestorOf(path));
             var icon = last.GetVisualDescendants().OfType<AppIcon>().First();
-            var labelCenter = label.TranslatePoint(new Point(0, label.Bounds.Height / 2), last)!.Value.Y;
+            var labelCenter = textGroup.TranslatePoint(new Point(0, textGroup.Bounds.Height / 2), last)!.Value.Y;
             var iconCenter = icon.TranslatePoint(new Point(0, icon.Bounds.Height / 2), last)!.Value.Y;
             Assert.True(Math.Abs(labelCenter - iconCenter) <= 0.5 / scale,
                 $"Label {label.Bounds} at {labelCenter}; icon {icon.Bounds} at {iconCenter}; row {last.Bounds}; scale {scale}.");

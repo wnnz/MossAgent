@@ -175,7 +175,7 @@ public sealed class WorkspaceFileChangesViewModel : ObservableObject, IDisposabl
     {
         var context = Statistics.IsEnabled && _catalog.SelectedTask is { } task && _catalog.SelectedProject is { } project
             ? _panels.CreateContext(task, project) : null;
-        Statistics.Update(Files, context, _incomplete);
+        Statistics.Update(Files, context, _incomplete, _catalog.SelectedProject?.AuthorizationRevision ?? 0);
         _visibleFiles = _expanded ? Files : Files.Take(3).ToArray();
         OnPropertyChanged(nameof(VisibleFiles));
         OnPropertyChanged(nameof(HasChanges));

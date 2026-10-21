@@ -4,6 +4,11 @@
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Shared/ObservedDiffInputSession.cs" Link="Testing/ObservedDiffInputSession.cs" />
+    <Compile Include="../Shared/ObservedDiffInputSessions.cs" Link="Testing/ObservedDiffInputSessions.cs" />
+    <Compile Include="../Shared/ObservedArtifactSessions.cs" Link="Testing/ObservedArtifactSessions.cs" />
+    <Compile Include="../Shared/BrowserArtifactTestSession.cs" Link="Testing/BrowserArtifactTestSession.cs" />
+    <Compile Include="../Shared/ObservedArtifactSession.cs" Link="Testing/ObservedArtifactSession.cs" />
     <Compile Include="../Shared/PullRequestTestData.cs" Link="Testing/PullRequestTestData.cs" />
     <PackageReference Include="Avalonia.Headless" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />

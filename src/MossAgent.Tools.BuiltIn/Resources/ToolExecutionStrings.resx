@@ -49,4 +49,27 @@
   <data name="SourceFilesDescription" xml:space="preserve"><value>只读获取明确授权 PR 在已展示提交版本下的变更文件和有界补丁，缺失或不完整补丁明确标记。</value></data>
   <data name="SourceCommentsDescription" xml:space="preserve"><value>只读获取已展示版本 PR 的讨论或行内评论，不跟随外部链接、不发布评论。</value></data>
   <data name="SourceChecksDescription" xml:space="preserve"><value>只读获取 PR 来源提交的检查运行或传统提交状态，不读取第三方日志。</value></data>
+  <data name="AuthorizedRootsChanged" xml:space="preserve"><value>工具调用期间授权目录发生变化，已拒绝继续执行。请检查授权后重新发起操作。</value></data>
+  <data name="DeleteDescription" xml:space="preserve"><value>删除授权目录内的文件或目录；递归删除必须显式启用。删除不可自动恢复。</value></data>
+  <data name="DeleteNotFound" xml:space="preserve"><value>目标路径不存在。</value></data>
+  <data name="DeleteCompleted" xml:space="preserve"><value>已提交 {0} 项删除请求。其他打开的读句柄可能延迟最终移除。</value></data>
+  <data name="DeleteIncomplete" xml:space="preserve"><value>删除未完整完成：系统已接受 {0}/{1} 项删除请求，部分目标可能仍待其他读句柄关闭后移除。请人工核实剩余内容，不会自动重试。</value></data>
+  <data name="DeleteUnsafe" xml:space="preserve"><value>无法安全提交删除；请检查文件占用及权限，核实剩余内容后手动重试。</value></data>
+  <data name="CopyDescription" xml:space="preserve"><value>在授权目录之间复制文件内容或目录树。不会跟随链接；overwrite 必须显式启用，部分完成不会自动重试。</value></data>
+  <data name="CopySelfDenied" xml:space="preserve"><value>不能将复制源复制到自身或自身内部。</value></data>
+  <data name="CopyTargetExists" xml:space="preserve"><value>目标文件已存在。保留原内容；覆盖必须显式启用 overwrite。</value></data>
+  <data name="CopyCompleted" xml:space="preserve"><value>已复制 {0} 个文件，新建 {1} 个目录：{2} → {3}。源树按预检时固定的内容复制。</value></data>
+  <data name="CopyIncomplete" xml:space="preserve"><value>复制未完整完成：已提交 {0} 个文件，新建 {1} 个目录。目标：{2}。请人工核实剩余内容，不会自动重试。</value></data>
+  <data name="DirectoryCreateDescription" xml:space="preserve"><value>在授权目录内创建目录及缺失的父目录。</value></data>
+  <data name="DirectoryReady" xml:space="preserve"><value>目录已就绪：{0}。</value></data>
+  <data name="DirectoryCreateCompleted" xml:space="preserve"><value>目录已就绪，新建 {0} 个目录：{1}。</value></data>
+  <data name="MoveDescription" xml:space="preserve"><value>在授权目录之间移动或重命名文件、目录。Windows 安全实现限同一本地 NTFS 卷；覆盖文件须显式启用 overwrite，目录目标须不存在。</value></data>
+  <data name="MoveSelfDenied" xml:space="preserve"><value>不能将移动源移动到自身或自身内部。</value></data>
+  <data name="MoveTargetExists" xml:space="preserve"><value>移动目标文件已存在。覆盖必须显式启用 overwrite，原内容已保留。</value></data>
+  <data name="MoveCompleted" xml:space="preserve"><value>已移动：{0} → {1}。</value></data>
+  <data name="MoveIncomplete" xml:space="preserve"><value>移动未正常结束，新建 {0} 个目标父目录，已确认完成 {1} 次重命名。源：{2}；目标：{3}。请人工核实，不会自动重试或回滚。</value></data>
+  <data name="MoveUnsafe" xml:space="preserve"><value>无法安全提交移动。请检查链接、占用及权限，核实源和目标后手动重试。</value></data>
+  <data name="ArtifactScopeDenied" xml:space="preserve"><value>产物目录与当前任务不匹配，已拒绝写入。请重新打开任务后重试。</value></data>
+  <data name="ArtifactWriteUnsafe" xml:space="preserve"><value>无法安全保存任务产物，目标名称已被占用。请核实任务目录后重试。</value></data>
+<data name="WorkspaceAuthorizationChanged" xml:space="preserve"><value>项目目录授权已变更，工具已停止。已发生的操作可能仍然保留，请核实结果并刷新项目后手动继续。</value></data>
 </root>

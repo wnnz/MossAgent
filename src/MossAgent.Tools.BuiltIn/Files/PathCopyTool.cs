@@ -1,12 +1,16 @@
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Files;
+using MossAgent.Tools.BuiltIn.Resources;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class PathCopyTool(AuthorizedPathResolver paths) : IAgentTool, IToolRequestPrevalidator
+public sealed class PathCopyTool(AuthorizedPathResolver paths, AtomicTextFileWriter? writer = null,
+    IFileTreeReadSessionFactory? sourceSessions = null, IAuthorizedDirectoryCreator? directories = null)
+    : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "filesystem.copy_path",
-        "在授权目录之间复制文件或目录，目录复制不会跟随链接。",
+        ToolExecutionText.Get("CopyDescription"),
         """{"type":"object","required":["source","destination"],"properties":{"source":{"type":"string"},"destination":{"type":"string"},"overwrite":{"type":"boolean"}}}""",
         ToolRiskLevel.Mutation,
         ToolCapability.FileRead | ToolCapability.FileWrite);
@@ -25,14 +29,20 @@ public sealed class PathCopyTool(AuthorizedPathResolver paths) : IAgentTool, ITo
         var source = paths.Resolve(request.Arguments.GetRequiredString("source"), context);
         var destination = paths.Resolve(request.Arguments.GetRequiredString("destination"), context);
         var overwrite = request.Arguments.GetOptionalBoolean("overwrite") ?? false;
+        if (sourceSessions is not null || writer is not null || directories is not null)
+        {
+            if (sourceSessions is null || writer is null || directories is null) throw new InvalidOperationException();
+            return await new PathCopyOperation(paths, writer, sourceSessions, directories)
+                .ExecuteAsync(source, destination, overwrite, context, cancellationToken);
+        }
 
         if (File.Exists(source))
         {
-            await CopyFileAsync(source, destination, overwrite, cancellationToken);
+            await CopyFileAsync(source, destination, overwrite, context, cancellationToken);
         }
         else if (Directory.Exists(source))
         {
-            await CopyDirectoryAsync(source, destination, overwrite, cancellationToken);
+            await CopyDirectoryAsync(source, destination, overwrite, context, cancellationToken);
         }
         else
         {
@@ -47,6 +57,7 @@ public sealed class PathCopyTool(AuthorizedPathResolver paths) : IAgentTool, ITo
         string source,
         string destination,
         bool overwrite,
+        ToolExecutionContext context,
         CancellationToken cancellationToken)
     {
         if (AuthorizedPathResolver.IsSameOrDescendant(destination, source))
@@ -70,7 +81,7 @@ public sealed class PathCopyTool(AuthorizedPathResolver paths) : IAgentTool, ITo
             {
                 await CopyFileAsync(
                     file, Path.Combine(current.Destination, Path.GetFileName(file)),
-                    overwrite, cancellationToken);
+                    overwrite, context, cancellationToken);
             }
 
             foreach (var directory in Directory.EnumerateDirectories(current.Source, "*", enumeration))
@@ -84,13 +95,12 @@ public sealed class PathCopyTool(AuthorizedPathResolver paths) : IAgentTool, ITo
         string source,
         string destination,
         bool overwrite,
+        ToolExecutionContext context,
         CancellationToken cancellationToken)
     {
+        await using var input = FileSnapshotReader.Open(source, context);
         Directory.CreateDirectory(Path.GetDirectoryName(destination)
             ?? throw new InvalidOperationException("无法确定目标父目录。"));
-        await using var input = new FileStream(
-            source, FileMode.Open, FileAccess.Read, FileShare.Read, 81920,
-            FileOptions.Asynchronous | FileOptions.SequentialScan);
         await using var output = new FileStream(
             destination, overwrite ? FileMode.Create : FileMode.CreateNew,
             FileAccess.Write, FileShare.None, 81920, FileOptions.Asynchronous);

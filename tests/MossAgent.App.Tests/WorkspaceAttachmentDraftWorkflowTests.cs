@@ -49,6 +49,17 @@ public sealed class WorkspaceAttachmentDraftWorkflowTests
         if (damage != "authorization") await Assert.ThrowsAsync<InvalidOperationException>(reopened.Drafts.FlushAsync);
         chip.RemoveCommand.Execute(null);
         await reopened.Drafts.FlushAsync();
+        if (damage == "authorization")
+        {
+            var revoked = Assert.Single(await fixture.Tasks.GetProjectsAsync(fixture.Token));
+            Assert.Empty(revoked.RootAuthorizations);
+            await fixture.Tasks.SaveProjectAsync(revoked with { AuthorizedDirectories = [revoked.PrimaryDirectory] }, fixture.Token);
+            var authorized = Assert.Single(await fixture.Tasks.GetProjectsAsync(fixture.Token));
+            Assert.Single(authorized.RootAuthorizations);
+            reopened.Catalog.SelectedProject = authorized;
+            await reopened.Drafts.LoadCurrentAsync();
+            Assert.Equal("preserve new text after removing unavailable attachment", reopened.ComposerText);
+        }
         Assert.True(reopened.PrimaryActionCommand.CanExecute(null));
         reopened.PrimaryActionCommand.Execute(null);
         await fixture.WaitUntilAsync(() => fixture.Server.Requests.Count == 1 && !reopened.IsRunning);

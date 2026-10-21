@@ -74,7 +74,7 @@ public sealed class SourceReviewChatPersistenceTests
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
         await fixture.ExecuteAsync("""
             DROP TABLE source_review_chats; DROP TRIGGER source_review_chat_environment;
-            DELETE FROM schema_versions WHERE version>=20;
+            DROP TRIGGER project_authorization_changed; ALTER TABLE projects DROP COLUMN authorization_revision; DELETE FROM schema_versions WHERE version>=20;
             CREATE TRIGGER reject_twenty BEFORE INSERT ON schema_versions WHEN NEW.version=20
             BEGIN SELECT RAISE(FAIL,'synthetic migration refusal'); END;
             """);
@@ -84,7 +84,7 @@ public sealed class SourceReviewChatPersistenceTests
         Assert.Equal(fixture.Task.Id, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)).Id);
         await fixture.ExecuteAsync("DROP TRIGGER reject_twenty;");
         await fixture.Initializer.InitializeAsync(fixture.Token); await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(25, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(28, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
     }
 
     private static async Task<SourceReviewChatBinding> BindingAsync(SqliteFailurePersistenceFixture fixture)

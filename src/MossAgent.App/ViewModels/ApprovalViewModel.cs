@@ -184,7 +184,6 @@ public sealed class ApprovalViewModel : ObservableObject
 
         if (!ReferenceEquals(ContentPreview, current?.ContentPreview)) ContentPreview?.Close();
         ContentPreview = current?.ContentPreview;
-        IsPending = current is not null;
         ToolName = current?.ToolName ?? string.Empty;
         Description = current?.Description ?? string.Empty;
         WorkingDirectory = current?.WorkingDirectory ?? string.Empty;
@@ -194,6 +193,7 @@ public sealed class ApprovalViewModel : ObservableObject
         RiskLabel = current?.RiskLabel ?? string.Empty;
         PendingCount = pendingCount;
         CurrentRequestId = current?.RequestId;
+        IsPending = current is not null;
         ApproveCommand.NotifyCanExecuteChanged();
         DenyCommand.NotifyCanExecuteChanged();
     }

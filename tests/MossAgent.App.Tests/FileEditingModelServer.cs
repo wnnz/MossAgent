@@ -15,14 +15,19 @@ internal sealed class FileEditingModelServer : IAsyncDisposable
     private readonly string _readPath;
     private readonly string _mutationPath;
     private readonly bool _replace;
+    private readonly bool _delete;
+    private readonly FileEditingMutation? _mutation;
     private readonly string _content;
     private readonly Task _serving;
 
-    public FileEditingModelServer(string path, string mutationPath, bool replace, string content, CancellationToken token)
+    public FileEditingModelServer(string path, string mutationPath, bool replace, string content, CancellationToken token,
+        bool delete = false, FileEditingMutation? mutation = null)
     {
         _readPath = path;
         _mutationPath = mutationPath;
         _replace = replace;
+        _delete = delete;
+        _mutation = mutation;
         _content = content;
         _stopping = CancellationTokenSource.CreateLinkedTokenSource(token);
         _listener.Start();
@@ -60,7 +65,7 @@ internal sealed class FileEditingModelServer : IAsyncDisposable
             type = "response.output_text.delta", delta = "本机文件流程已结束。"
         });
         var prefix = turn == 0 ? "filesystem_read_file__"
-            : _replace ? "filesystem_replace_text__" : "filesystem_write_file__";
+            : _mutation?.ToolPrefix ?? (_delete ? "filesystem_delete_path__" : _replace ? "filesystem_replace_text__" : "filesystem_write_file__");
         var name = request.GetProperty("tools").EnumerateArray().Select(tool => tool.GetProperty("name").GetString())
             .Single(tool => tool?.StartsWith(prefix, StringComparison.Ordinal) == true);
         object arguments;
@@ -74,7 +79,8 @@ internal sealed class FileEditingModelServer : IAsyncDisposable
             ExpectedSha256 = Regex.Match(read.RootElement.GetProperty("Summary").GetString()!,
                 "[A-Fa-f0-9]{64}").Value;
             if (ExpectedSha256.Length != 64) throw new InvalidDataException("Read response omitted its full-file hash.");
-            arguments = _replace
+            if (_mutation is not null) arguments = _mutation.Arguments;
+            else arguments = _delete ? new { path = _mutationPath } : _replace
                 ? new { path = _mutationPath, oldText = "alpha", newText = "beta", expectedSha256 = ExpectedSha256 }
                 : new { path = _mutationPath, content = _content, expectedSha256 = ExpectedSha256 };
         }

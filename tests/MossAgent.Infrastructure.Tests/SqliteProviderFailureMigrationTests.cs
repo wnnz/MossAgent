@@ -25,7 +25,7 @@ public sealed class SqliteProviderFailureMigrationTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(25, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(28, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(old with { IsPinned = true }, Assert.Single(await fixture.Repository.GetTasksAsync(old.ProjectId, fixture.Token)));
         Assert.Equal(archived, Assert.Single(await fixture.Repository.GetArchivedTasksAsync(old.ProjectId, fixture.Token)));
         Assert.Equal(message, Assert.Single(await fixture.Repository.GetMessagesAsync(old.Id, fixture.Token)));
@@ -61,7 +61,7 @@ public sealed class SqliteProviderFailureMigrationTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_eight;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(25, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(28, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(old, Assert.Single(await fixture.Repository.GetTasksAsync(old.ProjectId, fixture.Token)));
     }
 
@@ -88,6 +88,6 @@ public sealed class SqliteProviderFailureMigrationTests
         DROP TABLE agent_task_failures;
         ALTER TABLE agent_task_failures_v7 RENAME TO agent_task_failures;
         DROP TABLE conversation_model_preferences;
-        DELETE FROM schema_versions WHERE version>=8;
+        DROP TRIGGER project_authorization_changed; ALTER TABLE projects DROP COLUMN authorization_revision; DELETE FROM schema_versions WHERE version>=8;
         """);
 }

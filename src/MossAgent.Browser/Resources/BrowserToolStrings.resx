@@ -7,4 +7,14 @@
   <data name="DeveloperToolsDescription" xml:space="preserve"><value>打开当前任务绑定的浏览器开发工具窗口。</value></data>
   <data name="DeveloperToolsOpened" xml:space="preserve"><value>已打开浏览器开发工具。</value></data>
   <data name="DeveloperToolsUnsupported" xml:space="preserve"><value>当前浏览器会话不支持开发工具窗口。</value></data>
+  <data name="SessionRequired" xml:space="preserve"><value>当前任务没有绑定可用的浏览器会话，请先打开任务浏览器后重试。</value></data>
+  <data name="ScreenshotDescription" xml:space="preserve"><value>截取当前浏览器页面并保存为任务产物。</value></data>
+  <data name="ScreenshotSaved" xml:space="preserve"><value>浏览器截图已保存。</value></data>
+  <data name="ScreenshotEmpty" xml:space="preserve"><value>浏览器返回了空截图，未保留产物。请核实页面后重试。</value></data>
+  <data name="DownloadDescription" xml:space="preserve"><value>点击页面元素并将浏览器下载保存为任务产物。</value></data>
+  <data name="DownloadSaved" xml:space="preserve"><value>浏览器下载已保存，可在任务产物中查看。</value></data>
+  <data name="ArtifactTooLarge" xml:space="preserve"><value>浏览器导出超过 32 MiB 限额，未保留产物。请缩小截图范围或下载内容后重试。</value></data>
+  <data name="DownloadFailed" xml:space="preserve"><value>浏览器下载未能完成，请检查页面和网络后手动重试。</value></data>
+  <data name="DownloadCleanupFailed" xml:space="preserve"><value>浏览器下载暂存清理未获确认。请核实任务浏览器临时数据，不会自动重试下载。</value></data>
+  <data name="SessionCleanupFailed" xml:space="preserve"><value>任务浏览器关闭未获确认。请核实任务浏览器状态，不会自动重试操作。</value></data>
 </root>

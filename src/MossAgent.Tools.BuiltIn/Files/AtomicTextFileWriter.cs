@@ -1,9 +1,11 @@
 using System.Text;
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Files;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class AtomicTextFileWriter(AuthorizedPathResolver paths)
+public sealed class AtomicTextFileWriter(AuthorizedPathResolver paths, IAtomicFileWriteSessionFactory? sessions = null,
+    IPathDeleteSessionFactory? deleteSessions = null, IArtifactFileSessionFactory? artifactSessions = null)
 {
     private readonly SemaphoreSlim[] _gates = Enumerable.Range(0, 128)
         .Select(_ => new SemaphoreSlim(1, 1)).ToArray();
@@ -18,7 +20,7 @@ public sealed class AtomicTextFileWriter(AuthorizedPathResolver paths)
         ToolExecutionContext context, CancellationToken cancellationToken)
     {
         path = paths.Resolve(path, context);
-        using var history = new FileChangeSnapshotWriter(context);
+        using var history = new FileChangeSnapshotWriter(context, artifactSessions);
         var updated = await WriteCoreAsync(path, original, context,
             (stream, token) => WriteTextContentAsync(stream, content, encoding, token), history, cancellationToken);
         ToolFileChange? change = null;
@@ -41,11 +43,8 @@ public sealed class AtomicTextFileWriter(AuthorizedPathResolver paths)
         path = paths.Resolve(path, context);
         paths.RejectAuthorizedRootMutation(path, context);
         using var lease = await AcquireAsync(path, cancellationToken);
-        await VerifyAsync(path, original, context, cancellationToken);
         if (!original.Exists) throw new FileEditException("file_changed", "FileChanged");
-        paths.Resolve(path, context);
-        cancellationToken.ThrowIfCancellationRequested();
-        File.Delete(path);
+        await new PathDeletion(paths, deleteSessions).DeleteAsync(path, false, original, context, cancellationToken);
         var deleted = new FileSnapshot(null);
         context.FileSnapshots.Record(context.TaskId, FileSnapshotReader.CacheKey(path), deleted);
         return deleted;
@@ -58,6 +57,8 @@ public sealed class AtomicTextFileWriter(AuthorizedPathResolver paths)
         path = paths.Resolve(path, context);
         using var lease = await AcquireAsync(path, cancellationToken);
         await VerifyAsync(path, original, context, cancellationToken);
+        if (sessions is not null)
+            return await WriteGuardedAsync(path, original, context, writeContent, history, cancellationToken);
         var cleanupContext = context with { AuthorizedRoots = context.AuthorizedRoots.ToArray() };
         var directory = Path.GetDirectoryName(path) ?? throw new IOException("Missing parent directory.");
         Directory.CreateDirectory(paths.Resolve(directory, context));
@@ -86,6 +87,26 @@ public sealed class AtomicTextFileWriter(AuthorizedPathResolver paths)
         }
     }
 
+    private async Task<FileSnapshot> WriteGuardedAsync(
+        string path, FileSnapshot original, ToolExecutionContext context,
+        Func<Stream, CancellationToken, Task> writeContent, FileChangeSnapshotWriter? history, CancellationToken token)
+    {
+        paths.RejectAuthorizedRootMutation(path, context);
+        using var session = sessions!.Create(path, context.AuthorizedRoots, token);
+        var updated = await StageAsync(session.Stream, writeContent, token);
+        if (history is not null && original.Sha256 != updated.Sha256)
+        {
+            await history.CaptureBeforeAsync(paths.Resolve(path, context), original, token);
+            await history.CaptureAfterAsync(session.Stream, updated, token);
+        }
+        await VerifyAsync(path, original, context, token);
+        paths.Resolve(path, context);
+        if (!await session.TryCommitAsync(original.Sha256, token))
+            throw new FileEditException("file_changed", "FileChanged");
+        context.FileSnapshots.Record(context.TaskId, FileSnapshotReader.CacheKey(path), updated);
+        return updated;
+    }
+
     private static async Task WriteTextContentAsync(Stream stream, string content, Encoding encoding, CancellationToken token)
     {
         await using var writer = new StreamWriter(stream, encoding, leaveOpen: true);
@@ -106,7 +127,7 @@ public sealed class AtomicTextFileWriter(AuthorizedPathResolver paths)
         string path, FileSnapshot original, ToolExecutionContext context, CancellationToken cancellationToken)
     {
         paths.Resolve(path, context);
-        var current = await FileSnapshotReader.ReadAsync(path, cancellationToken);
+        var current = await FileSnapshotReader.ReadAsync(path, cancellationToken, context);
         if (current != original) throw new FileEditException("file_changed", "FileChanged");
         FileSnapshotReader.ValidateForEdit(path, context, current, null);
     }
@@ -116,6 +137,12 @@ public sealed class AtomicTextFileWriter(AuthorizedPathResolver paths)
     {
         await using var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.ReadWrite,
             FileShare.None, 81920, FileOptions.Asynchronous);
+        return await StageAsync(stream, writeContent, cancellationToken);
+    }
+
+    private static async Task<FileSnapshot> StageAsync(
+        FileStream stream, Func<Stream, CancellationToken, Task> writeContent, CancellationToken cancellationToken)
+    {
         await writeContent(stream, cancellationToken);
         await stream.FlushAsync(cancellationToken);
         stream.Position = 0;

@@ -19,7 +19,7 @@ public sealed class ToolInterruptionMigrationTests
         await fixture.Repository.AppendMessageAsync(message, fixture.Token);
         await fixture.ExecuteAsync("""
             DROP TABLE tool_execution_interruptions;
-            DELETE FROM schema_versions WHERE version>=24;
+            DROP TRIGGER project_authorization_changed; ALTER TABLE projects DROP COLUMN authorization_revision; DELETE FROM schema_versions WHERE version>=24;
             CREATE TRIGGER reject_version_twenty_four BEFORE INSERT ON schema_versions
             WHEN NEW.version=24 BEGIN SELECT RAISE(ABORT,'synthetic audit migration failure'); END;
             """);
@@ -31,7 +31,7 @@ public sealed class ToolInterruptionMigrationTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_twenty_four;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(25, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(28, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var restored = Assert.Single(await new SqliteToolExecutionAuditReader(fixture.Connections).GetRecentAsync(fixture.Task.Id, 10, fixture.Token));
         Assert.Equal(id, restored.Id);
         Assert.Equal("legacy-call", restored.CallId);
