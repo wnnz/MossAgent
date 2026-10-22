@@ -24,12 +24,12 @@
 不要在页面或代码后置覆盖子图标 Margin；`AppIconLabel` 通过 `Spacing` 拥有该间距。
 设置导航与侧边栏操作使用共享 14-DIP 字号和 18-DIP 行高，避免默认行高导致图文中心偏移。
 分组标题复用 `sidebar-section-heading` 与独立 `SidebarSectionTextBrush`，
-不能为一个分组覆盖整个主题的弱文字颜色；实测及限制见 `SHARED_NAVIGATION_TYPOGRAPHY_ACCEPTANCE.md`。
+不能为一个分组覆盖整个主题的弱文字颜色；实测及限制见 [SHARED_NAVIGATION_TYPOGRAPHY_ACCEPTANCE.md](archive/UI_COMPONENTS.md#shared-navigation-typography-acceptance)。
 任务文字使用共享 14-DIP 字号与 18-DIP 行高；`AppText.FadeOverflow` 默认关闭，
 任务变体只在文字实际溢出时通过 `:overflowing` 提供渐隐，不淡化完整短标题。
-本次文字颜色、原图指标、字体实验及剩余差异见 `SIDEBAR_TASK_TEXT_ACCEPTANCE.md`。
+本次文字颜色、原图指标、字体实验及剩余差异见 [SIDEBAR_TASK_TEXT_ACCEPTANCE.md](archive/UI_WORKFLOWS.md#sidebar-task-text-acceptance)。
 最新设置页原图测量、明暗和最小窗口交互范围见
-`SETTINGS_SHARED_APPEARANCE_ACCEPTANCE.md`；局部指标一致不代表整个界面像素一致。
+[SETTINGS_SHARED_APPEARANCE_ACCEPTANCE.md](archive/UI_WORKFLOWS.md#settings-shared-appearance-acceptance)；历史局部外观核验不能替代当前工作流验收。
 
 | 用途 | 组件 |
 | --- | --- |
@@ -80,7 +80,7 @@
 祖先不可用时不能抢回草稿焦点。订阅与组件附着生命周期一致。
 `ValidateSharedWorkspacePrompts` 和 `MOSSUI002` 拒绝替换 Content、DataTemplates、
 Padding、尺寸和内容对齐，包含原生属性所有者限定、属性元素及隐式子内容。
-实窗检索、选择、Escape 与非黑屏原图的范围见 `MODEL_SELECTION_ACCEPTANCE.md`。
+实窗检索、选择、Escape 与非黑屏原图的范围见 [MODEL_SELECTION_ACCEPTANCE.md](archive/PROVIDERS.md#model-selection-acceptance)。
 
 主回复和子代理回复统一使用 `AppResponseContent`，只绑定解析后的 `Blocks` 和已有
 `CopyCodeCommand`；子代理选择共享 `compact` 变体。标题、列表、引用、代码和表格
@@ -92,7 +92,7 @@ Padding、尺寸和内容对齐，包含原生属性所有者限定、属性元�
 派生的展示分块不写入持久化载荷；流式更新、完成和重开恢复均用同一组件。
 `ValidateSharedResponseContent` 与 `MOSSUI002` 拒绝替换 Content、DataTemplates、
 内边距、尺寸及内容对齐，包含原生属性所有者限定、属性元素和隐式子内容写法。
-实际模型链路、复制与截图范围见 `SUBAGENT_EXECUTION_ACCEPTANCE.md` 的 2026-10-07 记录。
+实际模型链路、复制与截图范围见 [SUBAGENT_EXECUTION_ACCEPTANCE.md](archive/AGENTS_AUTOMATIONS.md#subagent-execution-acceptance) 的 2026-10-07 记录。
 
 普通正文和列表统一为 14-DIP 字号、23-DIP 行高；段落间距只在共享文本块根节点设置，
 列表不重复加段落间距，列表缩进和前缀基线由 `ResponseContentVariants.axaml` 维护。
@@ -104,7 +104,7 @@ Padding、尺寸和内容对齐，包含原生属性所有者限定、属性元�
 `CodeFontFamily`、`CodeFontSize`、`CodeBackground`、`CodeBackgroundPadding`、
 `CodeCornerRadius`、`SelectionBrush`、`SelectionForegroundBrush` 均受 AXAML 和 `MOSSUI002` 门禁保护，
 页面不能直接赋值、绑定或重置这些外观属性。样式变化不重新构造整段文本或丢失选择。
-正文原始像素对照、窗口重排和剩余差异见 `RESPONSE_CONTENT_FIDELITY_ACCEPTANCE.md`。
+正文原始像素对照、窗口重排和剩余差异见 [RESPONSE_CONTENT_FIDELITY_ACCEPTANCE.md](archive/UI_WORKFLOWS.md#response-content-fidelity-acceptance)。
 
 数字输入统一通过 `AppNumericUpDown`，不要在页面拼装文本框和加减按钮。
 `NumericFieldVariants.axaml` 拥有内部箭头、22-DIP 连按按钮、32-DIP 字段、共享状态
@@ -113,7 +113,7 @@ Padding、尺寸和内容对齐，包含原生属性所有者限定、属性元�
 `ValidateSharedRepeatButtons` 与 `MOSSUI002` 同时阻止 AXAML/C# 外观覆盖，
 包括 `Button.Width` 等原生所有者属性元素；不添加原生控件例外。
 原始截图墨迹测量、主题/边界回归与原生加减/取消证据见
-`NUMERIC_FIELD_COMPONENT_ACCEPTANCE.md`；组件封装不代表全页逐像素还原完成。
+[NUMERIC_FIELD_COMPONENT_ACCEPTANCE.md](archive/UI_COMPONENTS.md#numeric-field-component-acceptance)；组件封装通过后仍需验证实际绑定和交互。
 
 侧边栏项目标题统一使用 `AppProjectNavigationRow`。页面只传 `Title`、选择和展开状态、
 `ActionTarget`、现有选择/展开命令、`SummaryContent` 与双向 `IsSummaryOpen`，不重新
@@ -128,14 +128,14 @@ Padding、尺寸和内容对齐，包含原生属性所有者限定、属性元�
 96 DPI 原图中闭合墨迹为 12×12、展开为 14×12；槽尺寸不等同于实际墨迹尺寸。
 `ValidateSharedProjectNavigationRows` 与 `MOSSUI002` 禁止覆盖 Content、Padding、尺寸
 及内容对齐，普通属性、属性元素和原生属性所有者限定写法同样受约束。
-明暗主题、真实页面命令及原始尺寸截图证据见 `PROJECT_ROW_COMPONENT_ACCEPTANCE.md`。
+明暗主题、真实页面命令及原始尺寸截图证据见 [PROJECT_ROW_COMPONENT_ACCEPTANCE.md](archive/UI_COMPONENTS.md#project-row-component-acceptance)。
 
 项目拖动只绑定当前侧边栏的 `DragScope`、既有 `ReorderCommand` 和 `IsReorderEnabled`。
 共享行拥有鼠标阈值、原生拖放与上下插入线，导航滚动区通过 `NavigationDragScope`
 复用同一作用域；页面不得自行处理拖放或构造第二份项目顺序。隐藏、禁用或不可用祖先
 拒绝迟到拖放并停止边缘滚动；换作用域、卸载或载荷失效同样释放订阅与计时器。
 身份与原位置检查在构造顺序之前完成，自身与未改变位置的拖放不写入、不改变行状态。
-原生拖动、保存、重启恢复及边界回归见 `SIDEBAR_PROJECT_DRAG_ACCEPTANCE.md`。
+原生拖动、保存、重启恢复及边界回归见 [SIDEBAR_PROJECT_DRAG_ACCEPTANCE.md](archive/UI_WORKFLOWS.md#sidebar-project-drag-acceptance)。
 
 侧边栏置顶、项目和最近会话共用 `AppScrollViewer` 的 `sidebar-navigation-scroll`
 变体。`NavigationActionVariants.axaml` 拥有 6-DIP、3-DIP 圆角的可见滑块及
@@ -143,20 +143,20 @@ Padding、尺寸和内容对齐，包含原生属性所有者限定、属性元�
 视口向侧边栏边缘延伸 9 DIP，同量右侧 Padding 保持行宽和文字位置不变。
 轨道保持透明、隐藏行箭头，但保留分页点击、拖动和滚轮；悬停及按下只改变专用主题颜色。
 这些规则仅作用于侧边栏变体，不改变其它滚动区或全局分隔线。
-原始尺寸像素、明暗主题与禁用/内容适配边界见 `SIDEBAR_FIDELITY_ACCEPTANCE.md`。
+原始尺寸像素、明暗主题与禁用/内容适配边界见 [SIDEBAR_FIDELITY_ACCEPTANCE.md](archive/UI_WORKFLOWS.md#sidebar-fidelity-acceptance)。
 
 侧边栏头部布局使用共享 `sidebar-actions-header` 变体，`has-pinned-tasks` 只绑定
 现有置顶列表的 `HasItems`。有置顶时下间距 17 DIP，无置顶时 21 DIP；置顶标题
 下间距 10 DIP，使标题上移但任务和项目位置不变。不能用文字 RenderTransform
 越过滚动视口裁剪边界，也不能在页面自行设置另一套间距或缓存重复状态。
-完整窗口坐标、真实置顶命令、原尺寸截图及限制见 `SIDEBAR_HEADING_ACCEPTANCE.md`。
+完整窗口坐标、真实置顶命令、原尺寸截图及限制见 [SIDEBAR_HEADING_ACCEPTANCE.md](archive/UI_WORKFLOWS.md#sidebar-heading-acceptance)。
 
 项目编辑器仍复用共享输入、按钮、列表和 `status-error` 文字变体。`IsBusy` 表达
 保存或目录选择进行中，命令拒绝重复执行，保存入口显示本地化的进行中状态。
 `HasStatusError` 只选择已有错误外观，不在页面定义颜色。保存与目录选择使用
 编辑器生命周期取消；迟到的保存结果不能清空新草稿，迟到的目录选择不能修改
 另一个项目。错误只展示允许列表中的验证提示或安全的存储失败提示，不展示原始异常。
-原生摘要、项目重命名、错误与重试保存验收见 `PROJECT_MANAGEMENT_ACCEPTANCE.md`。
+原生摘要、项目重命名、错误与重试保存验收见 [PROJECT_MANAGEMENT_ACCEPTANCE.md](archive/UI_WORKFLOWS.md#project-management-acceptance)。
 
 输入区上下文条统一使用 `AppComposerContextBar`。页面只绑定项目、分支、代理名称、
 代理集合与已有选择命令，并提供项目选择器的业务内容，不重新拼装三列操作区。
@@ -169,7 +169,7 @@ Padding、尺寸和内容对齐，包含原生属性所有者限定、属性元�
 项目缺失、选择器缺失或命令缺失时入口禁用；命令的 CanExecute 仍然生效。
 换项目、换命令、代理不可用或卸载时关闭相关浮层，项目选择器继承业务 DataContext。
 `ValidateSharedWorkspacePrompts` 和 `MOSSUI002` 拒绝页面替换内容、内边距和尺寸。
-运行截图、迟到数据回归与实际菜单输入验收见 `COMPOSER_CONTEXT_COMPONENT_ACCEPTANCE.md`。
+运行截图、迟到数据回归与实际菜单输入验收见 [COMPOSER_CONTEXT_COMPONENT_ACCEPTANCE.md](archive/UI_COMPONENTS.md#composer-context-component-acceptance)。
 
 对话标题栏统一使用 `AppConversationHeader`。页面传标题与菜单的业务内容、会话目标、
 状态和已有命令，不重新拼装右上角按钮或运行状态布局。共享变体统一 52-DIP 标题栏、
@@ -180,13 +180,13 @@ Padding、尺寸和内容对齐，包含原生属性所有者限定、属性元�
 换会话、换业务上下文、换菜单/命令或卸载时关闭浮层；草稿和任务仍归原 ViewModel。
 `ValidateSharedConversationHeaders` 和 `MOSSUI002` 拒绝页面替换 Content、Padding、
 尺寸及内容对齐，普通属性、属性元素和原生属性所有者限定同样受检查。
-运行截图、菜单实际宽度回归和验收限制见 `CONVERSATION_HEADER_COMPONENT_ACCEPTANCE.md`。
+运行截图、菜单实际宽度回归和验收限制见 [CONVERSATION_HEADER_COMPONENT_ACCEPTANCE.md](archive/UI_COMPONENTS.md#conversation-header-component-acceptance)。
 
 主工作区外框复用 `AppBorder` 的 `window-content-frame` 共享变体：统一 12-DIP
 圆角、右侧及底部 4-DIP 留白、内容裁剪和四周浅色阴影。页面不单独设置这些属性。
 侧边栏、对话及检查器放在同一外框内，标题栏、导航轨和原生窗口缩放命中区保持在外。
 侧边栏有独立目录 DataContext，展开状态必须绑定到窗口 ViewModel，不能从目录对象取值。
-布局和原生截图验收见 `WINDOW_FRAME_ACCEPTANCE.md`。
+布局和原生截图验收见 [WINDOW_FRAME_ACCEPTANCE.md](archive/UI_WORKFLOWS.md#window-frame-acceptance)。
 
 对话和检查器的排列统一使用 `AppWorkspacePanes`，页面只传 `PrimaryPane`、
 `InspectorPane` 和 `IsInspectorOpen`，不重新计算列宽或在 ViewModel 中维护外边距。
@@ -202,7 +202,7 @@ Padding、尺寸和内容对齐，包含原生属性所有者限定、属性元�
 组件不重建页面、任务或浏览器会话，卸载时解除列宽订阅。
 `ValidateSharedWorkspacePanes` 与 `MOSSUI002` 拒绝 Content、Padding、尺寸、内容对齐、
 默认比例、最小宽度、浮动位置及分隔条配置覆盖，普通属性和属性元素均受检查。
-功能数据和可见状态仍可绑定；验收见 `WORKSPACE_PANE_COMPONENT_ACCEPTANCE.md`。
+功能数据和可见状态仍可绑定；验收见 [WORKSPACE_PANE_COMPONENT_ACCEPTANCE.md](archive/UI_COMPONENTS.md#workspace-pane-component-acceptance)。
 
 输入、数字输入和下拉选择的默认最小高度统一为 32 DIP，内容垂直居中，
 在 `Styles/FieldVariants.axaml` 维护。多行配置统一使用 `field-multiline`
@@ -224,14 +224,14 @@ Padding、尺寸和内容对齐，包含原生属性所有者限定、属性元�
 `ValidateSharedWorkspacePrompts` 与 `MOSSUI002` 禁止替换这两个组件的内容、内边距、
 尺寸和内容对齐，也禁止覆盖权限按钮内部 Flyout、Command 和 CommandParameter。
 普通属性、属性元素和原生属性所有者限定写法执行同一检查；功能数据绑定仍允许。
-验收证据与限制见 `WORKSPACE_PROMPT_COMPONENT_ACCEPTANCE.md`。
+验收证据与限制见 [WORKSPACE_PROMPT_COMPONENT_ACCEPTANCE.md](archive/UI_COMPONENTS.md#workspace-prompt-component-acceptance)。
 
 任务失败提示统一使用 `AppTaskFailureNotice`，页面只绑定 `Hint` 和可见状态。
 组件拥有警告图标、有限宽度中的自动换行及共享卡片；图标采用共享 12-DIP
 `icon-small`，位置和外边距由 `SurfaceVariants.axaml` 维护，不在页面拼装。
 `ValidateSharedTaskFailureNotices` 和 `MOSSUI002` 拒绝替换内容、内边距、尺寸
 及内容对齐。提示只能来自本地化、允许列表中的失败类别，不回显原始异常；
-恢复后的提示、数据库迁移和明暗主题验收见 `TASK_FAILURE_ACCEPTANCE.md`。
+恢复后的提示、数据库迁移和明暗主题验收见 [TASK_FAILURE_ACCEPTANCE.md](archive/CONVERSATIONS.md#task-failure-acceptance)。
 
 提供商和模型列表的标题与操作区使用 `AppProviderSettingsHeader` 和
 `AppModelSettingsRow`，页面只传 Provider/Model、展开状态、数量和命令。
@@ -240,7 +240,7 @@ Padding、尺寸和内容对齐，包含原生属性所有者限定、属性元�
 `Styles/ProviderSettingsRowVariants.axaml` 统一 24-DIP 高度并垂直居中。
 目标数据或命令缺失时操作不可用，命令自身的 CanExecute 继续生效。
 `ValidateSharedProviderSettingsRows` 与 `MOSSUI002` 拒绝页面替换内容、内边距、
-尺寸和内容对齐。截图、真实页面命令及拒绝验收见 `PROVIDER_ROW_COMPONENT_ACCEPTANCE.md`。
+尺寸和内容对齐。截图、真实页面命令及拒绝验收见 [PROVIDER_ROW_COMPONENT_ACCEPTANCE.md](archive/PROVIDERS.md#provider-row-component-acceptance)。
 
 提供商与模型页面共用 `ProviderModelCatalogViewModel` 的完整配置快照，
 加载、读取失败和成功空结果必须分开呈现，不能用列表数量判断读取是否成功。
@@ -249,14 +249,14 @@ Padding、尺寸和内容对齐，包含原生属性所有者限定、属性元�
 不重新填充打开的编辑器；原目标删除后保留草稿并要求重新选择，不能自动换到其他提供商。
 获取/添加模型也使用共享 24-DIP 操作变体；提供商、模型及其他设置行的禁用操作
 统一半透明、箭头光标，不能仍像可点击操作。恢复后由共享样式恢复正常状态。
-详见 `PROVIDER_CATALOG_ACCEPTANCE.md`。
+详见 [PROVIDER_CATALOG_ACCEPTANCE.md](archive/PROVIDERS.md#provider-catalog-acceptance)。
 
 提供商/模型保存、删除与发现后的模型导入共用目录的写入执行器。
 等待写入时，相关行操作使用同一禁用样式；写入失败显示本地化安全提示，
 保留打开的草稿并允许重试。写入过程中重新打开编辑器或修改字段时，
 旧操作完成不能关闭或清空新草稿；成功删除其他模型也不能重置当前编辑器。
 读写状态和编辑版本由 ViewModel 管理，页面不另建样式或异步处理。
-设计、失败回归和实际鼠标/键盘验收见 `CONFIGURATION_MUTATION_ACCEPTANCE.md`。
+设计、失败回归和实际鼠标/键盘验收见 [CONFIGURATION_MUTATION_ACCEPTANCE.md](archive/ENGINEERING.md#configuration-mutation-acceptance)。
 
 网络代理、MCP、自定义代理与子代理列表复用 `AppSettingsItemRow`，不再在页面中
 拼装标题、协议、状态徽标和操作。组件将长名称与说明限制在可省略的有限列中，
@@ -269,7 +269,7 @@ Padding、尺寸和内容对齐，包含原生属性所有者限定、属性元�
 未提供动作标签时不显示操作，缺少命令或目标时禁用，命令自己的 CanExecute 仍生效。
 组件保留 `app-settings-item-row` 样式身份；封装尺寸、Content、Padding 和内容对齐
 受现有 C#/AXAML 构建门禁保护。协议与地址只显示必要信息，MCP 继续使用已有安全摘要，
-不展示 URL 凭据、路径、查询、参数、环境变量和请求头。详见 `SETTINGS_ITEM_COMPONENT_ACCEPTANCE.md`。
+不展示 URL 凭据、路径、查询、参数、环境变量和请求头。详见 [SETTINGS_ITEM_COMPONENT_ACCEPTANCE.md](archive/UI_COMPONENTS.md#settings-item-component-acceptance)。
 
 `Grid`、`StackPanel`、`WrapPanel`、`Panel`、`ContentPresenter` 可以作为结构元素。
 共享 `AppActionButton` 的图标、标签和徽标组合在内部统一按同一垂直中心排列，
@@ -301,7 +301,7 @@ AXAML 业务页不能用 `Classes.app-*` 状态绑定或显式标识冒充另一
 `AppBrowserViewport` 附加时订阅祖先的位置、可见性和变换属性，脱离时全部解除。
 浮动卡片与停靠面板切换时，即使视口自身的 Bounds 不变，也必须更新原生位置。
 页面不添加临时偏移或重建浏览器会话来绕过布局；拖动、收起重开和审批取消的
-原生截图与回归验收见 `BROWSER_EXECUTION_ACCEPTANCE.md`。
+原生截图与回归验收见 [BROWSER_EXECUTION_ACCEPTANCE.md](archive/BROWSER_MCP.md#browser-execution-acceptance)。
 主窗口协调器订阅审批状态并将最终状态更新投递到 UI 线程，关闭时解除订阅，
 不能在容器释放的后台线程销毁 Avalonia 属性绑定或修改原生视图。
 Windows 应用清单声明兼容系统和 DPI，
@@ -382,17 +382,17 @@ Windows 应用清单声明兼容系统和 DPI，
 直接执行命令也不能绕过。持久化失败只显示本地化安全提示，通过现有 `status-error`
 变体呈现，不在侧边栏添加错误颜色。晚完成的重命名保留新草稿；同一会话的置顶或
 元数据刷新不重置标题编辑器。取消和关闭向仓库传递所有者令牌，不发布过期结果。
-普通权限菜单操作、重启后恢复及测试边界见 `TASK_MUTATION_ACCEPTANCE.md`。
+普通权限菜单操作、重启后恢复及测试边界见 [TASK_MUTATION_ACCEPTANCE.md](archive/CONVERSATIONS.md#task-mutation-acceptance)。
 标题通过仓库端口的专用事务更新，不再回写旧任务全量快照；冲突保留草稿，
 成功发布存储返回的完整元数据。重命名和归档期间只阻止同一目标任务开始运行，
 其他任务和停止操作不被全局禁用；发布完成后再解除阻止。
-并发状态、外部标题、归档、取消与回滚回归见 `TASK_TITLE_PERSISTENCE_ACCEPTANCE.md`。
+并发状态、外部标题、归档、取消与回滚回归见 [TASK_TITLE_PERSISTENCE_ACCEPTANCE.md](archive/CONVERSATIONS.md#task-title-persistence-acceptance)。
 
 导航操作的显示状态统一在 `NavigationActionVariants.axaml` 和 `ConversationTabVariants.axaml`
 维护：隐藏时同时关闭鼠标命中，行悬停或键盘焦点进入时显示，焦点离开且没有悬停时隐藏。
 选中会话标签保留选项按钮；菜单打开期间，即使焦点进入弹出层，触发按钮也不能消失。
 显示状态不改变命令可用性，禁用操作不会因为悬停而启用。不要在页面绑定透明度补丁。
-详见 [NAVIGATION_ACTION_ACCEPTANCE.md](NAVIGATION_ACTION_ACCEPTANCE.md)。
+详见 [NAVIGATION_ACTION_ACCEPTANCE.md](archive/UI_WORKFLOWS.md#navigation-action-acceptance)。
 
 浏览器操作区统一使用 `AppBrowserToolbar`：`Address` 默认双向绑定，
 `NavigateCommand` 同时用于地址栏 Enter 和导航按钮；返回、前进、刷新和开发工具
@@ -563,14 +563,14 @@ dotnet test tests/MossAgent.App.Tests/MossAgent.App.Tests.csproj --no-restore --
 dotnet build MossAgent.slnx --no-restore --disable-build-servers -m:1
 ```
 
-编译和规则测试通过不等于已经一比一还原。仍需运行界面，用相同 DPI 和有效窗口尺寸截图，
-检查对齐、菜单、滚动、缩放和真实交互；不要把截图强行拉伸成目标尺寸来掩盖布局差异。
+编译和规则测试通过不等于工作流已验收。还需运行界面，在主要窗口尺寸、明暗主题和
+键盘操作下检查遮挡、裁切、可读性、焦点和真实交互；不以与 Codex 像素一致作为完成条件。
 
 侧边栏搜索只绑定 `Query`（双向）、`HasMatches` 和已有 `ClearCommand`，
 不能重新拼装浮层或替换内部内容。`SidebarSearchVariants.axaml` 拥有 270-DIP 浮层、
 无边框输入和 12-DIP 清除图标；快捷键、输入焦点和浮层生命周期由组件拥有。
 `ValidateSharedSidebarSearch` 和 `MOSSUI002` 拒绝内容、尺寸及 Padding 覆盖，
-原生交互与仍未确认的一比一范围见 `SIDEBAR_SEARCH_COMPONENT_ACCEPTANCE.md`。
+原生交互及历史外观核验范围见 [SIDEBAR_SEARCH_COMPONENT_ACCEPTANCE.md](archive/UI_COMPONENTS.md#sidebar-search-component-acceptance)。
 
 需要验证实际绑定和键盘命令的组件测试使用 `Avalonia.Headless` 的独立会话，
 在它的 UI 调度线程内构造、编辑和断言，并异步释放会话。
@@ -588,8 +588,9 @@ Avalonia 12.1 的首个调度线程和普通 xUnit 工作线程不一定相同�
 图标光学偏移、选中色和底部间距；`ValidateSharedNavigationRail` 与 `MOSSUI002`
 拒绝内部内容、Padding 和尺寸覆盖。帮助内容继承业务 DataContext；缺失功能禁用，
 命令 CanExecute 保留，所有权替换、隐藏、禁用或分离时关闭浮层并解除祖先订阅。
-定时任务尚未实现，保持明确禁用；不伪装成具有 Codex 的全部功能。
+定时任务已有运行链路；完整状态与剩余范围见[功能清单](FEATURE_STATUS_AND_IMPLEMENTATION_PLAN.md)。
+组件只承载真实可用的命令，未实现动作应说明限制。
 任务旋转动画只在专用图标主题内安装，不能在全局条件样式中污染其他图标的变换。
 `TranslateTransform` 与 `RotateTransform` 均为非视觉值对象；不放行原生视觉控件，
 业务页面仍不得覆盖 RenderTransform。原生像素与交互范围见
-`NAVIGATION_RAIL_COMPONENT_ACCEPTANCE.md`。
+[NAVIGATION_RAIL_COMPONENT_ACCEPTANCE.md](archive/UI_COMPONENTS.md#navigation-rail-component-acceptance)。

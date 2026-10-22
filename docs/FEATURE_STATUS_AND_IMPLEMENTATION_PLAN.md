@@ -18,15 +18,15 @@ MossAgent 已具备桌面 Coding Agent 的主要本地运行链路：项目/无�
 | 状态 | 含义 |
 | --- | --- |
 | 已完成的限定能力 | 有生产入口、实际运行链路和对应证据；只表示表中写明的范围，不表示整类功能全部完成 |
-| 部分完成 | 基础链路存在，但仍缺少明确列出的子能力或安全边界 |
+| 部分完成 | 基础链路存在，但仍缺少明确列出的子能无用力或安全边界 |
 | 未实现 | 当前盘点没有完整生产链路；设计文档、可保存配置或同名按钮不计为完成 |
 | 未验证 | 实现或方案存在，但缺少当前候选、实际平台、真实服务或指定时序的验收证据 |
 | 外部依赖待就绪/核实 | 受独立系统、官方接口、账号计划、注册权限或硬件限制，不能据此宣称已完成或擅自排除范围 |
 
-R01–R24 沿用[阶段交付清单](DELIVERY_STATUS_AND_ROADMAP.md)的编号；本文件统一展开当前缺口，
+R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-and-roadmap)的编号；本文件统一展开当前缺口，
 尤其补入 schema 26–28 和文件/产物句柄安全增量，不把这些已经实现的部分重新列为待开发。
 历史专项中的“未提交”“正在运行”等描述只代表其检查点，当前提交身份以上述基线为准。
-其他 Codex 入口沿用[功能矩阵](FUNCTIONAL_PARITY_MATRIX.md)中 2026-10-19 的参考盘点；
+其他 Codex 入口沿用[功能矩阵](archive/OVERVIEW.md#functional-parity-matrix)中 2026-10-19 的参考盘点；
 本轮没有重新操作 Codex 窗口或核实所有外部接口，实施前应重新确认服务和 Windows 支持范围。
 
 ## 2. 已完成的限定能力
@@ -38,50 +38,50 @@ R01–R24 沿用[阶段交付清单](DELIVERY_STATUS_AND_ROADMAP.md)的编号；
 
 | 编号 | 已完成的能力及实际链路 | 证据与剩余范围 |
 | --- | --- | --- |
-| C01 | 项目对话和无项目对话：新对话 → `WorkspaceTaskFactory` → 所选提供商 → Agent；无项目普通聊天不隐式获取目录、shell 或通用工具权限 | [无项目对话](PROJECTLESS_CHAT.md)、[无项目附件](PROJECTLESS_ATTACHMENTS_ACCEPTANCE.md)；原生全流程见 R23 |
-| C02 | 流式响应、多轮上下文、消息落库、历史重开和任务切换；历史消息参与下一轮请求 | [历史上下文](HISTORY_CONTEXT_ACCEPTANCE.md)、[流终态](PROVIDER_STREAM_COMPLETION_ACCEPTANCE.md)；完整协议/断线矩阵见 R06 |
-| C03 | 每任务运行控制、独立取消及事件流；发送准备可取消，失败保留草稿，提交后取消有可查看终态；启动恢复为中断，不自动重放 | [发送准备取消](SEND_PREPARATION_CANCELLATION_ACCEPTANCE.md)、[关闭恢复](SHUTDOWN_RECOVERY_ACCEPTANCE.md)；其他崩溃断点见 R03/R04/R23 |
-| C04 | 对话、新项目会话和无项目草稿隔离；文本/附件草稿持久化、导航恢复、版本冲突保护；消息提交与草稿消费共用 SQLite 事务，保留发送时的新输入 | [草稿持久化](DRAFT_BACKGROUND_PERSISTENCE_ACCEPTANCE.md)、[原子发送](CONVERSATION_SUBMISSION_ACCEPTANCE.md)；事务中真实终止及原生组合见 R03/R23 |
-| C05 | Queue：运行中 Enter 入队，编辑/排序/移除/手动继续；保存模型、强度、提示词、授权和附件快照，按原任务分派；仅成功活动链自动续发 | [Queue 运行](CONVERSATION_FOLLOWUP_RUNTIME_ACCEPTANCE.md)、[分派](CONVERSATION_FOLLOWUP_DISPATCH_ACCEPTANCE.md)、[进程恢复](CONVERSATION_FOLLOWUP_PROCESS_RECOVERY.md)；其余竞争见 R03 |
-| C06 | 文本 Steer：活动 Ctrl+Enter 接收草稿及 receipt，在当前工具批次后的模型边界应用；保持原运行模型/权限，有界 mailbox、幂等和历史状态 | [文本引导](CONVERSATION_STEERING_ACCEPTANCE.md)；附件引导、发送偏好未实现，见 R03 |
+| C01 | 项目对话和无项目对话：新对话 → `WorkspaceTaskFactory` → 所选提供商 → Agent；无项目普通聊天不隐式获取目录、shell 或通用工具权限 | [无项目对话](archive/CONVERSATIONS.md#projectless-chat)、[无项目附件](archive/CONVERSATIONS.md#projectless-attachments-acceptance)；原生全流程见 R23 |
+| C02 | 流式响应、多轮上下文、消息落库、历史重开和任务切换；历史消息参与下一轮请求 | [历史上下文](archive/CONVERSATIONS.md#history-context-acceptance)、[流终态](archive/PROVIDERS.md#provider-stream-completion-acceptance)；完整协议/断线矩阵见 R06 |
+| C03 | 每任务运行控制、独立取消及事件流；发送准备可取消，失败保留草稿，提交后取消有可查看终态；启动恢复为中断，不自动重放 | [发送准备取消](archive/CONVERSATIONS.md#send-preparation-cancellation-acceptance)、[关闭恢复](archive/TERMINAL_TOOLS.md#shutdown-recovery-acceptance)；其他崩溃断点见 R03/R04/R23 |
+| C04 | 对话、新项目会话和无项目草稿隔离；文本/附件草稿持久化、导航恢复、版本冲突保护；消息提交与草稿消费共用 SQLite 事务，保留发送时的新输入 | [草稿持久化](archive/CONVERSATIONS.md#draft-background-persistence-acceptance)、[原子发送](archive/CONVERSATIONS.md#conversation-submission-acceptance)；事务中真实终止及原生组合见 R03/R23 |
+| C05 | Queue：运行中 Enter 入队，编辑/排序/移除/手动继续；保存模型、强度、提示词、授权和附件快照，按原任务分派；仅成功活动链自动续发 | [Queue 运行](archive/CONVERSATIONS.md#conversation-followup-runtime-acceptance)、[分派](archive/CONVERSATIONS.md#conversation-followup-dispatch-acceptance)、[进程恢复](archive/CONVERSATIONS.md#conversation-followup-process-recovery)；其余竞争见 R03 |
+| C06 | 文本 Steer：活动 Ctrl+Enter 接收草稿及 receipt，在当前工具批次后的模型边界应用；保持原运行模型/权限，有界 mailbox、幂等和历史状态 | [文本引导](archive/CONVERSATIONS.md#conversation-steering-acceptance)；附件引导、发送偏好未实现，见 R03 |
 
 ### 2.2 授权、文件、Git 和终端
 
 | 编号 | 已完成的能力及实际链路 | 证据与剩余范围 |
 | --- | --- | --- |
-| C07 | 项目和多授权根管理；schema 26 条件保存及授权版本撤销旧 Agent、工具、审批和长驻 PTY，跨实例有界轮询，Queue 暂停，保留前台草稿 | [授权撤销](PROJECT_AUTHORIZATION_REVOCATION_ACCEPTANCE.md)；合作取消尚非严格排空屏障，见 R02 |
-| C08 | schema 27 绑定项目根的 grant、卷和目录文件 ID；旧项目待明确确认，同路径替换不继承授权；重新授权推进版本并撤销旧租约 | [项目根对象身份](ROOT_OBJECT_AUTHORIZATION_ACCEPTANCE.md)；ABA、别名/支持范围、严格撤权见 R02 |
-| C09 | 文件搜索、读取、预览和编辑校验通过标准工具管线；读取/预览等已接入入口在生产 Windows 打开后校验文件句柄，防止已覆盖场景的链接/重解析点越界 | [读取句柄保护](READ_HANDLE_PATH_SAFETY_ACCEPTANCE.md)、[编辑链路](FILE_EDITING_ACCEPTANCE.md)；其余枚举入口和完整竞态审计见 R02 |
-| C10 | 本地常规 NTFS 原子文本写入：固定父目录链、独占暂存、相对句柄提交、外部修改检查及失败清理；不支持的元数据保守拒绝 | [原子写入](WRITE_HANDLE_PATH_SAFETY_ACCEPTANCE.md)；最终名称条件替换尚缺，见 R02 |
-| C11 | 普通/递归删除、撤销新建文件按受控句柄执行；删除前有界预检，部分完成和取消结果可查看 | [删除与撤销](DELETE_HANDLE_PATH_SAFETY_ACCEPTANCE.md)；不是树事务或崩溃回滚，见 R02 |
-| C12 | 文件/目录树复制和显式目录创建：源树句柄预检、目标父目录租约、逐文件原子提交；同卷移动/重命名绑定源对象，跨卷明确拒绝 | [复制](COPY_HANDLE_PATH_SAFETY_ACCEPTANCE.md)、[移动](MOVE_HANDLE_PATH_SAFETY_ACCEPTANCE.md)；元数据完整克隆、跨卷安全方案及最终竞争仍见 R02 |
-| C13 | 任务产物读取、预览、编辑前后快照和最终补丁使用共享会话；完成与调用方保留分离，失败按原句柄清理，复制后校验 hash | [产物读取](ARTIFACT_HANDLE_PATH_SAFETY_ACCEPTANCE.md)、[共享产物会话](OWNED_ARTIFACT_SESSION_ACCEPTANCE.md)；崩溃清理/引用回收见 R02/R05 |
-| C14 | Git 状态、已暂存/未暂存差异、任务快照统计、补丁审阅及确认撤销；Git diff/numstat 临时输入持续固定、只共享读取并按句柄清理 | [差异审阅](DIFF_REVIEW_ACCEPTANCE.md)、[撤销](FILE_CHANGE_UNDO_ACCEPTANCE.md)、[Git 临时输入](GIT_DIFF_INPUT_SESSION_ACCEPTANCE.md)；不是 Git 进程隔离，见 R01/R11 |
-| C15 | 文件级暂存/取消暂存、已暂存内容预览确认提交、捕获 commit 的单分支预览确认推送；审批后复核 HEAD/索引/远端，不自动 stage-all 或强推 | [暂存](GIT_STAGING_ACCEPTANCE.md)、[提交](GIT_COMMIT_ACCEPTANCE.md)、[推送](GIT_PUSH_ACCEPTANCE.md)；区块、远端配置和真实认证见 R11 |
-| C16 | 独立工作树创建、手工选择分支/标签/提交并固定基准 commit、连续对话、重开、工具守卫和确认清理；失败目录保留供核实 | [基准选择](WORKTREE_BASE_REFERENCE_ACCEPTANCE.md)、[工作树路径](WORKTREE_PATH_SAFETY_ACCEPTANCE.md)；分支发现、创建/清理竞态及崩溃见 R04 |
-| C17 | schema 28 绑定工作树自身的 task/project/grant/目录对象身份；恢复拒绝同路径替换，即使复制 Git 元数据；Agent/工具/PTY 持续持有根链；旧工作树明确确认，不消耗草稿或续跑 | [工作树对象授权](WORKTREE_OBJECT_AUTHORIZATION_ACCEPTANCE.md)；替换对象重新授权、最终交接见 R02/R04 |
-| C18 | PowerShell 命令及 ConPTY 交互终端基础：输入/输出、VT、剪贴板/输入法、任务所属进程树、时限、有界输出和停止链路 | [命令](COMMAND_EXECUTION_ACCEPTANCE.md)、[终端](TERMINAL_INTERACTION_ACCEPTANCE.md)；**不具备严格文件系统隔离**，见 R01 |
+| C07 | 项目和多授权根管理；schema 26 条件保存及授权版本撤销旧 Agent、工具、审批和长驻 PTY，跨实例有界轮询，Queue 暂停，保留前台草稿 | [授权撤销](archive/SECURITY.md#project-authorization-revocation-acceptance)；合作取消尚非严格排空屏障，见 R02 |
+| C08 | schema 27 绑定项目根的 grant、卷和目录文件 ID；旧项目待明确确认，同路径替换不继承授权；重新授权推进版本并撤销旧租约 | [项目根对象身份](archive/SECURITY.md#root-object-authorization-acceptance)；ABA、别名/支持范围、严格撤权见 R02 |
+| C09 | 文件搜索、读取、预览和编辑校验通过标准工具管线；读取/预览等已接入入口在生产 Windows 打开后校验文件句柄，防止已覆盖场景的链接/重解析点越界 | [读取句柄保护](archive/SECURITY.md#read-handle-path-safety-acceptance)、[编辑链路](archive/CONVERSATIONS.md#file-editing-acceptance)；其余枚举入口和完整竞态审计见 R02 |
+| C10 | 本地常规 NTFS 原子文本写入：固定父目录链、独占暂存、相对句柄提交、外部修改检查及失败清理；不支持的元数据保守拒绝 | [原子写入](archive/SECURITY.md#write-handle-path-safety-acceptance)；最终名称条件替换尚缺，见 R02 |
+| C11 | 普通/递归删除、撤销新建文件按受控句柄执行；删除前有界预检，部分完成和取消结果可查看 | [删除与撤销](archive/SECURITY.md#delete-handle-path-safety-acceptance)；不是树事务或崩溃回滚，见 R02 |
+| C12 | 文件/目录树复制和显式目录创建：源树句柄预检、目标父目录租约、逐文件原子提交；同卷移动/重命名绑定源对象，跨卷明确拒绝 | [复制](archive/SECURITY.md#copy-handle-path-safety-acceptance)、[移动](archive/SECURITY.md#move-handle-path-safety-acceptance)；元数据完整克隆、跨卷安全方案及最终竞争仍见 R02 |
+| C13 | 任务产物读取、预览、编辑前后快照和最终补丁使用共享会话；完成与调用方保留分离，失败按原句柄清理，复制后校验 hash | [产物读取](archive/SECURITY.md#artifact-handle-path-safety-acceptance)、[共享产物会话](archive/SECURITY.md#owned-artifact-session-acceptance)；崩溃清理/引用回收见 R02/R05 |
+| C14 | Git 状态、已暂存/未暂存差异、任务快照统计、补丁审阅及确认撤销；Git diff/numstat 临时输入持续固定、只共享读取并按句柄清理 | [差异审阅](archive/GIT_WORKTREES.md#diff-review-acceptance)、[撤销](archive/GIT_WORKTREES.md#file-change-undo-acceptance)、[Git 临时输入](archive/GIT_WORKTREES.md#git-diff-input-session-acceptance)；不是 Git 进程隔离，见 R01/R11 |
+| C15 | 文件级暂存/取消暂存、已暂存内容预览确认提交、捕获 commit 的单分支预览确认推送；审批后复核 HEAD/索引/远端，不自动 stage-all 或强推 | [暂存](archive/GIT_WORKTREES.md#git-staging-acceptance)、[提交](archive/GIT_WORKTREES.md#git-commit-acceptance)、[推送](archive/GIT_WORKTREES.md#git-push-acceptance)；区块、远端配置和真实认证见 R11 |
+| C16 | 独立工作树创建、手工选择分支/标签/提交并固定基准 commit、连续对话、重开、工具守卫和确认清理；失败目录保留供核实 | [基准选择](archive/GIT_WORKTREES.md#worktree-base-reference-acceptance)、[工作树路径](archive/GIT_WORKTREES.md#worktree-path-safety-acceptance)；分支发现、创建/清理竞态及崩溃见 R04 |
+| C17 | schema 28 绑定工作树自身的 task/project/grant/目录对象身份；恢复拒绝同路径替换，即使复制 Git 元数据；Agent/工具/PTY 持续持有根链；旧工作树明确确认，不消耗草稿或续跑 | [工作树对象授权](archive/GIT_WORKTREES.md#worktree-object-authorization-acceptance)；替换对象重新授权、最终交接见 R02/R04 |
+| C18 | PowerShell 命令及 ConPTY 交互终端基础：输入/输出、VT、剪贴板/输入法、任务所属进程树、时限、有界输出和停止链路 | [命令](archive/TERMINAL_TOOLS.md#command-execution-acceptance)、[终端](archive/TERMINAL_TOOLS.md#terminal-interaction-acceptance)；**不具备严格文件系统隔离**，见 R01 |
 
 ### 2.3 提供商、工具、浏览器、MCP 和扩展代理
 
 | 编号 | 已完成的能力及实际链路 | 证据与剩余范围 |
 | --- | --- | --- |
-| C19 | 多提供商、多 HTTP/SOCKS5 代理、默认代理及明确直连；设置分组、展开、逐项编辑、持久化和真实适配器请求；代理失效不静默直连 | [提供商 UI](PROVIDER_UI_WORKFLOW_ACCEPTANCE.md)、[认证代理](AUTHENTICATED_PROVIDER_PROXY_ACCEPTANCE.md)；真实远端与配置并发矩阵见 R06 |
-| C20 | OpenAI Responses、兼容 Chat、Gemini GenerateContent、Anthropic Messages；模型发现/手工添加、上下文/输出限制、选项或自定义思考强度及其他参数参与请求或校验 | [思考与能力](MODEL_REASONING_CAPABILITY_ACCEPTANCE.md)、[Gemini 续轮](GEMINI_CONTINUATION_ACCEPTANCE.md)、[模型配置](MODEL_CONFIGURATION_NATIVE_ACCEPTANCE.md)；完整协议和远端支持见 R06 |
-| C21 | UTF-8 及静态 PNG/JPEG/GIF/WebP 明确选择、解码/限额、任务快照、草稿和历史恢复、能力不足拒绝；后台缩略图及 JPEG EXIF 八方向处理，源文件删除不破坏已保存快照 | [图像附件](IMAGE_ATTACHMENT_WORKFLOW_ACCEPTANCE.md)、[方向](IMAGE_ORIENTATION_ACCEPTANCE.md)、[历史缩略图](ATTACHMENT_THUMBNAIL_ACCEPTANCE.md#sent-message-and-history-extension)；PDF、全图、共享与回收见 R05 |
-| C22 | 统一工具查找/schema/能力与路径/风险/审批/取消与超时/输出限制/产物/审计；主/子代理工具 allowlist，UI 展示等待、审批、执行和结果 | [工具 schema](TOOL_SCHEMA_ACCEPTANCE.md)、[工具范围](TOOL_SCOPE_ACCEPTANCE.md)、[审批展示](GLOBAL_APPROVAL_PRESENTATION_ACCEPTANCE.md)；入口全面审计及 OS 边界见 R01/R02 |
-| C23 | schema 24 启动恢复遗留进行中工具审计为结果未知，保留人工核实提示；不显示为成功、不自动重做 | [中断审计](AUDIT_INTERRUPTION_RECOVERY_ACCEPTANCE.md)；全副作用时序仍见 R02/R03/R07 |
-| C24 | 内嵌 WebView2、受管外部 Chrome/Edge、显式 CDP 和任务标签页；DOM 操作/截图/下载与接管栏；取消/超时后旧会话失效并清理实际 SDK 资源 | [浏览器取消](BROWSER_OPERATION_CANCELLATION_ACCEPTANCE.md)、[Queue 浏览器链路](QUEUE_BROWSER_RUNTIME_ACCEPTANCE.md)、[已提交副作用恢复](BROWSER_COMMITTED_EFFECT_RECOVERY_ACCEPTANCE.md)；模式切换/接管完整矩阵见 R07 |
-| C25 | 浏览器截图/下载进入任务所属产物会话，审批后创建、有界导出、hash、SDK 暂存清理及最终复核；清理未知不伪装成功 | [浏览器产物](BROWSER_ARTIFACT_SESSION_ACCEPTANCE.md)；网络/缓存配额、未知状态持久化和崩溃回收见 R02/R07 |
-| C26 | MCP stdio/Streamable HTTP 配置、headers/代理、发现、动态注册和标准管线执行；故障提示、显式重连、重载及迟到结果抑制 | [MCP 执行](MCP_EXECUTION_ACCEPTANCE.md)、[UI 恢复](MCP_UI_RECOVERY_ACCEPTANCE.md)；认证、配置代际和传输中断见 R08 |
-| C27 | 自定义子代理名称、触发指导、提示词、模型、强度和上下文共享；`subagent.run` 选定子模型执行，子工具继承并收窄权限，父对话展示过程和结果，禁止递归委托 | [设置到运行](SUBAGENT_SETTINGS_TO_RUNTIME_ACCEPTANCE.md)、[生命周期](SUBAGENT_LIFECYCLE_NATIVE_ACCEPTANCE.md)；触发依赖主模型选择，非确定规则引擎；完整状态矩阵及图片共享见 R09/R05 |
+| C19 | 多提供商、多 HTTP/SOCKS5 代理、默认代理及明确直连；设置分组、展开、逐项编辑、持久化和真实适配器请求；代理失效不静默直连 | [提供商 UI](archive/PROVIDERS.md#provider-ui-workflow-acceptance)、[认证代理](archive/PROVIDERS.md#authenticated-provider-proxy-acceptance)；真实远端与配置并发矩阵见 R06 |
+| C20 | OpenAI Responses、兼容 Chat、Gemini GenerateContent、Anthropic Messages；模型发现/手工添加、上下文/输出限制、选项或自定义思考强度及其他参数参与请求或校验 | [思考与能力](archive/PROVIDERS.md#model-reasoning-capability-acceptance)、[Gemini 续轮](archive/PROVIDERS.md#gemini-continuation-acceptance)、[模型配置](archive/PROVIDERS.md#model-configuration-native-acceptance)；完整协议和远端支持见 R06 |
+| C21 | UTF-8 及静态 PNG/JPEG/GIF/WebP 明确选择、解码/限额、任务快照、草稿和历史恢复、能力不足拒绝；后台缩略图及 JPEG EXIF 八方向处理，源文件删除不破坏已保存快照 | [图像附件](archive/CONVERSATIONS.md#image-attachment-workflow-acceptance)、[方向](archive/CONVERSATIONS.md#image-orientation-acceptance)、[历史缩略图](archive/CONVERSATIONS.md#attachment-thumbnail-acceptance--sent-message-and-history-extension)；PDF、全图、共享与回收见 R05 |
+| C22 | 统一工具查找/schema/能力与路径/风险/审批/取消与超时/输出限制/产物/审计；主/子代理工具 allowlist，UI 展示等待、审批、执行和结果 | [工具 schema](archive/TERMINAL_TOOLS.md#tool-schema-acceptance)、[工具范围](archive/TERMINAL_TOOLS.md#tool-scope-acceptance)、[审批展示](archive/TERMINAL_TOOLS.md#global-approval-presentation-acceptance)；入口全面审计及 OS 边界见 R01/R02 |
+| C23 | schema 24 启动恢复遗留进行中工具审计为结果未知，保留人工核实提示；不显示为成功、不自动重做 | [中断审计](archive/TERMINAL_TOOLS.md#audit-interruption-recovery-acceptance)；全副作用时序仍见 R02/R03/R07 |
+| C24 | 内嵌 WebView2、受管外部 Chrome/Edge、显式 CDP 和任务标签页；DOM 操作/截图/下载与接管栏；取消/超时后旧会话失效并清理实际 SDK 资源 | [浏览器取消](archive/BROWSER_MCP.md#browser-operation-cancellation-acceptance)、[Queue 浏览器链路](archive/BROWSER_MCP.md#queue-browser-runtime-acceptance)、[已提交副作用恢复](archive/BROWSER_MCP.md#browser-committed-effect-recovery-acceptance)；模式切换/接管完整矩阵见 R07 |
+| C25 | 浏览器截图/下载进入任务所属产物会话，审批后创建、有界导出、hash、SDK 暂存清理及最终复核；清理未知不伪装成功 | [浏览器产物](archive/BROWSER_MCP.md#browser-artifact-session-acceptance)；网络/缓存配额、未知状态持久化和崩溃回收见 R02/R07 |
+| C26 | MCP stdio/Streamable HTTP 配置、headers/代理、发现、动态注册和标准管线执行；故障提示、显式重连、重载及迟到结果抑制 | [MCP 执行](archive/BROWSER_MCP.md#mcp-execution-acceptance)、[UI 恢复](archive/BROWSER_MCP.md#mcp-ui-recovery-acceptance)；认证、配置代际和传输中断见 R08 |
+| C27 | 自定义子代理名称、触发指导、提示词、模型、强度和上下文共享；`subagent.run` 选定子模型执行，子工具继承并收窄权限，父对话展示过程和结果，禁止递归委托 | [设置到运行](archive/AGENTS_AUTOMATIONS.md#subagent-settings-to-runtime-acceptance)、[生命周期](archive/AGENTS_AUTOMATIONS.md#subagent-lifecycle-native-acceptance)；触发依赖主模型选择，非确定规则引擎；完整状态矩阵及图片共享见 R09/R05 |
 
 ### 2.4 定时任务、PR 和桌面基础
 
 | 编号 | 已完成的能力及实际链路 | 证据与剩余范围 |
 | --- | --- | --- |
-| C28 | 定时任务创建/编辑、启用/暂停、手动运行/停止、历史/打开结果；调度认领 → 保存的模型选择/提示词/审批策略 → 独立后台 task，不消费前台草稿；启动跳过过期触发并标记中断 | [定时 UI](AUTOMATION_UI_WORKFLOW_ACCEPTANCE.md)、[计划修改](AUTOMATION_MUTATION_ACCEPTANCE.md)；目录范围取执行时项目授权，尚非计划级固定授权快照；关闭/DST/并发恢复见 R10 |
-| C29 | 独立 GitHub 来源账号/token/代理和仓库只读授权；开放 PR、URL 直达、描述/分页文件补丁/评论/checks；当前提交有效行内评论定位；固定快照及按需只读查询对话 | [来源账号](SOURCE_ACCOUNT_CONNECTION_ACCEPTANCE.md)、[行内评论](SOURCE_PR_INLINE_COMMENTS_ACCEPTANCE.md)、[查询对话](SOURCE_PR_ON_DEMAND_READING_ACCEPTANCE.md)、[URL](SOURCE_PR_URL_ACCEPTANCE.md)；不是完整 PR 写工作流，见 R12 |
+| C28 | 定时任务创建/编辑、启用/暂停、手动运行/停止、历史/打开结果；调度认领 → 保存的模型选择/提示词/审批策略 → 独立后台 task，不消费前台草稿；启动跳过过期触发并标记中断 | [定时 UI](archive/AGENTS_AUTOMATIONS.md#automation-ui-workflow-acceptance)、[计划修改](archive/AGENTS_AUTOMATIONS.md#automation-mutation-acceptance)；目录范围取执行时项目授权，尚非计划级固定授权快照；关闭/DST/并发恢复见 R10 |
+| C29 | 独立 GitHub 来源账号/token/代理和仓库只读授权；开放 PR、URL 直达、描述/分页文件补丁/评论/checks；当前提交有效行内评论定位；固定快照及按需只读查询对话 | [来源账号](archive/GIT_WORKTREES.md#source-account-connection-acceptance)、[行内评论](archive/GIT_WORKTREES.md#source-pr-inline-comments-acceptance)、[查询对话](archive/GIT_WORKTREES.md#source-pr-on-demand-reading-acceptance)、[URL](archive/GIT_WORKTREES.md#source-pr-url-acceptance)；不是完整 PR 写工作流，见 R12 |
 | C30 | Windows 优先的 Avalonia/.NET 10 模块化桌面；共享包装控件、集中明暗主题、本地化、键盘与紧凑布局基础；编译/测试约束组件与依赖方向 | [架构](ARCHITECTURE.md)、[共享组件](UI_COMPONENTS.md)；当前原生/DPI/焦点全覆盖及已知 restore 裁切见 R23 |
 | C31 | SQLite 向前迁移、结构化任务状态及文件型大产物；JIT 构建和 Windows x64 自包含单文件配置，明确关闭 AOT/裁剪 | [迁移及架构](ARCHITECTURE.md)、[发布配置](../src/MossAgent.App/Properties/PublishProfiles/WindowsX64.pubxml)；当前正式包验收见 R24 |
 
@@ -89,7 +89,7 @@ R01–R24 沿用[阶段交付清单](DELIVERY_STATUS_AND_ROADMAP.md)的编号；
 
 最新运行检查点为 `artifacts/worktree-object-authorization-20261021/`，提交记录确认该候选
 代码进入 `7949b87`。Debug 使用独立输出目录。原始产物是本机忽略文件，不随 Git 克隆分发；
-入库摘要见[工作树授权验收](WORKTREE_OBJECT_AUTHORIZATION_ACCEPTANCE.md)。
+入库摘要见[工作树授权验收](archive/GIT_WORKTREES.md#worktree-object-authorization-acceptance)。
 
 | 检查 | 已有结果 | 不能推断的内容 |
 | --- | --- | --- |
@@ -175,7 +175,7 @@ Windows 验收环境尚未就绪；本机已有诊断只获得较弱 DACL 层，
 **验收：** 根内命令/SDK/Git/PTY可用；绝对/相对路径、链接、子进程和继承句柄的根外访问
 均拒绝且外部标记不变；多根、多任务互不越权。覆盖启动失败、后端消失、撤权、取消/超时和崩溃。
 **依赖：** 可访问的受支持 MXC 验收机。本方案不复用已消费的一次性管理员授权，也不自动改换后端。
-参考：[隔离方案](COMMAND_FILESYSTEM_ISOLATION_PLAN.md)、[后端决策](WINDOWS_ISOLATION_BACKEND_DECISION.md)。
+参考：[隔离方案](archive/SECURITY.md#command-filesystem-isolation-plan)、[后端决策](archive/SECURITY.md#windows-isolation-backend-decision)。
 
 ### R02：最终路径边界、严格撤权、产物与恢复
 
@@ -202,8 +202,8 @@ Windows 验收环境尚未就绪；本机已有诊断只获得较弱 DACL 层，
 **验收：** 在检查/审批/打开/提交/释放前后设置确定性 gate，替换 junction、父目录、文件和
 Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权后不再接收新操作、所属资源退出或显示未知，
 另一任务不受影响；崩溃恢复不删除归属不明对象、不重放副作用。已有副作用不承诺自动回滚。
-参考：[读取](READ_HANDLE_PATH_SAFETY_ACCEPTANCE.md)、[写入](WRITE_HANDLE_PATH_SAFETY_ACCEPTANCE.md)、
-[产物会话](OWNED_ARTIFACT_SESSION_ACCEPTANCE.md)、[项目根对象](ROOT_OBJECT_AUTHORIZATION_ACCEPTANCE.md)。
+参考：[读取](archive/SECURITY.md#read-handle-path-safety-acceptance)、[写入](archive/SECURITY.md#write-handle-path-safety-acceptance)、
+[产物会话](archive/SECURITY.md#owned-artifact-session-acceptance)、[项目根对象](archive/SECURITY.md#root-object-authorization-acceptance)。
 
 ### R03：附件 Steer、发送偏好和 Queue/Steer 竞争
 
@@ -221,7 +221,7 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 
 **验收：** 项目/无项目、附件能力不足、队列重排与模型/授权变化、取消/超时、并发对话、
 已提交副作用后崩溃全部有记录；另做独立原生键盘/IME和真实提供商测试。旧不明原因失败继续保留，
-不能以新用例通过推断其根因。参考：[Queue](CONVERSATION_FOLLOWUP_RUNTIME_ACCEPTANCE.md)、[Steer](CONVERSATION_STEERING_ACCEPTANCE.md)。
+不能以新用例通过推断其根因。参考：[Queue](archive/CONVERSATIONS.md#conversation-followup-runtime-acceptance)、[Steer](archive/CONVERSATIONS.md#conversation-steering-acceptance)。
 
 ### R04：工作树创建、清理和完整生命周期
 
@@ -243,7 +243,7 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 
 **验收：** 创建空目标、Git 退出、登记、消息提交、对象删除、注册清理等断点分别终止恢复；
 覆盖并行创建一成功一失败/取消、基准移动、被占目录、陈旧确认及清理时同路径替换，保留另一任务和草稿。
-另验独立 EXE 重启和旧工作树确认。依赖 R01/R02，详细研究边界见[工作树授权方案](WORKTREE_OBJECT_AUTHORIZATION_ACCEPTANCE.md)。
+另验独立 EXE 重启和旧工作树确认。依赖 R01/R02，详细研究边界见[工作树授权方案](archive/GIT_WORKTREES.md#worktree-object-authorization-acceptance)。
 
 ### R05：PDF、其他附件、全图查看和快照回收
 
@@ -260,7 +260,7 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 
 **验收：** 损坏、伪装、超限、压缩炸弹、缺失/篡改、源文件变化、无项目明确选择、共享关闭、
 并发回收和重启均覆盖；另验证原生选择器/预览和真实模型图片/PDF理解。请求块形状正确不等于理解成功。
-依赖 R02/R06/R09；参考：[图像附件](IMAGE_ATTACHMENT_WORKFLOW_ACCEPTANCE.md)、[无项目附件](PROJECTLESS_ATTACHMENTS_ACCEPTANCE.md)。
+依赖 R02/R06/R09；参考：[图像附件](archive/CONVERSATIONS.md#image-attachment-workflow-acceptance)、[无项目附件](archive/CONVERSATIONS.md#projectless-attachments-acceptance)。
 
 ### R06：提供商、模型参数、代理和断流恢复
 
@@ -277,7 +277,7 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 
 **验收：** 先用确定性 HTTP/SSE/认证代理验证参数、能力、限流、证书、超时、断流和并发；
 再在获准账号上分别验证四协议、模型发现、图片/PDF、思考强度和续轮。只记录脱敏摘要，明确未支持模型。
-参考：[模型能力](MODEL_REASONING_CAPABILITY_ACCEPTANCE.md)、[终态](PROVIDER_STREAM_COMPLETION_ACCEPTANCE.md)、[代理](AUTHENTICATED_PROVIDER_PROXY_ACCEPTANCE.md)。
+参考：[模型能力](archive/PROVIDERS.md#model-reasoning-capability-acceptance)、[终态](archive/PROVIDERS.md#provider-stream-completion-acceptance)、[代理](archive/PROVIDERS.md#authenticated-provider-proxy-acceptance)。
 
 ### R07：浏览器模式切换、人工接管和其他崩溃时序
 
@@ -294,7 +294,7 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 
 **验收：** 本地确定性页面记录副作用次数，覆盖内外/CDP切换、创建取消、接管时停止、标签关闭、
 host/browser 崩溃和多任务；另一会话与草稿不受影响。独立原生 EXE 验证真实窗口、接管栏和恢复。
-参考：[取消修复](BROWSER_OPERATION_CANCELLATION_ACCEPTANCE.md)、[副作用恢复](BROWSER_COMMITTED_EFFECT_RECOVERY_ACCEPTANCE.md)。
+参考：[取消修复](archive/BROWSER_MCP.md#browser-operation-cancellation-acceptance)、[副作用恢复](archive/BROWSER_MCP.md#browser-committed-effect-recovery-acceptance)。
 
 ### R08：MCP 认证、配置版本和连接恢复
 
@@ -311,7 +311,7 @@ host/browser 崩溃和多任务；另一会话与草稿不受影响。独立原�
 
 **验收：** 可控 stdio/HTTP 服务覆盖认证刷新、配置竞争、工具清单变化、输出过大、断流、
 拒绝、取消与重连交错、多任务调用及重启；独立原生记录“配置→发现→审批执行→失败→人工恢复”。
-参考：[MCP 执行](MCP_EXECUTION_ACCEPTANCE.md)、[重连](MCP_RECONNECT_RECOVERY_ACCEPTANCE.md)、[UI 恢复](MCP_UI_RECOVERY_ACCEPTANCE.md)。
+参考：[MCP 执行](archive/BROWSER_MCP.md#mcp-execution-acceptance)、[重连](archive/BROWSER_MCP.md#mcp-reconnect-recovery-acceptance)、[UI 恢复](archive/BROWSER_MCP.md#mcp-ui-recovery-acceptance)。
 
 ### R09：子代理触发、共享及完整生命周期
 
@@ -329,7 +329,7 @@ host/browser 崩溃和多任务；另一会话与草稿不受影响。独立原�
 
 **验收：** 允许/拒绝审批、能力不足、模型禁用、错误/超时、父子独立取消、两个委托并发、
 授权变更、EXE 重启及共享开/关都保留可查看终态；分别记录模拟模型、真实提供商及原生窗口证据。
-参考：[设置到运行](SUBAGENT_SETTINGS_TO_RUNTIME_ACCEPTANCE.md)、[手动审批](SUBAGENT_MANUAL_APPROVAL_ACCEPTANCE.md)。
+参考：[设置到运行](archive/AGENTS_AUTOMATIONS.md#subagent-settings-to-runtime-acceptance)、[手动审批](archive/AGENTS_AUTOMATIONS.md#subagent-manual-approval-acceptance)。
 
 ### R10：定时任务的关闭、并发、时间和恢复
 
@@ -354,7 +354,7 @@ host/browser 崩溃和多任务；另一会话与草稿不受影响。独立原�
 **验收：** 保存非默认模型/提示词/授权，实际请求和文件工具使用该快照；另一任务、当前选项及
 未发送草稿保留。保存后模型参数/项目根变化覆盖拒绝或显式采用策略，不自动扩大旧计划范围。
 独立原生正常关闭/强制终止/重启查看结果，零自动补跑；新手动运行使用新 run ID。
-参考：[定时 UI](AUTOMATION_UI_WORKFLOW_ACCEPTANCE.md)、[修改行为](AUTOMATION_MUTATION_ACCEPTANCE.md)。
+参考：[定时 UI](archive/AGENTS_AUTOMATIONS.md#automation-ui-workflow-acceptance)、[修改行为](archive/AGENTS_AUTOMATIONS.md#automation-mutation-acceptance)。
 
 ### R11：Git 区块、远端、凭据和提交草稿
 
@@ -370,7 +370,7 @@ host/browser 崩溃和多任务；另一会话与草稿不受影响。独立原�
    明确动作，创建 PR 不隐式触发二者。
 
 **验收：** 真实临时仓库/bare 远端验证区块、冲突、审批期间索引变更、hook失败、提交已生效
-但回包取消、非快进、两任务和重启；随后获准真实远端认证及原生键盘预览确认。参考：[Git 提交](GIT_COMMIT_ACCEPTANCE.md)、[Git 推送](GIT_PUSH_ACCEPTANCE.md)。
+但回包取消、非快进、两任务和重启；随后获准真实远端认证及原生键盘预览确认。参考：[Git 提交](archive/GIT_WORKTREES.md#git-commit-acceptance)、[Git 推送](archive/GIT_WORKTREES.md#git-push-acceptance)。
 
 ### R12：完整 Pull Request 工作流
 
@@ -389,7 +389,7 @@ host/browser 崩溃和多任务；另一会话与草稿不受影响。独立原�
 
 **验收：** 确定性 HTTP 覆盖版本变化、撤权、分页、限流、行位过期、写入已生效但回包丢失、
 取消与恢复；获准测试仓库完成原生“读取→讨论→预览→确认写入→返回查询”，保留其他草稿和任务。
-参考：[完整 PR 方案](PULL_REQUEST_WORKFLOW_PLAN.md)、[只读查询边界](SOURCE_PR_ON_DEMAND_READING_ACCEPTANCE.md)。
+参考：[完整 PR 方案](archive/GIT_WORKTREES.md#pull-request-workflow-plan)、[只读查询边界](archive/GIT_WORKTREES.md#source-pr-on-demand-reading-acceptance)。
 
 ### R13：插件、技能和扩展
 
@@ -407,7 +407,7 @@ host/browser 崩溃和多任务；另一会话与草稿不受影响。独立原�
    自有文件。失败可回滚配置，重启只显示中断安装/清理，不重放 hook。
 
 **验收：** 真实技能提示词或 MCP 调用进入普通管线；覆盖拒绝包、停用/撤权、升级失败、并发运行、
-取消、重启和用户文件保留。目录/官方兼容只按获准公开接口验收。参考：[插件方案](PLUGIN_WORKFLOW_PLAN.md)。
+取消、重启和用户文件保留。目录/官方兼容只按获准公开接口验收。参考：[插件方案](archive/OVERVIEW.md#plugin-workflow-plan)。
 
 ### R14：目标窗口绑定的桌面控制
 
@@ -566,8 +566,8 @@ toast 全覆盖；目标完成需有可检查结果和终止条件，不能仅�
    截图只验遮挡、裁切、对齐和可读性，不以 Codex 像素相等验收；遇到工具黑帧/访问拒绝记录环境限制并补验。
 
 **验收：** 每条原生工作流有成功、拒绝、取消和恢复记录，明暗/窗口切换不丢草稿或焦点；
-restore 裁切有修复前后同场景证据，DPI转换与稳定后布局通过。参考：[原生诊断](NATIVE_RESIZE_DIAGNOSTIC_PROGRESS.md)、
-[原生消息](NATIVE_RESIZE_MESSAGE_PROGRESS.md)、[紧凑布局](COMPACT_NAVIGATION_ACCEPTANCE.md)。
+restore 裁切有修复前后同场景证据，DPI转换与稳定后布局通过。参考：[原生诊断](archive/UI_WORKFLOWS.md#native-resize-diagnostic-progress)、
+[原生消息](archive/UI_WORKFLOWS.md#native-resize-message-progress)、[紧凑布局](archive/UI_WORKFLOWS.md#compact-navigation-acceptance)。
 
 ### R24：固定提交全量回归和 JIT 单文件发布验收
 
@@ -614,7 +614,7 @@ restore 裁切有修复前后同场景证据，DPI转换与稳定后布局通过
 
 ## 9. 维护和验收记录规则
 
-- 关闭 R 项时同步更新本文件、[功能矩阵](FUNCTIONAL_PARITY_MATRIX.md)和[阶段交付清单](DELIVERY_STATUS_AND_ROADMAP.md)，
+- 关闭 R 项时更新本文件；旧功能矩阵和阶段交付报告保留为历史归档，不再重复维护状态，
   写明版本、入口、链路、数据传递、证据种类和剩余范围，不只修改“已完成”文字。
 - 各项真实副作用的恢复均要求人工核实；“能查看历史”与“能再次安全运行”分别证明。
 - 自动化/模拟服务、Headless、真实本地资源、原生 GUI、真实外部账号和发布包分别计证据，
