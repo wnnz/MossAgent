@@ -9,6 +9,7 @@ internal sealed class SteeringAcceptanceProbe(IConversationSteeringRepository in
     public Action<ConversationSteeringAcceptance?>? AfterAccept { get; set; }
     public Func<CancellationToken, Task>? BeforeApply { get; set; }
     public Func<CancellationToken, Task>? BeforeRead { get; set; }
+    public Func<CancellationToken, Task>? BeforeClose { get; set; }
     public bool SupportsDrafts(IConversationDraftRepository drafts) => inner.SupportsDrafts(drafts);
     public Task<ConversationSteeringRun?> OpenAsync(AgentTask task, Guid id, CancellationToken token,
         ConversationSteeringAuthorization? authorization = null) => inner.OpenAsync(task, id, token, authorization);
@@ -34,5 +35,9 @@ internal sealed class SteeringAcceptanceProbe(IConversationSteeringRepository in
         if (BeforeApply is not null) await BeforeApply(token);
         return await inner.ApplyAsync(run, ids, assistant, token, authorization);
     }
-    public Task<bool> CloseAsync(ConversationSteeringRun run, bool interrupt, CancellationToken token) => inner.CloseAsync(run, interrupt, token);
+    public async Task<bool> CloseAsync(ConversationSteeringRun run, bool interrupt, CancellationToken token)
+    {
+        if (BeforeClose is not null) await BeforeClose(token);
+        return await inner.CloseAsync(run, interrupt, token);
+    }
 }

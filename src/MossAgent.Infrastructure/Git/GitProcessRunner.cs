@@ -8,16 +8,18 @@ public sealed class GitProcessRunner(ITaskProcessLauncher processes, TimeProvide
     private const int MaximumStreamCharacters = 16 * 1024;
 
     public async Task<GitProcessResult> RunAsync(string directory, IReadOnlyList<string> arguments,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, int maximumStreamCharacters = MaximumStreamCharacters)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        if (maximumStreamCharacters is < 1024 or > 1_000_000)
+            throw new ArgumentOutOfRangeException(nameof(maximumStreamCharacters));
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30), timeProvider ?? TimeProvider.System);
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, deadline.Token);
         try
         {
             await using var process = processes.Start(new TaskProcessStartRequest("git", directory, arguments, RemovedEnvironmentPrefixes: ["GIT_"]), cancellation.Token);
-            var stdout = ReadAsync(process.StandardOutput, cancellation.Token);
-            var stderr = ReadAsync(process.StandardError, cancellation.Token);
+            var stdout = ReadAsync(process.StandardOutput, maximumStreamCharacters, cancellation.Token);
+            var stderr = ReadAsync(process.StandardError, maximumStreamCharacters, cancellation.Token);
             var readers = Task.WhenAll((Task)stdout, stderr);
             try { await process.WaitForExitAsync(cancellation.Token).ConfigureAwait(false); }
             finally
@@ -39,7 +41,8 @@ public sealed class GitProcessRunner(ITaskProcessLauncher processes, TimeProvide
         }
     }
 
-    private static async Task<(string Text, bool Truncated)> ReadAsync(TextReader reader, CancellationToken token)
+    private static async Task<(string Text, bool Truncated)> ReadAsync(
+        TextReader reader, int maximumCharacters, CancellationToken token)
     {
         var output = new StringBuilder();
         var buffer = new char[4096];
@@ -47,7 +50,7 @@ public sealed class GitProcessRunner(ITaskProcessLauncher processes, TimeProvide
         int count;
         while ((count = await reader.ReadAsync(buffer, token).ConfigureAwait(false)) > 0)
         {
-            var accepted = Math.Min(count, MaximumStreamCharacters - output.Length);
+            var accepted = Math.Min(count, maximumCharacters - output.Length);
             output.Append(buffer.AsSpan(0, accepted));
             truncated |= accepted < count;
         }

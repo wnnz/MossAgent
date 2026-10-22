@@ -95,6 +95,7 @@ internal static class AppComposition
         services.AddSingleton<IProjectAuthorizationReader>(static provider =>
             provider.GetRequiredService<IWorkspaceRepository>() as IProjectAuthorizationReader
             ?? new WorkspaceProjectAuthorizationReader(provider.GetRequiredService<IWorkspaceRepository>()));
+        services.AddSingleton<IAuthorizationResourceRegistry, SqliteAuthorizationResourceRegistry>();
         services.AddSingleton<ProjectAuthorizationMonitor>();
         services.AddSingleton<IConversationPreferenceRepository, SqliteConversationPreferenceRepository>();
         services.AddSingleton<IConversationDraftRepository, SqliteConversationDraftRepository>();
@@ -117,6 +118,8 @@ internal static class AppComposition
         services.AddSingleton<ITaskArtifactContentReader, TaskArtifactContentReader>();
         services.AddSingleton<IBrowserProfilePaths, BrowserProfilePaths>();
         services.AddSingleton<GitProcessRunner>();
+        services.AddSingleton<IExclusiveDirectoryClaimFactory, WindowsExclusiveDirectoryClaimFactory>();
+        services.AddSingleton<IGitReferenceDiscoveryService, GitReferenceDiscoveryService>();
         services.AddSingleton<IGitWorktreeService, GitWorktreeService>();
         services.AddSingleton<IGitRepositoryInfoService, GitRepositoryInfoService>();
         services.AddSingleton<MossAgent.Tools.Abstractions.Git.IGitRepositoryAuthorization, GitRepositoryAuthorization>();

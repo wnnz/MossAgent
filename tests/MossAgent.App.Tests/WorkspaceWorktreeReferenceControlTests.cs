@@ -46,7 +46,7 @@ public sealed class WorkspaceWorktreeReferenceControlTests : IAsyncLifetime
             flyout.ShowAt(button);
             Dispatcher.UIThread.RunJobs();
             var card = Assert.IsType<AppCard>(flyout.Content);
-            var input = Assert.Single(card.GetVisualDescendants().OfType<AppInput>());
+            var input = card.FindControl<AppInput>("BaseReferenceInput")!;
             Assert.True(input.IsEffectivelyVisible);
             Assert.True(input.Focus(NavigationMethod.Tab));
             window.KeyTextInput("selected-base");

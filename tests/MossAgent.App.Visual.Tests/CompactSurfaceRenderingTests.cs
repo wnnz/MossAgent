@@ -46,7 +46,7 @@ public sealed class CompactSurfaceRenderingTests : IAsyncLifetime
             Save(window, FormattableString.Invariant($"composer-{dark}-{width}-{scale}x"));
             var surface = Assert.Single(view.GetVisualDescendants().OfType<AppCard>(), card => card.Classes.Contains("composer-surface"));
             var model = Assert.Single(view.GetVisualDescendants().OfType<AppActionButton>(), button => button.Classes.Contains("composer-model-picker"));
-            var send = Assert.Single(view.GetVisualDescendants().OfType<AppIconButton>(), button => button.Classes.Contains("composer-send"));
+            var send = view.FindControl<AppIconButton>("SendButton")!;
             var policy = Assert.Single(view.GetVisualDescendants().OfType<AppApprovalPolicyButton>());
             Assert.Equal("OpenAI / GPT-5.4 Pro — extended context development model", model.Label);
             AssertContained(model, surface);

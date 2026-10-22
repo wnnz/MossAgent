@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using MossAgent.App.ViewModels;
+using MossAgent.Application.Git;
 using MossAgent.Domain;
 using MossAgent.Infrastructure.Persistence;
 using MossAgent.Tools.Abstractions;
@@ -24,6 +25,8 @@ public sealed class WorkspaceWorktreeFlowTests
         await fixture.AssertPersistedAsync(AgentTaskStatus.Completed);
         var task = Assert.IsType<AgentTask>(workspace.Catalog.SelectedTask);
         var path = Assert.IsType<string>(task.WorktreePath);
+        var intents = Assert.IsAssignableFrom<IWorktreeCreationIntentService>(fixture.Worktrees);
+        Assert.Empty(await intents.ReadIncompleteIntentsAsync(owner.Project.Id, fixture.Token));
         Assert.Equal("committed baseline\n", (await File.ReadAllTextAsync(Path.Combine(path, "README.md"), fixture.Token)).ReplaceLineEndings("\n"));
         Assert.Equal("uncommitted source change\n", await File.ReadAllTextAsync(source, fixture.Token));
         Assert.Equal($"mossagent/{task.Id:N}", (await owner.GitAsync(["branch", "--show-current"], path)).StandardOutput.Trim());
@@ -127,15 +130,54 @@ public sealed class WorkspaceWorktreeFlowTests
         workspace.ComposerText = "rejected worktree prompt";
         workspace.Catalog.Environment.UseWorktreeCommand.Execute(null);
         workspace.PrimaryActionCommand.Execute(null);
-        await fixture.WaitUntilAsync(() => workspace.HasSendPreparationError);
+        await fixture.WaitUntilAsync(() => workspace.HasSendPreparationError && !workspace.IsRunning);
         Assert.False(workspace.IsRunning);
         Assert.Equal("rejected worktree prompt", workspace.ComposerText);
         Assert.Null(workspace.Catalog.SelectedTask);
         Assert.Empty(await fixture.Tasks.GetTasksAsync(owner.Project.Id, fixture.Token));
         Assert.Empty(fixture.Server.Requests);
         Assert.False(workspace.Catalog.Environment.HasPreparationNotice);
+        var incomplete = Assert.Single(await Assert
+            .IsAssignableFrom<IWorktreeCreationIntentService>(fixture.Worktrees)
+            .ReadIncompleteIntentsAsync(owner.Project.Id, fixture.Token));
+        Assert.Equal(WorktreeCreationStatus.Failed, incomplete.Status);
+        Assert.Equal("task_submission_failed", incomplete.ErrorCode);
         var worktrees = (await owner.GitAsync(["worktree", "list", "--porcelain"])).StandardOutput;
         Assert.Single(worktrees.Split('\n'), line => line.StartsWith("worktree ", StringComparison.Ordinal));
         Assert.Empty(Directory.GetDirectories(Path.Combine(fixture.DataRoot, "worktrees")));
+    }
+
+    [Fact]
+    public async Task IntentConsumeFailureRollsBackTaskMessageDraftAndLeavesRecoveryEvidence()
+    {
+        await using var owner = await WorkspaceWorktreeGitFixture.CreateAsync();
+        var fixture = owner.Fixture;
+        await using (var connection = new SqliteConnectionFactory(new AppDataPaths(fixture.DataRoot)).Create())
+        {
+            await connection.OpenAsync(fixture.Token);
+            await using var command = connection.CreateCommand();
+            command.CommandText = """
+                CREATE TRIGGER reject_intent_consume BEFORE UPDATE ON worktree_creation_intents
+                WHEN OLD.status=2 AND NEW.status=4
+                BEGIN SELECT RAISE(ABORT, 'synthetic intent consume refusal'); END;
+                """;
+            await command.ExecuteNonQueryAsync(fixture.Token);
+        }
+        var workspace = fixture.Workspace;
+        workspace.ComposerText = "atomic worktree submission";
+        workspace.Catalog.Environment.UseWorktreeCommand.Execute(null);
+        workspace.PrimaryActionCommand.Execute(null);
+        await fixture.WaitUntilAsync(() => workspace.HasSendPreparationError && !workspace.IsRunning);
+
+        Assert.Equal("atomic worktree submission", workspace.ComposerText);
+        Assert.Null(workspace.Catalog.SelectedTask);
+        Assert.Empty(await fixture.Tasks.GetTasksAsync(owner.Project.Id, fixture.Token));
+        Assert.Empty(fixture.Server.Requests);
+        Assert.Empty(Directory.GetDirectories(Path.Combine(fixture.DataRoot, "worktrees")));
+        var intent = Assert.Single(await Assert
+            .IsAssignableFrom<IWorktreeCreationIntentService>(fixture.Worktrees)
+            .ReadIncompleteIntentsAsync(owner.Project.Id, fixture.Token));
+        Assert.Equal(WorktreeCreationStatus.Failed, intent.Status);
+        Assert.Equal("task_submission_failed", intent.ErrorCode);
     }
 }

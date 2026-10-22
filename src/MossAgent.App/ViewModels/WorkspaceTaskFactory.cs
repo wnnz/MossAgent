@@ -66,7 +66,7 @@ public sealed class WorkspaceTaskFactory(
         try
         {
             var message = await CreateUserMessageAsync(task, prompt, attachments, cancellationToken);
-            await SaveSubmissionAsync(task, message, submission, cancellationToken);
+            await SaveSubmissionAsync(task, message, submission, worktreePath, cancellationToken);
         }
         catch (Exception failure)
         {
@@ -96,6 +96,9 @@ public sealed class WorkspaceTaskFactory(
             if (active.Any(item => item.Id == task.Id) || archived.Any(item => item.Id == task.Id))
                 throw new InvalidOperationException("A persisted task owns this worktree; refresh before recovering it.");
             await worktrees.RemoveAsync(project, task.WorktreePath!, deadline.Token);
+            if (worktrees is IWorktreeCreationIntentService intents)
+                await intents.MarkFailedAsync(
+                    task.Id, task.WorktreePath!, "task_submission_failed", deadline.Token);
         }
         catch (Exception cleanupFailure)
         {
@@ -149,14 +152,34 @@ public sealed class WorkspaceTaskFactory(
             UpdatedAt = now
         };
         var message = await CreateUserMessageAsync(updated, prompt, attachments, cancellationToken);
-        await SaveSubmissionAsync(updated, message, submission, cancellationToken);
+        await SaveSubmissionAsync(updated, message, submission, null, cancellationToken);
         return updated;
     }
 
-    private Task SaveSubmissionAsync(AgentTask task, ConversationMessage message, WorkspaceDraftSubmission? submission,
+    private async Task SaveSubmissionAsync(AgentTask task, ConversationMessage message,
+        WorkspaceDraftSubmission? submission, string? worktreePath, CancellationToken cancellationToken)
+    {
+        if (worktreePath is not null && worktrees is IWorktreeCreationIntentService { SupportsCreationIntents: true }
+            && workspaces is IWorktreeCreationIntentSubmissionRepository intents)
+        {
+            await SaveAtomicWorktreeSubmissionAsync(task, message, submission, intents, cancellationToken);
+            return;
+        }
+        if (submission is null) await workspaces.SaveTaskWithMessagesAsync(task, [message], cancellationToken);
+        else await submission.SaveAsync(task, message, cancellationToken);
+        if (worktreePath is not null && worktrees is IWorktreeCreationIntentService intentService)
+        {
+            using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(5), timeProvider ?? TimeProvider.System);
+            try { await intentService.MarkConsumedAsync(task.Id, worktreePath, deadline.Token); }
+            catch { /* Startup reconciliation uses the persisted task if this bookkeeping update is unavailable. */ }
+        }
+    }
+
+    private static Task SaveAtomicWorktreeSubmissionAsync(AgentTask task, ConversationMessage message,
+        WorkspaceDraftSubmission? submission, IWorktreeCreationIntentSubmissionRepository repository,
         CancellationToken cancellationToken) => submission is null
-        ? workspaces.SaveTaskWithMessagesAsync(task, [message], cancellationToken)
-        : submission.SaveAsync(task, message, cancellationToken);
+        ? repository.SaveTaskWithMessagesAndWorktreeIntentAsync(task, [message], cancellationToken)
+        : submission.SaveAsync(task, message, cancellationToken, repository.SaveSubmissionAndWorktreeIntentAsync);
 
     private async Task<ConversationMessage> CreateUserMessageAsync(AgentTask task, string prompt,
         IReadOnlyList<WorkspaceAttachmentContent>? selectedAttachments, CancellationToken cancellationToken)

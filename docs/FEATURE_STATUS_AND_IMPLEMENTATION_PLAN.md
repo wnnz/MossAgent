@@ -119,9 +119,9 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | 编号 | 当前状态 | 未完成的功能或边界 | 优先级/依赖 |
 | --- | --- | --- | --- |
 | R01 | 部分完成；安全阻断 | 命令/PTY/Git hooks/helpers/stdio MCP 等代码执行的真实文件系统隔离 | P0；原生 MXC 独立环境尚未就绪 |
-| R02 | 部分完成、部分未验证 | 最终路径竞争、严格撤权排空、完整入口审计、产物/缓存崩溃回收与配额 | P0；复用已有句柄端口和 schema 26–28 |
-| R03 | 附件 Steer（schema 29）和发送方式偏好已实现；其他矩阵未验证 | Queue/Steer 竞争及事务/副作用中崩溃 | P1；R02/R05 |
-| R04 | 部分完成 | 自动分支发现、创建原子认领、句柄级清理、替换对象重新授权及完整崩溃生命周期 | P1；R01/R02 |
+| R02 | 部分完成；schema 30 持久资源登记、跨实例限时排空及陈旧登记二次确认恢复已实现 | 真实进程崩溃核验、迟到资源、最终路径竞争、完整入口审计、产物/缓存回收与配额 | P0；复用已有句柄端口和 schema 26–30 |
+| R03 | 附件 Steer、发送偏好，以及最终关闭对 Queue/Steer 的两种确定顺序已实现并验证 | 编辑/排序/并发认领矩阵、事务/副作用中崩溃 | P1；R02/R05 |
+| R04 | 部分完成；本地引用浏览、schema 31 intent、独占/原子认领及恢复 UI 已实现 | 清理交接、远端 ref 获取、替换对象重新授权及完整崩溃生命周期 | P1；R01/R02 |
 | R05 | 部分完成 | PDF/其他文件、全图查看、子代理图像共享、未引用快照安全回收 | P1；模型协议与产物会话 |
 | R06 | 部分完成；流帧异常已收口，其他部分未验证 | 真实提供商/模型能力和代理配置竞争矩阵 | P1；获准真实服务账号 |
 | R07 | 部分完成、部分未验证 | 内外/CDP 切换、可靠人工接管、其他创建/副作用崩溃与重启组合 | P1；R01/R02 |
@@ -186,12 +186,14 @@ Windows 验收环境尚未就绪；本机已有诊断只获得较弱 DACL 层，
 
 ### R02：最终路径边界、严格撤权、产物与恢复
 
-**现状：** 读取/写入/删除/复制/同卷移动及产物会话、授权版本和对象 grant 已实现，
-但它们不是所有文件入口、整棵子树不变、最终名称条件提交或同步撤销屏障的证明。
+**现状：** 读取/写入/删除/复制/同卷移动及产物会话、授权版本和对象 grant 已实现；
+本地项目编辑会撤销旧 revision lease，并通过 schema 30 资源登记等待本机和其他实例的
+旧租约退出。它们仍不是所有文件入口、整棵子树不变、崩溃遗留资源核实或最终名称条件提交的证明。
 
-1. Application 建立 task/run/授权代际的资源登记与状态：可接收新操作、撤销中、资源已排空、
-   清理未知。撤权先关闭新入口，再取消 Agent/工具/PTY/Git/Browser/MCP，限时等待实际资源退出；
-   授权已保存和资源已退出分开显示。跨实例聚合订阅/轮询，旧 context 不能借用新 grant。
+1. ✅ 已实现基础切片：Application 登记运行/工具 lease 的项目、revision 和实例心跳；撤权先
+   关闭新入口，再取消旧租约，并跨实例查询未释放登记。授权已保存和资源已退出分开显示。
+   崩溃遗留登记可在项目编辑器中查看，心跳过期后需连续两次确认才会标记为人工放弃并留下审计状态。
+   仍需补齐所有长驻资源的显式归属、真实进程崩溃核验和逐类状态投影。
 2. Platform.Windows 复用现有会话补齐最终目标比较与提交协议：写入/覆盖/移动在受控断点
    核对对象、目录项和内容版本。研究可证明的最终名称 CAS；不能先做字符串检查再无条件覆盖，
    不能宣称普通 rename API 已提供“仅当仍为旧对象”的原子语义。不支持时保守拒绝并保留原文件。
@@ -211,6 +213,23 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 另一任务不受影响；崩溃恢复不删除归属不明对象、不重放副作用。已有副作用不承诺自动回滚。
 参考：[读取](archive/SECURITY.md#read-handle-path-safety-acceptance)、[写入](archive/SECURITY.md#write-handle-path-safety-acceptance)、
 [产物会话](archive/SECURITY.md#owned-artifact-session-acceptance)、[项目根对象](archive/SECURITY.md#root-object-authorization-acceptance)。
+
+**R02 本轮授权排空切片（分支 `feature/complete-pending-features`）：**
+
+- `ProjectAuthorizationLease` 记录撤销、取消回调和实际退出三个分离状态；
+  `ProjectAuthorizationMonitor.WaitForQuiescenceAsync` 只等待目标项目旧 revision 的 lease，
+  5 秒内未退出时返回剩余数量，不会把“已取消”冒充成“资源已排空”。
+- 项目目录更新和根对象确认在 SQLite 提交后执行同一屏障。超时时仍发布已经提交的新项目快照，
+  编辑器保持打开并显示“授权已保存，但旧运行或工具仍在停止”，避免错误地报告普通保存失败。
+- schema 30 的 `authorization_resource_leases` 保存注册、心跳和释放时间；两个独立 registry
+  实例通过同一 SQLite 数据库查询旧 revision，项目保存会等待远端实例巡检并撤销其 lease。
+- 项目编辑器显示仍活动的旧资源；只有心跳超过 30 秒的登记可经“首次选择、二次确认”标记为
+  `abandoned`，并记录确认实例。该操作只解除保存屏障，不伪装成进程已终止或副作用已回滚。
+- 验证：App 项目编辑/授权保存 53 项、窄窗口陈旧资源恢复 UI 2 项、Infrastructure 全量 867 项、
+  Agent 撤权/架构 9 项、
+  Windows PTY 撤权 5 项通过；新增 registry 生命周期、跨实例成功、超时、数据库故障和
+  schema 30 回滚用例。证据仍为双实例同库确定性测试；进程崩溃后的人工核实/清理、迟到原生资源、
+  浏览器/MCP 持久进程和真实进程崩溃后的资源核验未验证。
 
 ### R03：附件 Steer、发送偏好和 Queue/Steer 竞争
 
@@ -252,29 +271,63 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
   本次发送偏好另通过存储往返/损坏/未知字段、设置页选择到真实 Headless 键盘提交、保存失败回退
   和架构约束测试。未验证：原生键盘/IME、真实提供商图片理解、附件引导的崩溃中断组合。
 
-**剩余（R03 第 3–4 步）：** Queue/Steer 竞争与事务断点、原生与真实服务验收。
+**R03 本轮 Queue/Steer 边界竞态验证：**
+
+- `ConversationSteeringSession` 的 session gate 与 SQLite run revision、任务状态和 receipt ID
+  共同确定最终关闭顺序。关闭先取得 gate 时，迟到 Steer 被拒绝且草稿保留，已排队输入随后消费一次；
+  Steer 先成功时，它先增加一个模型边界轮次，Queue 等该运行完成后再次启动。
+- App 结果断言覆盖两条消息各消费一次、Queue 清空、迟到草稿未被队列继承、steering receipt
+  最终状态为已在边界应用；相关 Steering/Followup 回归 15 项通过，Infrastructure
+  Steering/Followup 93 项通过。
+- 未覆盖编辑/排序与认领并发、提交前后真实终止宿主、工具副作用已发生后的崩溃和原生键盘/IME。
+
+**剩余（R03 第 3–4 步）：** 编辑/排序/认领完整竞争矩阵、事务与副作用断点、原生与真实服务验收。
 
 ### R04：工作树创建、清理和完整生命周期
 
-**现状：** 工作树对象 grant 与旧任务确认已完成。Git 创建返回到打开登记之间仍可能
-对象交接；清理需要释放禁止删除共享的句柄再调用 Git，因此最终删除窗口仍有竞态。
+**现状：** 工作树对象 grant、旧任务确认、schema 31 创建 intent、创建目标独占认领及
+任务/消息/草稿/intent 的原子条件认领已完成。清理需要释放禁止删除共享的句柄再调用 Git，
+因此最终删除窗口仍有竞态。项目编辑器已显示待核实创建记录并支持二次确认后的审计标记。
 
-1. Infrastructure 增加受管 runner 的本地分支/标签发现、搜索/分页和固定 commit 预览。
-   自动发现与已有手工输入分别保留；远端 ref 获取是单独显式网络动作。
-2. Platform.Windows 设计独占创建空目标并持有身份的会话，先用真实 Git 验证预创建空目录
-   与受限共享句柄的兼容性；不能采用接受已有目标的普通 `CreateDirectory` 冒充独占认领。
-   Infrastructure 在创建前持久化 task/repository/base commit/target/identity intent，成功后条件认领任务及消息。
+1. ✅ 已完成本地部分：Infrastructure 增加受管 runner 的本地分支/标签发现、搜索/分页和
+   固定 commit 预览。自动发现与已有手工输入分别保留；远端 ref 获取仍是单独显式网络动作。
+2. ✅ 已完成基础：Platform.Windows 使用 `NtCreateFile` 的空目录创建语义原子认领目标，
+   持有禁止删除/重命名的目录句柄并允许 Git 在目录内写入；真实 Git worktree add 已在该目录成功。
+   Infrastructure 在 Git 前持久化 task/project/repository/commit/target intent，并记录 claimed、
+   GitCreated、Failed、Orphaned、Consumed 阶段。任务、首条消息、可选草稿消费和
+   GitCreated→Consumed 状态在同一个 SQLite transaction 中条件提交，任一步失败全部回滚。
 3. 清理先关闭新运行并完成 R02 的 drain；按保存 grant 打开受控删除会话，比较身份后删除原对象。
    研究仅处理该 worktree 注册槽的 Git 元数据清理，避免对象删除后 Git 再按同名路径删除替换目录，
    不采用全局 prune。若不能证明交接安全，保留明确失败状态。
-4. 保存创建/清理各阶段与未知状态；启动只核对和展示人工恢复/清理，不自动重建或删除。
-   同时固定/复核 `.git` 指针、common-dir、注册槽和仓库归属，不能仅固定根目录。
+4. ✅ 已完成创建侧：保存创建各阶段与未知状态；启动和项目编辑器显示人工恢复信息，
+   `Failed/Orphaned` 可二次确认标记为已核实。清理阶段状态及清理恢复仍待实现。
+   同时继续固定/复核 `.git` 指针、common-dir、注册槽和仓库归属，不能仅固定根目录。
 5. 对已登记但被替换的对象，另设计显式重新授权代际和 CAS：完整展示任务/项目/路径，
    提交新 grant 时撤销旧租约，旧 context 不得复用新版本；确认后仍需手动续跑。
 
 **验收：** 创建空目标、Git 退出、登记、消息提交、对象删除、注册清理等断点分别终止恢复；
 覆盖并行创建一成功一失败/取消、基准移动、被占目录、陈旧确认及清理时同路径替换，保留另一任务和草稿。
 另验独立 EXE 重启和旧工作树确认。依赖 R01/R02，详细研究边界见[工作树授权方案](archive/GIT_WORKTREES.md#worktree-object-authorization-acceptance)。
+
+**R04 本轮创建认领切片：**
+
+- 新增 `IExclusiveDirectoryClaimFactory`；Windows 生产实现从已验证父目录句柄创建目标，
+  `FILE_CREATE` 保证目标此前不存在，持有期间禁止其他进程删除或重命名，但保留 Git 所需写入。
+- `GitWorktreeService` 在生产装配中先声明应用数据目录下的 `worktrees` 根、独占认领任务目录，再运行
+  Git，完成后重新核对目录卷/对象 ID。真实临时 Git 仓库验证 worktree 可在该空目录内创建。
+- 环境选择器通过 `git for-each-ref` 读取本地 branches/tags，分支与标签分组展示，支持有界搜索、
+  分页和 `git show` 固定 commit 预览；选择后把精确 commit 写回基准字段。不会自动 fetch、
+  跟随远端更新或执行 hooks。
+- schema 31 的 task、消息、草稿和 Consumed 状态通过同一 transaction 提交；
+  首次消息或 intent 条件更新失败时全部回滚，worktree 清理后标记 Failed。
+  启动恢复会把已有匹配任务的 intent 对账为 Consumed，其余未完成项保留为 Orphaned，不自动重建或删除。
+- 项目编辑器显示 Preparing、Claimed、GitCreated、Failed、Orphaned 阶段、任务、
+  目标路径及错误码；只有 Failed/Orphaned 可执行“首次选择、二次确认”的已人工核实标记，
+  状态变为 Acknowledged 并保留审计行，不自动删除目录或重写 Git。
+- 验证：Platform 独占/占用/释放及真实 Git 3 项、Infrastructure WorktreeCreationIntent/GitWorktree/
+  cancellation 75 项、App Worktree 55 项、引用/环境交互 9 项、恢复 ViewModel 1 项、
+  项目编辑器窄窗口 16 项。
+  未验证：两个真实进程同时认领、创建 intent 后强制终止宿主、Git 元数据清理窗口及原生窗口入口。
 
 ### R05：PDF、其他附件、全图查看和快照回收
 

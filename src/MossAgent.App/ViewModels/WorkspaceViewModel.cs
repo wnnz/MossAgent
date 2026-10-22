@@ -321,6 +321,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         AgentPicker.Dispose();
         ModelPicker.Dispose();
         Catalog.ProjectEditor.Dispose();
+        Catalog.Environment.Dispose();
         Catalog.TaskManagement.Dispose();
         SidebarProjects.Dispose();
         SidebarSearch.Dispose();

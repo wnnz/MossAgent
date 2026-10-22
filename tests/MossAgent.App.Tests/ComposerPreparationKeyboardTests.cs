@@ -58,6 +58,7 @@ public sealed class ComposerPreparationKeyboardTests : IAsyncLifetime
                 Assert.Empty(fixture.Server.Requests);
                 release.TrySetResult();
                 await fixture.WaitUntilAsync(() => fixture.Server.Requests.Count == 1 && !workspace.IsRunning);
+                Flush(window);
                 Assert.Equal("下一条尚未发送的草稿。", workspace.ComposerText);
                 Assert.True(input.IsSubmissionEnabled);
                 Assert.Single(fixture.Server.Requests);

@@ -172,6 +172,16 @@
   <data name="TaskEnvironmentBaseReferenceLabel" xml:space="preserve"><value>工作树基准（可选）</value></data>
   <data name="TaskEnvironmentBaseReferencePlaceholder" xml:space="preserve"><value>HEAD、分支、标签或提交</value></data>
   <data name="TaskEnvironmentBaseReferenceFailure" xml:space="preserve"><value>工作树基准无效或无法解析为本地提交，消息尚未发送。请检查分支、标签或提交；留空使用 HEAD。不会自动拉取或改用其他基准。</value></data>
+  <data name="GitReferenceBranch" xml:space="preserve"><value>分支</value></data>
+  <data name="GitReferenceTag" xml:space="preserve"><value>标签</value></data>
+  <data name="GitReferenceBranches" xml:space="preserve"><value>本地分支</value></data>
+  <data name="GitReferenceTags" xml:space="preserve"><value>本地标签</value></data>
+  <data name="GitReferenceSearch" xml:space="preserve"><value>搜索本地引用</value></data>
+  <data name="GitReferenceSearchPlaceholder" xml:space="preserve"><value>筛选分支或标签</value></data>
+  <data name="GitReferenceMore" xml:space="preserve"><value>加载更多本地引用</value></data>
+  <data name="GitReferenceEmpty" xml:space="preserve"><value>没有匹配的本地分支或标签。</value></data>
+  <data name="GitReferenceLoadFailed" xml:space="preserve"><value>无法读取本地分支和标签。不会自动访问远端。</value></data>
+  <data name="GitReferencePreview" xml:space="preserve"><value>{0} {1} → {2} · {3}</value></data>
   <data name="TaskEnvironmentExistingHint" xml:space="preserve"><value>对话开始后执行目录固定；如需切换项目目录或独立工作树，请创建新对话。</value></data>
   <data name="TaskEnvironmentRecoveryNotice" xml:space="preserve"><value>工作树未被强制删除，位置：{0}。请先刷新任务，检查任务是否已保存及目录中的改动，再手动恢复；不要反复发送来重试创建。</value></data>
   <data name="TaskEnvironmentCleanupFailure" xml:space="preserve"><value>无法完成工作树清理。请刷新任务并检查目录中的未提交改动或文件占用，然后再确认重试；不会强制删除工作树。</value></data>

@@ -72,4 +72,81 @@ public sealed class ProjectAuthorizationPersistenceTests
         catch (OperationCanceledException) when (lease.IsRevoked) { }
         Assert.True(lease.IsRevoked);
     }
+
+    [Fact]
+    public async Task CrossInstanceDrainWaitsForRegisteredOldRevisionLease()
+    {
+        await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
+        var firstResources = new SqliteAuthorizationResourceRegistry(fixture.Connections, TimeProvider.System);
+        var secondResources = new SqliteAuthorizationResourceRegistry(fixture.Connections, TimeProvider.System);
+        await using var firstMonitor = new ProjectAuthorizationMonitor(
+            fixture.Repository, new ProjectAuthorizationChanges(), resources: firstResources);
+        await using var secondMonitor = new ProjectAuthorizationMonitor(
+            new SqliteWorkspaceRepository(fixture.Connections), new ProjectAuthorizationChanges(),
+            resources: secondResources);
+        var lease = await firstMonitor.AcquireAsync(fixture.Project, fixture.Token);
+        var operation = Task.Run(async () =>
+        {
+            try { await Task.Delay(Timeout.Infinite, lease.Revocation); }
+            catch (OperationCanceledException) when (lease.IsRevoked) { }
+            await lease.DisposeAsync();
+        }, fixture.Token);
+        try
+        {
+            await new SqliteWorkspaceRepository(fixture.Connections).SaveProjectAsync(
+                fixture.Project with { AuthorizedDirectories = [fixture.Project.PrimaryDirectory, "additional"] },
+                fixture.Token);
+
+            var result = await secondMonitor.WaitForQuiescenceAsync(
+                fixture.Project.Id, fixture.Project.AuthorizationRevision,
+                TimeSpan.FromSeconds(5), fixture.Token);
+
+            Assert.True(result.IsDrained);
+            Assert.Equal(0, result.OutstandingOperations);
+            await operation.WaitAsync(TimeSpan.FromSeconds(5), fixture.Token);
+            Assert.Equal(0, await secondResources.CountOutstandingAsync(
+                fixture.Project.Id, fixture.Project.AuthorizationRevision, fixture.Token));
+        }
+        finally { await lease.DisposeAsync(); }
+    }
+
+    [Fact]
+    public async Task CrossInstanceDrainReportsUnknownRegisteredRowAfterDeadline()
+    {
+        await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
+        var firstResources = new SqliteAuthorizationResourceRegistry(fixture.Connections, TimeProvider.System);
+        var secondResources = new SqliteAuthorizationResourceRegistry(fixture.Connections, TimeProvider.System);
+        await using var monitor = new ProjectAuthorizationMonitor(
+            fixture.Repository, new ProjectAuthorizationChanges(), resources: secondResources);
+        var leaseId = Guid.NewGuid();
+        await firstResources.RegisterAsync(
+            leaseId, fixture.Project.Id, fixture.Project.AuthorizationRevision, fixture.Token);
+        try
+        {
+            var result = await monitor.WaitForQuiescenceAsync(
+                fixture.Project.Id, fixture.Project.AuthorizationRevision,
+                TimeSpan.FromMilliseconds(75), fixture.Token);
+
+            Assert.False(result.IsDrained);
+            Assert.Equal(1, result.OutstandingOperations);
+        }
+        finally { await firstResources.ReleaseAsync(leaseId, fixture.Token); }
+    }
+
+    [Fact]
+    public async Task ResourceRegistryFailureIsReportedAsNotDrained()
+    {
+        await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
+        var resources = new SqliteAuthorizationResourceRegistry(fixture.Connections, TimeProvider.System);
+        await using var monitor = new ProjectAuthorizationMonitor(
+            fixture.Repository, new ProjectAuthorizationChanges(), resources: resources);
+        await fixture.ExecuteAsync("DROP TABLE authorization_resource_leases;");
+
+        var result = await monitor.WaitForQuiescenceAsync(
+            fixture.Project.Id, fixture.Project.AuthorizationRevision,
+            TimeSpan.FromMilliseconds(50), fixture.Token);
+
+        Assert.False(result.IsDrained);
+        Assert.True(result.OutstandingOperations >= 1);
+    }
 }

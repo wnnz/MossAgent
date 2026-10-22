@@ -8,9 +8,12 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MossAgent.App.Controls;
 using MossAgent.App.ViewModels;
 using MossAgent.App.Views;
+using MossAgent.Application.Git;
 using MossAgent.Domain;
 using Xunit;
 
@@ -69,7 +72,8 @@ public sealed class WorkspaceTaskEnvironmentControlTests : IAsyncLifetime
                 Assert.True(flyout.IsOpen);
                 var content = Assert.IsType<AppCard>(flyout.Content);
                 var actions = content.GetVisualDescendants().OfType<AppActionButton>().ToArray();
-                Assert.Equal(2, actions.Length);
+                Assert.Contains(actions, action => ReferenceEquals(
+                    action.Command, workspace.Catalog.Environment.UseProjectDirectoryCommand));
                 var worktree = Assert.Single(actions, action => ReferenceEquals(action.Command, workspace.Catalog.Environment.UseWorktreeCommand));
                 Assert.True(worktree.IsEffectivelyEnabled);
                 SaveEvidence(window, dark, width);
@@ -113,6 +117,62 @@ public sealed class WorkspaceTaskEnvironmentControlTests : IAsyncLifetime
         }
         finally { window.Close(); }
     }, TestContext.Current.CancellationToken);
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task LocalReferenceBrowser_GroupsSelectsAndPreviewsFixedCommit(bool dark) =>
+        _session.DispatchAsync(async () =>
+        {
+            var commit = new string('c', 40);
+            var probe = new GitReferenceDiscoveryProbe
+            {
+                Items =
+                [
+                    new("main", "refs/heads/main", GitReferenceKind.Branch, commit),
+                    new("v1.0", "refs/tags/v1.0", GitReferenceKind.Tag, commit)
+                ],
+                Preview = new("", commit, "reference subject", "Reference Author", DateTimeOffset.UnixEpoch)
+            };
+            await using var fixture = await WorkspaceModelSelectionFixture.CreateAsync(configure: services =>
+            {
+                services.RemoveAll<IGitReferenceDiscoveryService>();
+                services.AddSingleton<IGitReferenceDiscoveryService>(probe);
+            });
+            var view = new WorkspaceComposerView { DataContext = fixture.Workspace };
+            var window = new AppWindow { Width = 526, Height = 360, Content = view,
+                RequestedThemeVariant = dark ? ThemeVariant.Dark : ThemeVariant.Light };
+            window.Show();
+            try
+            {
+                window.UpdateLayout();
+                var environment = Assert.Single(view.GetVisualDescendants().OfType<WorkspaceTaskEnvironmentView>());
+                var button = environment.FindControl<AppActionButton>("EnvironmentButton")!;
+                var flyout = Assert.IsType<AppFlyout>(button.Flyout);
+                flyout.ShowAt(button);
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(fixture.Token);
+                timeout.CancelAfter(TimeSpan.FromSeconds(5));
+                while (!fixture.Workspace.Catalog.Environment.GitReferences.HasResults)
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    await Task.Delay(15, timeout.Token);
+                }
+                Dispatcher.UIThread.RunJobs();
+                window.UpdateLayout();
+                var references = fixture.Workspace.Catalog.Environment.GitReferences;
+                Assert.Single(references.Branches);
+                Assert.Single(references.Tags);
+                await references.Branches[0].SelectCommand.ExecuteAsync(null);
+                Assert.Equal(commit, fixture.Workspace.Catalog.Environment.BaseReference);
+                Assert.True(references.HasPreview);
+                Assert.Contains("reference subject", references.Preview);
+                var content = Assert.IsAssignableFrom<Control>(flyout.Content);
+                var popup = Assert.IsAssignableFrom<TopLevel>(TopLevel.GetTopLevel(content));
+                Assert.True(content.Bounds.Height <= popup.ClientSize.Height);
+                SaveEvidence(window, dark, 526);
+            }
+            finally { window.Close(); }
+        }, TestContext.Current.CancellationToken);
 
     private static void SaveEvidence(AppWindow window, bool dark, int width)
     {

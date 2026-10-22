@@ -155,6 +155,60 @@ public sealed class ProjectAuthorizationMonitorTests
         finally { release.TrySetResult(); }
     }
 
+    [Fact]
+    public async Task QuiescenceWaitsForRevokedLeaseDisposal()
+    {
+        var project = Project();
+        await using var monitor = new ProjectAuthorizationMonitor(
+            new ProjectAuthorizationReaderProbe(project), new ProjectAuthorizationChanges());
+        var lease = await monitor.AcquireAsync(project, Token);
+        var revoked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var operation = Task.Run(async () =>
+        {
+            try { await Task.Delay(Timeout.Infinite, lease.Revocation); }
+            catch (OperationCanceledException) when (lease.IsRevoked) { }
+            revoked.TrySetResult();
+            await release.Task;
+            await lease.DisposeAsync();
+        }, Token);
+        try
+        {
+            var drain = monitor.WaitForQuiescenceAsync(project.Id, project.AuthorizationRevision,
+                TimeSpan.FromSeconds(5), Token);
+            await revoked.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+            Assert.False(drain.IsCompleted);
+            release.TrySetResult();
+            var result = await drain.WaitAsync(TimeSpan.FromSeconds(5), Token);
+            Assert.True(result.IsDrained);
+            Assert.Equal(0, result.OutstandingOperations);
+            await operation.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        }
+        finally
+        {
+            release.TrySetResult();
+            await lease.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5), Token);
+        }
+    }
+
+    [Fact]
+    public async Task QuiescenceReportsOutstandingOperationsAfterDeadline()
+    {
+        var project = Project();
+        await using var monitor = new ProjectAuthorizationMonitor(
+            new ProjectAuthorizationReaderProbe(project), new ProjectAuthorizationChanges());
+        var lease = await monitor.AcquireAsync(project, Token);
+        try
+        {
+            var result = await monitor.WaitForQuiescenceAsync(project.Id, project.AuthorizationRevision,
+                TimeSpan.FromMilliseconds(25), Token);
+            Assert.False(result.IsDrained);
+            Assert.Equal(1, result.OutstandingOperations);
+            Assert.True(lease.IsRevoked);
+        }
+        finally { await lease.DisposeAsync(); }
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(1)]

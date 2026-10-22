@@ -80,4 +80,66 @@ public sealed class ProjectEditorViewportTests : IAsyncLifetime
             Assert.Equal(1, action.Opacity);
             Assert.True(action.IsHitTestVisible);
         }, TestContext.Current.CancellationToken);
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task StaleAuthorizationResourceRecovery_StaysVisibleAndOperable(bool dark) =>
+        _session.DispatchAsync(async () =>
+        {
+            await using var fixture = await ProjectEditorViewportFixture.CreateAsync(
+                dark, 526, 601, 1, count: 2, staleResource: true);
+            fixture.Open();
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(5));
+            while (!fixture.Editor.AuthorizationResources.HasStaleResources)
+            {
+                fixture.Flush();
+                await Task.Delay(15, timeout.Token);
+            }
+            fixture.Flush();
+
+            var resourceButtons = fixture.Content.GetVisualDescendants().OfType<AppButton>()
+                .Where(button => button.IsEffectivelyVisible).ToArray();
+            var abandon = Assert.Single(resourceButtons, button =>
+                Equals(button.Content, fixture.Editor.AuthorizationResources.AbandonLabel));
+            var refresh = Assert.Single(resourceButtons, button =>
+                Equals(button.Content, fixture.Editor.AuthorizationResources.RefreshLabel));
+            Assert.True(abandon.IsEffectivelyEnabled);
+            Assert.True(abandon.Focus());
+            fixture.Flush();
+            fixture.AssertHit(abandon);
+            fixture.AssertHit(refresh);
+            fixture.SaveEvidence($"project-editor-stale-resource-{dark}");
+        }, TestContext.Current.CancellationToken);
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task FailedWorktreeIntentRecovery_StaysVisibleAndOperable(bool dark) =>
+        _session.DispatchAsync(async () =>
+        {
+            await using var fixture = await ProjectEditorViewportFixture.CreateAsync(
+                dark, 526, 601, 1, count: 2, failedWorktreeIntent: true);
+            fixture.Open();
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(5));
+            while (!fixture.Editor.WorktreeRecovery.HasItems)
+            {
+                fixture.Flush();
+                await Task.Delay(15, timeout.Token);
+            }
+            fixture.Flush();
+
+            var item = Assert.Single(fixture.Editor.WorktreeRecovery.Items);
+            var acknowledge = Assert.Single(fixture.Content.GetVisualDescendants().OfType<AppButton>(),
+                button => Equals(button.Content, item.AcknowledgeLabel));
+            var refresh = Assert.Single(fixture.Content.GetVisualDescendants().OfType<AppButton>(),
+                button => Equals(button.Content, fixture.Editor.WorktreeRecovery.RefreshLabel));
+            Assert.True(acknowledge.Focus());
+            fixture.Flush();
+            fixture.AssertHit(acknowledge);
+            fixture.AssertHit(refresh);
+            fixture.SaveEvidence($"project-editor-worktree-recovery-{dark}");
+        }, TestContext.Current.CancellationToken);
 }

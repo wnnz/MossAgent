@@ -5,7 +5,7 @@ using MossAgent.Application.Git;
 
 namespace MossAgent.App.ViewModels;
 
-public sealed class WorkspaceTaskEnvironmentViewModel : ObservableObject
+public sealed class WorkspaceTaskEnvironmentViewModel : ObservableObject, IDisposable
 {
     private Guid? _projectId;
     private Guid? _taskId;
@@ -15,9 +15,12 @@ public sealed class WorkspaceTaskEnvironmentViewModel : ObservableObject
     private bool _isPickerOpen;
     private string? _preparationNotice;
     private string _baseReference = string.Empty;
+    private bool _settingReference;
+    private bool _disposed;
 
-    public WorkspaceTaskEnvironmentViewModel()
+    public WorkspaceTaskEnvironmentViewModel(IGitReferenceDiscoveryService? references = null)
     {
+        GitReferences = new(references, ApplyReferenceCommit);
         UseProjectDirectoryCommand = new RelayCommand(() => Select(false), () => CanChoose);
         UseWorktreeCommand = new RelayCommand(() => Select(true), () => CanChoose);
     }
@@ -35,8 +38,13 @@ public sealed class WorkspaceTaskEnvironmentViewModel : ObservableObject
     public string BaseReference
     {
         get => _baseReference;
-        set { if (CanChoose) SetProperty(ref _baseReference, value ?? string.Empty); }
+        set
+        {
+            if (CanChoose && SetProperty(ref _baseReference, value ?? string.Empty) && !_settingReference)
+                GitReferences.ClearPreview();
+        }
     }
+    public WorkspaceGitReferencesViewModel GitReferences { get; }
     public IRelayCommand UseProjectDirectoryCommand { get; }
     public IRelayCommand UseWorktreeCommand { get; }
     public string? PreparationNotice => _preparationNotice;
@@ -44,7 +52,11 @@ public sealed class WorkspaceTaskEnvironmentViewModel : ObservableObject
     public bool IsPickerOpen
     {
         get => _isPickerOpen;
-        set => SetProperty(ref _isPickerOpen, value && CanChoose);
+        set
+        {
+            if (!SetProperty(ref _isPickerOpen, value && CanChoose) || !_isPickerOpen) return;
+            GitReferences.Open();
+        }
     }
 
     internal void SetContext(ProjectProfile? project, AgentTask? task)
@@ -62,6 +74,7 @@ public sealed class WorkspaceTaskEnvironmentViewModel : ObservableObject
         OnPropertyChanged(nameof(HasProject));
         OnPropertyChanged(nameof(Hint));
         NotifyChoice();
+        GitReferences.SetProject(project, CanChoose);
     }
 
     internal void SetLocked(bool locked)
@@ -107,5 +120,20 @@ public sealed class WorkspaceTaskEnvironmentViewModel : ObservableObject
         OnPropertyChanged(nameof(Label));
         UseProjectDirectoryCommand.NotifyCanExecuteChanged();
         UseWorktreeCommand.NotifyCanExecuteChanged();
+        GitReferences.SetEnabled(CanChoose);
+    }
+
+    private void ApplyReferenceCommit(string commit)
+    {
+        _settingReference = true;
+        try { BaseReference = commit; }
+        finally { _settingReference = false; }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        GitReferences.Dispose();
     }
 }

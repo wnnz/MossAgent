@@ -10,11 +10,12 @@ public sealed class WorkspaceDraftSubmission(
     Action<Guid, ConversationDraftUpdate[]> accept,
     Action conflict)
 {
-    public async Task SaveAsync(AgentTask task, ConversationMessage message, CancellationToken cancellationToken)
+    public async Task SaveAsync(AgentTask task, ConversationMessage message, CancellationToken cancellationToken,
+        Func<AgentTask, ConversationMessage, IReadOnlyList<ConversationDraftUpdate>, CancellationToken, Task>? save = null)
     {
         using var lease = await WorkspaceDraftWriteLease.AcquireAsync(writeGate, cancellationToken);
         var updates = capture(task.Id);
-        try { await repository.SaveSubmissionAsync(task, message, updates, cancellationToken); }
+        try { await (save ?? repository.SaveSubmissionAsync)(task, message, updates, cancellationToken); }
         catch (ConversationDraftConflictException) { conflict(); throw; }
         accept(task.Id, updates);
     }

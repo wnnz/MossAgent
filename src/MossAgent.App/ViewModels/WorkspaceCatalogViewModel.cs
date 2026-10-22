@@ -3,6 +3,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.Application.Persistence;
+using MossAgent.Application.Git;
 using MossAgent.App.Services;
 using MossAgent.Domain;
 namespace MossAgent.App.ViewModels;
@@ -25,12 +26,10 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public WorkspaceCatalogViewModel(
         IWorkspaceRepository workspaces,
         WorkspaceWorktreeCleanupService worktreeCleanup,
-        WorkspaceProjectService projectService, ConversationAttachmentThumbnailFactory? thumbnails = null)
+        WorkspaceProjectService projectService, ConversationAttachmentThumbnailFactory? thumbnails = null, IGitReferenceDiscoveryService? gitReferences = null)
     {
-        _workspaces = workspaces;
-        _thumbnails = thumbnails;
-        _worktreeCleanup = worktreeCleanup;
-        WorktreeAuthorization = new(worktreeCleanup.Authorizations);
+        _workspaces = workspaces; _thumbnails = thumbnails; _worktreeCleanup = worktreeCleanup;
+        Environment = new(gitReferences); WorktreeAuthorization = new(worktreeCleanup.Authorizations);
         ProjectEditor = new WorkspaceProjectEditorViewModel(projectService);
         ProjectEditor.ProjectCreated += AddProject;
         ProjectEditor.ProjectUpdated += UpdateProject;
@@ -72,7 +71,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public WorkspaceTaskSearchViewModel TaskSearch { get; }
     public WorkspaceRecentTasksViewModel RecentTasks { get; }
     public WorkspaceTaskManagementViewModel TaskManagement { get; }
-    public WorkspaceTaskEnvironmentViewModel Environment { get; } = new();
+    public WorkspaceTaskEnvironmentViewModel Environment { get; }
     public WorkspaceWorktreeAuthorizationViewModel WorktreeAuthorization { get; }
     public IRelayCommand NewTaskCommand { get; }
     public IRelayCommand NewChatCommand { get; }

@@ -11,7 +11,8 @@ namespace MossAgent.Infrastructure.Persistence;
 public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connections,
     AppDataPaths? paths = null, IAttachmentImageDecoder? images = null, IProjectAuthorizationChanges? authorizationChanges = null,
     IRootIdentitySessionFactory? rootIdentities = null)
-    : IWorkspaceRepository, IConversationSubmissionRepository, IProjectAuthorizationReader, IProjectAuthorizationWriter, IProjectAuthorizationConfirmation
+    : IWorkspaceRepository, IConversationSubmissionRepository, IWorktreeCreationIntentSubmissionRepository,
+        IProjectAuthorizationReader, IProjectAuthorizationWriter, IProjectAuthorizationConfirmation
 {
     private readonly SqliteWorkspaceWriter _writer = new(connections);
     private readonly SqliteTaskRenameWriter _renameWriter = new(connections);
@@ -28,6 +29,33 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
     public Task SaveSubmissionAsync(AgentTask task, ConversationMessage message,
         IReadOnlyList<ConversationDraftUpdate> drafts, CancellationToken cancellationToken)
     {
+        var snapshot = ValidateSubmission(task, message, drafts);
+        return SaveSubmissionCoreAsync(task, message, snapshot, null, cancellationToken);
+    }
+
+    public Task SaveSubmissionAndWorktreeIntentAsync(AgentTask task, ConversationMessage message,
+        IReadOnlyList<ConversationDraftUpdate> drafts, CancellationToken cancellationToken)
+    {
+        var snapshot = ValidateSubmission(task, message, drafts);
+        return SaveSubmissionCoreAsync(task, message, snapshot, RequireWorktreePath(task), cancellationToken);
+    }
+
+    public Task SaveTaskWithMessagesAndWorktreeIntentAsync(AgentTask task,
+        IReadOnlyList<ConversationMessage> messages, CancellationToken cancellationToken)
+    {
+        var worktreePath = RequireWorktreePath(task);
+        return Task.Run(async () =>
+        {
+            using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            deadline.CancelAfter(TimeSpan.FromSeconds(30));
+            await _writer.SaveAsync(task, messages, deadline.Token, (connection, transaction, token) =>
+                ConsumeWorktreeIntentAsync(connection, transaction, task.Id, worktreePath, token));
+        }, cancellationToken);
+    }
+
+    private ConversationDraftUpdate[] ValidateSubmission(AgentTask task, ConversationMessage message,
+        IReadOnlyList<ConversationDraftUpdate> drafts)
+    {
         var snapshot = drafts.Select(update => update with { Attachments = update.AttachmentItems.ToArray() }).ToArray();
         _draftWriter.Validate(snapshot);
         var target = new ConversationDraftScope(task.ProjectId, task.Id);
@@ -36,6 +64,12 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
                 || update.Scope.TaskId is { } id && id != task.Id)
             || !snapshot.Any(update => update.Scope == target))
             throw new ArgumentException("Invalid conversation submission scope.");
+        return snapshot;
+    }
+
+    private Task SaveSubmissionCoreAsync(AgentTask task, ConversationMessage message,
+        ConversationDraftUpdate[] snapshot, string? worktreePath, CancellationToken cancellationToken)
+    {
         return Task.Run(async () =>
         {
             using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -44,8 +78,32 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
             {
                 if (!await _draftWriter.WriteAsync(connection, transaction, snapshot, token))
                     throw new ConversationDraftConflictException();
+                if (worktreePath is not null)
+                    await ConsumeWorktreeIntentAsync(connection, transaction, task.Id, worktreePath, token);
             });
         }, cancellationToken);
+    }
+
+    private static string RequireWorktreePath(AgentTask task) =>
+        string.IsNullOrWhiteSpace(task.WorktreePath)
+            ? throw new ArgumentException("A worktree intent requires a managed worktree path.", nameof(task))
+            : task.WorktreePath;
+
+    private static async Task ConsumeWorktreeIntentAsync(SqliteConnection connection, SqliteTransaction transaction,
+        Guid taskId, string worktreePath, CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = """
+            UPDATE worktree_creation_intents
+            SET status=4,updated_at=$now,error_code=NULL
+            WHERE task_id=$task AND target_path=$target AND status=2;
+            """;
+        command.Parameters.AddWithValue("$task", taskId.ToString());
+        command.Parameters.AddWithValue("$target", worktreePath);
+        command.Parameters.AddWithValue("$now", DateTimeOffset.UtcNow.ToString("O"));
+        if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
+            throw new InvalidOperationException("The worktree creation intent was not consumable.");
     }
 
     public async Task<IReadOnlyList<ProjectProfile>> GetProjectsAsync(CancellationToken cancellationToken)

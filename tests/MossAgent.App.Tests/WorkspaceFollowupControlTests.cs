@@ -51,13 +51,13 @@ public sealed class WorkspaceFollowupControlTests : IAsyncLifetime
                 Assert.Single(fixture.Server.Requests);
                 Assert.True(workspace.HasActiveRun);
                 Assert.Equal(string.Empty, input.Text);
-                var stop = view.FindControl<AppIconButton>("SendButton")!;
+                var stop = view.FindControl<AppIconButton>("StopButton")!;
                 var queue = view.FindControl<AppButton>("QueueButton")!;
                 Assert.True(stop.IsEffectivelyVisible && stop.IsEffectivelyEnabled);
-                Assert.True(stop.IsAlternateIcon);
+                Assert.True(stop.IsFilledIcon);
                 Assert.True(queue.IsEffectivelyVisible);
                 Assert.Same(workspace.PrimaryActionCommand, stop.Command);
-                Assert.Same(workspace.Queue.EnqueueCommand, queue.Command);
+                Assert.Same(workspace.ComposerRouter.SubmitCommand, queue.Command);
                 var queueOrigin = queue.TranslatePoint(default, view)!.Value;
                 var stopOrigin = stop.TranslatePoint(default, view)!.Value;
                 Assert.InRange(queueOrigin.X + queue.Bounds.Width, 0, stopOrigin.X);

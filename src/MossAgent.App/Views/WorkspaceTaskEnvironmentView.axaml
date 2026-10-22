@@ -17,6 +17,59 @@
             <ui:AppInput x:Name="BaseReferenceInput" Text="{Binding BaseReference, Mode=TwoWay}"
                              PlaceholderText="{Binding BaseReferencePlaceholder}" MaxLength="512"
                              AutomationProperties.Name="{Binding BaseReferenceLabel}" IsEnabled="{Binding CanChoose}" />
+            <StackPanel DataContext="{Binding GitReferences}" IsVisible="{Binding IsAvailable}" Spacing="4">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                <ui:AppInput Text="{Binding Search, Mode=TwoWay}" PlaceholderText="{Binding SearchPlaceholder}"
+                             AutomationProperties.Name="{Binding SearchLabel}" IsEnabled="{Binding CanLoad}" />
+                <ui:AppIconButton Grid.Column="1" Classes="icon-compact" Command="{Binding SearchCommand}"
+                                  Label="{Binding SearchLabel}" IconData="{StaticResource UiIconSearch}" />
+              </Grid>
+              <ui:AppText Text="{Binding Preview}" Classes="type-10-5 text-muted" TextWrapping="Wrap"
+                          IsVisible="{Binding HasPreview}" />
+              <ui:AppScrollViewer Classes="composer-agent-options" HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="4">
+                  <ui:AppExpander IsExpanded="True" IsVisible="{Binding HasBranches}">
+                    <ui:AppExpander.Header>
+                      <ui:AppText Text="{Binding BranchLabel}" Classes="type-11 weight-semibold" />
+                    </ui:AppExpander.Header>
+                    <ui:AppItemsControl ItemsSource="{Binding Branches}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <ui:AppActionButton Classes="ghost menu-option align-leading" Label="{Binding Name}"
+                                              Command="{Binding SelectCommand}"
+                                              IconData="{StaticResource UiIconBranch}"
+                                              AutomationProperties.Name="{Binding AutomationLabel}"
+                                              ToolTip.Tip="{Binding CommitLabel}" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ui:AppItemsControl>
+                  </ui:AppExpander>
+                  <ui:AppExpander IsExpanded="True" IsVisible="{Binding HasTags}">
+                    <ui:AppExpander.Header>
+                      <ui:AppText Text="{Binding TagLabel}" Classes="type-11 weight-semibold" />
+                    </ui:AppExpander.Header>
+                    <ui:AppItemsControl ItemsSource="{Binding Tags}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <ui:AppActionButton Classes="ghost menu-option align-leading" Label="{Binding Name}"
+                                              Command="{Binding SelectCommand}"
+                                              IconData="{StaticResource UiIconBranch}"
+                                              AutomationProperties.Name="{Binding AutomationLabel}"
+                                              ToolTip.Tip="{Binding CommitLabel}" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ui:AppItemsControl>
+                  </ui:AppExpander>
+                  <ui:AppText Text="{Binding EmptyLabel}" Classes="type-10-5 text-muted"
+                              IsVisible="{Binding IsEmpty}" TextWrapping="Wrap" />
+                  <ui:AppButton Classes="ghost menu-option" Content="{Binding MoreLabel}"
+                                Command="{Binding MoreCommand}" IsVisible="{Binding HasMore}" />
+                  <ui:AppText Text="{Binding ErrorLabel}" Classes="status-warning type-10-5"
+                              IsVisible="{Binding HasError}" TextWrapping="Wrap" />
+                </StackPanel>
+              </ui:AppScrollViewer>
+            </StackPanel>
             <ui:AppActionButton Classes="ghost menu-option align-leading" Label="{Binding WorktreeLabel}"
                                 IconData="{StaticResource UiIconBranch}" Command="{Binding UseWorktreeCommand}" />
             <ui:AppText Classes="type-11 muted" Text="{Binding Hint}" TextWrapping="Wrap" />

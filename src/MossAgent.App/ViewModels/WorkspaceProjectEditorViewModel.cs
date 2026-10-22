@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.App.Resources;
+using MossAgent.Application.Authorization;
 using MossAgent.Domain;
 
 namespace MossAgent.App.ViewModels;
@@ -25,6 +26,8 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
     public WorkspaceProjectEditorViewModel(WorkspaceProjectService projectService)
     {
         _projectService = projectService;
+        AuthorizationResources = new(projectService);
+        WorktreeRecovery = new(projectService);
         OpenCommand = new RelayCommand(OpenNew, CanDismiss);
         CloseCommand = new RelayCommand(Close, CanDismiss);
         AddCommand = new GuardedAsyncRelayCommand(AddAsync, CanMutate);
@@ -45,6 +48,8 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
 
     public IAsyncRelayCommand AddDirectoryCommand { get; }
     public IAsyncRelayCommand ConfirmRootObjectsCommand { get; }
+    public WorkspaceAuthorizationResourcesViewModel AuthorizationResources { get; }
+    public WorkspaceWorktreeRecoveryViewModel WorktreeRecovery { get; }
     public bool ShowRootConfirmation => _editingProject is not null && _projectService.CanConfirmRootObjects;
     public string RootConfirmationLabel => SettingsText.Get("ProjectConfirmRootObjects");
     public string RootConfirmationHint => SettingsText.Get("ProjectConfirmRootObjectsHint");
@@ -97,6 +102,8 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
         Status = string.Empty;
         HasStatusError = false;
         if (ShowRootConfirmation && project.RootAuthorizations.Count == 0) SetStatus("ProjectRootsNeedConfirmation", false);
+        AuthorizationResources.Show(project.Id);
+        WorktreeRecovery.Show(project.Id);
         NotifyEditorModeChanged();
         IsOpen = true;
     }
@@ -112,6 +119,8 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
             Directories.Clear();
             Status = string.Empty;
             HasStatusError = false;
+            AuthorizationResources.Clear();
+            WorktreeRecovery.Clear();
             NotifyEditorModeChanged();
         }
         IsOpen = true;
@@ -119,7 +128,10 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
 
     private void Close()
     {
-        if (CanDismiss()) IsOpen = false;
+        if (!CanDismiss()) return;
+        IsOpen = false;
+        AuthorizationResources.Clear();
+        WorktreeRecovery.Clear();
     }
 
     private async Task AddAsync(CancellationToken cancellationToken)
@@ -145,8 +157,13 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
             var project = editingProject is null
                 ? await _projectService.CreateAsync(name, paths, operation.Token)
                 : await _projectService.UpdateAsync(editingProject, name, paths, operation.Token);
-            if (!_disposed && !operation.IsCancellationRequested)
+            if (!_disposed)
                 PublishSavedProject(project, editingProject is null, version, revision);
+        }
+        catch (ProjectAuthorizationNotQuiescedException exception)
+        {
+            if (IsCurrent(version))
+                PublishSavedProject(exception.SavedProject, editingProject is null, version, revision, drainPending: true);
         }
         catch (WorkspaceProjectValidationException exception)
         {
@@ -182,10 +199,20 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
         try
         {
             var saved = await _projectService.ConfirmRootObjectsAsync(expected, operation.Token);
-            if (!IsCurrent(version) || operation.IsCancellationRequested) return;
+            if (!IsCurrent(version)) return;
             _editingProject = saved;
             ProjectUpdated?.Invoke(saved);
+            AuthorizationResources.Show(saved.Id);
             SetStatus("ProjectRootObjectsConfirmed", false);
+        }
+        catch (ProjectAuthorizationNotQuiescedException exception)
+        {
+            if (!IsCurrent(version)) return;
+            _editingProject = exception.SavedProject;
+            ProjectUpdated?.Invoke(exception.SavedProject);
+            AuthorizationResources.Show(exception.SavedProject.Id);
+            SetStatus("ProjectAuthorizationSavedDrainPending", true);
+            NotifyEditorModeChanged();
         }
         catch (ProjectAuthorizationConflictException) { if (IsCurrent(version)) SetStatus("ProjectAuthorizationConflict", true); }
         catch (OperationCanceledException) { if (IsCurrent(version)) SetStatus("ProjectSaveCancelled", true); }
@@ -234,11 +261,21 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
         }
     }
 
-    private void PublishSavedProject(ProjectProfile project, bool created, long version, long revision)
+    private void PublishSavedProject(ProjectProfile project, bool created, long version, long revision,
+        bool drainPending = false)
     {
         if (created) ProjectCreated?.Invoke(project);
         else ProjectUpdated?.Invoke(project);
         if (!IsCurrent(version)) return;
+        if (drainPending)
+        {
+            if (_editingProject?.Id == project.Id) _editingProject = project;
+            AuthorizationResources.Show(project.Id);
+            WorktreeRecovery.Show(project.Id);
+            SetStatus("ProjectAuthorizationSavedDrainPending", true);
+            NotifyEditorModeChanged();
+            return;
+        }
         if (revision != _draftRevision)
         {
             if (_editingProject?.Id == project.Id) _editingProject = project;
@@ -247,6 +284,8 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
         }
         Name = string.Empty;
         Directories.Clear();
+        AuthorizationResources.Clear();
+        WorktreeRecovery.Clear();
         SetStatus(created ? "ProjectCreated" : "ProjectSaved", false);
         _editingProject = null;
         NotifyEditorModeChanged();
@@ -327,6 +366,8 @@ public sealed class WorkspaceProjectEditorViewModel : ObservableObject, IDisposa
         ((IDisposable)AddCommand).Dispose();
         ((IDisposable)AddDirectoryCommand).Dispose();
         ((IDisposable)ConfirmRootObjectsCommand).Dispose();
+        AuthorizationResources.Dispose();
+        WorktreeRecovery.Dispose();
         NotifyAvailabilityChanged();
     }
 }

@@ -58,6 +58,51 @@
           <ui:AppText Text="{Binding RootConfirmationHint}" Classes="subtle type-11" TextWrapping="Wrap" />
           <ui:AppButton Content="{Binding RootConfirmationLabel}" Command="{Binding ConfirmRootObjectsCommand}" />
         </StackPanel>
+        <StackPanel DataContext="{Binding AuthorizationResources}" IsVisible="{Binding IsVisible}" Spacing="5">
+          <ui:AppText Text="{Binding Status}" Classes="subtle type-11" TextWrapping="Wrap" />
+          <ui:AppText Text="{Binding Hint}" Classes="status-warning type-11" TextWrapping="Wrap"
+                      IsVisible="{Binding HasStaleResources}" />
+          <WrapPanel Orientation="Horizontal">
+            <ui:AppButton Classes="ghost menu-option" Content="{Binding RefreshLabel}"
+                          Command="{Binding RefreshCommand}" />
+            <ui:AppButton Classes="ghost menu-option" Content="{Binding AbandonLabel}"
+                          Command="{Binding AbandonCommand}" IsVisible="{Binding HasStaleResources}" />
+          </WrapPanel>
+          <ui:AppText Text="{Binding Error}" Classes="status-error type-11" TextWrapping="Wrap"
+                      IsVisible="{Binding HasError}" />
+        </StackPanel>
+        <StackPanel DataContext="{Binding WorktreeRecovery}" IsVisible="{Binding IsVisible}" Spacing="5">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <ui:AppText Text="{Binding Title}" Classes="type-11 weight-semibold" VerticalAlignment="Center" />
+            <ui:AppButton Grid.Column="1" Classes="ghost menu-option" Content="{Binding RefreshLabel}"
+                          Command="{Binding RefreshCommand}" />
+          </Grid>
+          <ui:AppText Text="{Binding Hint}" Classes="status-warning type-11" TextWrapping="Wrap" />
+          <ui:AppItemsControl ItemsSource="{Binding Items}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <ui:AppBorder Classes="directory-row project-directory-row">
+                  <StackPanel Spacing="3">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <ui:AppText Text="{Binding TaskLabel}" Classes="type-11 weight-semibold" />
+                      <ui:AppText Grid.Column="1" Text="{Binding StatusLabel}" Classes="subtle type-10-5" />
+                    </Grid>
+                    <ui:AppText Text="{Binding TargetPath}" Classes="subtle type-10-5" TextWrapping="Wrap" />
+                    <ui:AppText Text="{Binding ErrorCode}" Classes="status-warning type-10-5"
+                                IsVisible="{Binding HasErrorCode}" TextWrapping="Wrap" />
+                    <ui:AppButton Classes="ghost menu-option" HorizontalAlignment="Left"
+                                  Content="{Binding AcknowledgeLabel}" Command="{Binding AcknowledgeCommand}"
+                                  IsVisible="{Binding CanAcknowledge}" />
+                    <ui:AppText Text="{Binding Error}" Classes="status-error type-10-5"
+                                IsVisible="{Binding HasError}" TextWrapping="Wrap" />
+                  </StackPanel>
+                </ui:AppBorder>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ui:AppItemsControl>
+          <ui:AppText Text="{Binding Error}" Classes="status-error type-11" TextWrapping="Wrap"
+                      IsVisible="{Binding HasError}" />
+        </StackPanel>
         <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
           <ui:AppButton Grid.Column="1" Content="{x:Static text:ProjectEditorText.Cancel}" Command="{Binding CloseCommand}" />
           <ui:AppButton Grid.Column="2" Content="{Binding SubmitLabel}" Classes="primary" Command="{Binding AddCommand}" />
