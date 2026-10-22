@@ -91,7 +91,8 @@ public sealed class AutomationEditorPreviewTests : IAsyncLifetime
                 or nameof(AutomationEditorViewModel.Time) or nameof(AutomationEditorViewModel.SelectedProject)
                 or nameof(AutomationEditorViewModel.SelectedModel) or nameof(AutomationEditorViewModel.SelectedTimeZone)
                 or nameof(AutomationEditorViewModel.SelectedFrequency) or nameof(AutomationEditorViewModel.SelectedWeekday)
-                or nameof(AutomationEditorViewModel.SelectedPolicy) or nameof(AutomationEditorViewModel.IntervalHours)
+                or nameof(AutomationEditorViewModel.SelectedPolicy) or nameof(AutomationEditorViewModel.SelectedScopePolicy)
+                or nameof(AutomationEditorViewModel.IntervalHours)
                 or nameof(AutomationEditorViewModel.TimeoutMinutes)) revisions++;
         };
 

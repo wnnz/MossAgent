@@ -1,11 +1,14 @@
+using System.Text.Json;
 using Microsoft.Data.Sqlite;
+using MossAgent.Application.Attachments;
 using MossAgent.Domain;
 
 namespace MossAgent.Infrastructure.Persistence;
 
 internal static class SqliteConversationSteeringReader
 {
-    internal const string Columns = "id,task_id,run_id,sequence,substr(text,1,32769),state,accepted_at,applied_at,interrupted_at";
+    internal const string Columns =
+        "id,task_id,run_id,sequence,substr(text,1,32769),state,accepted_at,applied_at,interrupted_at,attachments";
 
     public static async Task<ConversationSteeringRun?> ReadRunAsync(SqliteConnection connection, SqliteTransaction? transaction,
         Guid taskId, Guid runId, CancellationToken token)
@@ -31,11 +34,15 @@ internal static class SqliteConversationSteeringReader
 
     public static ConversationSteeringInput ReadInput(SqliteDataReader reader)
     {
-        var input = new ConversationSteeringInput(Guid.Parse(reader.GetString(0)), Guid.Parse(reader.GetString(1)),
+        var id = Guid.Parse(reader.GetString(0));
+        var taskId = Guid.Parse(reader.GetString(1));
+        var attachments = ReadAttachments(reader.GetString(9), taskId, id);
+        var input = new ConversationSteeringInput(id, taskId,
             Guid.Parse(reader.GetString(2)), reader.GetInt64(3), reader.GetString(4),
             (ConversationSteeringInputState)reader.GetInt32(5), DateTimeOffset.Parse(reader.GetString(6)),
             reader.IsDBNull(7) ? null : DateTimeOffset.Parse(reader.GetString(7)),
-            reader.IsDBNull(8) ? null : DateTimeOffset.Parse(reader.GetString(8)));
+            reader.IsDBNull(8) ? null : DateTimeOffset.Parse(reader.GetString(8)),
+            attachments.Length == 0 ? null : attachments);
         if (input.Text.Length > ConversationSteeringInput.MaximumTextLength || !Enum.IsDefined(input.State)
             || string.IsNullOrWhiteSpace(input.Text)) throw new InvalidDataException("Invalid steering receipt.");
         return input;
@@ -63,5 +70,21 @@ internal static class SqliteConversationSteeringReader
         command.Parameters.AddWithValue("$task", taskId.ToString());
         command.Parameters.AddWithValue("$run", runId.ToString());
         return command;
+    }
+
+    /// <summary>
+    /// Parses and validates the stored attachment snapshot metadata of one steering input.
+    /// </summary>
+    /// <param name="json">Stored JSON array written by the accept transaction.</param>
+    /// <param name="taskId">Task that must own every snapshot.</param>
+    /// <param name="inputId">Steering input id that must own every snapshot.</param>
+    private static ConversationAttachment[] ReadAttachments(string json, Guid taskId, Guid inputId)
+    {
+        ConversationAttachment[]? items;
+        try { items = JsonSerializer.Deserialize<ConversationAttachment[]>(json); }
+        catch (JsonException) { throw new InvalidDataException("Invalid steering attachment snapshot."); }
+        if (items is null || items.Length == 0) return [];
+        ConversationAttachmentValidation.Validate(taskId, inputId, items);
+        return items;
     }
 }

@@ -156,7 +156,7 @@ public sealed class ModelReasoningInteractionTests : IAsyncLifetime
         try
         {
             window.UpdateLayout();
-            var send = Assert.Single(view.GetVisualDescendants().OfType<AppIconButton>(), button => button.Classes.Contains("composer-send"));
+            var send = Assert.Single(view.GetVisualDescendants().OfType<AppIconButton>(), button => button.Name == "SendButton");
             var notice = Assert.Single(view.GetVisualDescendants().OfType<AppText>(), text => text.Text == workspace.ModelPicker.ReasoningNotice);
             Assert.False(workspace.PrimaryActionCommand.CanExecute(null));
             Assert.False(send.IsEffectivelyEnabled);

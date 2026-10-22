@@ -42,16 +42,13 @@
 
       <ui:AppComposerInput Grid.Row="2" Classes="composer-input" Text="{Binding ComposerText}"
                 PlaceholderText="随心输入"
-                 SubmitCommand="{Binding ComposerSubmitCommand}"
-                 AlternateSubmitCommand="{Binding Steering.AlternateSubmitCommand}"
-                 ToolTip.Tip="{x:Static resources:ComposerInputText.Hint}"
+                 SubmitCommand="{Binding ComposerRouter.SubmitCommand}"
+                 AlternateSubmitCommand="{Binding ComposerRouter.AlternateSubmitCommand}"
+                 SubmitOnEnter="{Binding ComposerRouter.SubmitOnEnter}"
+                 ToolTip.Tip="{Binding ComposerRouter.Hint}"
                  AcceptsReturn="True">
         <ui:AppComposerInput.IsSubmissionEnabled>
-          <MultiBinding Converter="{x:Static BoolConverters.Or}">
-            <Binding Path="!IsRunning" />
-            <Binding Path="Queue.CanEnqueueMessage" />
-            <Binding Path="Steering.CanSubmit" />
-          </MultiBinding>
+          <Binding Path="ComposerRouter.CanUseShortcuts" />
         </ui:AppComposerInput.IsSubmissionEnabled>
       </ui:AppComposerInput>
 
@@ -85,7 +82,7 @@
         </ui:AppActionButton>
 
         <ui:AppButton x:Name="QueueButton" Grid.Column="3" Classes="ghost menu-option" Content="{Binding Queue.EnqueueLabel}"
-                      Command="{Binding Queue.EnqueueCommand}">
+                      Command="{Binding ComposerRouter.SubmitCommand}">
           <ui:AppButton.IsVisible>
             <MultiBinding Converter="{x:Static BoolConverters.And}">
               <Binding Path="HasActiveRun" /><Binding Path="Queue.IsAvailable" />
@@ -93,11 +90,14 @@
           </ui:AppButton.IsVisible>
         </ui:AppButton>
         <ui:AppIconButton x:Name="SendButton" Grid.Column="4" Classes="primary composer-send"
-                          Command="{Binding PrimaryActionCommand}" Label="{Binding PrimaryActionLabel}"
+                          Command="{Binding ComposerRouter.SubmitCommand}"
+                          Label="{x:Static resources:ComposerInputText.SubmitLabel}"
                           IconData="{StaticResource UiIconSend}"
-                          AlternateIconData="{StaticResource UiIconStop}"
-                          IsAlternateIcon="{Binding IsRunning}"
-                          IsFilledIcon="{Binding IsRunning}" />
+                          IsVisible="{Binding !IsRunning}" />
+        <ui:AppIconButton x:Name="StopButton" Grid.Column="4" Classes="primary composer-send"
+                          Command="{Binding PrimaryActionCommand}" Label="{Binding PrimaryActionLabel}"
+                          IconData="{StaticResource UiIconStop}" IsFilledIcon="True"
+                          IsVisible="{Binding IsRunning}" />
       </Grid>
       </Grid>
     </ui:AppCard>

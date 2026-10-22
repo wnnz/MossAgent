@@ -1,4 +1,5 @@
 using MossAgent.Application.Agent;
+using MossAgent.Application.Models;
 using MossAgent.Domain;
 
 namespace MossAgent.Agent.Tests;
@@ -19,17 +20,18 @@ internal sealed class ProbeAgentSteeringInput(Guid taskId) : IAgentSteeringInput
         _pending.Add(new(Guid.NewGuid(), TaskId, RunId, ++Revision, text, ConversationSteeringInputState.Pending, DateTimeOffset.UtcNow));
     }
 
-    public Task<ConversationSteeringApplication?> ApplyAtBoundaryAsync(string? precedingAssistant, bool completeIfEmpty,
-        Action<IReadOnlyList<ConversationSteeringInput>> validate, CancellationToken cancellationToken)
+    public Task<AgentSteeringApplication?> ApplyAtBoundaryAsync(string? precedingAssistant, bool completeIfEmpty,
+        Action<IReadOnlyList<ModelMessage>> validate, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (_pending.Count == 0)
         {
             Closed = completeIfEmpty;
-            return Task.FromResult<ConversationSteeringApplication?>(null);
+            return Task.FromResult<AgentSteeringApplication?>(null);
         }
         var pending = _pending.ToArray();
-        validate(pending);
+        var prepared = pending.Select(item => new ModelMessage(ModelRole.User, item.Text)).ToArray();
+        validate(prepared);
         var now = DateTimeOffset.UtcNow;
         var application = new ConversationSteeringApplication(new(RunId, TaskId, ++Revision, now),
             pending.Select(item => item with { State = ConversationSteeringInputState.AppliedAtBoundary, AppliedAt = now }).ToArray(),
@@ -37,6 +39,6 @@ internal sealed class ProbeAgentSteeringInput(Guid taskId) : IAgentSteeringInput
             string.IsNullOrWhiteSpace(precedingAssistant) ? null : new(Guid.NewGuid(), TaskId, MessageRole.Assistant, precedingAssistant, now));
         _pending.Clear();
         Applications.Add(application);
-        return Task.FromResult<ConversationSteeringApplication?>(application);
+        return Task.FromResult<AgentSteeringApplication?>(new(application, prepared));
     }
 }

@@ -16,7 +16,7 @@
                           ToggleInspectorCommand="{Binding ToggleRightPanelCommand}"
                           SettingsCommand="{Binding CloseSettingsCommand}">
       <ui:AppNavigationRail.HelpContent>
-        <views:KeyboardShortcutsFlyoutView />
+        <views:KeyboardShortcutsFlyoutView DataContext="{Binding Workspace.ComposerPreferences}" />
       </ui:AppNavigationRail.HelpContent>
     </ui:AppNavigationRail>
     <ui:AppBorder Grid.Column="1" Classes="window-content-frame">

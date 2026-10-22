@@ -126,6 +126,16 @@
   <data name="TimelineRunning" xml:space="preserve"><value>正在处理</value></data>
   <data name="TimelineActivities" xml:space="preserve"><value>执行过程</value></data>
   <data name="ComposerInputHint" xml:space="preserve"><value>Enter 或 Ctrl+Enter 发送，运行中加入队列；Shift+Enter 换行。停止按钮可取消当前运行。</value></data>
+  <data name="ComposerEnterSendsHint" xml:space="preserve"><value>Enter 发送，运行中加入队列；Ctrl+Enter 引导当前运行；Shift+Enter 换行。</value></data>
+  <data name="ComposerControlEnterSendsHint" xml:space="preserve"><value>Ctrl+Enter 发送或加入队列；Enter 换行；引导当前运行请使用引导按钮。</value></data>
+  <data name="ComposerEnterSendsShortcut" xml:space="preserve"><value>Enter 发送</value></data>
+  <data name="ComposerControlEnterSendsShortcut" xml:space="preserve"><value>Ctrl+Enter 发送</value></data>
+  <data name="ComposerSettingsTitle" xml:space="preserve"><value>发送与引导</value></data>
+  <data name="ComposerSettingsDescription" xml:space="preserve"><value>选择输入框使用的键盘发送方式。两种方式共用同一发送可用性和持久化草稿。</value></data>
+  <data name="ComposerEnterSendsOption" xml:space="preserve"><value>Enter 发送；Ctrl+Enter 引导</value></data>
+  <data name="ComposerControlEnterSendsOption" xml:space="preserve"><value>Ctrl+Enter 发送；Enter 换行</value></data>
+  <data name="ComposerPreferenceLoadFailed" xml:space="preserve"><value>发送快捷键设置无法读取，当前暂用 Enter 发送，原设置文件未被覆盖。请检查数据目录权限。</value></data>
+  <data name="ComposerPreferenceSaveFailed" xml:space="preserve"><value>发送快捷键设置保存失败，已恢复上次生效的选择。请检查数据目录权限。</value></data>
   <data name="ComposerNewlineLabel" xml:space="preserve"><value>输入框换行</value></data>
   <data name="AddFilesLabel" xml:space="preserve"><value>添加文本或图像附件</value></data>
   <data name="AttachmentSelectionHint" xml:space="preserve"><value>仅发送所选文件的快照，不会授予模型额外的文件访问权限。</value></data>
@@ -207,8 +217,9 @@
 <data name="SteeringSubmit" xml:space="preserve"><value>引导当前运行</value></data>
 <data name="SteeringReceiving" xml:space="preserve"><value>正在接收…</value></data>
 <data name="SteeringBusy" xml:space="preserve"><value>本对话已有引导正在接收，请等待确认。草稿已保留。</value></data>
-<data name="SteeringHint" xml:space="preserve"><value>Ctrl+Enter 引导当前运行：在下一次模型请求前加入；Enter 加入下一轮队列。保留当前运行的模型和权限。</value></data>
-<data name="SteeringTextOnly" xml:space="preserve"><value>当前引导仅接收文字。请移除附件，或将完整消息加入下一轮队列；附件不会被丢弃。</value></data>
+<data name="SteeringHint" xml:space="preserve"><value>Ctrl+Enter 引导当前运行：文字和附件在下一次模型请求前加入；Enter 加入下一轮队列。保留当前运行的模型和权限。</value></data>
+<data name="SteeringAttachmentModelUnsupported" xml:space="preserve"><value>当前运行的模型不支持图片附件。请移除图片，或加入下一轮队列；草稿和附件已保留。</value></data>
+<data name="SteeringAttachmentsUnavailable" xml:space="preserve"><value>引导附件快照无法读取或已变化，未加入模型请求。请重新选择附件后重试；草稿已保留。</value></data>
 <data name="SteeringTooLong" xml:space="preserve"><value>引导文字不能超过 32,768 个 UTF-16 单元，请缩短后重试。</value></data>
 <data name="SteeringInvalid" xml:space="preserve"><value>引导文字为空、过长或包含无效字符，草稿已保留。请编辑后重试。</value></data>
 <data name="SteeringScopeChanged" xml:space="preserve"><value>项目、工作树或源审阅授权已变化，未继续接收或注入指导。请检查授权；草稿及已接收记录保留。</value></data>

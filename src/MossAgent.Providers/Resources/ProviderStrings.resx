@@ -7,6 +7,10 @@
   <data name="CompatibleInvalidResponse" xml:space="preserve"><value>OpenAI 兼容供应商返回了无效的流式响应，请检查接口协议配置后重试。</value></data>
   <data name="CompatibleIncompleteResponse" xml:space="preserve"><value>OpenAI 兼容供应商的响应提前结束，尚未收到完成标记。请检查网络连接后手动重试。</value></data>
   <data name="CompatibleRequestFailed" xml:space="preserve"><value>OpenAI 兼容供应商请求失败。</value></data>
+  <data name="StreamInvalidResponse" xml:space="preserve"><value>供应商返回了无法解析的流式事件，本轮工具均未执行。请检查接口协议、代理或网关配置后手动重试。</value></data>
+  <data name="ResponsesInvalidToolCall" xml:space="preserve"><value>OpenAI Responses 返回了不完整或无效的工具调用，本轮工具均未执行。请检查模型和接口协议后手动重试。</value></data>
+  <data name="AnthropicInvalidToolCall" xml:space="preserve"><value>Anthropic 返回了不完整或无效的工具调用，本轮工具均未执行。请检查模型和接口协议后手动重试。</value></data>
+  <data name="AnthropicRequestFailed" xml:space="preserve"><value>Anthropic 请求失败。</value></data>
   <data name="GeminiInvalidResponse" xml:space="preserve"><value>Gemini 返回了无效的流式响应，工具调用未执行。请检查协议和模型设置后手动重试。</value></data>
   <data name="GeminiIncompleteResponse" xml:space="preserve"><value>Gemini 响应提前结束，尚未收到正常完成标记，工具调用未执行。请检查网络后手动重试。</value></data>
   <data name="GeminiBlockedResponse" xml:space="preserve"><value>Gemini 拦截了本次生成，工具调用未执行。请调整请求内容并确认其符合供应商使用规则后手动重试。</value></data>

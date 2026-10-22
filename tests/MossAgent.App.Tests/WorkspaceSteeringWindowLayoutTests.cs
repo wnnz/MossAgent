@@ -50,15 +50,17 @@ public sealed class WorkspaceSteeringWindowLayoutTests : IAsyncLifetime
                 Flush(window);
                 var composer = Assert.Single(window.GetVisualDescendants().OfType<WorkspaceComposerView>());
                 var messages = window.GetVisualDescendants().OfType<AppScrollViewer>().Single(control => control.Name == "MessageScrollViewer");
+                var composerViewport = window.GetVisualDescendants().OfType<AppScrollViewer>()
+                    .Single(control => control.Name == "ComposerScrollViewer");
                 Capture(window, dark, width, height, "draft");
                 Assert.True(messages.Bounds.Height >= 72, $"Message viewport {messages.Bounds}; composer {composer.Bounds}; visible {messages.IsEffectivelyVisible}; settings {fixture.Main.IsSettingsOpen}; conversation {fixture.Main.Pages.IsConversationOpen}; messages {workspace.Messages.Count}.");
                 var send = composer.FindControl<AppIconButton>("SendButton")!;
-                send.BringIntoView();
+                ScrollIntoView(composerViewport, send);
                 Flush(window);
                 AssertInside(window, send);
                 Capture(window, dark, width, height, "stop");
                 var steer = composer.GetVisualDescendants().OfType<AppButton>().Single(control => control.Name == "SteerButton");
-                steer.BringIntoView();
+                ScrollIntoView(composerViewport, steer);
                 Flush(window);
                 AssertInside(window, steer);
                 Assert.True(steer.Focus());
@@ -84,6 +86,17 @@ public sealed class WorkspaceSteeringWindowLayoutTests : IAsyncLifetime
             Assert.InRange(relative.Y, 0, viewport.Bounds.Height);
             Assert.InRange(relative.Y + control.Bounds.Height, 0, viewport.Bounds.Height);
         }
+    }
+    private static void ScrollIntoView(AppScrollViewer viewport, Control control)
+    {
+        var relative = control.TranslatePoint(default, viewport)!.Value;
+        var delta = relative.Y < 0
+            ? relative.Y
+            : relative.Y + control.Bounds.Height > viewport.Viewport.Height
+                ? relative.Y + control.Bounds.Height - viewport.Viewport.Height
+                : 0;
+        var maximum = Math.Max(0, viewport.Extent.Height - viewport.Viewport.Height);
+        viewport.Offset = new Vector(viewport.Offset.X, Math.Clamp(viewport.Offset.Y + delta, 0, maximum));
     }
     private static void Flush(MainWindow window) { Dispatcher.UIThread.RunJobs(); window.UpdateLayout(); Dispatcher.UIThread.RunJobs(); }
     private static void Capture(MainWindow window, bool dark, int width, int height, string action)

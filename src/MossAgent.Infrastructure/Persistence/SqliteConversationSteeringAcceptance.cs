@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
@@ -9,22 +10,24 @@ internal static class SqliteConversationSteeringAcceptance
 {
     public static async Task<ConversationSteeringAcceptance?> AcceptAsync(SqliteConnection connection,
         SqliteConversationDraftWriter drafts, Guid taskId, Guid runId, Guid inputId, string text,
-        ConversationDraftUpdate? draft, DateTimeOffset now, CancellationToken token, ConversationSteeringAuthorization? authorization)
+        ConversationDraftUpdate? draft, DateTimeOffset now, CancellationToken token, ConversationSteeringAuthorization? authorization,
+        IReadOnlyList<ConversationAttachment> attachments, IReadOnlyCollection<Guid> draftAttachmentIds)
     {
         await using var transaction = connection.BeginTransaction();
         await SqliteConversationSteeringAuthorization.ValidateAsync(connection, transaction, taskId, authorization, token);
         var run = await SqliteConversationSteeringReader.ReadRunAsync(connection, transaction, taskId, runId, token);
         if (run is null) return null;
-        if (draft is not null && !await MatchesDraftScopeAsync(connection, transaction, taskId, draft, token)) return null;
+        if (draft is not null && !await MatchesDraftScopeAsync(connection, transaction, taskId, draft, draftAttachmentIds, token)) return null;
         var duplicate = await SqliteConversationSteeringReader.ReadInputAsync(connection, transaction, inputId, token);
         if (duplicate is not null)
         {
-            if (duplicate.TaskId != taskId || duplicate.RunId != runId || duplicate.Text != text)
+            if (duplicate.TaskId != taskId || duplicate.RunId != runId || duplicate.Text != text
+                || !duplicate.AttachmentItems.SequenceEqual(attachments))
                 throw new ArgumentException("A steering identity cannot be reused with different input.");
             return new(duplicate, run.Revision, true);
         }
         if (!run.IsOpen || run.Revision == long.MaxValue) return null;
-        if (!await InsertAsync(connection, transaction, taskId, runId, inputId, text, now, token)) return null;
+        if (!await InsertAsync(connection, transaction, taskId, runId, inputId, text, attachments, now, token)) return null;
         if (draft is not null && !await drafts.WriteAsync(connection, transaction, [draft], token))
             throw new ConversationDraftConflictException();
         await using var advance = SqliteConversationSteeringReader.Create(connection, transaction, taskId, runId);
@@ -36,28 +39,49 @@ internal static class SqliteConversationSteeringAcceptance
         return new(input, run.Revision + 1, false);
     }
 
+    /// <summary>
+    /// Verifies that the draft being consumed still owns exactly the attachments this steering input claims.
+    /// </summary>
+    /// <param name="connection">Open connection.</param>
+    /// <param name="transaction">Accept transaction.</param>
+    /// <param name="taskId">Task expected to own the draft scope.</param>
+    /// <param name="draft">Draft update carrying the attachments that remain in the composer.</param>
+    /// <param name="consumed">Composer attachment ids snapshotted into this steering input.</param>
     private static async Task<bool> MatchesDraftScopeAsync(SqliteConnection connection, SqliteTransaction transaction,
-        Guid taskId, ConversationDraftUpdate draft, CancellationToken token)
+        Guid taskId, ConversationDraftUpdate draft, IReadOnlyCollection<Guid> consumed, CancellationToken token)
     {
+        var expected = new HashSet<string>(draft.AttachmentItems.Select(item => item.Id.ToString()), StringComparer.Ordinal);
+        expected.UnionWith(consumed.Select(id => id.ToString()));
         await using var command = connection.CreateCommand();
         command.Transaction = transaction;
-        command.CommandText = """
+        var subset = string.Empty;
+        if (expected.Count > 0)
+        {
+            var names = expected.Select((_, index) => "$attachment" + index).ToArray();
+            subset = $" AND NOT EXISTS(SELECT 1 FROM conversation_draft_attachments WHERE scope_key=$scope "
+                + $"AND attachment_id NOT IN ({string.Join(",", names)}))";
+            var index = 0;
+            foreach (var id in expected) command.Parameters.AddWithValue("$attachment" + index++, id);
+        }
+        command.CommandText = $"""
             SELECT COUNT(*) FROM agent_tasks WHERE id=$task AND project_id IS $project
-            AND NOT EXISTS(SELECT 1 FROM conversation_draft_attachments WHERE scope_key=$scope);
+            AND (SELECT COUNT(*) FROM conversation_draft_attachments WHERE scope_key=$scope)=$expected{subset};
             """;
         command.Parameters.AddWithValue("$task", taskId.ToString());
         command.Parameters.AddWithValue("$project", (object?)draft.Scope.ProjectId?.ToString() ?? DBNull.Value);
         command.Parameters.AddWithValue("$scope", draft.Scope.Key);
+        command.Parameters.AddWithValue("$expected", expected.Count);
         return Convert.ToInt64(await command.ExecuteScalarAsync(token)) == 1;
     }
 
     private static async Task<bool> InsertAsync(SqliteConnection connection, SqliteTransaction transaction,
-        Guid taskId, Guid runId, Guid inputId, string text, DateTimeOffset now, CancellationToken token)
+        Guid taskId, Guid runId, Guid inputId, string text, IReadOnlyList<ConversationAttachment> attachments,
+        DateTimeOffset now, CancellationToken token)
     {
         await using var command = SqliteConversationSteeringReader.Create(connection, transaction, taskId, runId);
         command.CommandText = $"""
-            INSERT INTO conversation_steering_inputs(id,task_id,run_id,text,byte_count,state,accepted_at)
-            SELECT $id,$task,$run,$text,$bytes,0,$now WHERE {SqliteConversationSteeringRuns.ActiveScope}
+            INSERT INTO conversation_steering_inputs(id,task_id,run_id,text,byte_count,state,accepted_at,attachments)
+            SELECT $id,$task,$run,$text,$bytes,0,$now,$attachments WHERE {SqliteConversationSteeringRuns.ActiveScope}
               AND (SELECT COUNT(*) FROM conversation_steering_inputs WHERE run_id=$run AND state=0)<$maximum
               AND (SELECT COALESCE(SUM(byte_count),0) FROM conversation_steering_inputs WHERE run_id=$run AND state=0)+$bytes<=$budget
               AND NOT EXISTS(SELECT 1 FROM messages WHERE id=$id)
@@ -69,6 +93,7 @@ internal static class SqliteConversationSteeringAcceptance
         command.Parameters.AddWithValue("$maximum", ConversationSteeringInput.MaximumPendingItems);
         command.Parameters.AddWithValue("$budget", ConversationSteeringInput.MaximumPendingBytes);
         command.Parameters.AddWithValue("$now", now.ToString("O"));
+        command.Parameters.AddWithValue("$attachments", attachments.Count == 0 ? "[]" : JsonSerializer.Serialize(attachments));
         return await command.ExecuteNonQueryAsync(token) == 1;
     }
 }

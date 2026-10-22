@@ -68,7 +68,7 @@ public sealed class AnthropicToolCallStateTests
     }
 
     [Fact]
-    public void InvalidArguments_RemoveOnlyTheirOwnBlockWithoutPublishingACall()
+    public void InvalidArguments_RemoveOnlyTheirOwnBlockAndReportAFailureInsteadOfThrowing()
     {
         var parser = CreateParser();
         Start(parser, 0, "invalid", "first_tool");
@@ -76,7 +76,10 @@ public sealed class AnthropicToolCallStateTests
         Append(parser, 0, "{");
         Append(parser, 1, "{\"value\":\"valid\"}");
 
-        Assert.ThrowsAny<JsonException>(() => Stop(parser, 0));
+        // Unparsable arguments now surface as a bounded failure event: an exception would escape the
+        // provider stream and abort the run without a reviewable state.
+        var failure = Assert.IsType<ModelFailed>(Stop(parser, 0));
+        Assert.Equal("invalid_tool_arguments", failure.Code);
 
         Assert.Null(Stop(parser, 0));
         AssertCall(Stop(parser, 1), "valid", "second_tool", "valid");

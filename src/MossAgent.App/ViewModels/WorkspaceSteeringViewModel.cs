@@ -3,18 +3,26 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.App.Browser;
 using MossAgent.Application.Agent;
+using MossAgent.Application.Attachments;
 using MossAgent.Application.Conversations;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 
 namespace MossAgent.App.ViewModels;
 
+/// <summary>
+/// Live steering composer state for the selected task: text plus the attachment snapshots that reach
+/// the model at the next boundary. Attachments are validated against the run's model before a snapshot
+/// is written and are consumed together with the draft in the same accept transaction.
+/// </summary>
 public sealed class WorkspaceSteeringViewModel : ObservableObject, IDisposable
 {
     private readonly WorkspaceRunTracker _runs;
     private readonly WorkspaceRunController _controller;
     private readonly WorkspaceCatalogViewModel _catalog;
     private readonly WorkspaceComposerDraftsViewModel _drafts;
+    private readonly WorkspaceAttachmentManagerViewModel _attachments;
+    private readonly WorkspaceTaskFactory _tasks;
     private readonly IRelayCommand _primary;
     private readonly Func<bool> _canAct;
     private readonly WorkspaceFollowupOperations _operations = new();
@@ -24,10 +32,13 @@ public sealed class WorkspaceSteeringViewModel : ObservableObject, IDisposable
 
     internal WorkspaceSteeringViewModel(IConversationSteeringRepository? repository, WorkspaceRunTracker runs,
         WorkspaceRunController controller, WorkspaceCatalogViewModel catalog, WorkspaceComposerDraftsViewModel drafts,
+        WorkspaceAttachmentManagerViewModel attachments, WorkspaceTaskFactory tasks,
         IRelayCommand primary, IRelayCommand fallbackSubmit, Func<bool> canAct)
     {
-        IsAvailable = repository is not null; _runs = runs; _controller = controller; _catalog = catalog;
-        _drafts = drafts; _primary = primary; _canAct = canAct;
+        IsAvailable = repository is not null;
+        _runs = runs; _controller = controller; _catalog = catalog;
+        _drafts = drafts; _attachments = attachments; _tasks = tasks;
+        _primary = primary; _canAct = canAct;
         History = new(repository, catalog);
         History.PropertyChanged += HandleDraftChanged;
         SubmitCommand = new AsyncRelayCommand(SubmitAsync, () => CanSubmit, AsyncRelayCommandOptions.AllowConcurrentExecutions);
@@ -36,6 +47,7 @@ public sealed class WorkspaceSteeringViewModel : ObservableObject, IDisposable
             if (HasActiveRun && IsAvailable) SubmitCommand.Execute(null); else fallbackSubmit.Execute(null);
         }, () => HasActiveRun && IsAvailable ? SubmitCommand.CanExecute(null) : fallbackSubmit.CanExecute(null));
         _drafts.PropertyChanged += HandleDraftChanged;
+        _attachments.Items.CollectionChanged += HandleAttachmentsChanged;
         _primary.CanExecuteChanged += HandlePrimaryChanged;
         _catalog.SelectionChanged += NotifyStateChanged;
         _controller.RunFinished += HandleFinishedAsync;
@@ -50,12 +62,13 @@ public sealed class WorkspaceSteeringViewModel : ObservableObject, IDisposable
     public bool CanSubmit => !_disposed && IsAvailable && !_operations.IsStopping && !IsBusy && _canAct()
         && _catalog.SelectedTask is { } task && task.ProjectId == _catalog.SelectedProject?.Id
         && _drafts.Scope == new ConversationDraftScope(task.ProjectId, task.Id) && _drafts.CanSend
-        && _drafts.Attachments.Count == 0 && !string.IsNullOrWhiteSpace(_drafts.Text)
+        && !string.IsNullOrWhiteSpace(_drafts.Text)
         && _drafts.Text.Length <= ConversationSteeringInput.MaximumTextLength
+        && AttachmentsAccepted(task.Id)
         && _runs.TryGet(task.Id, out var state) && state?.Steering is { IsAccepting: true } session && _drafts.CanSteerTo(session);
     public string SubmitLabel => WorkspaceText.Get(IsBusy ? "SteeringReceiving" : "SteeringSubmit");
-    public string Hint => WorkspaceText.Get(_drafts.Attachments.Count > 0 ? "SteeringTextOnly"
-        : _drafts.Text.Length > ConversationSteeringInput.MaximumTextLength ? "SteeringTooLong" : "SteeringHint");
+    public string Hint => WorkspaceText.Get(_drafts.Text.Length > ConversationSteeringInput.MaximumTextLength ? "SteeringTooLong"
+        : FailingAttachments() ? "SteeringAttachmentModelUnsupported" : "SteeringHint");
     public bool HasNotice => _catalog.SelectedTask is { } task && _notices.ContainsKey(task.Id);
     public string Notice => _catalog.SelectedTask is { } task && _notices.TryGetValue(task.Id, out var key) ? WorkspaceText.Get(key) : string.Empty;
     public IAsyncRelayCommand SubmitCommand { get; }
@@ -67,20 +80,30 @@ public sealed class WorkspaceSteeringViewModel : ObservableObject, IDisposable
             return Task.CompletedTask;
         var scope = _drafts.Scope;
         var text = _drafts.Text;
-        if (!_attempts.TryGetValue(task.Id, out var attempt) || attempt.RunId != session.RunId || attempt.Scope != scope || attempt.Text != text)
-            _attempts[task.Id] = attempt = new(session.RunId, scope, text, Guid.NewGuid());
+        var selected = _attachments.Items.ToArray();
+        var selectionIds = selected.Select(item => item.SelectionId).ToArray();
+        if (!_attempts.TryGetValue(task.Id, out var attempt) || !attempt.Matches(session.RunId, scope, text, selectionIds))
+            _attempts[task.Id] = attempt = new(session.RunId, scope, text, Guid.NewGuid(), selectionIds);
         var captured = attempt;
         return _operations.RunAsync(task.Id, true, async token =>
         {
             try
             {
-                var submission = _drafts.CreateSteeringSubmission(session, scope, text);
+                var snapshots = captured.Attachments ?? await SnapshotAsync(task.Id, captured.Id, selected, token);
+                if (captured.Attachments is null && snapshots.Count > 0)
+                    await AvaloniaUiThread.RunAsync(() =>
+                    {
+                        if (!_disposed && _attempts.TryGetValue(task.Id, out var current) && current.Id == captured.Id)
+                            _attempts[task.Id] = current with { Attachments = snapshots };
+                    }, CancellationToken.None);
+                var submission = _drafts.CreateSteeringSubmission(session, scope, text, captured.AttachmentIds, snapshots);
                 var receipt = await submission.SaveAsync(session, captured.RunId, captured.Id, token);
                 await AvaloniaUiThread.RunAsync(() =>
                 {
                     if (_disposed) return;
                     if (!receipt.AlreadyAccepted) { _attempts.Remove(task.Id); _notices.Remove(task.Id); }
                     else _notices[task.Id] = "SteeringAlreadyAccepted";
+                    _attachments.Consume(selected);
                 }, CancellationToken.None);
             }
             catch (Exception exception)
@@ -89,6 +112,45 @@ public sealed class WorkspaceSteeringViewModel : ObservableObject, IDisposable
             }
             await History.RefreshForTaskAsync(task.Id);
         });
+    }
+
+    /// <summary>
+    /// Writes the attachment snapshots owned by this steering input.
+    /// </summary>
+    /// <param name="taskId">Task that owns the snapshots.</param>
+    /// <param name="inputId">Steering input id used as the snapshot owner.</param>
+    /// <param name="selected">Currently attached composer items.</param>
+    /// <param name="token">Operation cancellation token.</param>
+    private async Task<IReadOnlyList<ConversationAttachment>> SnapshotAsync(Guid taskId, Guid inputId,
+        IReadOnlyList<WorkspaceAttachmentViewModel> selected, CancellationToken token)
+    {
+        if (selected.Count == 0) return [];
+        var contents = selected.Select(item => item.Content).ToArray();
+        ConversationAttachmentValidation.ValidateModel(SelectedModel ?? throw new ConversationSteeringException("SteeringRunUnavailable"), contents);
+        var snapshots = await _tasks.SnapshotAttachmentsAsync(taskId, inputId, contents, token);
+        ConversationAttachmentValidation.Validate(taskId, inputId, snapshots);
+        if (snapshots.Count != contents.Length) throw new ConversationSteeringException("SteeringAttachmentsUnavailable");
+        return snapshots;
+    }
+
+    private ModelProfile? SelectedModel => _catalog.SelectedTask is { } task && _runs.TryGet(task.Id, out var state) ? state?.Model : null;
+
+    /// <summary>
+    /// Checks that the current composer attachments can travel with the run's model.
+    /// </summary>
+    /// <param name="taskId">Task whose run model applies.</param>
+    private bool AttachmentsAccepted(Guid taskId)
+    {
+        var selected = _attachments.Items.ToArray();
+        if (selected.Length == 0) return true;
+        return _runs.TryGet(taskId, out var state) && state?.Model is { } model
+            && ConversationAttachmentValidation.Supports(model, selected.Select(item => item.Content));
+    }
+
+    private bool FailingAttachments()
+    {
+        if (_catalog.SelectedTask is not { } task) return false;
+        return _attachments.Items.Count > 0 && !AttachmentsAccepted(task.Id);
     }
 
     private static string FailureKey(Exception exception) => exception switch
@@ -115,6 +177,7 @@ public sealed class WorkspaceSteeringViewModel : ObservableObject, IDisposable
         SubmitCommand.NotifyCanExecuteChanged(); AlternateSubmitCommand.NotifyCanExecuteChanged();
     }
     private void HandleDraftChanged(object? sender, PropertyChangedEventArgs args) => NotifyStateChanged();
+    private void HandleAttachmentsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs args) => NotifyStateChanged();
     private void HandlePrimaryChanged(object? sender, EventArgs args) => NotifyStateChanged();
     private Task HandleOperationsChangedAsync() => AvaloniaUiThread.RunAsync(NotifyStateChanged, CancellationToken.None);
     private Task HandleFinishedAsync(WorkspaceRunState state, bool released) => AvaloniaUiThread.RunAsync(async () =>
@@ -131,6 +194,7 @@ public sealed class WorkspaceSteeringViewModel : ObservableObject, IDisposable
         _disposed = true; _operations.StateChanged -= HandleOperationsChangedAsync;
         _catalog.SelectionChanged -= NotifyStateChanged; _primary.CanExecuteChanged -= HandlePrimaryChanged;
         _drafts.PropertyChanged -= HandleDraftChanged; _controller.RunFinished -= HandleFinishedAsync;
+        _attachments.Items.CollectionChanged -= HandleAttachmentsChanged;
         History.PropertyChanged -= HandleDraftChanged; _operations.Dispose(); History.Dispose();
     }
 }

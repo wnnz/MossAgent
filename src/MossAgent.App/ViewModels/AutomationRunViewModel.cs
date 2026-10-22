@@ -14,7 +14,12 @@ public sealed class AutomationRunViewModel(AutomationRun run)
     public bool NeedsAttention => Run.Status is AutomationRunStatus.Cancelled or AutomationRunStatus.Interrupted;
     public string Detail => Run.Status switch
     {
-        AutomationRunStatus.Failed => AutomationText.Get(Run.ErrorCode == "execution-unavailable" ? "ExecutionUnavailable" : "RunFailedHint"),
+        AutomationRunStatus.Failed => AutomationText.Get(Run.ErrorCode switch
+        {
+            "execution-unavailable" => "ExecutionUnavailable",
+            "authorization-changed" => "RunAuthorizationChangedHint",
+            _ => "RunFailedHint"
+        }),
         AutomationRunStatus.TimedOut => AutomationText.Get("RunTimedOutHint"),
         AutomationRunStatus.Interrupted => AutomationText.Get("RunInterruptedHint"),
         AutomationRunStatus.Cancelled => AutomationText.Get("RunCancelledHint"),

@@ -16,6 +16,8 @@ public sealed class AppComposerInput : AppInput
 
     public static readonly StyledProperty<bool> IsSubmissionEnabledProperty =
         AvaloniaProperty.Register<AppComposerInput, bool>(nameof(IsSubmissionEnabled));
+    public static readonly StyledProperty<bool> SubmitOnEnterProperty =
+        AvaloniaProperty.Register<AppComposerInput, bool>(nameof(SubmitOnEnter), defaultValue: true);
 
     private TextPresenter? _presenter;
     private bool _enterHeld;
@@ -30,6 +32,12 @@ public sealed class AppComposerInput : AppInput
     {
         get => GetValue(IsSubmissionEnabledProperty);
         set => SetValue(IsSubmissionEnabledProperty, value);
+    }
+
+    public bool SubmitOnEnter
+    {
+        get => GetValue(SubmitOnEnterProperty);
+        set => SetValue(SubmitOnEnterProperty, value);
     }
 
     public ICommand? AlternateSubmitCommand
@@ -56,6 +64,11 @@ public sealed class AppComposerInput : AppInput
         var wasHeld = _enterHeld;
         _enterHeld = true;
         if (eventArgs.KeyModifiers is not (KeyModifiers.None or KeyModifiers.Control))
+        {
+            base.OnKeyDown(eventArgs);
+            return;
+        }
+        if (eventArgs.KeyModifiers == KeyModifiers.None && !SubmitOnEnter)
         {
             base.OnKeyDown(eventArgs);
             return;

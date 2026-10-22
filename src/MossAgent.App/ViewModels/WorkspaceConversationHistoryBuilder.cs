@@ -43,7 +43,7 @@ internal sealed class WorkspaceConversationHistoryBuilder(IConversationAttachmen
             }
             var store = attachments ?? throw new InvalidOperationException("Attachment persistence is unavailable.");
             var contents = await ReadAsync(store, task.Id, message.Id, items, cancellationToken);
-            var context = WorkspaceAttachmentContextBuilder.Build(contents);
+            var context = WorkspaceAttachmentContextFormatter.Format(contents);
             var payloads = contents.Where(content => content.Image is not null).Select(content => ModelImage.FromAttachment(content.Image!)).ToImmutableArray();
             imageCount += payloads.Length;
             imageBytes += images.Sum(item => item.ByteCount);

@@ -47,7 +47,7 @@ public sealed class WorkspaceSteeringTransactionAccessTests : IAsyncLifetime
             else
             {
                 probe.BeforeAccept = revoke;
-                var submission = workspace.Drafts.CreateSteeringSubmission(session, workspace.Drafts.Scope, workspace.ComposerText);
+                var submission = workspace.Drafts.CreateSteeringSubmission(session, workspace.Drafts.Scope, workspace.ComposerText, [], []);
                 var failure = await Assert.ThrowsAsync<ConversationSteeringException>(() =>
                     submission.SaveAsync(session, session.RunId, Guid.NewGuid(), fixture.Token));
                 Assert.Equal("SteeringScopeChanged", failure.Code);

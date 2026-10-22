@@ -110,8 +110,8 @@ public sealed class ComposerToolbarFidelityTests : IAsyncLifetime
     private static void AssertToolbarGeometry(WorkspaceComposerView view)
     {
         var buttons = view.GetVisualDescendants().OfType<AppIconButton>().ToArray();
-        var send = Assert.Single(buttons, button => button.Classes.Contains("composer-send"));
-        var attach = Assert.Single(buttons, button => !button.Classes.Contains("composer-send"));
+        var send = Assert.Single(buttons, button => button.Name == "SendButton");
+        var attach = Assert.Single(buttons, button => button.Classes.Contains("composer-attach"));
         Assert.Equal(new Size(28, 28), send.Bounds.Size);
         Assert.Equal(new CornerRadius(14), send.CornerRadius);
         var sendIcon = Assert.Single(send.GetVisualDescendants().OfType<AppIcon>());

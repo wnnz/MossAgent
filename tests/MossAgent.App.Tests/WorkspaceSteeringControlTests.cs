@@ -70,7 +70,7 @@ public sealed class WorkspaceSteeringControlTests : IAsyncLifetime
                 Assert.InRange(origin.X, 0, view.Bounds.Width);
                 Assert.InRange(origin.X + button.Bounds.Width, 0, view.Bounds.Width);
                 Assert.InRange(origin.Y + button.Bounds.Height, 0, window.Bounds.Height);
-                Assert.Same(workspace.PrimaryActionCommand, view.FindControl<AppIconButton>("SendButton")!.Command);
+                Assert.Same(workspace.ComposerRouter.SubmitCommand, view.FindControl<AppIconButton>("SendButton")!.Command);
                 Capture(window, dark, width);
                 workspace.ComposerText = "引导后的下一条草稿";
                 fixture.Server.ReleaseResponses();

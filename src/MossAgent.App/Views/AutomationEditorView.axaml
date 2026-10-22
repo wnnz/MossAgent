@@ -70,6 +70,12 @@
                              AutomationProperties.Name="{x:Static text:AutomationText.Timeout}" />
       </StackPanel>
     </Grid>
+    <StackPanel Spacing="6">
+      <ui:AppText Text="{x:Static text:AutomationText.Scope}" Classes="type-12 weight-semibold" />
+      <ui:AppComboBox ItemsSource="{Binding ScopePolicies}" SelectedItem="{Binding SelectedScopePolicy}" HorizontalAlignment="Stretch"
+                      AutomationProperties.Name="{x:Static text:AutomationText.Scope}" />
+      <ui:AppText Text="{x:Static text:AutomationText.ScopeHint}" Classes="type-11 subtle line-18" TextWrapping="Wrap" />
+    </StackPanel>
     <ui:AppText Text="{x:Static text:AutomationText.PausedDefault}" Classes="type-11 subtle line-18" TextWrapping="Wrap" />
   </StackPanel>
 </ui:AppUserControl>

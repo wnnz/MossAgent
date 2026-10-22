@@ -43,7 +43,7 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 | C03 | 每任务运行控制、独立取消及事件流；发送准备可取消，失败保留草稿，提交后取消有可查看终态；启动恢复为中断，不自动重放 | [发送准备取消](archive/CONVERSATIONS.md#send-preparation-cancellation-acceptance)、[关闭恢复](archive/TERMINAL_TOOLS.md#shutdown-recovery-acceptance)；其他崩溃断点见 R03/R04/R23 |
 | C04 | 对话、新项目会话和无项目草稿隔离；文本/附件草稿持久化、导航恢复、版本冲突保护；消息提交与草稿消费共用 SQLite 事务，保留发送时的新输入 | [草稿持久化](archive/CONVERSATIONS.md#draft-background-persistence-acceptance)、[原子发送](archive/CONVERSATIONS.md#conversation-submission-acceptance)；事务中真实终止及原生组合见 R03/R23 |
 | C05 | Queue：运行中 Enter 入队，编辑/排序/移除/手动继续；保存模型、强度、提示词、授权和附件快照，按原任务分派；仅成功活动链自动续发 | [Queue 运行](archive/CONVERSATIONS.md#conversation-followup-runtime-acceptance)、[分派](archive/CONVERSATIONS.md#conversation-followup-dispatch-acceptance)、[进程恢复](archive/CONVERSATIONS.md#conversation-followup-process-recovery)；其余竞争见 R03 |
-| C06 | 文本 Steer：活动 Ctrl+Enter 接收草稿及 receipt，在当前工具批次后的模型边界应用；保持原运行模型/权限，有界 mailbox、幂等和历史状态 | [文本引导](archive/CONVERSATIONS.md#conversation-steering-acceptance)；附件引导、发送偏好未实现，见 R03 |
+| C06 | 文本 Steer：活动 Ctrl+Enter 接收草稿及 receipt，在当前工具批次后的模型边界应用；保持原运行模型/权限，有界 mailbox、幂等和历史状态；附件 Steer 将任务附件快照与草稿消费放进同一接收事务，边界前复核 hash 与模型能力 | [文本引导](archive/CONVERSATIONS.md#conversation-steering-acceptance)、R03“本轮实现说明”；发送方式偏好、Queue/Steer 竞争见 R03 |
 
 ### 2.2 授权、文件、Git 和终端
 
@@ -80,7 +80,7 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 
 | 编号 | 已完成的能力及实际链路 | 证据与剩余范围 |
 | --- | --- | --- |
-| C28 | 定时任务创建/编辑、启用/暂停、手动运行/停止、历史/打开结果；调度认领 → 保存的模型选择/提示词/审批策略 → 独立后台 task，不消费前台草稿；启动跳过过期触发并标记中断 | [定时 UI](archive/AGENTS_AUTOMATIONS.md#automation-ui-workflow-acceptance)、[计划修改](archive/AGENTS_AUTOMATIONS.md#automation-mutation-acceptance)；目录范围取执行时项目授权，尚非计划级固定授权快照；关闭/DST/并发恢复见 R10 |
+| C28 | 定时任务创建/编辑、启用/暂停、手动运行/停止、历史/打开结果；调度认领 → 保存的模型选择/提示词/审批策略/授权与模型参数快照 → 独立后台 task，不消费前台草稿；启动跳过过期触发并标记中断；项目授权变化后旧计划被阻止并要求重新保存确认 | [定时 UI](archive/AGENTS_AUTOMATIONS.md#automation-ui-workflow-acceptance)、[计划修改](archive/AGENTS_AUTOMATIONS.md#automation-mutation-acceptance)、R10 本轮实现说明；关闭/DST/并发恢复见 R10 |
 | C29 | 独立 GitHub 来源账号/token/代理和仓库只读授权；开放 PR、URL 直达、描述/分页文件补丁/评论/checks；当前提交有效行内评论定位；固定快照及按需只读查询对话 | [来源账号](archive/GIT_WORKTREES.md#source-account-connection-acceptance)、[行内评论](archive/GIT_WORKTREES.md#source-pr-inline-comments-acceptance)、[查询对话](archive/GIT_WORKTREES.md#source-pr-on-demand-reading-acceptance)、[URL](archive/GIT_WORKTREES.md#source-pr-url-acceptance)；不是完整 PR 写工作流，见 R12 |
 | C30 | Windows 优先的 Avalonia/.NET 10 模块化桌面；共享包装控件、集中明暗主题、本地化、键盘与紧凑布局基础；编译/测试约束组件与依赖方向 | [架构](ARCHITECTURE.md)、[共享组件](UI_COMPONENTS.md)；当前原生/DPI/焦点全覆盖及已知 restore 裁切见 R23 |
 | C31 | SQLite 向前迁移、结构化任务状态及文件型大产物；JIT 构建和 Windows x64 自包含单文件配置，明确关闭 AOT/裁剪 | [迁移及架构](ARCHITECTURE.md)、[发布配置](../src/MossAgent.App/Properties/PublishProfiles/WindowsX64.pubxml)；当前正式包验收见 R24 |
@@ -120,14 +120,14 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | --- | --- | --- | --- |
 | R01 | 部分完成；安全阻断 | 命令/PTY/Git hooks/helpers/stdio MCP 等代码执行的真实文件系统隔离 | P0；原生 MXC 独立环境尚未就绪 |
 | R02 | 部分完成、部分未验证 | 最终路径竞争、严格撤权排空、完整入口审计、产物/缓存崩溃回收与配额 | P0；复用已有句柄端口和 schema 26–28 |
-| R03 | 附件 Steer/发送偏好未实现；其他矩阵未验证 | 附件引导、默认发送配置、Queue/Steer 竞争及事务/副作用中崩溃 | P1；R02/R05 |
+| R03 | 附件 Steer（schema 29）和发送方式偏好已实现；其他矩阵未验证 | Queue/Steer 竞争及事务/副作用中崩溃 | P1；R02/R05 |
 | R04 | 部分完成 | 自动分支发现、创建原子认领、句柄级清理、替换对象重新授权及完整崩溃生命周期 | P1；R01/R02 |
 | R05 | 部分完成 | PDF/其他文件、全图查看、子代理图像共享、未引用快照安全回收 | P1；模型协议与产物会话 |
-| R06 | 部分完成、部分未验证 | 全协议终态与断线、真实提供商/模型能力和代理配置竞争矩阵 | P1；获准真实服务账号 |
+| R06 | 部分完成；流帧异常已收口，其他部分未验证 | 真实提供商/模型能力和代理配置竞争矩阵 | P1；获准真实服务账号 |
 | R07 | 部分完成、部分未验证 | 内外/CDP 切换、可靠人工接管、其他创建/副作用崩溃与重启组合 | P1；R01/R02 |
 | R08 | 部分完成 | MCP 认证恢复、配置 CAS/代际、断流/进程退出/并发取消的完整闭环 | P1；R01/R02 |
 | R09 | 部分完成、部分未验证 | 子代理当前版本全触发/审批/失败/取消/共享/并发/恢复矩阵 | P1；R05/R06 |
-| R10 | 部分完成；计划级授权快照尚缺，其他组合待验 | 定时计划授权/参数版本、关闭/中断/并发/多实例、时区与 DST，以及关闭后的行为实机验收 | P1；R02/R06 |
+| R10 | 部分完成；计划级授权/参数快照已实现，关闭并发等组合待验 | 关闭/中断/并发/多实例、时区与 DST，以及关闭后的行为实机验收 | P1；R02/R06 |
 | R11 | 部分完成 | Git 区块/整组操作、远端/凭据管理、提交消息草稿重开及原生验收 | P2；R01/R02 |
 | R12 | 部分完成 | PR 收件箱、reviews/activity、版本标记、确认写入、OAuth/GitLab/云审阅 | P2；独立写授权与公开接口 |
 | R13 | 未实现完整链路 | 插件/技能/扩展目录、安装、启停、执行、升级和卸载 | P2；R01/R08及目录/账号接口 |
@@ -214,13 +214,13 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 
 ### R03：附件 Steer、发送偏好和 Queue/Steer 竞争
 
-**现状：** Queue 与文本 Steer 已贯通；附件引导和可保存的默认/替代发送方式尚未实现，
-事务中止、分派/终态与引导竞争和原生输入组合尚未全部验证。
+**现状：** Queue 与文本 Steer 已贯通；附件引导和发送方式偏好已实现（见 6.3），
+事务中止、分派/终态与引导竞争及原生输入组合尚未全部验证。
 
-1. Domain/Application 将附件引导表示为任务所属不可变快照引用；请求前验证 MIME、模型能力、
-   hash 和整轮预算，再将 receipt 接收与草稿消费原子提交。拒绝时保留草稿，不能扩大活动任务的原权限。
-2. App 使用现有共享输入组件增加本地化发送方式设置和明确的入队/引导状态，持久保存偏好。
-   Enter、Ctrl+Enter、鼠标共用相同命令和可用性判断；多行输入、IME 组合和独立停止按钮保持可用。
+1. ✅ 已完成：附件引导以任务所属不可变快照引用表达，接收前验证 MIME、数量/字节、模型图片能力和
+   hash 归属，receipt 与草稿消费在同一事务提交；草稿中的其余附件保留在输入框。
+2. ✅ 已完成：本地化“发送方式”设置（Enter 发送/Ctrl+Enter 引导与 Ctrl+Enter 发送的切换）并持久保存偏好。
+   Enter、Ctrl+Enter、鼠标须共用相同命令和可用性判断；多行输入、IME 组合和独立停止按钮保持可用。
 3. 用 run ID、草稿/队列 revision 和 receipt ID 保护编辑/排序/认领/分派/完成/关闭竞争；
    最后一轮终态与新引导同时发生时，明确接收、拒绝或保留草稿，不能丢失或重复消费。
 4. 在 SQLite 事务前/后和工具生效前/后增加受控断点，真实终止宿主后重建服务验证；
@@ -229,6 +229,30 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 **验收：** 项目/无项目、附件能力不足、队列重排与模型/授权变化、取消/超时、并发对话、
 已提交副作用后崩溃全部有记录；另做独立原生键盘/IME和真实提供商测试。旧不明原因失败继续保留，
 不能以新用例通过推断其根因。参考：[Queue](archive/CONVERSATIONS.md#conversation-followup-runtime-acceptance)、[Steer](archive/CONVERSATIONS.md#conversation-steering-acceptance)。
+
+**R03 本轮实现说明（schema 29 与发送偏好，分支 `feature/complete-pending-features`）：**
+
+- Domain/Application：`ConversationSteeringInput` 增加可选附件快照集合；`ConversationSteeringSession`
+  在接收前校验快照结构、数量/聚合字节、模型图片能力，并在同一事务内消费草稿；边界应用前由
+  `ConversationSteeringMessageBuilder` 读取并核对 hash，失败即拒绝该边界（`SteeringAttachmentsUnavailable`），
+  不会静默丢弃用户文件。`IAgentSteeringInput` 改为返回已准备好的 `ModelMessage`，
+  使整轮上下文预算在提交前就能把图片成本计算在内。
+- Infrastructure：新增 schema 29 的 `attachments` 列（幂等补列，旧库可向前迁移；v25 被重放时也会自动补齐）；
+  接收事务校验“草稿当前附件集合 = 引导快照 + 草稿剩余附件”，防止附件被静默丢弃；应用时把快照转为
+  该用户消息的 `conversation_attachments` 行，后续历史轮次自动带上同样的附件。
+- App：附件快照以 steering receipt id 作为 owner 并在重试时复用，草稿文本与附件在一次接收中一起消费；
+  模型不支持图片时输入框直接给出本地化提示且不发请求。文本附件内容作为不可信数据块随消息进入模型。
+- App/Infrastructure：外观设置页增加本地化发送方式选择；独立 `composer-settings.json`
+  使用原子替换并保留未知字段，损坏配置或写入失败不会覆盖原文件。启动加载完成前键盘提交禁用；
+  “Ctrl+Enter 发送”模式下 Enter 交给文本框换行，Ctrl+Enter 与鼠标共用原发送命令，
+  活动运行仍走 Queue，引导按钮仍进入既有附件/文本 Steer 接收事务。
+- 验证：`dotnet build MossAgent.slnx -c Debug` 零警告零错误；Infrastructure 854 项、Agent 162 项、
+  Providers 634 项通过。App 的本轮改动回归 124 项通过；扩展 Steering/设置/定时任务回归 84 项中
+  原通过 76 项，修复失败组后剩余 10 项单独通过；设置视觉测试 28 项通过。
+  本次发送偏好另通过存储往返/损坏/未知字段、设置页选择到真实 Headless 键盘提交、保存失败回退
+  和架构约束测试。未验证：原生键盘/IME、真实提供商图片理解、附件引导的崩溃中断组合。
+
+**剩余（R03 第 3–4 步）：** Queue/Steer 竞争与事务断点、原生与真实服务验收。
 
 ### R04：工作树创建、清理和完整生命周期
 
@@ -272,15 +296,31 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 ### R06：提供商、模型参数、代理和断流恢复
 
 **现状：** 四协议和设置到运行已通，仍需补齐所有终态变体、真实服务能力及配置竞争矩阵。
+本轮已补齐流解析的异常逃逸与帧级夹具（见下方“R06 本轮实现说明”）。
 
 1. Providers 维持请求构建/流解析/事件/错误映射分离，逐协议补空流、failed/incomplete、
    缺失终态 EOF、工具片段缺失、重复终态和取消的 JSON/SSE fixtures；失败不能推动 Queue 自动续发。
+   ✅ 已完成：空流、缺终态 EOF、重复终态、取消及无效帧/不完整工具调用已有确定性夹具。
 2. 将逐模型能力覆盖与协议支持共同用于输入校验，接入 R05 的文件/PDF能力；上下文、输出、
    自定义思考强度和其他参数进入实际请求。未知或不支持参数给修复说明，不静默替代；发现模型不覆盖用户编辑值。
 3. Infrastructure 明确请求开始时的提供商/代理配置快照；测试默认代理、显式直连、带凭据代理、
    禁用/删除、同时编辑和请求。失败不自动直连，不关闭全局 TLS；错误和重定向不得泄露凭据。
 4. 错误恢复只在请求边界提供显式重试；区分未提交请求、已提交收费请求和已执行工具的情况，
    保留未知状态，不以自动重发解决断流。历史恢复和后续新轮次使用明确的配置版本。
+
+**R06 本轮实现说明（分支 `feature/complete-pending-features`）：**
+
+- 新增 `ProviderFrameJson.TryParse`：单帧 JSON 解析失败时返回 `invalid_response` 失败事件而不是
+  让 `JsonException` 逃出流枚举；OpenAI Responses 与 Anthropic 两个提供程序接入。
+- `OpenAiEventMapper`：`type`、工具名、`call_id`、`arguments` 只在确为 JSON 字符串时读取；
+  缺少参数或参数不是合法 JSON 时返回 `invalid_tool_arguments` 失败事件，不再抛出
+  `InvalidOperationException`/`JsonException`，也不会把空参数当成正常工具调用。
+- `AnthropicStreamParser`：`content_block`、`delta`、`text`、`id`、`name`、`partial_json` 均做类型校验；
+  工具块标识缺失、`partial_json` 缺失或参数无法解析时返回 `invalid_tool_arguments`。
+  OpenAI 兼容与 Gemini 解析器此前已具备同类有界失败语义，本次保持不动。
+- 验证：新增 `ProviderMalformedFrameTests`（17 例）覆盖四协议的无效帧、Responses/Anthropic 不完整
+  工具调用、四协议重复终态只产生一个完成事件、取消不产生完成；`MossAgent.Providers.Tests` 634 项全通过。
+  未验证：真实提供商对畸形帧的实际返回、真实网关/代理截断组合。
 
 **验收：** 先用确定性 HTTP/SSE/认证代理验证参数、能力、限流、证书、超时、断流和并发；
 再在获准账号上分别验证四协议、模型发现、图片/PDF、思考强度和续轮。只记录脱敏摘要，明确未支持模型。
@@ -342,21 +382,39 @@ host/browser 崩溃和多任务；另一会话与草稿不受影响。独立原�
 
 **现状：** 创建/编辑/启停/手动运行/停止/结果已通；应用关闭后不是持续后台执行服务。
 启动会跳过过期触发并标记遗留中断，原生关闭及全部时间组合尚未完成验收。
-当前 `AutomationSchedule` 保存项目/提供商/模型 ID、提示词和审批策略，
-`WorkspaceAutomationRunner` 在执行时读取启用的提供商/模型和项目当前目录授权，交给
-`WorkspaceBackgroundRunCoordinator`。这不是保存时固定目录 grant 和所有模型参数的计划级快照。
+计划级授权/参数快照已实现（见下方“R10 本轮实现说明”）。
 
 1. Application 的调度器和 Infrastructure 仓库继续使用事务认领及实例租约，明确计划 revision、
    触发时间/时区、错过时间策略和单次 run 所有权；活动运行固定启动快照，编辑仅影响后续触发。
-2. 增加计划级授权/参数版本记录：保存项目授权 revision、根 grant 集合、审批策略及明确的模型
-   参数采用策略。默认授权变化阻止旧计划运行并提示重新确认；如支持跟随项目变更，应由计划级
-   显式选项授予，不能隐式扩权。认领时事务复核，运行中变更继续撤销旧租约。
+2. ✅ 已实现：计划级授权/参数版本记录（项目授权 revision、根 grant 集合、审批策略、模型参数快照与
+   “固定/跟随项目”显式策略）。默认固定快照；项目授权变化后旧计划在认领阶段被阻止并记录
+   `authorization-changed` 的运行，需用户核对后重新保存确认；跟随项目只能由用户显式选择。
 3. 暂停仅影响未来计划，停止仅取消本次运行，分别展示；关闭先禁止新认领，再取消并等待已有
    runner 和工具资源，之后释放调度租约。未知副作用显示中断记录，不自动补跑。
 4. 覆盖定时与“立即运行”碰撞、重复 tick、多实例、运行中编辑/删除、时钟前后跳和 DST。
    使用可控时钟验证时间算法；数据库认领失败不得产生模型请求或丢失前台输入。
 5. 若需要关闭应用后继续执行，另建可选后台宿主及 IPC/单实例所有权、安装/更新/退出方案，
    与现有前台调度共享状态但不重复认领；该能力在单独设计与验收前保持未实现。
+
+**R10 本轮实现说明（分支 `feature/complete-pending-features`）：**
+
+- Domain：`AutomationSchedule` 增加可选的 `AutomationScopeSnapshot`（项目授权 revision、根集合、
+  `AutomationScopePolicy`）与 `AutomationModelSnapshot`（思考强度、温度、TopP、额外参数）。
+  旧行没有这两个字段，仍可反序列化；快照按根集合值比较，避免重载后与草稿不相等。
+- Application：`AutomationScopeRules` 负责快照构建、匹配、模型参数还原与取值范围校验；
+  未保存过快照的旧计划按“跟随项目”处理，重新保存即绑定快照。`AutomationTiming.Validate`
+  同时校验快照字段。调度器把 `AutomationScopeChangedException` 记为 `authorization-changed` 失败。
+- Infrastructure：认领事务内用 `projects.authorization_revision` 与 `authorized_directories_json`
+  复核固定快照；不匹配时推进 `next_run_at` 并写入一条失败运行记录（手动运行不改计划时间），
+  避免每个 tick 重复记录。
+- App：编辑器新增“项目授权”选择（固定保存时授权与参数／跟随项目当前授权）与说明文字；
+  保存时绑定项目授权快照和模型参数快照。`WorkspaceAutomationRunner` 执行前再次复核快照，
+  并按快照参数发起请求（思考强度不受支持时明确失败，不静默替换）。运行记录把该错误码
+  映射为本地化说明。
+- 验证：`MossAgent.Infrastructure.Tests` 的 Automation 相关 46 项通过（新增 5 项覆盖固定快照阻止、
+  未变化时正常认领、跟随项目放行、旧计划兼容与重存后生效、非法快照拒绝）；
+  `MossAgent.App.Tests` 的 Automation 相关 152 项与新增编辑器快照 4 项通过。
+  未验证：独立原生实例的关闭/强制终止、DST 与多实例组合，以及真实提供商上的计划级参数复现。
 
 **验收：** 保存非默认模型/提示词/授权，实际请求和文件工具使用该快照；另一任务、当前选项及
 未发送草稿保留。保存后模型参数/项目根变化覆盖拒绝或显式采用策略，不自动扩大旧计划范围。

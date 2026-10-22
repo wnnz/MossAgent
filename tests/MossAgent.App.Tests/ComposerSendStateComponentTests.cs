@@ -1,4 +1,5 @@
 using Avalonia.Headless;
+using Avalonia.Controls;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using MossAgent.App.Controls;
@@ -49,8 +50,8 @@ public sealed class ComposerSendStateComponentTests : IAsyncLifetime
             Assert.True(warning.IsVisible);
             Assert.True(warning.Bounds.Height > 0);
             Assert.DoesNotContain("synthetic secret", warning.Text);
-            var send = Assert.Single(composer.GetVisualDescendants().OfType<AppIconButton>(), button => button.Classes.Contains("composer-send"));
-            Assert.Same(workspace.PrimaryActionCommand, send.Command);
+            var send = Assert.Single(composer.GetVisualDescendants().OfType<AppIconButton>(), button => button.Name == "SendButton");
+            Assert.Same(workspace.ComposerRouter.SubmitCommand, send.Command);
             Assert.Equal("发送消息", send.Label);
             Assert.False(send.IsAlternateIcon);
             Assert.True(send.IsEffectivelyEnabled);
@@ -58,6 +59,29 @@ public sealed class ComposerSendStateComponentTests : IAsyncLifetime
             Assert.Contains(composer.GetVisualDescendants().OfType<AppText>(), text => text.Text == "next.txt" && text.IsVisible);
             Assert.True(send.Bounds.Width > 0);
             Assert.True(send.Bounds.Height > 0);
+        }
+        finally { window.Close(); }
+    }, TestContext.Current.CancellationToken);
+
+    [Fact]
+    public Task RunningComposerKeepsSubmitAndStopAsSeparateActions() => _session.DispatchAsync(async () =>
+    {
+        await using var fixture = await WorkspaceModelSelectionFixture.CreateAsync(pauseResponse: true);
+        var composer = new WorkspaceComposerView { DataContext = fixture.Workspace };
+        var window = new AppWindow { Width = 800, Height = 600, Content = composer };
+        window.Show();
+        try
+        {
+            fixture.Workspace.PrimaryActionCommand.Execute(null);
+            await fixture.WaitUntilAsync(() => fixture.Workspace.IsRunning && fixture.Server.Requests.Count == 1);
+            window.UpdateLayout();
+            var send = composer.FindControl<AppIconButton>("SendButton")!;
+            var stop = composer.FindControl<AppIconButton>("StopButton")!;
+            var queue = composer.FindControl<AppButton>("QueueButton")!;
+            Assert.False(send.IsEffectivelyVisible);
+            Assert.True(stop.IsEffectivelyVisible);
+            Assert.Same(fixture.Workspace.PrimaryActionCommand, stop.Command);
+            Assert.Same(fixture.Workspace.ComposerRouter.SubmitCommand, queue.Command);
         }
         finally { window.Close(); }
     }, TestContext.Current.CancellationToken);

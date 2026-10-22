@@ -10,6 +10,18 @@
       <ui:AppText Text="{x:Static resources:AppearanceText.VisualStyle}" Classes="settings-section-title settings-theme-heading" />
       <ui:AppThemeModePicker />
       <ui:AppThemePaletteCard DataContext="{Binding ActivePalette}" Margin="0,16,0,0" />
+      <ui:AppText Text="{x:Static resources:ComposerInputText.SettingsTitle}"
+                 Classes="settings-section-title" Margin="0,24,0,8" />
+      <ui:AppText Text="{x:Static resources:ComposerInputText.SettingsDescription}"
+                 Classes="muted type-12" TextWrapping="Wrap" />
+      <ui:AppComboBox ItemsSource="{Binding Workspace.ComposerPreferences.Options}"
+                      SelectedIndex="{Binding Workspace.ComposerPreferences.SelectedIndex, Mode=TwoWay}"
+                      IsEnabled="{Binding Workspace.ComposerPreferences.IsReady}"
+                      AutomationProperties.Name="{x:Static resources:ComposerInputText.SettingsTitle}"
+                      Margin="0,10,0,0" />
+      <ui:AppText Text="{Binding Workspace.ComposerPreferences.Error}"
+                 Classes="type-12 status-error"
+                 IsVisible="{Binding Workspace.ComposerPreferences.HasError}" />
       <ui:AppExpander Header="{x:Static resources:AppearanceText.Advanced}" Classes="appearance-advanced">
         <StackPanel Spacing="16">
           <ui:AppDiffPreview />

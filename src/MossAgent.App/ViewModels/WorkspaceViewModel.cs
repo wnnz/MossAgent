@@ -44,7 +44,8 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         ISidebarPreferenceStore? sidebarPreferences = null,
         WorkspaceFileChangeUndoService? undoService = null, WorkspaceFileChangeStatisticsService? statisticsService = null,
         IConversationPreferenceRepository? conversationPreferences = null, IConversationDraftRepository? conversationDrafts = null,
-        WorkspaceFollowupServices? followups = null, IConversationSteeringRepository? steering = null)
+        WorkspaceFollowupServices? followups = null, IConversationSteeringRepository? steering = null,
+        ComposerPreferenceViewModel? composerPreferences = null)
     {
         _runs = runs;
         _panels = panels;
@@ -55,6 +56,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         _attachmentDrafts = new(attachments, Drafts);
         Shutdown = new() { Drafts = Drafts };
         Drafts.PropertyChanged += HandleDraftChanged;
+        ComposerPreferences = composerPreferences ?? new(null);
         FileChanges = new WorkspaceFileChangesViewModel(catalog, panels, undoService, statisticsService);
         SidebarProjects = new WorkspaceSidebarProjectsViewModel(catalog.ProjectNavigation, sidebarPreferences);
         SidebarSearch = new WorkspaceSidebarSearchViewModel(catalog);
@@ -91,8 +93,10 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
                 && !Catalog.WorktreeAuthorization.BlocksTaskStart(task.Id))
             ?? new(null, catalog, () => WorkspaceSendRequest.Capture(this), () => false, () => false, () => HasActiveRun, PrimaryActionCommand);
         Queue.StateChanged += NotifyRunStateChanged;
-        Steering = new(steering, runs, runController, catalog, Drafts, PrimaryActionCommand, Queue.SubmitCommand,
+        Steering = new(steering, runs, runController, catalog, Drafts, Attachments, taskFactory, PrimaryActionCommand, Queue.SubmitCommand,
             () => !_disposed && !IsShuttingDown && Startup.IsReady && !FileChanges.Undo.IsBusy);
+        ComposerRouter = new(ComposerPreferences, Queue.SubmitCommand, Steering.AlternateSubmitCommand,
+            () => !IsRunning || Queue.CanEnqueueMessage || Steering.CanSubmit);
         _backgroundRuns = new(taskFactory, runs, runController, panels, catalog,
             () => !_disposed && !IsShuttingDown && Startup.IsReady, PresentEventAsync, SetActivity,
             ApplyTaskUpdate, NotifyRunStateChanged, (taskId, preference) => ConversationPreferences?.Remember(taskId, preference));
@@ -110,7 +114,8 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     public WorkspaceComposerDraftsViewModel Drafts { get; }
     public WorkspaceFollowupQueueViewModel Queue { get; }
     public WorkspaceSteeringViewModel Steering { get; }
-    public IRelayCommand ComposerSubmitCommand => Queue.SubmitCommand;
+    public ComposerPreferenceViewModel ComposerPreferences { get; }
+    public WorkspaceComposerRouter ComposerRouter { get; }
     public AppShutdownViewModel Shutdown { get; }
     public bool IsShuttingDown => _isShuttingDown;
     public ObservableCollection<WorkspaceProjectNavigationViewModel> ProjectPickerProjects { get; } = [];
@@ -211,6 +216,8 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     private async Task LoadCoreAsync()
     {
         if (_disposed) return;
+        await ComposerPreferences.LoadAsync();
+        if (_disposed) return;
         await Catalog.ReloadAsync();
         if (_disposed) return;
         await Drafts.LoadCurrentAsync();
@@ -306,6 +313,8 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         ModelPicker.ModelSelected -= HandleModelSelected;
         AgentPicker.PropertyChanged -= HandleAgentPickerChanged;
         ConversationPreferences?.Dispose();
+        ComposerRouter.Dispose();
+        ComposerPreferences.Dispose();
         Drafts.PropertyChanged -= HandleDraftChanged;
         _attachmentDrafts.Dispose();
         Drafts.Dispose();
@@ -481,6 +490,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         OnPropertyChanged(nameof(PrimaryActionLabel));
         OnPropertyChanged(nameof(HasMessages));
         OnPropertyChanged(nameof(IsEmptySession));
+        ComposerRouter?.UpdateAvailability();
         Catalog.IsLocked = _preparation.IsActive || IsShuttingDown;
         Catalog.NotifyTaskRunStateChanged();
         PrimaryActionCommand.NotifyCanExecuteChanged();

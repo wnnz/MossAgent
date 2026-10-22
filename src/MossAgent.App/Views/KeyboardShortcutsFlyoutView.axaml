@@ -9,7 +9,7 @@
       <ui:AppText Classes="type-12 weight-semibold" Text="键盘快捷键" />
       <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="{x:Static resources:NavigationRailText.Settings}" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Ctrl+," Classes="subtle type-11" /></Grid>
       <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="新建任务" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Ctrl+N" Classes="subtle type-11" /></Grid>
-      <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="{x:Static resources:ComposerInputText.SubmitLabel}" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Enter / Ctrl+Enter" Classes="subtle type-11" /></Grid>
+      <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="{x:Static resources:ComposerInputText.SubmitLabel}" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="{Binding ShortcutSummary}" Classes="subtle type-11" /></Grid>
       <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="{x:Static resources:ComposerInputText.NewlineLabel}" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Shift+Enter" Classes="subtle type-11" /></Grid>
       <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="代码审查" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Ctrl+Shift+G" Classes="subtle type-11" /></Grid>
       <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="终端" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Ctrl+J" Classes="subtle type-11" /></Grid>

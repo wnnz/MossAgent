@@ -106,6 +106,7 @@ internal static class AppComposition
         services.AddSingleton<IAutomationLease, AutomationSchedulerLease>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<ISidebarPreferenceStore, JsonSidebarPreferenceStore>();
+        services.AddSingleton<IComposerPreferenceStore, JsonComposerPreferenceStore>();
         services.AddSingleton<IAttachmentImageDecoder, SkiaAttachmentImageDecoder>();
         services.AddSingleton<IAttachmentThumbnailRenderer, SkiaAttachmentThumbnailRenderer>();
         services.AddSingleton<WorkspaceAttachmentReader>();
@@ -254,6 +255,7 @@ internal static class AppComposition
         services.AddSingleton<WorkspaceTaskFactory>();
         services.AddSingleton<WorkspaceProjectService>();
         services.AddSingleton<WorkspaceAttachmentManagerViewModel>();
+        services.AddSingleton<ComposerPreferenceViewModel>();
         services.AddSingleton<ConversationAttachmentThumbnailFactory>();
         services.AddSingleton<WorkspaceRunTracker>();
         services.AddSingleton<WorkspaceRunExecutor>();

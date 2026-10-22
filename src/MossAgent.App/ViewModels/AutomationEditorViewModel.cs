@@ -17,6 +17,7 @@ public sealed class AutomationEditorViewModel : ObservableObject
     private AutomationChoice<AutomationFrequency>? _frequency;
     private AutomationChoice<DayOfWeek>? _weekday;
     private AutomationChoice<ApprovalPolicy>? _policy;
+    private AutomationChoice<AutomationScopePolicy>? _scopePolicy;
     private TimeZoneInfo? _zone;
     private decimal _interval = 1;
     private decimal _timeout = 30;
@@ -39,6 +40,9 @@ public sealed class AutomationEditorViewModel : ObservableObject
         Enum.GetValues<DayOfWeek>().Select(value => new AutomationChoice<DayOfWeek>(value, AutomationText.Get($"Day{(int)value}"))).ToArray();
     public IReadOnlyList<AutomationChoice<ApprovalPolicy>> Policies { get; } =
         Enum.GetValues<ApprovalPolicy>().Select(value => new AutomationChoice<ApprovalPolicy>(value, ApprovalPolicyText.Label(value))).ToArray();
+    public IReadOnlyList<AutomationChoice<AutomationScopePolicy>> ScopePolicies { get; } =
+        Enum.GetValues<AutomationScopePolicy>().Select(value =>
+            new AutomationChoice<AutomationScopePolicy>(value, AutomationText.Get($"Scope{value}"))).ToArray();
 
     public bool IsOpen
     {
@@ -56,6 +60,16 @@ public sealed class AutomationEditorViewModel : ObservableObject
     public TimeZoneInfo? SelectedTimeZone { get => _zone; set => SetProperty(ref _zone, value); }
     public AutomationChoice<DayOfWeek>? SelectedWeekday { get => _weekday; set => SetProperty(ref _weekday, value); }
     public AutomationChoice<ApprovalPolicy>? SelectedPolicy { get => _policy; set => SetProperty(ref _policy, value); }
+
+    /// <summary>
+    /// Whether a saved plan keeps its authorization snapshot or follows later project changes.
+    /// Changing it only affects the next save; existing runs keep the snapshot they started with.
+    /// </summary>
+    public AutomationChoice<AutomationScopePolicy>? SelectedScopePolicy
+    {
+        get => _scopePolicy;
+        set => SetProperty(ref _scopePolicy, value);
+    }
     public AutomationChoice<AutomationFrequency>? SelectedFrequency
     {
         get => _frequency;
@@ -89,6 +103,10 @@ public sealed class AutomationEditorViewModel : ObservableObject
             SelectedFrequency = Frequencies.First(item => item.Value == (schedule?.Frequency ?? AutomationFrequency.Daily));
             SelectedWeekday = Weekdays.First(item => item.Value == (schedule?.Weekday ?? DayOfWeek.Monday));
             SelectedPolicy = Policies.First(item => item.Value == (schedule?.ApprovalPolicy ?? ApprovalPolicy.ReadOnly));
+            // A plan without a saved snapshot is edited as "fixed": saving binds a fresh snapshot,
+            // which is the explicit re-confirmation after an authorization change.
+            SelectedScopePolicy = ScopePolicies.First(item =>
+                item.Value == (schedule?.Scope?.Policy ?? AutomationScopePolicy.FixedSnapshot));
             SelectedTimeZone = TimeZones.FirstOrDefault(item => item.Id == (schedule?.TimeZoneId ?? TimeZoneInfo.Local.Id));
             Time = schedule is null ? "09:00" : $"{schedule.Hour:00}:{schedule.Minute:00}";
             IntervalHours = schedule?.IntervalHours ?? 1;
@@ -123,14 +141,16 @@ public sealed class AutomationEditorViewModel : ObservableObject
     {
         var time = TimeOnly.MinValue;
         if (SelectedProject is null || SelectedModel is null || SelectedTimeZone is null
-            || SelectedFrequency is null || SelectedPolicy is null || SelectedWeekday is null
+            || SelectedFrequency is null || SelectedPolicy is null || SelectedWeekday is null || SelectedScopePolicy is null
             || !IsHourly && !TimeOnly.TryParseExact(Time, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out time)
             || decimal.Truncate(IntervalHours) != IntervalHours || decimal.Truncate(TimeoutMinutes) != TimeoutMinutes)
             throw new ArgumentException("Invalid automation editor state.");
         var schedule = new AutomationSchedule(Original?.Id ?? Guid.NewGuid(), Name.Trim(), Prompt.Trim(),
             SelectedProject.Id, SelectedModel.Provider.Id, SelectedModel.Model.Id, SelectedFrequency.Value,
             checked((int)IntervalHours), time.Hour, time.Minute, SelectedWeekday.Value, SelectedTimeZone.Id,
-            SelectedPolicy.Value, checked((int)TimeoutMinutes), Original?.IsEnabled ?? false, now, Original?.Revision ?? 0);
+            SelectedPolicy.Value, checked((int)TimeoutMinutes), Original?.IsEnabled ?? false, now, Original?.Revision ?? 0,
+            AutomationScopeRules.CreateScope(SelectedProject, SelectedScopePolicy.Value),
+            AutomationScopeRules.CreateModel(SelectedModel.Model));
         return schedule with { NextRunAt = AutomationTiming.Next(schedule, now) };
     }
 
@@ -138,7 +158,7 @@ public sealed class AutomationEditorViewModel : ObservableObject
     {
         var changed = args.PropertyName is nameof(Name) or nameof(Prompt) or nameof(Time) or nameof(SelectedProject)
             or nameof(SelectedModel) or nameof(SelectedTimeZone) or nameof(SelectedFrequency) or nameof(SelectedWeekday)
-            or nameof(SelectedPolicy) or nameof(IntervalHours) or nameof(TimeoutMinutes);
+            or nameof(SelectedPolicy) or nameof(SelectedScopePolicy) or nameof(IntervalHours) or nameof(TimeoutMinutes);
         if (changed) DraftRevision++;
         base.OnPropertyChanged(args);
         if (changed && !_isInitializing) UpdateSchedulePreview();

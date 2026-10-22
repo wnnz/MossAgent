@@ -20,10 +20,11 @@ internal sealed class SteeringAcceptanceProbe(IConversationSteeringRepository in
         return await inner.GetInputsAsync(task, before, size, token);
     }
     public async Task<ConversationSteeringAcceptance?> AcceptAsync(Guid task, Guid run, Guid id, string text,
-        ConversationDraftUpdate? draft, CancellationToken token, ConversationSteeringAuthorization? authorization = null)
+        ConversationDraftUpdate? draft, CancellationToken token, ConversationSteeringAuthorization? authorization = null,
+        IReadOnlyList<ConversationAttachment>? attachments = null, IReadOnlyCollection<Guid>? draftAttachmentIds = null)
     {
         if (BeforeAccept is not null) await BeforeAccept(token);
-        var receipt = await inner.AcceptAsync(task, run, id, text, draft, token, authorization);
+        var receipt = await inner.AcceptAsync(task, run, id, text, draft, token, authorization, attachments, draftAttachmentIds);
         AfterAccept?.Invoke(receipt);
         return receipt;
     }

@@ -11,12 +11,19 @@ public sealed record ConversationSteeringInput(
     ConversationSteeringInputState State,
     DateTimeOffset AcceptedAt,
     DateTimeOffset? AppliedAt = null,
-    DateTimeOffset? InterruptedAt = null)
+    DateTimeOffset? InterruptedAt = null,
+    IReadOnlyList<ConversationAttachment>? Attachments = null)
 {
     public const int MaximumTextLength = 32_768;
     public const int MaximumPendingItems = 16;
     public const int MaximumPendingBytes = 262_144;
     public const int MaximumPageSize = 64;
+
+    /// <summary>
+    /// Task-owned attachment snapshots accepted together with this input; empty for text-only steering.
+    /// Each snapshot is keyed by <see cref="Id"/> as its owning identifier.
+    /// </summary>
+    public IReadOnlyList<ConversationAttachment> AttachmentItems => Attachments ?? [];
 
     public static void ValidateText(string text)
     {

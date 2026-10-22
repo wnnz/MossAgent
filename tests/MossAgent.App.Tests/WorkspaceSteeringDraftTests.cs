@@ -25,7 +25,7 @@ public sealed class WorkspaceSteeringDraftTests : IAsyncLifetime
         var drafts = fixture.Workspace.Drafts;
         drafts.Text = "accepted composer guidance";
         await drafts.FlushAsync();
-        var submission = drafts.CreateSteeringSubmission(session, drafts.Scope, drafts.Text);
+        var submission = drafts.CreateSteeringSubmission(session, drafts.Scope, drafts.Text, [], []);
         var id = Guid.NewGuid();
         var accepted = await submission.SaveAsync(session, session.RunId, id, fixture.Token);
         Assert.False(accepted.AlreadyAccepted);
@@ -55,7 +55,7 @@ public sealed class WorkspaceSteeringDraftTests : IAsyncLifetime
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var probe = Assert.IsType<SteeringAcceptanceProbe>(fixture.Steering);
         probe.BeforeAccept = async token => { entered.TrySetResult(); await release.Task.WaitAsync(token); };
-        var submission = drafts.CreateSteeringSubmission(session, scope, drafts.Text);
+        var submission = drafts.CreateSteeringSubmission(session, scope, drafts.Text, [], []);
         var saving = submission.SaveAsync(session, session.RunId, Guid.NewGuid(), fixture.Token);
         await entered.Task.WaitAsync(fixture.Token);
         drafts.Text = "next text for active conversation";
@@ -86,7 +86,7 @@ public sealed class WorkspaceSteeringDraftTests : IAsyncLifetime
         var saved = (await fixture.Drafts.GetAsync(scope, fixture.Token))!;
         if (externalConflict)
             Assert.True(await fixture.Drafts.SaveAsync([new(scope, "external draft", saved.Revision)], fixture.Token));
-        var submission = drafts.CreateSteeringSubmission(session, scope, drafts.Text);
+        var submission = drafts.CreateSteeringSubmission(session, scope, drafts.Text, [], []);
         if (externalConflict)
         {
             await Assert.ThrowsAsync<ConversationDraftConflictException>(() => submission.SaveAsync(session, session.RunId, Guid.NewGuid(), fixture.Token));
@@ -102,20 +102,22 @@ public sealed class WorkspaceSteeringDraftTests : IAsyncLifetime
     }, TestContext.Current.CancellationToken);
 
     [Fact]
-    public Task AttachmentsOrAnotherDraftStoreCannotBeSilentlyConsumedAsTextInput() => _session.DispatchAsync(async () =>
+    public Task AttachmentsRequireMatchingSnapshotsAndAnotherDraftStoreCannotBeUsed() => _session.DispatchAsync(async () =>
     {
         await using var fixture = await CreateAsync();
         var session = await StartAsync(fixture);
         var drafts = fixture.Workspace.Drafts;
         using var other = new WorkspaceComposerDraftsViewModel(new TestConversationDraftRepository());
-        Assert.Throws<InvalidOperationException>(() => other.CreateSteeringSubmission(session, drafts.Scope, "wrong store"));
+        Assert.Throws<InvalidOperationException>(() => other.CreateSteeringSubmission(session, drafts.Scope, "wrong store", [], []));
         drafts.Text = "text with an attachment";
         var path = Path.Combine(fixture.DataRoot, "attachment.txt");
-        drafts.SetAttachments(drafts.Scope, [new(Guid.NewGuid(), path,
+        var attachmentId = Guid.NewGuid();
+        drafts.SetAttachments(drafts.Scope, [new(attachmentId, path,
             "attachment.txt", "content", 7, WorkspaceAttachmentAuthorization.CreateSelection(path))]);
-        var submission = drafts.CreateSteeringSubmission(session, drafts.Scope, drafts.Text);
-        var failure = await Assert.ThrowsAsync<ConversationSteeringException>(() => submission.SaveAsync(session, session.RunId, Guid.NewGuid(), fixture.Token));
-        Assert.Equal("SteeringTextOnly", failure.Code);
+        var invalid = drafts.CreateSteeringSubmission(session, drafts.Scope, drafts.Text, [attachmentId], []);
+        var refused = await Assert.ThrowsAsync<ConversationSteeringException>(
+            () => invalid.SaveAsync(session, session.RunId, Guid.NewGuid(), fixture.Token));
+        Assert.Equal("SteeringInvalid", refused.Code);
         Assert.Equal("text with an attachment", drafts.Text);
         Assert.Single(drafts.Attachments);
         Assert.Empty((await fixture.Steering.GetInputsAsync(session.TaskId, long.MaxValue, 64, fixture.Token)).Items);

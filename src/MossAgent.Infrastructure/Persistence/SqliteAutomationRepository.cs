@@ -65,6 +65,15 @@ public sealed class SqliteAutomationRepository(SqliteConnectionFactory connectio
         await using var connection = connections.Create();
         await connection.OpenAsync(cancellationToken);
         await using var transaction = connection.BeginTransaction();
+        if (!await SqliteAutomationScopeCheck.MatchesAsync(connection, transaction, expected, cancellationToken))
+        {
+            // The saved snapshot no longer matches the project: record the blocked attempt once per
+            // scheduled interval instead of running with the project's current (possibly wider) roots.
+            await SqliteAutomationScopeCheck.RecordBlockedAsync(connection, transaction, expected, now,
+                manual ? expected.NextRunAt : nextRunAt, manual, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return null;
+        }
         await using var claim = connection.CreateCommand();
         claim.Transaction = transaction;
         claim.CommandText = """

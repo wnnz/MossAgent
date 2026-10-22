@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.Json;
 using MossAgent.Application.Models;
 using MossAgent.Application.Networking;
 using MossAgent.Domain;
@@ -40,7 +39,12 @@ public sealed class OpenAiResponsesProvider(IProviderHttpClientFactory clients) 
                 yield break;
             }
 
-            using var document = JsonDocument.Parse(data);
+            using var document = ProviderFrameJson.TryParse(data);
+            if (document is null)
+            {
+                yield return new ModelFailed("invalid_response", ProviderText.Get("StreamInvalidResponse"));
+                yield break;
+            }
             if (OpenAiEventMapper.Map(document.RootElement, toolNames) is { } modelEvent)
             {
                 yield return ProviderErrorSanitizer.Sanitize(modelEvent, request.Provider);

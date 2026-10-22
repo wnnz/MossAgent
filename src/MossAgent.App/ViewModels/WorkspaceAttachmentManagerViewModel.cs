@@ -71,7 +71,7 @@ public sealed class WorkspaceAttachmentManagerViewModel : ObservableObject, IDis
     }
 
     public string? BuildContext() =>
-        WorkspaceAttachmentContextBuilder.Build(Items.Select(static item => item.Content));
+        WorkspaceAttachmentContextFormatter.Format(Items.Select(static item => item.Content));
 
     public void Consume(IEnumerable<WorkspaceAttachmentViewModel> attachments)
     {

@@ -48,4 +48,6 @@ public static class AutomationText
     public static string DeleteTitle => Get("DeleteTitle");
     public static string DeleteHint => Get("DeleteHint");
     public static string PausedDefault => Get("PausedDefault");
+    public static string Scope => Get("Scope");
+    public static string ScopeHint => Get("ScopeHint");
 }

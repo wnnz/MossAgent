@@ -88,7 +88,7 @@ public sealed class WorkspaceAgentComposerStateTests : IAsyncLifetime
         var bar = Assert.Single(view.GetVisualDescendants().OfType<AppComposerContextBar>());
         var agent = bar.FindControl<AppActionButton>("AgentButton")!;
         var send = Assert.Single(view.GetVisualDescendants().OfType<AppIconButton>(),
-            button => button.Classes.Contains("composer-send"));
+            button => button.Name == "SendButton");
         var notice = Assert.Single(view.GetVisualDescendants().OfType<AppText>(),
             text => text.Text == workspace.AgentPicker.CatalogNotice);
         Assert.True(agent.IsVisible);

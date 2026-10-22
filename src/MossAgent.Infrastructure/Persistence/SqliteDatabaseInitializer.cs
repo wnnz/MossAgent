@@ -47,6 +47,7 @@ public sealed class SqliteDatabaseInitializer(
         await ApplyVersionAsync(connection, 26, ProjectAuthorizationDatabaseSchema.VersionTwentySix, cancellationToken);
         await ApplyVersionAsync(connection, 27, RootObjectAuthorizationDatabaseSchema.VersionTwentySeven, cancellationToken);
         await ApplyVersionAsync(connection, 28, WorktreeRootAuthorizationDatabaseSchema.VersionTwentyEight, cancellationToken);
+        await ApplyVersionTwentyNineAsync(connection, cancellationToken);
         await SqliteInterruptedWorkRecovery.RecoverAsync(connection, cancellationToken);
     }
 
@@ -57,6 +58,37 @@ public sealed class SqliteDatabaseInitializer(
         migration.Transaction = transaction;
         migration.CommandText = AutomationDatabaseSchema.VersionNine;
         await migration.ExecuteNonQueryAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Applies the steering attachment column and its version marker idempotently.
+    /// The column is added whenever it is still missing, so re-applying the earlier steering version
+    /// (which recreates the input table without the column) cannot leave reads without snapshot metadata.
+    /// </summary>
+    private static async Task ApplyVersionTwentyNineAsync(SqliteConnection connection, CancellationToken cancellationToken)
+    {
+        await using var transaction = connection.BeginTransaction();
+        await using var table = connection.CreateCommand();
+        table.Transaction = transaction;
+        table.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='conversation_steering_inputs';";
+        if (Convert.ToInt64(await table.ExecuteScalarAsync(cancellationToken)) == 1)
+        {
+            await using var column = connection.CreateCommand();
+            column.Transaction = transaction;
+            column.CommandText = "SELECT COUNT(*) FROM pragma_table_info('conversation_steering_inputs') WHERE name='attachments';";
+            if (Convert.ToInt64(await column.ExecuteScalarAsync(cancellationToken)) == 0)
+            {
+                await using var alter = connection.CreateCommand();
+                alter.Transaction = transaction;
+                alter.CommandText = ConversationSteeringAttachmentDatabaseSchema.AddAttachmentsColumn;
+                await alter.ExecuteNonQueryAsync(cancellationToken);
+            }
+        }
+        await using var marker = connection.CreateCommand();
+        marker.Transaction = transaction;
+        marker.CommandText = "INSERT OR IGNORE INTO schema_versions(version,applied_at) VALUES(29,datetime('now'));";
+        await marker.ExecuteNonQueryAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
     }
 

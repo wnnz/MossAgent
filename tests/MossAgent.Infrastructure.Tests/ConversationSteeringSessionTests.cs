@@ -35,11 +35,14 @@ public sealed class ConversationSteeringSessionTests
         await Assert.ThrowsAsync<ConversationSteeringException>(() => session.AcceptAsync(Guid.NewGuid(), Guid.NewGuid(), "stale", null, fixture.Token));
         var ack = await session.AcceptAsync(session.RunId, Guid.NewGuid(), "next model input", null, fixture.Token);
         var validated = false;
-        var applied = Assert.IsType<ConversationSteeringApplication>(await session.ApplyAtBoundaryAsync("streamed response", true, inputs =>
-        {
-            Assert.Equal(ack.Input, Assert.Single(inputs));
-            validated = true;
-        }, fixture.Token));
+        var result = Assert.IsType<MossAgent.Application.Agent.AgentSteeringApplication>(
+            await session.ApplyAtBoundaryAsync("streamed response", true, inputs =>
+            {
+                Assert.Equal(ack.Input.Text, Assert.Single(inputs).Content);
+                validated = true;
+            }, fixture.Token));
+        var applied = result.Applied;
+        Assert.Equal(ack.Input.Text, Assert.Single(result.Messages).Content);
         Assert.True(validated);
         Assert.True(session.IsAccepting);
         Assert.Equal(session.RunId, applied.Run.Id);

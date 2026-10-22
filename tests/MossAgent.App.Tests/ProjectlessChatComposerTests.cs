@@ -43,7 +43,7 @@ public sealed class ProjectlessChatComposerTests : IAsyncLifetime
             var bar = Assert.Single(window.GetVisualDescendants().OfType<AppComposerContextBar>(), item => item.IsEffectivelyVisible);
             Assert.Equal("无项目聊天", bar.ProjectLabel);
             Assert.True(bar.IsProjectAvailable);
-            var send = Assert.Single(window.GetVisualDescendants().OfType<AppIconButton>(), item => item.Classes.Contains("composer-send"));
+            var send = Assert.Single(window.GetVisualDescendants().OfType<AppIconButton>(), item => item.Name == "SendButton");
             Assert.True(send.IsEffectivelyEnabled);
             var attach = Assert.Single(window.GetVisualDescendants().OfType<AppIconButton>(),
                 item => item.Classes.Contains("composer-attach"));

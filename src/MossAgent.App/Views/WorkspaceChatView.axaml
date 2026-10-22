@@ -93,7 +93,8 @@
       <views:WorkspaceBottomPanel Grid.Row="1" VerticalAlignment="Bottom"
                                   DataContext="{Binding $parent[Window].DataContext}"
                                   IsVisible="{Binding $parent[Window].DataContext.IsBottomPanelOpen}" />
-      <ui:AppScrollViewer Grid.Row="2" x:Name="ComposerScrollViewer" HorizontalScrollBarVisibility="Disabled">
+      <ui:AppScrollViewer Grid.Row="2" x:Name="ComposerScrollViewer" HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
         <ui:AppScrollViewer.MaxHeight>
           <MultiBinding Converter="{StaticResource ComposerViewportHeightConverter}">
             <Binding Path="Bounds" RelativeSource="{RelativeSource AncestorType=views:WorkspaceChatView}" />

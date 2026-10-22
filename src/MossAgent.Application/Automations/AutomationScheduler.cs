@@ -142,6 +142,7 @@ public sealed class AutomationScheduler(
         {
             status = execution.IsTimedOut ? AutomationRunStatus.TimedOut : AutomationRunStatus.Cancelled;
         }
+        catch (AutomationScopeChangedException) { status = AutomationRunStatus.Failed; error = "authorization-changed"; }
         catch (Exception) { error = "execution-unavailable"; }
         try { await FinishAsync(run with { Status = status, FinishedAt = clock.GetUtcNow(), ErrorCode = error }).ConfigureAwait(false); }
         finally

@@ -44,7 +44,7 @@ public sealed class WorkspaceRunExecutor(
         state.Steering = steering is null ? null : await ConversationSteeringSession.OpenAsync(
             steering, state.Task, cancellationToken, cancellationToken,
             steeringAccess.ValidateAsync, new ConversationSteeringAuthorization(state.Project, review),
-            steeringAccess.ValidateEmptyBoundaryAsync)
+            steeringAccess.ValidateEmptyBoundaryAsync, attachments, state.Model)
             ?? throw new ConversationSteeringException("SteeringRunUnavailable");
         try
         {

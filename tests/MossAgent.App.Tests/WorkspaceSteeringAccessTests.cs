@@ -42,7 +42,7 @@ public sealed class WorkspaceSteeringAccessTests : IAsyncLifetime
             if (credentials) await fixture.SourceAccounts.SaveAsync(account, fixture.Token);
             else await fixture.SourceGrants.RevokeAsync(scope.GrantId, fixture.Token);
             workspace.ComposerText = "guidance after revocation";
-            var submission = workspace.Drafts.CreateSteeringSubmission(session, workspace.Drafts.Scope, workspace.ComposerText);
+            var submission = workspace.Drafts.CreateSteeringSubmission(session, workspace.Drafts.Scope, workspace.ComposerText, [], []);
             await Assert.ThrowsAsync<SourceReviewException>(() => submission.SaveAsync(session, session.RunId, Guid.NewGuid(), fixture.Token));
             Assert.Equal("guidance after revocation", workspace.ComposerText);
             fixture.Server.ReleaseResponses();

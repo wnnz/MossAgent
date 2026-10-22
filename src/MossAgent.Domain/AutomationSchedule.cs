@@ -17,4 +17,6 @@ public sealed record AutomationSchedule(
     int TimeoutMinutes,
     bool IsEnabled,
     DateTimeOffset NextRunAt,
-    long Revision = 0);
+    long Revision = 0,
+    AutomationScopeSnapshot? Scope = null,
+    AutomationModelSnapshot? Model = null);

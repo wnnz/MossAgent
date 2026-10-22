@@ -16,6 +16,7 @@ public static class AutomationTiming
             || schedule.TimeoutMinutes is < 1 or > 240 || schedule.Revision < 0
             || string.IsNullOrWhiteSpace(schedule.TimeZoneId))
             throw new ArgumentException("Invalid automation configuration.");
+        AutomationScopeRules.Validate(schedule);
         _ = TimeZoneInfo.FindSystemTimeZoneById(schedule.TimeZoneId);
     }
 

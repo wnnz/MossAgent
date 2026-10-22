@@ -169,6 +169,22 @@ public sealed class ComposerInputKeyboardTests : IAsyncLifetime
         Assert.Single(submitted);
     });
 
+    [Fact]
+    public Task EnterCanRemainANewlineWhileControlEnterUsesTheAlternateCommand() => WithInput((window, input, submitted) =>
+    {
+        var alternate = 0;
+        input.SubmitOnEnter = false;
+        input.AlternateSubmitCommand = new RelayCommand(() => alternate++);
+
+        Press(window, RawInputModifiers.None);
+        Assert.Empty(submitted);
+        Assert.Equal(0, alternate);
+
+        Press(window, RawInputModifiers.Control);
+        Assert.Empty(submitted);
+        Assert.Equal(1, alternate);
+    });
+
     private Task WithInput(Action<AppWindow, AppComposerInput, List<string>> action) => _session.Dispatch(() =>
     {
         var submitted = new List<string>();

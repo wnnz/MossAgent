@@ -94,12 +94,15 @@ public sealed class IconComponentUsageTests
             && element.Attributes().Any(attribute => attribute.Name.LocalName == "Key"
                 && attribute.Value == "UiIconStop"));
         var sendButton = Assert.Single(composer.Descendants(), element => element.Name.LocalName == "AppIconButton"
-            && element.Attribute("Classes")?.Value.Contains("composer-send", StringComparison.Ordinal) == true);
+            && element.Attributes().Any(attribute => attribute.Name.LocalName == "Name" && attribute.Value == "SendButton"));
+        var stopButton = Assert.Single(composer.Descendants(), element => element.Name.LocalName == "AppIconButton"
+            && element.Attributes().Any(attribute => attribute.Name.LocalName == "Name" && attribute.Value == "StopButton"));
         Assert.Equal("{StaticResource UiIconSend}", sendButton.Attribute("IconData")?.Value);
-        Assert.Equal("{StaticResource UiIconStop}", sendButton.Attribute("AlternateIconData")?.Value);
-        Assert.Equal("{Binding IsRunning}", sendButton.Attribute("IsAlternateIcon")?.Value);
-        Assert.Equal("{Binding IsRunning}", sendButton.Attribute("IsFilledIcon")?.Value);
-        Assert.Equal("{Binding PrimaryActionLabel}", sendButton.Attribute("Label")?.Value);
+        Assert.Equal("{Binding ComposerRouter.SubmitCommand}", sendButton.Attribute("Command")?.Value);
+        Assert.Equal("{Binding !IsRunning}", sendButton.Attribute("IsVisible")?.Value);
+        Assert.Equal("{StaticResource UiIconStop}", stopButton.Attribute("IconData")?.Value);
+        Assert.Equal("{Binding PrimaryActionCommand}", stopButton.Attribute("Command")?.Value);
+        Assert.Equal("{Binding IsRunning}", stopButton.Attribute("IsVisible")?.Value);
 
         var disclosure = Assert.Single(chat.Descendants(), element => element.Name.LocalName == "AppToolActivityRow"
             && element.Attribute("Command")?.Value == "{Binding ToggleToolCommand}");

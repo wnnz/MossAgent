@@ -8,7 +8,7 @@ namespace MossAgent.App.Tests;
 public sealed class WorkspaceAttachmentContextTests
 {
     [Fact]
-    public void BuildAndAppend_AddsEncodedContextOnlyToLastUserMessage()
+    public void FormatAndAppend_AddsEncodedContextOnlyToLastUserMessage()
     {
         var original = new ModelMessage(ModelRole.User, "请检查附件");
         var messages = new List<ModelMessage>
@@ -17,7 +17,7 @@ public sealed class WorkspaceAttachmentContextTests
             new(ModelRole.Assistant, "旧回答"),
             original
         };
-        var context = WorkspaceAttachmentContextBuilder.Build(
+        var context = WorkspaceAttachmentContextFormatter.Format(
         [
             new WorkspaceAttachmentContent(
                 "C:\\workspace\\sample.cs", "workspace\\sample.cs",
@@ -33,8 +33,8 @@ public sealed class WorkspaceAttachmentContextTests
     }
 
     [Fact]
-    public void Build_ReturnsNullForNoAttachments()
+    public void Format_ReturnsNullForNoAttachments()
     {
-        Assert.Null(WorkspaceAttachmentContextBuilder.Build([]));
+        Assert.Null(WorkspaceAttachmentContextFormatter.Format([]));
     }
 }

@@ -192,10 +192,12 @@ public sealed class WorkspaceComposerDraftsViewModel : ObservableObject, IDispos
         _repository is not null && session.SupportsDrafts(_repository);
 
     internal WorkspaceSteeredDraftSubmission CreateSteeringSubmission(MossAgent.Application.Conversations.ConversationSteeringSession session,
-        ConversationDraftScope scope, string sentText) => _repository is null || !session.SupportsDrafts(_repository)
-        ? throw new InvalidOperationException("Live input and composer must share the same draft store.") : new(_repository, scope, sentText,
-            token => _steering.AcquireAsync(scope, sentText, token),
-            (taskId, updates) => AcceptSubmission(scope, taskId, sentText, [], updates),
+        ConversationDraftScope scope, string sentText, IReadOnlyCollection<Guid> attachmentIds,
+        IReadOnlyList<ConversationAttachment> attachments) => _repository is null || !session.SupportsDrafts(_repository)
+        ? throw new InvalidOperationException("Live input and composer must share the same draft store.")
+        : new(_repository, scope, sentText, attachmentIds, attachments,
+            token => _steering.AcquireAsync(scope, sentText, attachmentIds, token),
+            (taskId, updates) => AcceptSubmission(scope, taskId, sentText, attachmentIds, updates),
             () => { lock (_gate) GetEntry(scope).ErrorKey = "DraftConflict"; Publish(); });
 
     internal WorkspaceQueuedDraftSubmission CreateQueuedSubmission(IConversationFollowupRepository repository,

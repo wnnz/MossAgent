@@ -16,6 +16,9 @@ internal sealed class ConversationSteeringTestFixture : IAsyncDisposable
 
     public CancellationToken Token => _inner.Token;
     public AgentTask Task { get; }
+
+    /// <summary>Project that owns <see cref="Task"/>, used by draft and attachment fixtures.</summary>
+    public ProjectProfile Project => _inner.Project;
     public SqliteConversationSteeringRepository Repository { get; }
     public SqliteWorkspaceRepository Workspaces => _inner.Repository;
     public SqliteConnectionFactory Connections => _inner.Connections;

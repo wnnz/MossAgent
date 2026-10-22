@@ -1,3 +1,4 @@
+using MossAgent.Application.Attachments;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 
@@ -57,16 +58,27 @@ public sealed class SqliteConversationSteeringRepository(SqliteConnectionFactory
     }
 
     public Task<ConversationSteeringAcceptance?> AcceptAsync(Guid taskId, Guid runId, Guid inputId, string text,
-        ConversationDraftUpdate? draft, CancellationToken cancellationToken, ConversationSteeringAuthorization? authorization = null)
+        ConversationDraftUpdate? draft, CancellationToken cancellationToken, ConversationSteeringAuthorization? authorization = null,
+        IReadOnlyList<ConversationAttachment>? attachments = null, IReadOnlyCollection<Guid>? draftAttachmentIds = null)
     {
         ValidateIdentity(taskId, runId);
         ConversationSteeringInput.ValidateText(text);
         if (inputId == Guid.Empty)
             throw new ArgumentException("Invalid steering input.");
+        var snapshots = attachments?.ToArray() ?? [];
+        var consumed = draftAttachmentIds?.ToArray() ?? [];
+        if (snapshots.Length > 0)
+        {
+            ConversationAttachmentValidation.Validate(taskId, inputId, snapshots);
+            if (draft is null || consumed.Length != snapshots.Length || consumed.Distinct().Count() != consumed.Length)
+                throw new ArgumentException("Invalid steering attachment consumption.");
+        }
+        else if (consumed.Length > 0) throw new ArgumentException("Invalid steering attachment consumption.");
         if (draft is not null)
         {
             _drafts.Validate([draft]);
-            if (draft.Scope.TaskId != taskId || draft.AttachmentItems.Count != 0)
+            if (draft.Scope.TaskId != taskId) throw new ArgumentException("Invalid steering draft consumption.");
+            if (draft.AttachmentItems.Select(item => item.Id).Intersect(consumed).Any())
                 throw new ArgumentException("Invalid steering draft consumption.");
         }
         return RunAsync(async token =>
@@ -74,7 +86,7 @@ public sealed class SqliteConversationSteeringRepository(SqliteConnectionFactory
             await using var connection = connections.Create();
             await connection.OpenAsync(token);
             return await SqliteConversationSteeringAcceptance.AcceptAsync(connection, _drafts, taskId, runId,
-                inputId, text, draft, Now, token, authorization);
+                inputId, text, draft, Now, token, authorization, snapshots, consumed);
         }, cancellationToken);
     }
 

@@ -10,8 +10,7 @@ public static class ConversationAttachmentValidation
             throw new ArgumentException("The selected model does not support image inputs.", nameof(model));
     }
 
-    public static void Validate(Guid taskId, Guid messageId, IReadOnlyList<ConversationAttachment> attachments)
-    {
+    public static void Validate(Guid taskId, Guid messageId, IReadOnlyList<ConversationAttachment> attachments)    {
         if (taskId == Guid.Empty || messageId == Guid.Empty || attachments.Count > WorkspaceAttachmentLimits.MaximumFiles
             || attachments.Select(attachment => attachment.Id).Distinct().Count() != attachments.Count)
             throw new InvalidDataException("Invalid conversation attachment identity or count.");
@@ -29,4 +28,13 @@ public static class ConversationAttachmentValidation
         if (attachments.Where(item => item.MediaType != "text/plain").Sum(item => item.ByteCount) > AttachmentImage.MaximumTotalByteCount)
             throw new InvalidDataException("Image attachments exceed their aggregate byte limit.");
     }
+
+    /// <summary>
+    /// Checks whether the selected model accepts the supplied attachment contents without throwing,
+    /// so composer state can show the limitation before any snapshot is written.
+    /// </summary>
+    /// <param name="model">Model that will receive the attachments.</param>
+    /// <param name="attachments">Currently selected attachment contents.</param>
+    public static bool Supports(ModelProfile model, IEnumerable<WorkspaceAttachmentContent> attachments) =>
+        model.SupportsImages || !attachments.Any(item => item.Image is not null);
 }
