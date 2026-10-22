@@ -13,7 +13,7 @@ namespace MossAgent.Application.Conversations;
 internal static class ConversationSteeringMessageBuilder
 {
     /// <summary>
-    /// Builds one user message per input, appending the text attachment context block and binary image parts.
+    /// Builds one user message per input, appending text context and native image/PDF parts.
     /// </summary>
     /// <param name="taskId">Task that owns the snapshots; must match every input.</param>
     /// <param name="inputs">Pending inputs in acceptance order.</param>
@@ -61,7 +61,11 @@ internal static class ConversationSteeringMessageBuilder
         var context = WorkspaceAttachmentContextFormatter.Format(contents);
         var images = contents.Where(content => content.Image is not null)
             .Select(content => ModelImage.FromAttachment(content.Image!)).ToImmutableArray();
+        var files = contents.Where(content => content.Document is not null)
+            .Select(content => ModelFile.FromAttachment(
+                Path.GetFileName(content.DisplayPath), content.Document!)).ToImmutableArray();
         return new ModelMessage(ModelRole.User, context is null ? input.Text : input.Text + context,
-            Images: images.IsEmpty ? default : images);
+            Images: images.IsEmpty ? default : images,
+            Files: files.IsEmpty ? default : files);
     }
 }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using MossAgent.App.ViewModels;
+using MossAgent.Application.Authorization;
 using MossAgent.Application.Git;
 using MossAgent.Domain;
 using MossAgent.Infrastructure.Git;
@@ -74,6 +75,52 @@ public sealed class WorktreeObjectRuntimeTests
         await RootObjectTestDirectory.MoveWhenReadersFinishAsync(first.WorktreePath!, first.WorktreePath + "-moved", fixture.Token);
         Assert.Throws<IOException>(() => Directory.Move(second.WorktreePath!, second.WorktreePath + "-moved"));
         Directory.Move(first.WorktreePath + "-moved", first.WorktreePath!);
+    }
+
+    [Fact]
+    public async Task ExplicitReauthorizationAllowsVerifiedReplacementAndRejectsOldContext()
+    {
+        await using var owner = await WorkspaceWorktreeGitFixture.CreateAsync();
+        var fixture = owner.Fixture;
+        var task = await CreateTaskAsync(owner);
+        var path = task.WorktreePath!;
+        var original = path + "-original";
+        await RootObjectTestDirectory.MoveWhenReadersFinishAsync(
+            path, original, fixture.Token);
+        Directory.CreateDirectory(path);
+        File.Copy(Path.Combine(original, ".git"), Path.Combine(path, ".git"));
+        await File.WriteAllTextAsync(
+            Path.Combine(path, "README.md"), "verified replacement", fixture.Token);
+
+        var authorizations = Assert.IsAssignableFrom<IGitWorktreeAuthorizationService>(
+            fixture.Worktrees);
+        var result = await authorizations.ReauthorizeAsync(
+            owner.Project, task, fixture.Token);
+        await using var reopened = AppComposition.CreateServices(fixture.DataRoot);
+        var project = Assert.IsType<ProjectProfile>(
+            await reopened.GetRequiredService<IProjectAuthorizationReader>()
+                .ReadAuthorizationAsync(owner.Project.Id, fixture.Token));
+        Assert.Equal(result.AuthorizationRevision, project.AuthorizationRevision);
+        Assert.Equal(owner.Project.AuthorizedDirectories, project.AuthorizedDirectories);
+        Assert.Equal(owner.Project.RootAuthorizations, project.RootAuthorizations);
+
+        var updatedContext = reopened.GetRequiredService<WorkspaceTaskPanelCoordinator>()
+            .CreateContext(task, project);
+        var updated = await reopened.GetRequiredService<IToolExecutor>().ExecuteAsync(
+            new("reauthorized-read", "filesystem.read_file",
+                JsonSerializer.SerializeToElement(new { path = "README.md" })),
+            updatedContext, fixture.Token);
+        Assert.True(updated.IsSuccess, updated.Summary);
+        Assert.Contains("verified replacement", updated.Content);
+
+        var staleContext = reopened.GetRequiredService<WorkspaceTaskPanelCoordinator>()
+            .CreateContext(task, owner.Project);
+        var stale = await reopened.GetRequiredService<IToolExecutor>().ExecuteAsync(
+            new("stale-reauthorization-read", "filesystem.read_file",
+                JsonSerializer.SerializeToElement(new { path = "README.md" })),
+            staleContext, fixture.Token);
+        Assert.Equal("workspace_authorization_changed", stale.ErrorCode);
+        Assert.Empty(fixture.Server.Requests);
     }
 
     [Fact]

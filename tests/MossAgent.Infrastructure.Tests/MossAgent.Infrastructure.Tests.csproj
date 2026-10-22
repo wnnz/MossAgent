@@ -3,6 +3,7 @@
   <ItemGroup>
     <Compile Include="../MossAgent.Tools.Tests/ReadHandleProbe.cs" Link="Testing/ReadHandleProbe.cs" />
     <Compile Include="../Shared/PullRequestTestData.cs" Link="Testing/PullRequestTestData.cs" />
+    <Compile Include="../Shared/InMemoryWorktreeCleanupIntentService.cs" Link="Testing/InMemoryWorktreeCleanupIntentService.cs" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />

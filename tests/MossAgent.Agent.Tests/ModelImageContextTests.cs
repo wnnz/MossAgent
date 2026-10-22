@@ -56,16 +56,54 @@ public sealed class ModelImageContextTests
     [Theory]
     [InlineData("")]
     [InlineData("describe this")]
-    public void SharedChildContext_ExplicitlyMarksImagesAsUnavailable(string text)
+    public void SharedChildContext_KeepsTextFreeOfBinaryAndExposesBoundedImageInputs(string text)
     {
         var image = ModelImage.FromBytes("image/png", new byte[128]);
 
         var context = SubagentConversationContextBuilder.Build([new(ModelRole.User, text, Images: [image])]);
+        var shared = SubagentConversationContextBuilder.BuildImages(
+            [new(ModelRole.User, text, Images: [image])]);
 
         Assert.NotNull(context);
-        Assert.Contains("Image inputs omitted", context);
+        Assert.Contains("Image inputs are attached separately", context);
         Assert.DoesNotContain(image.Base64Data, context);
+        var attachment = Assert.Single(shared);
+        Assert.Equal(image.MediaType, attachment.MediaType);
+        Assert.Equal(image.ByteCount, attachment.ByteCount);
+        Assert.Equal(image.Base64Data, attachment.Base64Data);
         if (text.Length > 0) Assert.Contains(text, context);
+    }
+
+    [Fact]
+    public void SharedChildImagesUseLatestTenUserImagesAcrossRoles()
+    {
+        var images = Enumerable.Range(0, 12)
+            .Select(index => ModelImage.FromBytes("image/png", [(byte)(index + 1)]))
+            .ToArray();
+        var messages = new List<ModelMessage>();
+        foreach (var image in images.Take(11))
+            messages.Add(new(ModelRole.User, "image", Images: [image]));
+        messages.Add(new(ModelRole.Assistant, "ignored", Images: [images[11]]));
+
+        var selected = SubagentConversationContextBuilder.BuildImages(messages);
+
+        Assert.Equal(ModelImageRequestValidation.MaximumImages, selected.Length);
+        Assert.Equal(images[1].Base64Data, selected[0].Base64Data);
+        Assert.Equal(images[10].Base64Data, selected[^1].Base64Data);
+    }
+
+    [Fact]
+    public void SharedChildImagesStayInsideTheRecentContextMessageWindow()
+    {
+        var image = ModelImage.FromBytes("image/png", [1]);
+        var messages = new List<ModelMessage>
+        {
+            new(ModelRole.User, "old image", Images: [image])
+        };
+        for (var index = 0; index < 12; index++)
+            messages.Add(new(ModelRole.User, $"recent {index}"));
+
+        Assert.True(SubagentConversationContextBuilder.BuildImages(messages).IsEmpty);
     }
 
     private static ModelProfile Model() => new(Guid.NewGuid(), Guid.NewGuid(), "fixture", "fixture",

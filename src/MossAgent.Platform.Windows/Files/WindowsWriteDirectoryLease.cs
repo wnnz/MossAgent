@@ -40,6 +40,39 @@ internal sealed class WindowsWriteDirectoryLease : IDisposable
         catch { lease.Dispose(); throw; }
     }
 
+    public static WindowsWriteDirectoryLease AcquireRoot(
+        string path, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        if (!Path.IsPathFullyQualified(path))
+            throw new UnauthorizedAccessException(WindowsFileText.WriteHandleDenied);
+        var fullPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
+        ValidateName(Path.GetFileName(fullPath));
+        var drive = Path.GetPathRoot(fullPath)!;
+        if (drive.Length != 3 || drive[1] != ':' || GetDriveTypeW(drive) != 3)
+            throw new UnauthorizedAccessException(WindowsFileText.WriteHandleDenied);
+        var lease = new WindowsWriteDirectoryLease();
+        try
+        {
+            lease.AddDrive(drive);
+            var parts = fullPath[drive.Length..]
+                .Split('\\', StringSplitOptions.RemoveEmptyEntries);
+            for (var index = 0; index < parts.Length; index++)
+            {
+                var access = index == parts.Length - 1
+                    ? WindowsRelativeFile.DirectoryAccess | 0x10000
+                    : WindowsRelativeFile.DirectoryAccess;
+                lease.AddDirectory(parts[index], false, token, access);
+            }
+            return lease;
+        }
+        catch
+        {
+            lease.Dispose();
+            throw;
+        }
+    }
+
     private void AddDrive(string drive)
     {
         var handle = CreateFileW(@"\\?\" + drive, WindowsRelativeFile.DirectoryAccess,
@@ -52,11 +85,12 @@ internal sealed class WindowsWriteDirectoryLease : IDisposable
             throw new UnauthorizedAccessException(WindowsFileText.WriteHandleDenied);
     }
 
-    internal void AddDirectory(string name, bool create, CancellationToken token, Action? onCreated = null)
+    internal void AddDirectory(string name, bool create, CancellationToken token,
+        uint access = WindowsRelativeFile.DirectoryAccess, Action? onCreated = null)
     {
         token.ThrowIfCancellationRequested();
         ValidateName(name);
-        var handle = WindowsRelativeFile.Open(Parent, name, WindowsRelativeFile.DirectoryAccess,
+        var handle = WindowsRelativeFile.Open(Parent, name, access,
             FileShare.ReadWrite, create ? 3u : 1u, true, out var created)!;
         _handles.Add(handle);
         if (created) onCreated?.Invoke();

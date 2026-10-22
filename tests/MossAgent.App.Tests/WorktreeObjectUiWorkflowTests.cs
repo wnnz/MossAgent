@@ -80,6 +80,92 @@ public sealed class WorktreeObjectUiWorkflowTests : IAsyncLifetime
             finally { window.Close(); }
         }, TestContext.Current.CancellationToken);
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public Task ReplacementReauthorizationRequiresTwoStepsAndPreservesDraft(bool dark, bool compact) =>
+        _session.DispatchAsync(async () =>
+        {
+            await using var owner = await WorkspaceWorktreeGitFixture.CreateAsync();
+            var fixture = owner.Fixture;
+            var task = await WorktreeObjectRuntimeTests.CreateTaskAsync(owner);
+            var path = task.WorktreePath!;
+            var original = path + "-original";
+            await RootObjectTestDirectory.MoveWhenReadersFinishAsync(
+                path, original, fixture.Token);
+            Directory.CreateDirectory(path);
+            File.Copy(Path.Combine(original, ".git"), Path.Combine(path, ".git"));
+            await File.WriteAllTextAsync(
+                Path.Combine(path, "README.md"), "verified replacement", fixture.Token);
+            var workspace = fixture.Workspace;
+            workspace.Catalog.UpsertTask(task, select: false);
+            workspace.Catalog.SelectedTask = task;
+            var projectRevision =
+                workspace.Catalog.SelectedProject!.AuthorizationRevision;
+            await fixture.WaitUntilAsync(() =>
+                workspace.Catalog.WorktreeAuthorization.ReauthorizeCommand.CanExecute(null));
+            var window = new MainWindow
+            {
+                DataContext = fixture.Main,
+                Width = compact ? 526 : 1280,
+                Height = compact ? 601 : 820,
+                RequestedThemeVariant = dark ? ThemeVariant.Dark : ThemeVariant.Light
+            };
+            window.Show();
+            try
+            {
+                ProviderUiWorkflowInput.Flush(window);
+                var composer = Assert.Single(window.GetVisualDescendants().OfType<AppInput>(),
+                    input => input.Classes.Contains("composer-input"));
+                ProviderUiWorkflowInput.Type(window, composer, "重新授权时保留草稿");
+                var reauthorize = Assert.Single(
+                    window.GetVisualDescendants().OfType<AppButton>(),
+                    button => button.Name == "ReauthorizeWorktreeObjectButton");
+                Assert.True(reauthorize.IsEffectivelyVisible);
+                reauthorize.BringIntoView();
+                ProviderUiWorkflowInput.Flush(window);
+                ProviderUiWorkflowInput.Press(window, reauthorize);
+                ProviderUiWorkflowInput.Flush(window);
+                await workspace.Catalog.WorktreeAuthorization.ReauthorizeCommand.ExecutionTask!
+                    .WaitAsync(fixture.Token);
+                await Task.Delay(100, fixture.Token);
+                ProviderUiWorkflowInput.Flush(window);
+                Assert.True(workspace.Catalog.WorktreeAuthorization
+                    .IsReauthorizationConfirmationPending);
+                Assert.True(workspace.Catalog.WorktreeAuthorization.BlocksTaskStart(task.Id));
+                var confirmReauthorize = Assert.Single(
+                    window.GetVisualDescendants().OfType<AppButton>(),
+                    button => button.Name == "ConfirmReauthorizeWorktreeObjectButton");
+                Assert.True(confirmReauthorize.IsEffectivelyVisible);
+                Assert.True(workspace.Catalog.WorktreeAuthorization
+                    .ConfirmReauthorizeCommand.CanExecute(null));
+                await workspace.Catalog.WorktreeAuthorization
+                    .ConfirmReauthorizeCommand.ExecuteAsync(null);
+                ProviderUiWorkflowInput.Flush(window);
+                var persisted = Assert.Single(
+                    await fixture.Tasks.GetProjectsAsync(fixture.Token),
+                    item => item.Id == owner.Project.Id);
+                Assert.True(
+                    persisted.AuthorizationRevision
+                    == projectRevision + 1,
+                    workspace.Catalog.WorktreeAuthorization.Status);
+                Assert.Equal("重新授权时保留草稿", workspace.ComposerText);
+                Assert.Equal(task.Id, workspace.Catalog.SelectedTask?.Id);
+                Assert.True(
+                    workspace.Catalog.SelectedProject?.AuthorizationRevision
+                    == projectRevision + 1,
+                    workspace.Catalog.WorktreeAuthorization.Status);
+                Assert.False(workspace.Catalog.WorktreeAuthorization.BlocksTaskStart(task.Id));
+                Assert.IsAssignableFrom<IGitWorktreeAuthorizationService>(fixture.Worktrees);
+                await fixture.Worktrees.ValidateAsync(workspace.Catalog.SelectedProject!, task.Id,
+                    path, fixture.Token);
+                Assert.Empty(fixture.Server.Requests);
+            }
+            finally { window.Close(); }
+        }, TestContext.Current.CancellationToken);
+
     private static Task<ToolResult> ReadAsync(WorkspaceWorktreeGitFixture owner, AgentTask task, string callId) =>
         owner.Fixture.Tools.ExecuteAsync(new(callId, "filesystem.read_file", JsonSerializer.SerializeToElement(new { path = "README.md" })),
             owner.Fixture.Panels.CreateContext(task, owner.Project), owner.Fixture.Token);

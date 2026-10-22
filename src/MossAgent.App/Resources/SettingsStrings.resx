@@ -95,17 +95,23 @@
   <data name="ProjectAuthorizationResourcesAbandon" xml:space="preserve"><value>标记过期登记为已放弃</value></data>
   <data name="ProjectAuthorizationResourcesConfirmAbandon" xml:space="preserve"><value>确认相关进程已停止并放弃登记</value></data>
   <data name="ProjectAuthorizationResourcesFailed" xml:space="preserve"><value>无法读取或更新授权资源状态。请保留现场并稍后重试。</value></data>
-  <data name="WorktreeRecoveryTitle" xml:space="preserve"><value>待核实的工作树创建记录（{0}）</value></data>
-  <data name="WorktreeRecoveryHint" xml:space="preserve"><value>这些记录来自启动前未完成任务。应用不会自动删除目录或重放 Git。请先检查目标路径和相关进程；确认已经人工处理后，再标记为已核实。</value></data>
+  <data name="WorktreeRecoveryTitle" xml:space="preserve"><value>待核实的工作树恢复记录（{0}）</value></data>
+  <data name="WorktreeRecoveryHint" xml:space="preserve"><value>这些记录来自未完成或可能中断的工作树创建、清理操作。应用不会自动删除目录、续删隔离树或重放 Git。请先检查目标路径、隔离路径和相关进程；确认已经人工处理后，再标记为已核实。</value></data>
   <data name="WorktreeRecoveryRefresh" xml:space="preserve"><value>刷新工作树恢复状态</value></data>
-  <data name="WorktreeRecoveryLoadFailed" xml:space="preserve"><value>无法读取工作树创建记录。请保留现场并稍后重试。</value></data>
+  <data name="WorktreeRecoveryLoadFailed" xml:space="preserve"><value>无法读取工作树恢复记录。请保留现场并稍后重试。</value></data>
   <data name="WorktreeRecoveryTask" xml:space="preserve"><value>任务 {0}</value></data>
   <data name="WorktreeRecoveryStatusPreparing" xml:space="preserve"><value>准备中</value></data>
   <data name="WorktreeRecoveryStatusClaimed" xml:space="preserve"><value>目标已认领</value></data>
   <data name="WorktreeRecoveryStatusGitCreated" xml:space="preserve"><value>Git 已创建，任务尚未确认</value></data>
   <data name="WorktreeRecoveryStatusFailed" xml:space="preserve"><value>创建失败</value></data>
   <data name="WorktreeRecoveryStatusOrphaned" xml:space="preserve"><value>孤立，需要人工核实</value></data>
+  <data name="WorktreeRecoveryStatusCleanupPreparing" xml:space="preserve"><value>清理准备中或进程已中断</value></data>
+  <data name="WorktreeRecoveryStatusCleanupQuarantined" xml:space="preserve"><value>已隔离，Git 注册待清理或进程已中断</value></data>
+  <data name="WorktreeRecoveryStatusCleanupRegistrationDeleted" xml:space="preserve"><value>Git 注册已删除，隔离树待清理或进程已中断</value></data>
+  <data name="WorktreeRecoveryStatusCleanupFailed" xml:space="preserve"><value>清理失败，需要人工核实</value></data>
+  <data name="WorktreeRecoveryStatusCleanupTaskMetadataPending" xml:space="preserve"><value>目录和 Git 注册已清理，任务记录仍指向旧工作树</value></data>
   <data name="WorktreeRecoveryStatusUnknown" xml:space="preserve"><value>未知状态</value></data>
+  <data name="WorktreeRecoveryQuarantine" xml:space="preserve"><value>隔离路径：{0}</value></data>
   <data name="WorktreeRecoveryAcknowledged" xml:space="preserve"><value>标记为已人工核实</value></data>
   <data name="WorktreeRecoveryConfirmAcknowledged" xml:space="preserve"><value>确认已检查目录和进程</value></data>
   <data name="WorktreeRecoveryAcknowledgeFailed" xml:space="preserve"><value>无法更新这条恢复记录，请刷新后重试。</value></data>

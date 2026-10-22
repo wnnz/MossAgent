@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using MossAgent.App.ViewModels;
@@ -148,11 +149,58 @@ public sealed class ProjectlessAttachmentWorkflowTests
         await reopened.ShutdownAsync();
     }
 
+    [Fact]
+    public async Task ExplicitProjectlessPdfUsesSnapshotHistoryAndNoImplicitFileAccess()
+    {
+        await using var fixture = await WorkspaceModelSelectionFixture.CreateAsync(withProject: false);
+        fixture.Workspace.ComposerText = string.Empty;
+        await fixture.Workspace.Drafts.FlushAsync();
+        await EnableFilesAsync(fixture);
+        var picker = new WorkspaceAttachmentOperationProbe();
+        using var runs = new WorkspaceRunTracker();
+        using var workspace = fixture.CreateWorkspace(
+            fixture.Tasks, runs, attachmentPicker: picker, conversationDrafts: fixture.Drafts);
+        await workspace.LoadAsync();
+        var path = Path.Combine(Path.GetDirectoryName(fixture.DataRoot)!, "projectless.pdf");
+        var bytes = Encoding.ASCII.GetBytes("%PDF-1.7\n1 0 obj\n<<>>\nendobj\n%%EOF\n");
+        await File.WriteAllBytesAsync(path, bytes, fixture.Token);
+        picker.Paths = [path];
+
+        await workspace.Attachments.AddFilesCommand.ExecuteAsync(null);
+        var chip = Assert.Single(workspace.Attachments.Items);
+        Assert.Equal("application/pdf", chip.Content.MediaType);
+        Assert.Equal(WorkspaceAttachmentAuthorization.CreateSelection(path), chip.AuthorizationStamp);
+        Assert.Null(chip.Thumbnail);
+        await workspace.Drafts.FlushAsync();
+        workspace.PrimaryActionCommand.Execute(null);
+        await fixture.WaitUntilAsync(() => fixture.Server.Requests.Count == 1 && !workspace.IsRunning);
+        AssertProjectlessPdfRequest(fixture.Server.Requests.Single(), bytes);
+        Assert.Null(workspace.Catalog.SelectedTask!.ProjectId);
+        Assert.Equal(ApprovalPolicy.ReadOnly, workspace.Catalog.SelectedTask.ApprovalPolicy);
+        Assert.Empty(await fixture.Tasks.GetProjectsAsync(fixture.Token));
+
+        File.Delete(path);
+        workspace.ComposerText = "follow up from the stored projectless PDF";
+        workspace.PrimaryActionCommand.Execute(null);
+        await fixture.WaitUntilAsync(() => fixture.Server.Requests.Count == 2 && !workspace.IsRunning);
+        AssertProjectlessPdfRequest(fixture.Server.Requests.Last(), bytes);
+        await workspace.ShutdownAsync();
+    }
+
     private static async Task EnableImagesAsync(WorkspaceModelSelectionFixture fixture)
     {
         var editor = fixture.Main.Models;
         editor.EditProviderModelCommand.Execute(fixture.SelectedModel);
         editor.SupportsImages = true;
+        await editor.SaveModelCommand.ExecuteAsync(null);
+        Assert.False(editor.HasStatusError, editor.Status);
+    }
+
+    private static async Task EnableFilesAsync(WorkspaceModelSelectionFixture fixture)
+    {
+        var editor = fixture.Main.Models;
+        editor.EditProviderModelCommand.Execute(fixture.SelectedModel);
+        editor.SupportsFiles = true;
         await editor.SaveModelCommand.ExecuteAsync(null);
         Assert.False(editor.HasStatusError, editor.Status);
     }
@@ -176,5 +224,20 @@ public sealed class ProjectlessAttachmentWorkflowTests
             Assert.Contains("workspace_attachments", first.GetString());
         }
         Assert.DoesNotContain(source, request.GetRawText());
+    }
+
+    private static void AssertProjectlessPdfRequest(JsonElement request, byte[] bytes)
+    {
+        Assert.Empty(request.GetProperty("tools").EnumerateArray());
+        var blocks = request.GetProperty("input").EnumerateArray()
+            .Where(message => message.GetProperty("role").GetString() == "user")
+            .SelectMany(message => message.GetProperty("content").ValueKind == JsonValueKind.Array
+                ? message.GetProperty("content").EnumerateArray() : [])
+            .ToArray();
+        var block = Assert.Single(blocks,
+            item => item.TryGetProperty("type", out var type) && type.GetString() == "input_file");
+        Assert.Equal("projectless.pdf", block.GetProperty("filename").GetString());
+        Assert.Equal("data:application/pdf;base64," + Convert.ToBase64String(bytes),
+            block.GetProperty("file_data").GetString());
     }
 }

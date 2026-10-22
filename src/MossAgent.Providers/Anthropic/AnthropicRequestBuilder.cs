@@ -9,12 +9,13 @@ internal static class AnthropicRequestBuilder
     public static string Build(ModelRequest request, ProviderToolNameMap toolNames)
     {
         var images = new ModelImageRequestValidation(request.Model.SupportsImages);
+        var files = new ModelFileRequestValidation(request.Model.SupportsFiles);
         var root = new JsonObject
         {
             ["model"] = request.Model.ModelId,
             ["max_tokens"] = request.Model.MaximumOutputTokens,
             ["stream"] = true,
-            ["messages"] = BuildMessages(request, toolNames, ref images),
+            ["messages"] = BuildMessages(request, toolNames, ref images, ref files),
             ["tools"] = BuildTools(request, toolNames)
         };
         var system = string.Join("\n\n", request.Messages
@@ -40,18 +41,20 @@ internal static class AnthropicRequestBuilder
             request.Model.MaximumOutputTokens);
 
         AdvancedParameterMerger.Merge(root, request.Model.AdvancedParametersJson, request.Provider.Protocol);
-        return ModelRequestJson.Serialize(root, images.ContainsImages);
+        return ModelRequestJson.Serialize(root, images.ContainsImages, files.ContainsFiles);
     }
 
     private static JsonArray BuildMessages(
         ModelRequest request,
         ProviderToolNameMap toolNames,
-        ref ModelImageRequestValidation images)
+        ref ModelImageRequestValidation images,
+        ref ModelFileRequestValidation files)
     {
         var result = new JsonArray();
         foreach (var message in request.Messages)
         {
             images.Include(message);
+            files.Include(message);
             if (message.Role == ModelRole.System) continue;
             var content = BuildContent(message, toolNames);
             result.Add(new JsonObject
@@ -80,7 +83,7 @@ internal static class AnthropicRequestBuilder
 
         if (message.Role != ModelRole.Assistant || message.ToolCalls is not { Count: > 0 })
         {
-            return ModelImageContentBuilder.Anthropic(message);
+            return ModelContentBuilder.Anthropic(message);
         }
 
         var blocks = new JsonArray();

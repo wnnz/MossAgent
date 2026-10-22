@@ -70,10 +70,21 @@ public sealed class RestoredWorktreeAuthorizationTests
         await status.RefreshAsync(project, forged);
         Assert.Empty(branchProbe.Reads);
         workspace.ComposerText = "retained denied follow-up";
-        workspace.PrimaryActionCommand.Execute(null);
-        await fixture.WaitUntilAsync(() => workspace.HasSendPreparationError);
+        if (location == "revoked")
+        {
+            workspace.PrimaryActionCommand.Execute(null);
+            await fixture.WaitUntilAsync(() => workspace.HasSendPreparationError);
+            Assert.Equal(WorkspaceText.Get("TaskEnvironmentAuthorizationFailure"),
+                workspace.SendPreparationError);
+        }
+        else
+        {
+            Assert.False(workspace.PrimaryActionCommand.CanExecute(null));
+            workspace.PrimaryActionCommand.Execute(null);
+            await Task.Delay(50, fixture.Token);
+            Assert.False(workspace.HasSendPreparationError);
+        }
         Assert.Equal("retained denied follow-up", workspace.ComposerText);
-        Assert.Equal(WorkspaceText.Get("TaskEnvironmentAuthorizationFailure"), workspace.SendPreparationError);
         Assert.Single(await fixture.Tasks.GetMessagesAsync(task.Id, fixture.Token));
         Assert.Equal(AgentTaskStatus.Completed, Assert.Single(await fixture.Tasks.GetTasksAsync(owner.Project.Id, fixture.Token)).Status);
         Assert.Empty(fixture.Server.Requests);

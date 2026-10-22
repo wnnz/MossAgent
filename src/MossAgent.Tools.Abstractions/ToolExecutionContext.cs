@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Collections.Immutable;
 using MossAgent.Domain;
 using MossAgent.Tools.Abstractions.Browser;
 
@@ -22,6 +23,8 @@ public sealed record ToolExecutionContext(
 
     public TaskFileSnapshotStore FileSnapshots { get; init; } = new(TaskId);
     public Action<ToolExecutionProgress>? Progress { get; init; }
+    public ImmutableArray<SharedImageContent> SharedImages { get; init; }
+    public ImmutableArray<SharedFileContent> SharedFiles { get; init; }
     public ToolFileChange? ReviewedChange { get; init; }
     public bool ToolsEnabled { get; init; } = true;
     public ITaskWorkspaceGuard? WorkspaceGuard { get; init; }

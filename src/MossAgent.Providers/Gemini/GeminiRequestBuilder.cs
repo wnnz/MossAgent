@@ -10,11 +10,12 @@ internal static class GeminiRequestBuilder
     public static string Build(ModelRequest request, ProviderToolNameMap toolNames)
     {
         var images = new ModelImageRequestValidation(request.Model.SupportsImages);
+        var files = new ModelFileRequestValidation(request.Model.SupportsFiles);
         if (!ModelReasoningPolicy.Supports(request.Provider.Protocol, request.Model.ModelId, request.Model.ReasoningEffort))
             throw new ArgumentException("Unsupported Gemini reasoning effort.", nameof(request));
         var root = new JsonObject
         {
-            ["contents"] = BuildContents(request, toolNames, ref images),
+            ["contents"] = BuildContents(request, toolNames, ref images, ref files),
             ["tools"] = BuildTools(request, toolNames),
             ["generationConfig"] = BuildGenerationConfig(request)
         };
@@ -30,13 +31,14 @@ internal static class GeminiRequestBuilder
         }
 
         AdvancedParameterMerger.Merge(root, request.Model.AdvancedParametersJson, request.Provider.Protocol);
-        return ModelRequestJson.Serialize(root, images.ContainsImages);
+        return ModelRequestJson.Serialize(root, images.ContainsImages, files.ContainsFiles);
     }
 
     private static JsonArray BuildContents(
         ModelRequest request,
         ProviderToolNameMap toolNames,
-        ref ModelImageRequestValidation images)
+        ref ModelImageRequestValidation images,
+        ref ModelFileRequestValidation files)
     {
         var result = new JsonArray();
         JsonArray? previousToolParts = null;
@@ -44,6 +46,7 @@ internal static class GeminiRequestBuilder
         foreach (var message in request.Messages)
         {
             images.Include(message);
+            files.Include(message);
             if (message.Role == ModelRole.System) continue;
             JsonArray parts;
             if (message.Role == ModelRole.Tool)
@@ -98,7 +101,7 @@ internal static class GeminiRequestBuilder
             parts.Add(new JsonObject { ["text"] = message.Content });
         }
 
-        ModelImageContentBuilder.AppendGemini(parts, message);
+        ModelContentBuilder.AppendGemini(parts, message);
         foreach (var call in message.Role == ModelRole.Assistant ? message.ToolCalls ?? [] : [])
         {
             var function = new JsonObject

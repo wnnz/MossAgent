@@ -88,6 +88,8 @@
                       <ui:AppText Grid.Column="1" Text="{Binding StatusLabel}" Classes="subtle type-10-5" />
                     </Grid>
                     <ui:AppText Text="{Binding TargetPath}" Classes="subtle type-10-5" TextWrapping="Wrap" />
+                    <ui:AppText Text="{Binding QuarantineLabel}" Classes="subtle type-10-5"
+                                IsVisible="{Binding HasQuarantinePath}" TextWrapping="Wrap" />
                     <ui:AppText Text="{Binding ErrorCode}" Classes="status-warning type-10-5"
                                 IsVisible="{Binding HasErrorCode}" TextWrapping="Wrap" />
                     <ui:AppButton Classes="ghost menu-option" HorizontalAlignment="Left"

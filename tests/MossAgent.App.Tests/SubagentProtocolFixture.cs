@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using MossAgent.App.ViewModels;
+using MossAgent.Application.Attachments;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 using MossAgent.Infrastructure.Persistence;
@@ -15,10 +16,13 @@ internal sealed class SubagentProtocolFixture : IAsyncDisposable
     private ServiceProvider? _services;
     private WorkspaceViewModel? _workspace;
 
-    private SubagentProtocolFixture(ProviderProtocol protocol, bool denyPath, ProviderProtocol parentProtocol)
+    private SubagentProtocolFixture(
+        ProviderProtocol protocol, bool denyPath, ProviderProtocol parentProtocol,
+        bool withSharedImage)
     {
         Protocol = protocol;
         ParentProtocol = parentProtocol;
+        WithSharedImage = withSharedImage;
         Root = Directory.CreateTempSubdirectory("MossAgent-subagent-protocol-").FullName;
         ProjectRoot = Path.Combine(Root, "project");
         _timeout.CancelAfter(TimeSpan.FromSeconds(30));
@@ -36,6 +40,9 @@ internal sealed class SubagentProtocolFixture : IAsyncDisposable
     public string OutsideFile => Path.Combine(Root, "outside.txt");
     public ProviderProtocol Protocol { get; }
     public ProviderProtocol ParentProtocol { get; }
+    public bool WithSharedImage { get; }
+    public string SharedImageBase64 =>
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC";
     public string ParentModelId => ParentProtocol == ProviderProtocol.GeminiGenerateContent ? "gemini-3-flash-preview" : "parent-model";
     public CancellationToken Token => _timeout.Token;
     public WorkspaceModelStreamServer ParentServer { get; }
@@ -51,9 +58,11 @@ internal sealed class SubagentProtocolFixture : IAsyncDisposable
 
     public static async Task<SubagentProtocolFixture> CreateAsync(
         ProviderProtocol protocol, bool shareContext, bool denyPath = false,
-        ProviderProtocol parentProtocol = ProviderProtocol.OpenAiResponses)
+        ProviderProtocol parentProtocol = ProviderProtocol.OpenAiResponses,
+        bool withSharedImage = false, bool childSupportsImages = true)
     {
-        var fixture = new SubagentProtocolFixture(protocol, denyPath, parentProtocol);
+        var fixture = new SubagentProtocolFixture(
+            protocol, denyPath, parentProtocol, withSharedImage);
         try
         {
             Directory.CreateDirectory(fixture.ProjectRoot);
@@ -61,7 +70,8 @@ internal sealed class SubagentProtocolFixture : IAsyncDisposable
             await File.WriteAllTextAsync(fixture.OutsideFile, SubagentProtocolResponses.PrivateEvidence, fixture.Token);
             fixture._services = AppComposition.CreateServices(Path.Combine(fixture.Root, "data"));
             await fixture._services.GetRequiredService<IDatabaseInitializer>().InitializeAsync(fixture.Token);
-            await fixture.ConfigureAsync(shareContext);
+            await fixture.ConfigureAsync(
+                shareContext, withSharedImage, childSupportsImages);
             await fixture._services.GetRequiredService<WorkspaceProjectService>().CreateAsync("子代理跨协议验收", [fixture.ProjectRoot]);
             fixture._workspace = fixture._services.GetRequiredService<WorkspaceViewModel>();
             await fixture.Workspace.LoadAsync();
@@ -70,17 +80,18 @@ internal sealed class SubagentProtocolFixture : IAsyncDisposable
         catch { await fixture.DisposeAsync(); throw; }
     }
 
-    private async Task ConfigureAsync(bool shareContext)
+    private async Task ConfigureAsync(
+        bool shareContext, bool withSharedImage, bool childSupportsImages)
     {
         var parent = await AddProviderAsync("parent-provider", ParentProtocol, ParentServer.BaseUri, true);
-        await AddModelAsync(parent, ParentModelId, true);
+        await AddModelAsync(parent, ParentModelId, true, withSharedImage);
         ChildProvider = await AddProviderAsync("child-provider", Protocol, ChildServer.BaseUri, false);
         ChildModel = await AddModelAsync(ChildProvider, Protocol switch
         {
             ProviderProtocol.GeminiGenerateContent => "gemini-3-flash-preview",
             ProviderProtocol.AnthropicMessages => "claude-sonnet-4-5",
             _ => "child-model"
-        }, false);
+        }, false, withSharedImage && childSupportsImages);
         var settings = Main.Subagents;
         await settings.RefreshCommand.ExecuteAsync(null);
         settings.NewCommand.Execute(null);
@@ -109,7 +120,8 @@ internal sealed class SubagentProtocolFixture : IAsyncDisposable
         return Assert.Single(settings.Items, item => item.Name == name);
     }
 
-    private async Task<ModelProfile> AddModelAsync(AiProvider provider, string id, bool isDefault)
+    private async Task<ModelProfile> AddModelAsync(
+        AiProvider provider, string id, bool isDefault, bool supportsImages = false)
     {
         var settings = Main.Models;
         await settings.RefreshProvidersCommand.ExecuteAsync(null);
@@ -120,6 +132,7 @@ internal sealed class SubagentProtocolFixture : IAsyncDisposable
         settings.ContextLength = 32000;
         settings.MaximumOutputTokens = 4096;
         settings.ReasoningEffort = "medium";
+        settings.SupportsImages = supportsImages;
         settings.IsDefault = isDefault;
         await settings.SaveModelCommand.ExecuteAsync(null);
         Assert.False(settings.HasStatusError, settings.Status);
@@ -148,6 +161,19 @@ internal sealed class SubagentProtocolFixture : IAsyncDisposable
     {
         Assert.Equal(ParentModelId, Workspace.SelectedModel!.ModelId);
         Workspace.SetApprovalPolicyCommand.Execute(policy);
+        if (WithSharedImage)
+        {
+            var bytes = Convert.FromBase64String(SharedImageBase64);
+            var image = AttachmentImage.FromDecodedBytes(
+                "image/png", bytes, width: 1, height: 1);
+            var project = Workspace.Catalog.SelectedProject!;
+            Workspace.Attachments.Items.Add(new WorkspaceAttachmentViewModel(
+                new WorkspaceAttachmentContent(
+                    Path.Combine(project.PrimaryDirectory, "pixel.png"),
+                    "pixel.png", string.Empty, bytes.Length, image),
+                _ => { },
+                authorizationStamp: WorkspaceAttachmentAuthorization.Create(project)));
+        }
         Workspace.ComposerText = "审查合成文件 " + SubagentProtocolResponses.ParentMarker;
         Assert.True(Workspace.PrimaryActionCommand.CanExecute(null));
         Workspace.PrimaryActionCommand.Execute(null);

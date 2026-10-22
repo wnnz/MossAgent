@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using MossAgent.Application.Attachments;
+using MossAgent.Domain;
 using MossAgent.Infrastructure.Attachments;
 using Xunit;
 
@@ -94,5 +95,23 @@ public sealed class SelectedAttachmentReaderTests
         var reader = new WorkspaceAttachmentReader();
         await Assert.ThrowsAsync<InvalidOperationException>(() => reader.ReadSelectedAsync([path], fixture.Token));
         await Assert.ThrowsAsync<InvalidOperationException>(() => reader.ReadSelectedAsync(Enumerable.Repeat(path, 11).ToArray(), fixture.Token));
+    }
+
+    [Fact]
+    public async Task ExplicitProjectlessSelectionReadsPdfWithoutCreatingAProjectGrant()
+    {
+        await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
+        var path = Path.Combine(fixture.Project.PrimaryDirectory, "selected.pdf");
+        await File.WriteAllBytesAsync(path,
+            "%PDF-1.7\n1 0 obj\n<<>>\nendobj\n%%EOF\n"u8.ToArray(), fixture.Token);
+
+        var result = Assert.Single(await new WorkspaceAttachmentReader()
+            .ReadSelectedAsync([path], fixture.Token));
+
+        Assert.Equal(AttachmentDocument.PdfMediaType, result.MediaType);
+        Assert.Equal("selected.pdf", result.DisplayPath);
+        Assert.NotNull(result.Document);
+        Assert.Equal(fixture.Project.Id,
+            Assert.Single(await fixture.Repository.GetProjectsAsync(fixture.Token)).Id);
     }
 }

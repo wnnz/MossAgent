@@ -258,7 +258,8 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         && SelectedProvider is not null
         && SelectedModel is not null && ModelPicker.CanSendWithSelectedModel
         && ModelPicker.SelectedItem?.Provider.Id == SelectedProvider.Id
-        && ModelPicker.SelectedItem.Model.Id == SelectedModel.Id && (!string.IsNullOrWhiteSpace(ComposerText) || Attachments.HasImageItems)
+        && ModelPicker.SelectedItem.Model.Id == SelectedModel.Id
+        && (!string.IsNullOrWhiteSpace(ComposerText) || Attachments.HasImageItems || Attachments.HasFileItems)
         && (Catalog.SelectedTask is null || (Catalog.SelectedTask.ProjectId == Catalog.SelectedProject?.Id && (allowRunning || !_runs.IsRunning(Catalog.SelectedTask.Id))
             && Queue?.IsPreparing(Catalog.SelectedTask.Id) != true
             && !Catalog.TaskManagement.BlocksTaskStart(Catalog.SelectedTask.Id)

@@ -29,7 +29,8 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         WorkspaceProjectService projectService, ConversationAttachmentPreviewFactory? thumbnails = null, IGitReferenceDiscoveryService? gitReferences = null)
     {
         _workspaces = workspaces; _thumbnails = thumbnails; _worktreeCleanup = worktreeCleanup;
-        Environment = new(gitReferences); WorktreeAuthorization = new(worktreeCleanup.Authorizations);
+        Environment = new(gitReferences); WorktreeAuthorization = new(projectService);
+        WorktreeAuthorization.ProjectChanged += UpdateProject;
         ProjectEditor = new WorkspaceProjectEditorViewModel(projectService);
         ProjectEditor.ProjectCreated += AddProject;
         ProjectEditor.ProjectUpdated += UpdateProject;

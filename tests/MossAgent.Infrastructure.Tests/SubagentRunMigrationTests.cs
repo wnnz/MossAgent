@@ -17,7 +17,7 @@ public sealed class SubagentRunMigrationTests
             """);
 
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Initializer.InitializeAsync(fixture.Token));
-        Assert.Equal(31, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(33, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='subagent_runs';"));
 
@@ -25,7 +25,7 @@ public sealed class SubagentRunMigrationTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(32, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(34, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='subagent_runs';"));
     }

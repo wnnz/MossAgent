@@ -119,6 +119,7 @@ internal static class AppComposition
         services.AddSingleton<IBrowserProfilePaths, BrowserProfilePaths>();
         services.AddSingleton<GitProcessRunner>();
         services.AddSingleton<IExclusiveDirectoryClaimFactory, WindowsExclusiveDirectoryClaimFactory>();
+        services.AddSingleton<IWorktreeCleanupIntentService, SqliteWorktreeCleanupIntentStore>();
         services.AddSingleton<IGitReferenceDiscoveryService, GitReferenceDiscoveryService>();
         services.AddSingleton<IGitWorktreeService, GitWorktreeService>();
         services.AddSingleton<IGitRepositoryInfoService, GitRepositoryInfoService>();
@@ -145,6 +146,7 @@ internal static class AppComposition
         services.AddSingleton<IAtomicFileWriteSessionFactory, WindowsAtomicFileWriteSessionFactory>();
         services.AddSingleton<IPathDeleteSessionFactory, WindowsPathDeleteSessionFactory>();
         services.AddSingleton<IPathMoveSessionFactory, WindowsPathMoveSessionFactory>();
+        services.AddSingleton<IPathQuarantineSessionFactory, WindowsPathQuarantineSessionFactory>();
         services.AddSingleton<IFileTreeReadSessionFactory, WindowsFileTreeReadSessionFactory>();
         services.AddSingleton<IAuthorizedDirectoryCreator, WindowsAuthorizedDirectoryCreator>();
         services.AddSingleton<IArtifactFileSessionFactory, WindowsArtifactFileSessionFactory>();

@@ -9,6 +9,13 @@
     <WrapPanel>
       <ui:AppButton x:Name="ConfirmWorktreeObjectButton" Classes="ghost menu-option"
                     Content="{Binding ConfirmLabel}" Command="{Binding ConfirmCommand}" />
+      <ui:AppButton x:Name="ReauthorizeWorktreeObjectButton" Classes="ghost menu-option"
+                    Content="{Binding ReauthorizeLabel}" Command="{Binding ReauthorizeCommand}"
+                    IsVisible="{Binding !IsReauthorizationConfirmationPending}" />
+      <ui:AppButton x:Name="ConfirmReauthorizeWorktreeObjectButton" Classes="ghost menu-option"
+                    Content="{Binding ConfirmReauthorizeLabel}"
+                    Command="{Binding ConfirmReauthorizeCommand}"
+                    IsVisible="{Binding IsReauthorizationConfirmationPending}" />
       <ui:AppButton Classes="ghost menu-option" Content="{Binding RetryLabel}" Command="{Binding RefreshCommand}" />
     </WrapPanel>
   </StackPanel>

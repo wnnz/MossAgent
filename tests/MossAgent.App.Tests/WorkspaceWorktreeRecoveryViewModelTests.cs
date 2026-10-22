@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using MossAgent.App.ViewModels;
+using MossAgent.Application.Git;
+using MossAgent.Domain;
 using MossAgent.Infrastructure.Persistence;
 using Xunit;
 
@@ -38,6 +40,44 @@ public sealed class WorkspaceWorktreeRecoveryViewModelTests
         await connection.OpenAsync(fixture.Token);
         await using var command = connection.CreateCommand();
         command.CommandText = $"SELECT COUNT(*) FROM worktree_creation_intents WHERE task_id='{taskId}' AND status=6;";
+        Assert.Equal(1L, Convert.ToInt64(await command.ExecuteScalarAsync(fixture.Token)));
+    }
+
+    [Fact]
+    public async Task EditorListsFailedCleanupWithQuarantinePathAndRequiresTwoStepAcknowledgement()
+    {
+        await using var fixture = await WorkspaceFileEditingFixture.CreateAsync(false, "unused");
+        var services = fixture.Services;
+        var project = fixture.Workspace.Catalog.SelectedProject!;
+        var taskId = Guid.NewGuid();
+        var root = Path.Combine(fixture.Root, "data", "worktrees");
+        var target = Path.Combine(root, taskId.ToString("N"));
+        var quarantine = Path.Combine(root, $"{Guid.NewGuid():N}.quarantine");
+        var store = services.GetRequiredService<IWorktreeCleanupIntentService>();
+        await store.BeginAsync(project.Id, taskId, target, quarantine, fixture.Token);
+        await store.MarkFailedAsync(taskId, quarantine,
+            "worktree_cleanup_failed", fixture.Token);
+
+        using var editor = new WorkspaceProjectEditorViewModel(
+            services.GetRequiredService<WorkspaceProjectService>());
+        editor.Edit(project);
+        await WaitUntilAsync(() => editor.WorktreeRecovery.HasItems);
+        var item = Assert.Single(editor.WorktreeRecovery.Items);
+        Assert.Equal(WorktreeCleanupState.Failed, item.CleanupIntent?.State);
+        Assert.Contains("清理失败", item.StatusLabel);
+        Assert.Contains(quarantine, item.QuarantineLabel);
+        Assert.True(item.CanAcknowledge);
+
+        await item.AcknowledgeCommand.ExecuteAsync(null);
+        Assert.Contains("确认", item.AcknowledgeLabel);
+        await item.AcknowledgeCommand.ExecuteAsync(null);
+        await WaitUntilAsync(() => !editor.WorktreeRecovery.HasItems);
+
+        var connections = services.GetRequiredService<SqliteConnectionFactory>();
+        await using var connection = connections.Create();
+        await connection.OpenAsync(fixture.Token);
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"SELECT COUNT(*) FROM worktree_cleanup_intents WHERE task_id='{taskId}' AND state=3;";
         Assert.Equal(1L, Convert.ToInt64(await command.ExecuteScalarAsync(fixture.Token)));
     }
 

@@ -1,4 +1,6 @@
+using System.Collections.Immutable;
 using System.Text;
+using MossAgent.Domain;
 using MossAgent.Application.Models;
 
 namespace MossAgent.Agent;
@@ -31,7 +33,11 @@ internal static class SubagentConversationContextBuilder
             truncated |= AppendTail(context, Environment.NewLine);
             truncated |= AppendTail(context, message.Content);
             if (!message.Images.IsDefaultOrEmpty)
-                truncated |= AppendTail(context, "\n[Image inputs omitted: shared subagent context contains text only.]\n");
+                truncated |= AppendTail(context,
+                    "\n[Image inputs are attached separately when the child model supports them.]\n");
+            if (!message.Files.IsDefaultOrEmpty)
+                truncated |= AppendTail(context,
+                    "\n[PDF inputs are attached separately when the child model supports them.]\n");
             truncated |= AppendTail(context, Environment.NewLine);
         }
 
@@ -51,9 +57,74 @@ internal static class SubagentConversationContextBuilder
         return marker + context.ToString(suffixStart, context.Length - suffixStart);
     }
 
+    public static ImmutableArray<SharedImageContent> BuildImages(
+        IReadOnlyList<ModelMessage> messages)
+    {
+        var selected = ImmutableArray.CreateBuilder<SharedImageContent>();
+        long bytes = 0;
+        var relevantMessages = 0;
+        for (var messageIndex = messages.Count - 1;
+             messageIndex >= 0 && relevantMessages < MaximumMessages
+             && selected.Count < ModelImageRequestValidation.MaximumImages;
+             messageIndex--)
+        {
+            if (!IsRelevant(messages[messageIndex])) continue;
+            relevantMessages++;
+            var images = messages[messageIndex].Images;
+            if (messages[messageIndex].Role != ModelRole.User || images.IsDefaultOrEmpty)
+                continue;
+            for (var imageIndex = images.Length - 1;
+                 imageIndex >= 0 && selected.Count < ModelImageRequestValidation.MaximumImages;
+                 imageIndex--)
+            {
+                var image = images[imageIndex];
+                if (bytes + image.ByteCount > ModelImageRequestValidation.MaximumTotalByteCount)
+                    continue;
+                selected.Add(SharedImageContent.FromEncoded(
+                    image.MediaType, image.ByteCount, image.Base64Data));
+                bytes += image.ByteCount;
+            }
+        }
+        selected.Reverse();
+        return selected.ToImmutable();
+    }
+
+    public static ImmutableArray<SharedFileContent> BuildFiles(
+        IReadOnlyList<ModelMessage> messages)
+    {
+        var selected = ImmutableArray.CreateBuilder<SharedFileContent>();
+        long bytes = 0;
+        var relevantMessages = 0;
+        for (var messageIndex = messages.Count - 1;
+             messageIndex >= 0 && relevantMessages < MaximumMessages
+             && selected.Count < ModelFileRequestValidation.MaximumFiles;
+             messageIndex--)
+        {
+            if (!IsRelevant(messages[messageIndex])) continue;
+            relevantMessages++;
+            var files = messages[messageIndex].Files;
+            if (messages[messageIndex].Role != ModelRole.User || files.IsDefaultOrEmpty)
+                continue;
+            for (var fileIndex = files.Length - 1;
+                 fileIndex >= 0 && selected.Count < ModelFileRequestValidation.MaximumFiles;
+                 fileIndex--)
+            {
+                var file = files[fileIndex];
+                if (bytes + file.ByteCount > ModelFileRequestValidation.MaximumTotalByteCount)
+                    continue;
+                selected.Add(SharedFileContent.FromEncoded(
+                    file.FileName, file.MediaType, file.ByteCount, file.Base64Data));
+                bytes += file.ByteCount;
+            }
+        }
+        selected.Reverse();
+        return selected.ToImmutable();
+    }
+
     private static bool IsRelevant(ModelMessage message) =>
         message.Role is ModelRole.User or ModelRole.Assistant or ModelRole.ToolObservation
-        && (!string.IsNullOrWhiteSpace(message.Content) || !message.Images.IsDefaultOrEmpty);
+        && (!string.IsNullOrWhiteSpace(message.Content) || !message.Images.IsDefaultOrEmpty
+            || !message.Files.IsDefaultOrEmpty);
 
     private static bool AppendTail(StringBuilder context, ReadOnlySpan<char> value)
     {

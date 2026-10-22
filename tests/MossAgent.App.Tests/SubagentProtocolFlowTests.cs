@@ -99,6 +99,49 @@ public sealed class SubagentProtocolFlowTests
         Assert.Equal(SubagentProtocolResponses.PrivateEvidence, await File.ReadAllTextAsync(fixture.OutsideFile, fixture.Token));
     }
 
+    [Theory]
+    [InlineData(ProviderProtocol.OpenAiResponses, true)]
+    [InlineData(ProviderProtocol.OpenAiResponses, false)]
+    [InlineData(ProviderProtocol.OpenAiCompatible, true)]
+    [InlineData(ProviderProtocol.OpenAiCompatible, false)]
+    [InlineData(ProviderProtocol.AnthropicMessages, true)]
+    [InlineData(ProviderProtocol.AnthropicMessages, false)]
+    [InlineData(ProviderProtocol.GeminiGenerateContent, true)]
+    [InlineData(ProviderProtocol.GeminiGenerateContent, false)]
+    public async Task ParentImageReachesChildRequestOnlyWhenContextSharingIsEnabled(
+        ProviderProtocol protocol, bool shareContext)
+    {
+        await using var fixture = await SubagentProtocolFixture.CreateAsync(
+            protocol, shareContext, withSharedImage: true);
+
+        await fixture.SendAsync();
+
+        Assert.Contains(fixture.SharedImageBase64,
+            fixture.ParentServer.Requests[0].Body.GetRawText());
+        Assert.Equal(shareContext, fixture.ChildServer.Requests[0].Body.GetRawText()
+            .Contains(fixture.SharedImageBase64, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task SharedImageWithUnsupportedChildModelFailsBeforeChildRequestWithoutFallback()
+    {
+        await using var fixture = await SubagentProtocolFixture.CreateAsync(
+            ProviderProtocol.OpenAiResponses, shareContext: true,
+            withSharedImage: true, childSupportsImages: false);
+        await fixture.SendAsync();
+
+        Assert.Empty(fixture.ChildServer.Requests);
+        var task = fixture.Workspace.Catalog.SelectedTask!;
+        var audit = Assert.Single(await fixture.Audits.GetRecentAsync(
+            task.Id, 10, fixture.Token));
+        Assert.False(audit.IsSuccess);
+        Assert.Equal("subagent_images_unsupported", audit.ErrorCode);
+        var row = Assert.Single(fixture.Workspace.Messages,
+            message => message.IsSubagentTool);
+        Assert.False(row.Tool!.IsSuccess);
+        Assert.Equal(2, fixture.ParentServer.Requests.Count);
+    }
+
     internal static void AssertChildRequest(SubagentProtocolFixture fixture, bool shareContext)
     {
         var (target, request) = fixture.ChildServer.Requests[0];

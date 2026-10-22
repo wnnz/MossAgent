@@ -141,7 +141,10 @@ public sealed class ConversationSteeringSession : IAgentSteeringInput
         }
         if (draft is null || draftAttachmentIds is null || draftAttachmentIds.Count != snapshots.Count)
             throw new ConversationSteeringException("SteeringInvalid");
-        if (snapshots.Any(snapshot => snapshot.MediaType != "text/plain") && _model is not { SupportsImages: true })
+        if ((snapshots.Any(snapshot => AttachmentImage.IsSupportedMediaType(snapshot.MediaType))
+                && _model is not { SupportsImages: true })
+            || (snapshots.Any(snapshot => AttachmentDocument.IsSupportedMediaType(snapshot.MediaType))
+                && _model is not { SupportsFiles: true }))
             throw new ConversationSteeringException("SteeringAttachmentModelUnsupported");
         try { ConversationAttachmentValidation.Validate(TaskId, inputId, snapshots); }
         catch (Exception exception) when (exception is InvalidDataException or UnauthorizedAccessException or ArgumentException)

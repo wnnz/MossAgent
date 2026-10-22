@@ -19,10 +19,11 @@ internal sealed class ConversationDraftAttachmentFiles(AppDataPaths paths, IAtta
         {
             cancellationToken.ThrowIfCancellationRequested();
             var bytes = _codec.Encode(new(attachment.FullPath, attachment.DisplayPath, attachment.Content ?? string.Empty,
-                attachment.ByteCount, attachment.Image));
-            if (attachment.Image is not null)
+                attachment.ByteCount, attachment.Image, attachment.Document));
+            if (attachment.Image is not null || attachment.Document is not null)
                 await _codec.DecodeAsync(attachment.FullPath, attachment.DisplayPath, bytes, attachment.MediaType, cancellationToken);
-            var metadata = new ConversationDraftAttachmentMetadata(scope, attachment with { Content = null, Image = null },
+            var metadata = new ConversationDraftAttachmentMetadata(
+                scope, attachment with { Content = null, Image = null, Document = null },
                 Convert.ToHexString(SHA256.HashData(bytes)));
             var path = GetPath(metadata);
             if (File.Exists(path)) await ReadAsync(metadata, cancellationToken);
@@ -47,7 +48,12 @@ internal sealed class ConversationDraftAttachmentFiles(AppDataPaths paths, IAtta
         if (!Convert.ToHexString(SHA256.HashData(bytes)).Equals(metadata.Sha256, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException();
         var decoded = await _codec.DecodeAsync(path, metadata.Attachment.DisplayPath, bytes, metadata.Attachment.MediaType, cancellationToken);
-        var attachment = metadata.Attachment with { Content = decoded.Image is null ? decoded.Content : null, Image = decoded.Image };
+        var attachment = metadata.Attachment with
+        {
+            Content = decoded.Image is null && decoded.Document is null ? decoded.Content : null,
+            Image = decoded.Image,
+            Document = decoded.Document
+        };
         ConversationDraftAttachmentValidation.Validate(metadata.Scope, [attachment]);
         return attachment;
     }

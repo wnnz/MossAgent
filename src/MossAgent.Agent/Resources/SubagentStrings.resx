@@ -6,4 +6,6 @@
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
   <data name="RunFailed" xml:space="preserve"><value>子代理执行失败，请检查代理配置和工具审计记录。</value></data>
   <data name="ReasoningUnavailable" xml:space="preserve"><value>子代理所选模型不支持已配置的思考强度。请在子代理设置中重新选择支持的档位后重试。</value></data>
+  <data name="ImagesUnsupported" xml:space="preserve"><value>共享上下文包含图片，但子代理所选模型不支持图片输入。请关闭上下文共享、移除图片，或为子代理选择支持图片的模型。</value></data>
+  <data name="FilesUnsupported" xml:space="preserve"><value>共享上下文包含 PDF，但子代理所选模型不支持文件输入。请关闭上下文共享、移除 PDF，或为子代理选择支持文件的模型。</value></data>
 </root>

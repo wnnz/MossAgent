@@ -97,6 +97,36 @@ public sealed class WorkspaceAttachmentReaderTests
     }
 
     [Fact]
+    public async Task ReadAsync_UsesPdfSignatureForProjectFilesAndRejectsSpoofedPdfExtension()
+    {
+        var root = CreateTestRoot();
+        try
+        {
+            var valid = Path.Combine(root, "valid.data");
+            var spoofed = Path.Combine(root, "spoofed.pdf");
+            await File.WriteAllBytesAsync(valid,
+                "%PDF-1.7\n1 0 obj\n<<>>\nendobj\n%%EOF\n"u8.ToArray(),
+                TestContext.Current.CancellationToken);
+            await File.WriteAllBytesAsync(spoofed, "not a PDF"u8.ToArray(),
+                TestContext.Current.CancellationToken);
+            var reader = new WorkspaceAttachmentReader();
+
+            var result = Assert.Single(await reader.ReadAsync(
+                CreateProject(root), [valid], TestContext.Current.CancellationToken));
+            Assert.Equal(AttachmentDocument.PdfMediaType, result.MediaType);
+            Assert.NotNull(result.Document);
+            Assert.Empty(result.Content);
+
+            await Assert.ThrowsAsync<InvalidDataException>(() => reader.ReadAsync(
+                CreateProject(root), [spoofed], TestContext.Current.CancellationToken));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task ReadAsync_RejectsJunctionEscape()
     {
         var testRoot = CreateTestRoot();

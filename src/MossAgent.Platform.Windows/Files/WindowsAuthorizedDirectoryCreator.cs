@@ -36,7 +36,7 @@ public sealed class WindowsAuthorizedDirectoryCreator : IAuthorizedDirectoryCrea
                 {
                     await validate(token).ConfigureAwait(false);
                     token.ThrowIfCancellationRequested();
-                    lease.AddDirectory(part, true, token, () => created++);
+                    lease.AddDirectory(part, true, token, onCreated: () => created++);
                 }
             WindowsWriteDirectoryCasePolicy.Validate(lease.Parent);
             token.ThrowIfCancellationRequested();

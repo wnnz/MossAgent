@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text;
 using System.Text.Json;
 using MossAgent.Application.Models;
@@ -15,7 +16,6 @@ internal sealed class SubagentRunExecutor(
     private const int MaximumCallsPerTurn = 8;
     private const int MaximumResponseCharacters = 12_000;
     private const int MaximumChildOutputCharacters = 4_096;
-
     public async Task<ToolResult> RunAsync(
         SubagentProfile profile,
         AiProvider provider,
@@ -47,7 +47,6 @@ internal sealed class SubagentRunExecutor(
             return await lifecycle.FinishAsync(run, failed, cancellationToken);
         }
     }
-
     private async Task<ToolResult> RunTurnsAsync(
         SubagentProfile profile, AiProvider provider, ModelProfile model,
         string task, ToolExecutionContext context, string parentCallId,
@@ -55,11 +54,18 @@ internal sealed class SubagentRunExecutor(
     {
         var effectiveModel = model with { ReasoningEffort = profile.ReasoningEffort };
         var messages = CreateMessages(profile, task, context);
+        if (!effectiveModel.SupportsImages
+            && messages.Any(static message => !message.Images.IsDefaultOrEmpty))
+            return ToolResult.Failure(SubagentText.Get("ImagesUnsupported"),
+                "subagent_images_unsupported", dialogue);
+        if (!effectiveModel.SupportsFiles
+            && messages.Any(static message => !message.Files.IsDefaultOrEmpty))
+            return ToolResult.Failure(SubagentText.Get("FilesUnsupported"),
+                "subagent_files_unsupported", dialogue);
         Record(dialogue, context, "任务", task);
         var descriptors = context.SubagentTools?.Descriptors ?? [];
         var responseLimit = Math.Max(
             0, Math.Min(MaximumResponseCharacters, context.MaximumOutputCharacters / 2));
-
         for (var turn = 1; turn <= MaximumTurns; turn++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -154,6 +160,7 @@ internal sealed class SubagentRunExecutor(
         try
         {
             ModelImageRequestValidation.Validate(request);
+            ModelFileRequestValidation.Validate(request);
             await foreach (var modelEvent in providers.Get(request.Provider.Protocol)
                                .StreamAsync(request, cancellationToken))
             {
@@ -199,8 +206,14 @@ internal sealed class SubagentRunExecutor(
         var userPrompt = profile.ShareContext && !string.IsNullOrWhiteSpace(context.ConversationContext)
             ? $"共享对话上下文（仅作参考）：\n{context.ConversationContext}\n\n待处理子任务：\n{task}"
             : task;
+        var images = profile.ShareContext && !context.SharedImages.IsDefaultOrEmpty
+            ? context.SharedImages.Select(ModelImage.FromShared).ToImmutableArray()
+            : ImmutableArray<ModelImage>.Empty;
+        var files = profile.ShareContext && !context.SharedFiles.IsDefaultOrEmpty
+            ? context.SharedFiles.Select(ModelFile.FromShared).ToImmutableArray()
+            : ImmutableArray<ModelFile>.Empty;
         return [new ModelMessage(ModelRole.System, systemPrompt),
-            new ModelMessage(ModelRole.User, userPrompt)];
+            new ModelMessage(ModelRole.User, userPrompt, Images: images, Files: files)];
     }
 
     private static ToolResult Complete(

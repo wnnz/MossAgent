@@ -49,6 +49,10 @@ public sealed class WorkspaceAttachmentReader(IAttachmentImageDecoder? images = 
             results.Add(await ReadOneAsync(path, roots, cancellationToken));
             if (results.Where(item => item.Image is not null).Sum(item => item.ByteCount) > AttachmentImage.MaximumTotalByteCount)
                 throw new AttachmentImageValidationException(AttachmentImageFailure.SizeLimit);
+            var documents = results.Where(item => item.Document is not null).ToArray();
+            if (documents.Length > AttachmentDocument.MaximumCount
+                || documents.Sum(item => item.ByteCount) > AttachmentDocument.MaximumTotalByteCount)
+                throw new InvalidDataException("PDF attachments exceed their aggregate limit.");
         }
 
         return results;
@@ -83,6 +87,12 @@ public sealed class WorkspaceAttachmentReader(IAttachmentImageDecoder? images = 
         RejectLinkEscape(fullPath, roots);
         var displayPath = root is null ? Path.GetFileName(fullPath) : BuildDisplayPath(root, fullPath);
         try { return await _codec.DecodeAsync(fullPath, displayPath, bytes, null, cancellationToken); }
+        catch (InvalidDataException exception) when (
+            AttachmentContentCodec.IsPdfPath(fullPath)
+            || AttachmentDocument.DetectMediaType(bytes) is not null)
+        {
+            throw new InvalidDataException("PDF 附件结构无效或已损坏。", exception);
+        }
         catch (InvalidDataException exception) { throw new InvalidOperationException("不支持二进制文本附件。", exception); }
         catch (System.Text.DecoderFallbackException exception) { throw new InvalidOperationException("附件不是有效的 UTF-8 文本文件。", exception); }
     }
@@ -92,10 +102,17 @@ public sealed class WorkspaceAttachmentReader(IAttachmentImageDecoder? images = 
         var prefix = new byte[(int)Math.Min(12, stream.Length)];
         await stream.ReadExactlyAsync(prefix, cancellationToken);
         var image = AttachmentImage.DetectMediaType(prefix) is not null || AttachmentContentCodec.IsImagePath(path);
-        var limit = image ? AttachmentImage.MaximumByteCount : WorkspaceAttachmentLimits.MaximumBytesPerFile;
+        var document = AttachmentDocument.DetectMediaType(prefix) is not null
+            || AttachmentContentCodec.IsPdfPath(path);
+        var limit = image ? AttachmentImage.MaximumByteCount
+            : document ? AttachmentDocument.MaximumByteCount
+            : WorkspaceAttachmentLimits.MaximumBytesPerFile;
         if (stream.Length > limit)
         {
             if (image) throw new AttachmentImageValidationException(AttachmentImageFailure.SizeLimit);
+            if (document)
+                throw new InvalidDataException(
+                    $"PDF attachments cannot exceed {AttachmentDocument.MaximumByteCount / 1024 / 1024} MiB.");
             throw new InvalidOperationException(
                 $"附件不能超过 {WorkspaceAttachmentLimits.MaximumBytesPerFile / 1024} KiB。");
         }

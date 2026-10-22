@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using MossAgent.Agent;
 using MossAgent.Application.Agent;
@@ -78,18 +79,145 @@ public sealed class AgentRunnerSubagentTests
         Assert.False(char.IsLowSurrogate(childContext[markerIndex + marker.Length]));
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task RunAsync_SharesParentImagesOnlyWhenContextSharingIsEnabled(bool shareContext)
+    {
+        var fixture = CreateSharedContextFixture(shareContext);
+        var image = ModelImage.FromBytes("image/png", Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"));
+        var request = fixture.Request with
+        {
+            Messages = fixture.Request.Messages.Take(fixture.Request.Messages.Count - 1)
+                .Append(new ModelMessage(ModelRole.User, "当前问题", Images: [image]))
+                .ToArray()
+        };
+
+        await foreach (var agentEvent in fixture.Runner.RunAsync(
+                           request, TestContext.Current.CancellationToken))
+            Assert.NotNull(agentEvent);
+
+        var childRequest = Assert.Single(fixture.Requests,
+            item => item.Model.Id == fixture.ChildModel.Id);
+        var childUser = Assert.Single(childRequest.Messages,
+            item => item.Role == ModelRole.User);
+        if (shareContext)
+        {
+            var sharedImage = Assert.Single(childUser.Images);
+            Assert.Equal(image.MediaType, sharedImage.MediaType);
+            Assert.Equal(image.Base64Data, sharedImage.Base64Data);
+        }
+        else
+        {
+            Assert.True(childUser.Images.IsDefaultOrEmpty);
+            Assert.DoesNotContain(image.Base64Data, childRequest.Messages[1].Content);
+        }
+    }
+
+    [Fact]
+    public async Task RunAsync_FailsExplicitlyWhenSharedChildModelDoesNotSupportImages()
+    {
+        var fixture = CreateSharedContextFixture(
+            shareContext: true, childSupportsImages: false);
+        var image = ModelImage.FromBytes("image/png",
+            Convert.FromBase64String(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"));
+        var request = fixture.Request with
+        {
+            Messages =
+            [
+                new ModelMessage(ModelRole.User, "分析图片", Images: [image])
+            ]
+        };
+        var events = new List<AgentEvent>();
+
+        await foreach (var agentEvent in fixture.Runner.RunAsync(
+                           request, TestContext.Current.CancellationToken))
+            events.Add(agentEvent);
+
+        var result = Assert.Single(events.OfType<AgentToolEvent>()).Result;
+        Assert.False(result.IsSuccess);
+        Assert.Equal("subagent_images_unsupported", result.ErrorCode);
+        Assert.DoesNotContain(fixture.Requests,
+            item => item.Model.Id == fixture.ChildModel.Id);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task RunAsync_SharesParentPdfInputsOnlyWhenContextSharingIsEnabled(bool shareContext)
+    {
+        var fixture = CreateSharedContextFixture(
+            shareContext, childSupportsImages: true, childSupportsFiles: true);
+        var file = PdfFile();
+        var request = fixture.Request with
+        {
+            Messages =
+            [
+                fixture.Request.Messages[0],
+                new ModelMessage(ModelRole.User, "分析 PDF", Files: [file])
+            ]
+        };
+
+        await foreach (var agentEvent in fixture.Runner.RunAsync(
+                           request, TestContext.Current.CancellationToken))
+            Assert.NotNull(agentEvent);
+
+        var childRequest = Assert.Single(fixture.Requests,
+            item => item.Model.Id == fixture.ChildModel.Id);
+        var childUser = Assert.Single(childRequest.Messages,
+            item => item.Role == ModelRole.User);
+        if (shareContext)
+        {
+            var shared = Assert.Single(childUser.Files);
+            Assert.Equal(file.FileName, shared.FileName);
+            Assert.Equal(file.Base64Data, shared.Base64Data);
+            Assert.Contains("PDF inputs are attached separately", childUser.Content);
+        }
+        else
+        {
+            Assert.True(childUser.Files.IsDefaultOrEmpty);
+            Assert.DoesNotContain(file.Base64Data, childUser.Content);
+        }
+    }
+
+    [Fact]
+    public async Task RunAsync_FailsExplicitlyWhenSharedChildModelDoesNotSupportPdf()
+    {
+        var fixture = CreateSharedContextFixture(
+            shareContext: true, childSupportsImages: true, childSupportsFiles: false);
+        var request = fixture.Request with
+        {
+            Messages = [new ModelMessage(ModelRole.User, "分析 PDF", Files: [PdfFile()])]
+        };
+        var events = new List<AgentEvent>();
+
+        await foreach (var agentEvent in fixture.Runner.RunAsync(
+                           request, TestContext.Current.CancellationToken))
+            events.Add(agentEvent);
+
+        var result = Assert.Single(events.OfType<AgentToolEvent>()).Result;
+        Assert.False(result.IsSuccess);
+        Assert.Equal("subagent_files_unsupported", result.ErrorCode);
+        Assert.DoesNotContain(fixture.Requests,
+            item => item.Model.Id == fixture.ChildModel.Id);
+    }
+
     private static (
         AgentRunner Runner,
         List<ModelRequest> Requests,
         ModelProfile ChildModel,
-        AgentRunRequest Request) CreateSharedContextFixture()
+        AgentRunRequest Request) CreateSharedContextFixture(
+        bool shareContext = true, bool childSupportsImages = true, bool childSupportsFiles = false)
     {
         var provider = CreateProvider();
-        var mainModel = CreateModel(provider.Id, "main");
-        var childModel = CreateModel(provider.Id, "child");
+        var mainModel = CreateModel(provider.Id, "main", supportsFiles: true);
+        var childModel = CreateModel(
+            provider.Id, "child", childSupportsImages, childSupportsFiles);
         var profile = new SubagentProfile(
             Guid.NewGuid(), "review", "独立审查", "检查改动。",
-            provider.Id, childModel.Id, "high", true, true);
+            provider.Id, childModel.Id, "high", shareContext, true);
         var requests = new List<ModelRequest>();
         var parentCalls = 0;
         Func<ModelRequest, IReadOnlyList<ModelEvent>> responseFactory = modelRequest =>
@@ -209,7 +337,13 @@ public sealed class AgentRunnerSubagentTests
             new Uri("https://example.test/v1"), "test-key", null, false, true,
             new Dictionary<string, string>());
 
-    private static ModelProfile CreateModel(Guid providerId, string modelId) =>
+    private static ModelProfile CreateModel(
+        Guid providerId, string modelId, bool supportsImages = true, bool supportsFiles = false) =>
         new(Guid.NewGuid(), providerId, modelId, modelId, 16_000, 2_000,
-            "medium", null, null, false, false, false, true, "{}");
+            "medium", null, null, supportsImages, supportsFiles, false, true, "{}");
+
+    private static ModelFile PdfFile() =>
+        ModelFile.FromAttachment("shared.pdf", AttachmentDocument.FromDecodedBytes(
+            AttachmentDocument.PdfMediaType,
+            Encoding.ASCII.GetBytes("%PDF-1.7\n1 0 obj\n<<>>\nendobj\n%%EOF\n")));
 }

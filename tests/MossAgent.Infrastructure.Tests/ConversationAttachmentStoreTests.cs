@@ -44,6 +44,51 @@ public sealed class ConversationAttachmentStoreTests : IDisposable
         Assert.False(File.Exists(contents[0].FullPath));
     }
 
+    [Fact]
+    public async Task PdfSnapshotRoundTripsWithoutDatabaseBytesOrSourceAccess()
+    {
+        var bytes = "%PDF-1.7\n1 0 obj\n<<>>\nendobj\n%%EOF\n"u8.ToArray();
+        var document = AttachmentDocument.FromDecodedBytes(AttachmentDocument.PdfMediaType, bytes);
+        var content = new WorkspaceAttachmentContent(
+            Path.Combine(_root, "missing-source.pdf"), "report.pdf", "", document.ByteCount,
+            Document: document);
+
+        var metadata = Assert.Single(await _store.SaveAsync(_taskId, _messageId, [content], Token));
+        var restored = Assert.Single(await new ConversationAttachmentStore(_paths)
+            .ReadAsync(_taskId, _messageId, [metadata], Token));
+
+        Assert.Equal(AttachmentDocument.PdfMediaType, metadata.MediaType);
+        Assert.Equal(document.ByteCount, metadata.ByteCount);
+        Assert.Equal(document.Base64Data, restored.Document?.Base64Data);
+        Assert.Null(restored.Image);
+        Assert.Empty(restored.Content);
+        Assert.False(File.Exists(content.FullPath));
+    }
+
+    [Theory]
+    [InlineData("length")]
+    [InlineData("hash")]
+    [InlineData("structure")]
+    public async Task PdfSnapshotRejectsChangedLengthHashOrStructure(string damage)
+    {
+        var bytes = "%PDF-1.7\n1 0 obj\n<<>>\nendobj\n%%EOF\n"u8.ToArray();
+        var document = AttachmentDocument.FromDecodedBytes(AttachmentDocument.PdfMediaType, bytes);
+        var metadata = Assert.Single(await _store.SaveAsync(_taskId, _messageId,
+            [new(Path.Combine(_root, "missing.pdf"), "report.pdf", "", document.ByteCount, Document: document)], Token));
+        var path = SnapshotPath(metadata);
+        var changed = damage == "length" ? bytes.Concat("%%EOF\n"u8.ToArray()).ToArray() : bytes.ToArray();
+        if (damage == "hash") changed[20] ^= 0x01;
+        if (damage == "structure") "xxxxx"u8.CopyTo(changed.AsSpan(changed.Length - 6));
+        await File.WriteAllBytesAsync(path, changed, Token);
+        if (damage == "structure")
+            metadata = metadata with { Sha256 = Convert.ToHexString(SHA256.HashData(changed)) };
+
+        var failure = await Record.ExceptionAsync(() =>
+            _store.ReadAsync(_taskId, _messageId, [metadata], Token));
+
+        Assert.IsType<InvalidDataException>(failure);
+    }
+
     [Theory]
     [InlineData("count")]
     [InlineData("characters")]

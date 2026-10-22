@@ -146,7 +146,7 @@
   <data name="ComposerPreferenceLoadFailed" xml:space="preserve"><value>发送快捷键设置无法读取，当前暂用 Enter 发送，原设置文件未被覆盖。请检查数据目录权限。</value></data>
   <data name="ComposerPreferenceSaveFailed" xml:space="preserve"><value>发送快捷键设置保存失败，已恢复上次生效的选择。请检查数据目录权限。</value></data>
   <data name="ComposerNewlineLabel" xml:space="preserve"><value>输入框换行</value></data>
-  <data name="AddFilesLabel" xml:space="preserve"><value>添加文本或图像附件</value></data>
+  <data name="AddFilesLabel" xml:space="preserve"><value>添加文本、图像或 PDF 附件</value></data>
   <data name="AttachmentSelectionHint" xml:space="preserve"><value>仅发送所选文件的快照，不会授予模型额外的文件访问权限。</value></data>
   <data name="AttachmentProjectRequired" xml:space="preserve"><value>当前无法读取手动选择的文件，请重试或选择项目后添加附件。</value></data>
   <data name="AttachmentContextChanged" xml:space="preserve"><value>项目已切换。请在当前对话中重新选择附件。</value></data>
@@ -154,14 +154,17 @@
   <data name="AttachmentCancelled" xml:space="preserve"><value>已取消添加附件，可重新选择文件。</value></data>
   <data name="AttachmentUnauthorized" xml:space="preserve"><value>附件路径未经授权或包含不受支持的链接。请选择可读取的普通文件；项目附件须位于授权目录内。</value></data>
   <data name="AttachmentMissing" xml:space="preserve"><value>所选附件已不存在，请重新选择文件。</value></data>
-  <data name="AttachmentFailed" xml:space="preserve"><value>无法添加附件。请选择 UTF-8 文本或静态 PNG、JPEG、GIF、WebP 图像，并检查文件大小和读取权限。</value></data>
+  <data name="AttachmentFailed" xml:space="preserve"><value>无法添加附件。请选择 UTF-8 文本、静态 PNG、JPEG、GIF、WebP 图像或有效 PDF，并检查文件大小和读取权限。</value></data>
   <data name="AttachmentImageInvalid" xml:space="preserve"><value>图像已损坏或内容与类型不符，请重新导出后选择。</value></data>
   <data name="AttachmentImageUnsupported" xml:space="preserve"><value>暂不支持此图像格式，请转换为静态 PNG、JPEG、GIF 或 WebP 后选择。</value></data>
   <data name="AttachmentImageAnimated" xml:space="preserve"><value>暂不支持动态图像，请明确导出所需静态帧后重新选择。</value></data>
   <data name="AttachmentImageSizeLimit" xml:space="preserve"><value>图像超出限制：单张最多 5 MiB、合计 10 MiB，宽高不超过 8192，像素不超过 16777216。请缩小后重试。</value></data>
+  <data name="AttachmentDocumentSizeLimit" xml:space="preserve"><value>PDF 超出限制：每次最多 4 个、单个最多 16 MiB、合计最多 32 MiB。请移除或压缩 PDF 后重试。</value></data>
   <data name="AttachmentImageDecoderUnavailable" xml:space="preserve"><value>图像解码器不可用，请检查应用安装后重试。</value></data>
   <data name="AttachmentImageModelUnsupported" xml:space="preserve"><value>当前模型不支持图像，请选择支持图像的模型或移除图像附件；草稿会保留。</value></data>
+  <data name="AttachmentFileModelUnsupported" xml:space="preserve"><value>当前模型不支持文件，请选择支持文件的模型或移除 PDF 附件；草稿会保留。</value></data>
   <data name="ImageConversationTitle" xml:space="preserve"><value>图像对话</value></data>
+  <data name="AttachmentConversationTitle" xml:space="preserve"><value>附件对话</value></data>
   <data name="AttachmentFileLimit" xml:space="preserve"><value>每次最多附加 {0} 个文件，请移除部分附件后重试。</value></data>
   <data name="DraftLoading" xml:space="preserve"><value>正在读取此对话的草稿，输入内容不会被覆盖。</value></data>
   <data name="DraftLoadFailed" xml:space="preserve"><value>无法读取此对话的草稿，已暂停发送。当前输入已保留，请重试。</value></data>
@@ -199,13 +202,18 @@
   <data name="PreparationCancelled" xml:space="preserve"><value>已取消发送准备，输入内容和附件已保留。</value></data>
   <data name="TaskEnvironmentAuthorizationFailure" xml:space="preserve"><value>工作树授权校验未通过，消息尚未发送。请检查项目授权、工作树及 Git 注册关系后重试。</value></data>
   <data name="WorktreeObjectConfirm" xml:space="preserve"><value>确认授权此旧工作树目录</value></data>
+  <data name="WorktreeObjectReauthorize" xml:space="preserve"><value>重新授权当前替换目录</value></data>
+  <data name="WorktreeObjectReauthorizeConfirm" xml:space="preserve"><value>确认替换合法并重新授权</value></data>
+  <data name="WorktreeObjectReauthorizeNotice" xml:space="preserve"><value>再次点击将把当前目录登记为新对象，推进项目授权版本并撤销旧版本运行上下文。此操作不会继续任务或重放命令。</value></data>
   <data name="WorktreeObjectRefresh" xml:space="preserve"><value>刷新工作树授权</value></data>
   <data name="WorktreeObjectChecking" xml:space="preserve"><value>正在核对工作树授权…</value></data>
-  <data name="WorktreeObjectEnrolled" xml:space="preserve"><value>已登记工作树目录对象；执行时仍会核对。若目录对象已替换，请恢复原对象或新建任务。</value></data>
+  <data name="WorktreeObjectEnrolled" xml:space="preserve"><value>已登记工作树目录对象；执行时仍会核对。目录对象被合法替换后可显式重新授权。</value></data>
   <data name="WorktreeObjectLegacyNotice" xml:space="preserve"><value>此旧工作树尚未登记目录对象。核对上方完整路径后，可明确授权当前目录；确认不会继续任务或重放命令。</value></data>
-  <data name="WorktreeObjectFailure" xml:space="preserve"><value>无法确认工作树。请停止任务并刷新；核对项目授权与 Git 注册关系。已登记目录不可重新认领替换对象，应恢复原对象或新建任务。</value></data>
+  <data name="WorktreeObjectChanged" xml:space="preserve"><value>当前目录对象与登记不一致。请确认这是你主动重建的同一 Git 工作树；必要时二次确认重新授权，或恢复原对象。</value></data>
+  <data name="WorktreeObjectDrainPending" xml:space="preserve"><value>新目录对象已保存，但旧版本授权操作尚未全部退出。任务保持阻止，请刷新项目授权状态后再继续。</value></data>
+  <data name="WorktreeObjectFailure" xml:space="preserve"><value>无法确认工作树。请停止任务并刷新；核对项目授权与 Git 注册关系。只有明确确认替换合法时才可重新授权。</value></data>
   <data name="WorktreeObjectCancelled" xml:space="preserve"><value>工作树授权检查已取消或超时。请刷新授权状态；不会自动继续任务。</value></data>
-  <data name="WorktreeObjectRunFailure" xml:space="preserve"><value>工作树未确认或目录对象已变更，消息尚未发送。旧工作树请在输入区下方核对路径并确认；已登记对象变更时请恢复原对象或新建任务。</value></data>
+  <data name="WorktreeObjectRunFailure" xml:space="preserve"><value>工作树未确认或目录对象已变更，消息尚未发送。请在输入区下方核对路径；已登记对象若确属合法重建，可二次确认重新授权。</value></data>
   <data name="PreparationFinalizationFailure" xml:space="preserve"><value>消息可能已经保存，但取消状态尚未确认（任务：{0}）。请先刷新并检查该对话，再决定是否继续；不要重复发送。</value></data>
   <data name="PreparationCommittedCancelled" xml:space="preserve"><value>消息已保存，执行已取消；如需继续，请手动发送后续消息。</value></data>
 <data name="FollowupTitle" xml:space="preserve"><value>待发送（{0}）</value></data>
@@ -237,7 +245,7 @@
 <data name="SteeringReceiving" xml:space="preserve"><value>正在接收…</value></data>
 <data name="SteeringBusy" xml:space="preserve"><value>本对话已有引导正在接收，请等待确认。草稿已保留。</value></data>
 <data name="SteeringHint" xml:space="preserve"><value>Ctrl+Enter 引导当前运行：文字和附件在下一次模型请求前加入；Enter 加入下一轮队列。保留当前运行的模型和权限。</value></data>
-<data name="SteeringAttachmentModelUnsupported" xml:space="preserve"><value>当前运行的模型不支持图片附件。请移除图片，或加入下一轮队列；草稿和附件已保留。</value></data>
+  <data name="SteeringAttachmentModelUnsupported" xml:space="preserve"><value>当前运行的模型不支持随引导发送的图片或 PDF。请移除不兼容附件，或加入下一轮队列；草稿和附件已保留。</value></data>
 <data name="SteeringAttachmentsUnavailable" xml:space="preserve"><value>引导附件快照无法读取或已变化，未加入模型请求。请重新选择附件后重试；草稿已保留。</value></data>
 <data name="SteeringTooLong" xml:space="preserve"><value>引导文字不能超过 32,768 个 UTF-16 单元，请缩短后重试。</value></data>
 <data name="SteeringInvalid" xml:space="preserve"><value>引导文字为空、过长或包含无效字符，草稿已保留。请编辑后重试。</value></data>

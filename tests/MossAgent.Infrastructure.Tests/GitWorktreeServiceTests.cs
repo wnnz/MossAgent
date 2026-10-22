@@ -9,7 +9,7 @@ namespace MossAgent.Infrastructure.Tests;
 public sealed class GitWorktreeServiceTests
 {
     [Fact]
-    public async Task RemoveAsync_OnlyRemovesCleanManagedWorktrees()
+    public async Task RemoveAsync_RejectsDirtyWorktreeBeforeRequiringNativeHandoff()
     {
         var root = Path.Combine(Path.GetTempPath(), "MossAgent.Tests", Guid.NewGuid().ToString("N"));
         var repository = Path.Combine(root, "repository");
@@ -21,7 +21,11 @@ public sealed class GitWorktreeServiceTests
             await InitializeRepositoryAsync(repository, cancellationToken);
             var project = new ProjectProfile(
                 Guid.NewGuid(), "test", repository, [repository], DateTimeOffset.UtcNow);
-            var service = new GitWorktreeService(new AppDataPaths(appData), new GitProcessRunner(new FixtureTaskProcessLauncher()));
+            var removal = new TestGitWorktreeRemovalFactory();
+            var service = new GitWorktreeService(new AppDataPaths(appData),
+                new GitProcessRunner(new FixtureTaskProcessLauncher()),
+                quarantineSessions: removal, deleteSessions: removal,
+                cleanupIntents: new InMemoryWorktreeCleanupIntentService());
             var worktree = await service.CreateAsync(
                 project, Guid.NewGuid(), cancellationToken);
             Assert.True(Directory.Exists(worktree));
@@ -38,6 +42,13 @@ public sealed class GitWorktreeServiceTests
             Assert.True(Directory.Exists(worktree));
 
             File.Delete(dirtyFile);
+            var ignoredFile = Path.Combine(worktree, "ignored.txt");
+            await File.WriteAllTextAsync(ignoredFile, "ignored user data", cancellationToken);
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => service.RemoveAsync(project, worktree, cancellationToken));
+            Assert.True(File.Exists(ignoredFile));
+
+            File.Delete(ignoredFile);
             await service.RemoveAsync(project, worktree, cancellationToken);
             Assert.False(Directory.Exists(worktree));
         }
@@ -54,6 +65,8 @@ public sealed class GitWorktreeServiceTests
         await RunGitAsync(repository, ["init"], cancellationToken);
         await RunGitAsync(repository, ["config", "user.email", "test@example.invalid"], cancellationToken);
         await RunGitAsync(repository, ["config", "user.name", "MossAgent Tests"], cancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(repository, ".git", "info", "exclude"),
+            "ignored.txt\n", cancellationToken);
         await File.WriteAllTextAsync(
             Path.Combine(repository, "README.md"), "test", cancellationToken);
         await RunGitAsync(repository, ["add", "README.md"], cancellationToken);

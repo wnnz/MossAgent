@@ -10,12 +10,13 @@ internal static class OpenAiRequestBuilder
     public static string Build(ModelRequest request, ProviderToolNameMap toolNames)
     {
         var images = new ModelImageRequestValidation(request.Model.SupportsImages);
+        var files = new ModelFileRequestValidation(request.Model.SupportsFiles);
         var root = new JsonObject
         {
             ["model"] = request.Model.ModelId,
             ["stream"] = true,
             ["max_output_tokens"] = request.Model.MaximumOutputTokens,
-            ["input"] = BuildMessages(request, toolNames, ref images),
+            ["input"] = BuildMessages(request, toolNames, ref images, ref files),
             ["tools"] = BuildTools(request, toolNames)
         };
 
@@ -37,18 +38,20 @@ internal static class OpenAiRequestBuilder
         }
 
         AdvancedParameterMerger.Merge(root, request.Model.AdvancedParametersJson, request.Provider.Protocol);
-        return ModelRequestJson.Serialize(root, images.ContainsImages);
+        return ModelRequestJson.Serialize(root, images.ContainsImages, files.ContainsFiles);
     }
 
     private static JsonArray BuildMessages(
         ModelRequest request,
         ProviderToolNameMap toolNames,
-        ref ModelImageRequestValidation images)
+        ref ModelImageRequestValidation images,
+        ref ModelFileRequestValidation files)
     {
         var messages = new JsonArray();
         foreach (var message in request.Messages)
         {
             images.Include(message);
+            files.Include(message);
             if (message.Role == ModelRole.Assistant && message.ToolCalls is { Count: > 0 })
             {
                 foreach (var call in message.ToolCalls)
@@ -72,12 +75,13 @@ internal static class OpenAiRequestBuilder
                     ["output"] = message.Content
                 });
             }
-            else if (!string.IsNullOrEmpty(message.Content) || !message.Images.IsDefaultOrEmpty)
+            else if (!string.IsNullOrEmpty(message.Content) || !message.Images.IsDefaultOrEmpty
+                || !message.Files.IsDefaultOrEmpty)
             {
                 messages.Add(new JsonObject
                 {
                     ["role"] = message.Role == ModelRole.ToolObservation ? "user" : message.Role.ToString().ToLowerInvariant(),
-                    ["content"] = ModelImageContentBuilder.Responses(message)
+                    ["content"] = ModelContentBuilder.Responses(message)
                 });
             }
         }

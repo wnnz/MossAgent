@@ -57,12 +57,19 @@ public sealed class WorkspaceAttachmentManagerViewModel : ObservableObject, IDis
     public string SelectionHint => WorkspaceText.Get("AttachmentSelectionHint");
 
     public bool HasItems => Items.Count > 0;
-    public bool HasImageItems => Items.Any(item => item.Content.MediaType != "text/plain");
-    public bool IsModelCompatible => !HasImageItems || _model?.SupportsImages == true;
+    public bool HasImageItems => Items.Any(item =>
+        AttachmentImage.IsSupportedMediaType(item.Content.MediaType));
+    public bool HasFileItems => Items.Any(item =>
+        AttachmentDocument.IsSupportedMediaType(item.Content.MediaType));
+    public bool IsModelCompatible =>
+        (!HasImageItems || _model?.SupportsImages == true)
+        && (!HasFileItems || _model?.SupportsFiles == true);
 
     public string Status
     {
-        get => IsModelCompatible ? _status : WorkspaceText.Get("AttachmentImageModelUnsupported");
+        get => IsModelCompatible ? _status
+            : WorkspaceText.Get(HasImageItems && _model?.SupportsImages != true
+                ? "AttachmentImageModelUnsupported" : "AttachmentFileModelUnsupported");
         private set => SetProperty(ref _status, value);
     }
 
@@ -149,6 +156,11 @@ public sealed class WorkspaceAttachmentManagerViewModel : ObservableObject, IDis
             if (Items.Select(item => item.Content).Concat(contents).Where(item => item.Image is not null)
                 .Sum(item => item.ByteCount) > AttachmentImage.MaximumTotalByteCount)
             { Status = WorkspaceText.Get("AttachmentImageSizeLimit"); return; }
+            var documents = Items.Select(item => item.Content).Concat(contents)
+                .Where(item => item.Document is not null).ToArray();
+            if (documents.Length > AttachmentDocument.MaximumCount
+                || documents.Sum(item => item.ByteCount) > AttachmentDocument.MaximumTotalByteCount)
+            { Status = WorkspaceText.Get("AttachmentDocumentSizeLimit"); return; }
             foreach (var content in contents)
             {
                 Items.Add(CreateItem(content,
@@ -223,6 +235,7 @@ public sealed class WorkspaceAttachmentManagerViewModel : ObservableObject, IDis
     {
         OnPropertyChanged(nameof(HasItems));
         OnPropertyChanged(nameof(HasImageItems));
+        OnPropertyChanged(nameof(HasFileItems));
         OnPropertyChanged(nameof(IsModelCompatible));
         OnPropertyChanged(nameof(Status));
         AddFilesCommand.NotifyCanExecuteChanged();

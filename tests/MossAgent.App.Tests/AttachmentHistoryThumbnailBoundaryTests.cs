@@ -63,6 +63,7 @@ public sealed class AttachmentHistoryThumbnailBoundaryTests
 
         Assert.Null(factory.Create(message with { Role = role }, attachment));
         Assert.Null(factory.Create(message, attachment with { MediaType = "text/plain" }));
+        Assert.Null(factory.Create(message, attachment with { MediaType = "application/pdf" }));
         Assert.Empty(store.ReadMessages);
     }
 

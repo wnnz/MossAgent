@@ -32,5 +32,8 @@ public sealed class ModelImage
     public static ModelImage FromAttachment(AttachmentImage image) =>
         new(image.MediaType, image.ByteCount, image.Base64Data);
 
+    public static ModelImage FromShared(SharedImageContent image) =>
+        new(image.MediaType, image.ByteCount, image.Base64Data);
+
     public override string ToString() => $"ModelImage(MediaType={MediaType}, ByteCount={ByteCount})";
 }

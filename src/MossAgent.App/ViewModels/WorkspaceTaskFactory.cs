@@ -55,8 +55,8 @@ public sealed class WorkspaceTaskFactory(
         if (!useWorktree && baseReference is not null) throw new InvalidOperationException("A base reference requires a worktree.");
         var now = DateTimeOffset.UtcNow;
         var taskId = reservedTaskId ?? Guid.NewGuid();
-        var title = string.IsNullOrWhiteSpace(prompt) && attachments?.Any(item => item.Image is not null) == true
-            ? WorkspaceText.Get("ImageConversationTitle") : prompt.Length <= 48 ? prompt : prompt[..48];
+        var title = string.IsNullOrWhiteSpace(prompt) && attachments is { Count: > 0 }
+            ? WorkspaceText.Get("AttachmentConversationTitle") : prompt.Length <= 48 ? prompt : prompt[..48];
         var worktreePath = useWorktree
             ? await CreateWorktreeAsync(project!, taskId, baseReference, cancellationToken)
             : null;

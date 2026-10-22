@@ -58,8 +58,8 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 | C13 | 任务产物读取、预览、编辑前后快照和最终补丁使用共享会话；完成与调用方保留分离，失败按原句柄清理，复制后校验 hash | [产物读取](archive/SECURITY.md#artifact-handle-path-safety-acceptance)、[共享产物会话](archive/SECURITY.md#owned-artifact-session-acceptance)；崩溃清理/引用回收见 R02/R05 |
 | C14 | Git 状态、已暂存/未暂存差异、任务快照统计、补丁审阅及确认撤销；Git diff/numstat 临时输入持续固定、只共享读取并按句柄清理 | [差异审阅](archive/GIT_WORKTREES.md#diff-review-acceptance)、[撤销](archive/GIT_WORKTREES.md#file-change-undo-acceptance)、[Git 临时输入](archive/GIT_WORKTREES.md#git-diff-input-session-acceptance)；不是 Git 进程隔离，见 R01/R11 |
 | C15 | 文件级暂存/取消暂存、已暂存内容预览确认提交、捕获 commit 的单分支预览确认推送；审批后复核 HEAD/索引/远端，不自动 stage-all 或强推 | [暂存](archive/GIT_WORKTREES.md#git-staging-acceptance)、[提交](archive/GIT_WORKTREES.md#git-commit-acceptance)、[推送](archive/GIT_WORKTREES.md#git-push-acceptance)；区块、远端配置和真实认证见 R11 |
-| C16 | 独立工作树创建、手工选择分支/标签/提交并固定基准 commit、连续对话、重开、工具守卫和确认清理；失败目录保留供核实 | [基准选择](archive/GIT_WORKTREES.md#worktree-base-reference-acceptance)、[工作树路径](archive/GIT_WORKTREES.md#worktree-path-safety-acceptance)；分支发现、创建/清理竞态及崩溃见 R04 |
-| C17 | schema 28 绑定工作树自身的 task/project/grant/目录对象身份；恢复拒绝同路径替换，即使复制 Git 元数据；Agent/工具/PTY 持续持有根链；旧工作树明确确认，不消耗草稿或续跑 | [工作树对象授权](archive/GIT_WORKTREES.md#worktree-object-authorization-acceptance)；替换对象重新授权、最终交接见 R02/R04 |
+| C16 | 独立工作树创建、手工选择分支/标签/提交并固定基准 commit、连续对话、重开、工具守卫、句柄安全清理、schema 33 阶段恢复及替换对象重新授权；失败或中断现场保留供核实 | [基准选择](archive/GIT_WORKTREES.md#worktree-base-reference-acceptance)、[工作树路径](archive/GIT_WORKTREES.md#worktree-path-safety-acceptance)；真实多进程强制终止及远端 ref 见 R04 |
+| C17 | schema 28 绑定工作树自身的 task/project/grant/目录对象身份；恢复拒绝同路径替换，即使复制 Git 元数据；合法重建可经两阶段确认重新授权，同事务推进 grant/项目/根对象 revision 并撤销旧上下文；Agent/工具/PTY 持续持有根链 | [工作树对象授权](archive/GIT_WORKTREES.md#worktree-object-authorization-acceptance)；真实多进程强制终止矩阵仍见 R04 |
 | C18 | PowerShell 命令及 ConPTY 交互终端基础：输入/输出、VT、剪贴板/输入法、任务所属进程树、时限、有界输出和停止链路 | [命令](archive/TERMINAL_TOOLS.md#command-execution-acceptance)、[终端](archive/TERMINAL_TOOLS.md#terminal-interaction-acceptance)；**不具备严格文件系统隔离**，见 R01 |
 
 ### 2.3 提供商、工具、浏览器、MCP 和扩展代理
@@ -68,13 +68,13 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 | --- | --- | --- |
 | C19 | 多提供商、多 HTTP/SOCKS5 代理、默认代理及明确直连；设置分组、展开、逐项编辑、持久化和真实适配器请求；代理失效不静默直连 | [提供商 UI](archive/PROVIDERS.md#provider-ui-workflow-acceptance)、[认证代理](archive/PROVIDERS.md#authenticated-provider-proxy-acceptance)；真实远端与配置并发矩阵见 R06 |
 | C20 | OpenAI Responses、兼容 Chat、Gemini GenerateContent、Anthropic Messages；模型发现/手工添加、上下文/输出限制、选项或自定义思考强度及其他参数参与请求或校验 | [思考与能力](archive/PROVIDERS.md#model-reasoning-capability-acceptance)、[Gemini 续轮](archive/PROVIDERS.md#gemini-continuation-acceptance)、[模型配置](archive/PROVIDERS.md#model-configuration-native-acceptance)；完整协议和远端支持见 R06 |
-| C21 | UTF-8 及静态 PNG/JPEG/GIF/WebP 明确选择、解码/限额、任务快照、草稿和历史恢复、能力不足拒绝；后台缩略图及 JPEG EXIF 八方向处理；编辑区、历史和来源面板可从同一安全快照打开全图，支持适应/缩放/实际大小、取消、超时和损坏安全失败，源文件删除不破坏预览 | [图像附件](archive/CONVERSATIONS.md#image-attachment-workflow-acceptance)、[方向](archive/CONVERSATIONS.md#image-orientation-acceptance)、[历史缩略图](archive/CONVERSATIONS.md#attachment-thumbnail-acceptance--sent-message-and-history-extension)；PDF、子代理共享与回收见 R05 |
+| C21 | UTF-8、静态 PNG/JPEG/GIF/WebP 和 PDF 明确选择、真实内容校验、逐类限额、任务快照、草稿和历史恢复、能力不足拒绝；PDF 通过 Responses/Anthropic/Gemini 原生文件块发送，兼容 Chat 明确拒绝；图像保留缩略图、EXIF 方向和全图查看，源文件删除不破坏快照；共享上下文子代理按能力接收有界图片与 PDF | [图像附件](archive/CONVERSATIONS.md#image-attachment-workflow-acceptance)、[方向](archive/CONVERSATIONS.md#image-orientation-acceptance)、[历史缩略图](archive/CONVERSATIONS.md#attachment-thumbnail-acceptance--sent-message-and-history-extension)；PDF 页面预览、其他文件和回收见 R05 |
 | C22 | 统一工具查找/schema/能力与路径/风险/审批/取消与超时/输出限制/产物/审计；主/子代理工具 allowlist，UI 展示等待、审批、执行和结果 | [工具 schema](archive/TERMINAL_TOOLS.md#tool-schema-acceptance)、[工具范围](archive/TERMINAL_TOOLS.md#tool-scope-acceptance)、[审批展示](archive/TERMINAL_TOOLS.md#global-approval-presentation-acceptance)；入口全面审计及 OS 边界见 R01/R02 |
 | C23 | schema 24 启动恢复遗留进行中工具审计为结果未知，保留人工核实提示；不显示为成功、不自动重做 | [中断审计](archive/TERMINAL_TOOLS.md#audit-interruption-recovery-acceptance)；全副作用时序仍见 R02/R03/R07 |
 | C24 | 内嵌 WebView2、受管外部 Chrome/Edge、显式 CDP 和任务标签页；DOM 操作/截图/下载与接管栏；取消/超时后旧会话失效并清理实际 SDK 资源 | [浏览器取消](archive/BROWSER_MCP.md#browser-operation-cancellation-acceptance)、[Queue 浏览器链路](archive/BROWSER_MCP.md#queue-browser-runtime-acceptance)、[已提交副作用恢复](archive/BROWSER_MCP.md#browser-committed-effect-recovery-acceptance)；模式切换/接管完整矩阵见 R07 |
 | C25 | 浏览器截图/下载进入任务所属产物会话，审批后创建、有界导出、hash、SDK 暂存清理及最终复核；清理未知不伪装成功 | [浏览器产物](archive/BROWSER_MCP.md#browser-artifact-session-acceptance)；网络/缓存配额、未知状态持久化和崩溃回收见 R02/R07 |
 | C26 | MCP stdio/Streamable HTTP 配置、headers/代理、发现、动态注册和标准管线执行；故障提示、显式重连、重载及迟到结果抑制 | [MCP 执行](archive/BROWSER_MCP.md#mcp-execution-acceptance)、[UI 恢复](archive/BROWSER_MCP.md#mcp-ui-recovery-acceptance)；认证、配置代际和传输中断见 R08 |
-| C27 | 自定义子代理名称、触发指导、提示词、模型、强度和上下文共享；`subagent.run` 选定子模型执行，子工具继承并收窄权限，父对话展示过程和结果，禁止递归委托；schema 32 保存父子 run、配置快照、所属实例及成功/失败/取消/待核实终态 | [设置到运行](archive/AGENTS_AUTOMATIONS.md#subagent-settings-to-runtime-acceptance)、[生命周期](archive/AGENTS_AUTOMATIONS.md#subagent-lifecycle-native-acceptance)；触发依赖主模型选择，非确定性规则引擎；跨进程接管、完整状态矩阵及图片共享见 R09/R05 |
+| C27 | 自定义子代理名称、触发指导、提示词、模型、强度和上下文共享；`subagent.run` 选定子模型执行，共享上下文按预算传递文本、图片与 PDF，子工具继承并收窄权限，父对话展示过程和结果，禁止递归委托；schema 32 保存父子 run、配置快照、所属实例及终态 | [设置到运行](archive/AGENTS_AUTOMATIONS.md#subagent-settings-to-runtime-acceptance)、[生命周期](archive/AGENTS_AUTOMATIONS.md#subagent-lifecycle-native-acceptance)；触发依赖主模型选择；跨进程接管和完整状态矩阵见 R09 |
 
 ### 2.4 定时任务、PR 和桌面基础
 
@@ -121,13 +121,13 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | R01 | 部分完成；安全阻断 | 命令/PTY/Git hooks/helpers/stdio MCP 等代码执行的真实文件系统隔离 | P0；原生 MXC 独立环境尚未就绪 |
 | R02 | 部分完成；schema 30 持久资源登记、跨实例限时排空及陈旧登记二次确认恢复已实现 | 真实进程崩溃核验、迟到资源、最终路径竞争、完整入口审计、产物/缓存回收与配额 | P0；复用已有句柄端口和 schema 26–30 |
 | R03 | 附件 Steer、发送偏好，以及最终关闭对 Queue/Steer 的两种确定顺序已实现并验证 | 编辑/排序/并发认领矩阵、事务/副作用中崩溃 | P1；R02/R05 |
-| R04 | 部分完成；本地引用浏览、schema 31 intent、独占/原子认领及恢复 UI 已实现 | 清理交接、远端 ref 获取、替换对象重新授权及完整崩溃生命周期 | P1；R01/R02 |
-| R05 | 部分完成；图像全图查看已实现并通过附件/Headless 回归 | PDF/其他文件、子代理图像共享、未引用快照安全回收；全图原生窗口与真实模型理解仍待验收 | P1；模型协议与产物会话 |
+| R04 | 部分完成；本地引用浏览、schema 31 创建 intent、schema 33 清理阶段、独占/原子认领、本地 NTFS 清理交接、替换对象重新授权及恢复 UI 已实现 | 真实强制终止/多实例清理矩阵、远端 ref 获取及完整生命周期 | P1；R01/R02 |
+| R05 | 部分完成；PDF 输入、快照恢复、schema 34 与三协议原生块已实现；图像全图查看及子代理图片/PDF 共享已完成协议/附件回归 | PDF 分页预览、其他文件、未引用快照安全回收；全图原生窗口与真实模型图片/PDF 理解仍待验收 | P1；模型协议与产物会话 |
 | R06 | 部分完成；流帧异常已收口，其他部分未验证 | 真实提供商/模型能力和代理配置竞争矩阵 | P1；获准真实服务账号 |
 | R07 | 部分完成、部分未验证 | 内外/CDP 切换、可靠人工接管、其他创建/副作用崩溃与重启组合 | P1；R01/R02 |
 | R08 | 部分完成 | MCP 认证恢复、配置 CAS/代际、断流/进程退出/并发取消的完整闭环 | P1；R01/R02 |
-| R09 | 部分完成；schema 32 已持久父子 run、配置快照和终态，工具历史与审计面板可查看，其他实例遗留运行标为待核实 | 固定规则触发、图片共享、跨进程实时心跳/接管、完整并发与原生/真实提供商矩阵 | P1；R05/R06 |
-| R10 | 部分完成；计划级授权/参数快照已实现，关闭并发等组合待验 | 关闭/中断/并发/多实例、时区与 DST，以及关闭后的行为实机验收 | P1；R02/R06 |
+| R09 | 部分完成；schema 32 已持久父子 run、配置快照和终态，文本/图片/PDF 共享与审计面板可查看，其他实例遗留运行标为待核实 | 固定规则触发、跨进程实时心跳/接管、完整并发与原生/真实提供商矩阵 | P1；R05/R06 |
+| R10 | 部分完成；计划级快照、确定性并发认领、手动/定时碰撞、时区/DST 和时钟变化已验证 | 独立原生 EXE 的强制终止/重启组合及真实提供商计划运行 | P1；R02/R06 |
 | R11 | 部分完成 | Git 区块/整组操作、远端/凭据管理、提交消息草稿重开及原生验收 | P2；R01/R02 |
 | R12 | 部分完成 | PR 收件箱、reviews/activity、版本标记、确认写入、OAuth/GitLab/云审阅 | P2；独立写授权与公开接口 |
 | R13 | 未实现完整链路 | 插件/技能/扩展目录、安装、启停、执行、升级和卸载 | P2；R01/R08及目录/账号接口 |
@@ -136,7 +136,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | R16 | 未实现专用链路 | 图像生成/编辑、任务状态、产物和结果展示 | P3；模型服务/费用与能力 |
 | R17 | 未实现专用链路 | 语音输入、实时会话/输出、可关闭输入预测 | P3；音频设备和服务接口 |
 | R18 | 部分任务基础，专用链路待实现/验证 | 系统通知、持续目标、预算、检查点及后台生命周期 | P3；后台宿主需单独设计 |
-| R19 | 部分预览基础 | PDF/Office/交互可视化的可信预览、生成文件保存/导出 | P3；R02/R05 |
+| R19 | 部分预览基础；PDF 已可作为原生模型输入，但没有页面渲染预览 | PDF/Office/交互可视化的可信预览、生成文件保存/导出 | P3；R02/R05 |
 | R20 | 部分浏览器基础；兼容范围待核实 | Appshots 语义、浏览器扩展协议、配对和跨进程接管 | P3；R07/公开协议 |
 | R21 | 未实现；外部依赖待核实 | 宠物交互、Codex Micro 外设与 Windows 支持 | P3；协议和真实硬件 |
 | R22 | 未实现接入或未验证 | Sites/dots/Space、ChatGPT 登录、远程/云/移动与跨端同步 | P3；官方接口/账号计划/范围决策 |
@@ -285,9 +285,11 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 
 ### R04：工作树创建、清理和完整生命周期
 
-**现状：** 工作树对象 grant、旧任务确认、schema 31 创建 intent、创建目标独占认领及
-任务/消息/草稿/intent 的原子条件认领已完成。清理需要释放禁止删除共享的句柄再调用 Git，
-因此最终删除窗口仍有竞态。项目编辑器已显示待核实创建记录并支持二次确认后的审计标记。
+**现状：** 工作树对象 grant、旧任务确认、schema 31 创建 intent、schema 33 清理 intent、创建目标独占认领及
+任务/消息/草稿/intent 的原子条件认领已完成。本地 NTFS 清理已改为固定工作树与 Git 注册槽后
+原子隔离目标并直接删除注册槽，不再释放原路径后调用 Git 按路径删除。清理记录保存隔离路径、
+所属实例和阶段；失败、旧实例 Running 及任务元数据残留会显示在项目编辑器，只允许人工核实。
+真实强制终止后的阶段恢复和多实例组合仍未闭合。
 
 1. ✅ 已完成本地部分：Infrastructure 增加受管 runner 的本地分支/标签发现、搜索/分页和
    固定 commit 预览。自动发现与已有手工输入分别保留；远端 ref 获取仍是单独显式网络动作。
@@ -296,14 +298,19 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
    Infrastructure 在 Git 前持久化 task/project/repository/commit/target intent，并记录 claimed、
    GitCreated、Failed、Orphaned、Consumed 阶段。任务、首条消息、可选草稿消费和
    GitCreated→Consumed 状态在同一个 SQLite transaction 中条件提交，任一步失败全部回滚。
-3. 清理先关闭新运行并完成 R02 的 drain；按保存 grant 打开受控删除会话，比较身份后删除原对象。
-   研究仅处理该 worktree 注册槽的 Git 元数据清理，避免对象删除后 Git 再按同名路径删除替换目录，
-   不采用全局 prune。若不能证明交接安全，保留明确失败状态。
-4. ✅ 已完成创建侧：保存创建各阶段与未知状态；启动和项目编辑器显示人工恢复信息，
-   `Failed/Orphaned` 可二次确认标记为已核实。清理阶段状态及清理恢复仍待实现。
+3. ✅ 已完成本地 NTFS 交接：清理先关闭新运行并完成 R02 的 drain；打开工作树、注册槽和
+   注册槽内全部条目的受控句柄，拒绝脏、ignored 或 locked 工作树；随后原子移动到随机隔离名，
+   直接删除原注册槽并在固定根句柄下递归删除隔离树。原路径即使立刻被替换也不会再被 Git 或
+   清理器按路径访问，不采用全局 prune。
+4. ✅ 已完成创建和清理恢复：创建侧保存各阶段与未知状态；清理侧 schema 33 保存
+   目标/隔离路径、所属实例及 Preparing/Quarantined/RegistrationDeleted 阶段。
+   项目编辑器统一显示创建失败/孤儿、清理失败、旧实例 Running 和“目录已清理但任务元数据
+   尚未清空”，全部使用二次人工核实，不自动续删或回放副作用。
    同时继续固定/复核 `.git` 指针、common-dir、注册槽和仓库归属，不能仅固定根目录。
-5. 对已登记但被替换的对象，另设计显式重新授权代际和 CAS：完整展示任务/项目/路径，
-   提交新 grant 时撤销旧租约，旧 context 不得复用新版本；确认后仍需手动续跑。
+5. ✅ 已完成替换对象显式重新授权：输入区展示任务路径和两个独立确认动作；服务端重新校验
+   当前路径、Git 注册和 task/project 条件，在同一 transaction 替换 grant、推进项目与
+   根对象授权 revision，并写前后对象身份历史。授权变更事件撤销旧租约，旧 project revision
+   的 context 不能复用于新对象；确认后仍由用户手动续跑，不自动发送消息。
 
 **验收：** 创建空目标、Git 退出、登记、消息提交、对象删除、注册清理等断点分别终止恢复；
 覆盖并行创建一成功一失败/取消、基准移动、被占目录、陈旧确认及清理时同路径替换，保留另一任务和草稿。
@@ -329,29 +336,80 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
   项目编辑器窄窗口 16 项。
   未验证：两个真实进程同时认领、创建 intent 后强制终止宿主、Git 元数据清理窗口及原生窗口入口。
 
+**R04 本轮清理交接切片：**
+
+- 新增 `IPathQuarantineSessionFactory`；Windows 实现先固定工作树根句柄，再在同一卷内执行
+  句柄相对原子重命名，并在根句柄仍打开时递归固定、标记删除隔离树。
+- `GitWorktreeRemovalHandoff` 在任何身份句柄释放前准备隔离会话和 Git 注册槽删除会话；
+  移动完成后只删除已固定注册槽，不再调用 `git worktree remove <path>` 或全局 prune。
+- 清理前通过有界 `git status` 拒绝 modified、untracked、ignored 和 submodule 变化；
+  注册槽存在 `locked` 时明确拒绝，需先由用户手动解锁。
+- schema 33 在任何清理副作用前写入 task/project、目标、隔离路径、实例和阶段；
+  `Preparing → Quarantined → RegistrationDeleted → Completed` 条件推进，失败保留现场。
+  Completed 仅在对应 `agent_tasks.worktree_path` 仍指向旧目标时继续显示，避免清理成功但
+  任务元数据未更新的崩溃窗口被隐藏。
+- 验证：真实 Git 创建/移除、注册项消失与分支保留、工作树锁定拒绝、脏/ignored 拒绝，
+  identity 句柄转交、嵌套授权根顺序，以及“移动后原路径立即出现替换目录，替换内容保持不动”
+  的竞态反例；另覆盖 schema 33 迁移、阶段条件推进、失败重试、旧实例确认、
+  Completed 元数据残留、替换对象重新授权、旧上下文拒绝和恢复面板两步确认。
+  完整 Infrastructure 878 项、Platform.Windows 431 项、App Worktree 64 项串行测试通过，
+  App Visual 300 项通过，解决方案构建 0 警告、0 错误。
+- 未完成：尚未用两个真实进程分别强制终止在 Preparing/Quarantined/RegistrationDeleted
+  后完成端到端恢复矩阵；清理与授权 drain 的多实例组合及远端 ref 仍待验证。
+
+**R04 本轮重新授权切片：**
+
+- `IGitWorktreeAuthorizationService.ReauthorizeAsync` 只接受已存在 grant、非运行任务、
+  匹配的 task/project/管理路径和仍有效的 Git 注册；执行前重新打开并固定当前目录对象。
+- schema 33 同时保存 `worktree_root_authorization_history`，记录旧/新 grant、路径、
+  卷/文件 ID、project revision 和时间。grant、项目 revision 与项目根对象 revision
+  在同一 SQLite transaction 条件更新，任一步冲突全部回滚。
+- 授权变更发布后，ProjectAuthorizationMonitor 撤销旧 revision 租约；UI 等待 drain，
+  旧 context 的工具调用返回 `workspace_authorization_changed`，不会静默切换到新对象。
+- UI 使用两个清晰按钮：先进入重新授权确认，再执行“确认替换合法并重新授权”；草稿、任务选择和
+  历史保留，确认操作不发送模型消息。`WorkspaceAuthorizationException` 等非对象替换错误不会被
+  伪装成可重新授权状态。
+- 验证：真实重建目录、复制 Git 元数据、旧 context 拒绝、新 context 读取、grant/revision/
+  history 条件推进、运行中任务拒绝、草稿保持，以及明暗/窄宽的 Headless 两阶段交互。
+  未验证：两个真实 EXE 同时操作同一任务的最终系统级竞争矩阵。
+
 ### R05：PDF、其他附件、全图查看和快照回收
 
-**现状：** 文本和静态图像链路已有实现，图像可从编辑区、历史消息和来源面板通过不可变快照打开
-共享全图查看器。PDF/其他原生文件、子代理图片共享和安全回收尚缺。
+**现状：** 文本、静态图像和 PDF 输入链路已有实现。图像可从编辑区、历史消息和来源面板通过
+不可变快照打开共享全图查看器；PDF 以消息/草稿快照恢复，并通过 OpenAI Responses、Anthropic
+Messages 和 Gemini GenerateContent 的原生文件块发送。共享上下文的子代理可按最新有界图片和
+PDF 集获得同一输入。PDF 页面渲染预览、其他原生文件和安全回收尚缺。
 
-1. Domain/Application 定义格式、MIME/真实内容、来源、大小/页数/像素/解压展开量限额。
-   Providers 为每协议明确原生文件块支持；不支持时仅允许用户明确选择有界文字提取，UI 说明语义差异。
-2. Infrastructure 将解析和快照写入放在后台可取消操作；拒绝脚本、损坏和伪装文件。
+1. ✅ PDF 已完成：Domain/Application 定义 `application/pdf`、签名和尾部结束标记校验、
+   单文件 16 MiB、最多 4 个、合计 32 MiB；Providers 为 Responses/Anthropic/Gemini 构建原生块，
+   OpenAI 兼容 Chat 明确拒绝。尚缺页数、Unicode 文本提取、页级渲染和解压展开量控制。
+2. ✅ PDF 快照已完成：Infrastructure 在后台可取消读取中拒绝伪装或损坏文件，数据库只保存
+   MIME、hash、所属消息和大小，恢复不读取已删除原路径，也不执行 PDF 脚本。页面预览仍缺；
+   后续需使用 Windows `Windows.Data.Pdf.PdfDocument` 或经验证的独立渲染后端，加入页数/像素/
+   解压限额、有界缓存、取消和迟到结果隔离。
    已完成的图像全图查看使用快照读取源与共享 `AppImagePreview`，提供适应、10%–400% 缩放、实际大小、
    键盘关闭、加载/错误状态、15 秒时限和迟到结果隔离；历史只读快照不依赖原文件。
    剩余工作是在同一预览宿主增加 PDF 分页与有界解码缓存。
-3. 子代理共享使用任务归属的只读快照引用，分别验证共享开关、子模型能力和预算；
-   不共享时请求中不得包含图片，能力不足明确失败，不能偷偷换用父模型。
+3. ✅ 已完成子代理图片与 PDF 共享：Agent 从最近 12 条相关父对话消息中取最多 10 张、
+   总计 10 MiB 图片放入
+   `ToolExecutionContext` 的有界只读输入，子请求仅在共享开关开启时转换并使用；子模型不支持
+   图片时在任何子提供商请求前返回 `subagent_images_unsupported`。同一窗口独立选取最多
+   4 个、合计 32 MiB PDF；文件能力不足时返回 `subagent_files_unsupported`。两者都不切换父模型。
+   四种协议的实际图片请求，以及三协议 PDF 原生请求块均已验证。
 4. 用数据库引用集合、活动租约、宽限期及删除前复核回收快照，覆盖草稿/消息/Queue/Steer/
    子代理/正在解析和导出的引用；按原句柄删除，不按目录年龄清空。恢复扫描与 R02 的产物阶段记录共用。
 
-**验收：** 损坏、伪装、超限、压缩炸弹、缺失/篡改、源文件变化、无项目明确选择、共享关闭、
-并发回收和重启均覆盖；另验证原生选择器/预览和真实模型图片/PDF理解。请求块形状正确不等于理解成功。
+**验收：** 已覆盖 PDF 有效/损坏/伪装/过大、数据库边界与迁移回滚、草稿和历史源文件删除、
+项目及无项目明确选择、模型能力拒绝、三协议请求块、兼容接口拒绝及子代理共享开关。尚需覆盖
+页级压缩炸弹、原生选择器/PDF 预览和真实模型图片/PDF理解。请求块形状正确不等于理解成功。
 依赖 R02/R06/R09；参考：[图像附件](archive/CONVERSATIONS.md#image-attachment-workflow-acceptance)、[无项目附件](archive/CONVERSATIONS.md#projectless-attachments-acceptance)。
 
-**本轮图像全图证据：** `AttachmentPreviewViewModelTests`、`WorkspaceAttachmentPreviewViewTests`、
+**PDF 本轮证据：** `AttachmentDocumentTests`、`DocumentAttachmentMigrationTests`、
+`DocumentDraftAttachmentTests`、`WorkspaceDocumentAttachmentHistoryTests`、
+`WorkspacePdfAttachmentWorkflowTests`、`ModelFileRequestTests` 与子代理共享测试。
+**既有图像全图证据：** `AttachmentPreviewViewModelTests`、`WorkspaceAttachmentPreviewViewTests`、
 `WorkspaceAttachmentPreviewFlowTests`、附件 chip、历史快照、策略、明暗/窄宽 Headless 和完整构建；
-共 183 项附件及预览相关筛选测试通过。该证据不覆盖原生鼠标/DPI、真实模型图像理解或 PDF。
+共 183 项附件及预览相关筛选测试通过。该证据不覆盖原生鼠标/DPI、真实模型图像理解或 PDF 页面预览。
 
 ### R06：提供商、模型参数、代理和断流恢复
 
@@ -361,7 +419,8 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 1. Providers 维持请求构建/流解析/事件/错误映射分离，逐协议补空流、failed/incomplete、
    缺失终态 EOF、工具片段缺失、重复终态和取消的 JSON/SSE fixtures；失败不能推动 Queue 自动续发。
    ✅ 已完成：空流、缺终态 EOF、重复终态、取消及无效帧/不完整工具调用已有确定性夹具。
-2. 将逐模型能力覆盖与协议支持共同用于输入校验，接入 R05 的文件/PDF能力；上下文、输出、
+2. ✅ 已将逐模型 `SupportsImages`/`SupportsFiles` 与协议支持共同用于输入校验，并接入 R05 的
+   图片/PDF；上下文、输出、
    自定义思考强度和其他参数进入实际请求。未知或不支持参数给修复说明，不静默替代；发现模型不覆盖用户编辑值。
 3. Infrastructure 明确请求开始时的提供商/代理配置快照；测试默认代理、显式直连、带凭据代理、
    禁用/删除、同时编辑和请求。失败不自动直连，不关闭全局 TLS；错误和重定向不得泄露凭据。
@@ -427,12 +486,14 @@ host/browser 崩溃和多任务；另一会话与草稿不受影响。独立原�
 及终态；工具消息和审计面板可显示运行状态。其他实例遗留的 Running 运行只显示“需要核实”，
 不会因另一次应用启动被改写，也不会自动重放；用户确认旧实例已停止并核对实际副作用后，
 可经二次确认持久化为“已中断”，当前实例拥有的 run 不能被冒领。触发条件仍由主模型选择，不宣传为确定规则匹配；
-跨进程实时心跳/接管、图片共享和完整原生/真实提供商矩阵仍待完成。
+跨进程实时心跳/接管和完整原生/真实提供商矩阵仍待完成。
 
 1. 已完成 Agent/Application 的 run 生命周期和 SQLite schema 32；保留剩余工作：
    跨进程运行心跳/接管、运行中实时审计刷新，并扩展可控模型取消/超时/恢复矩阵。
-2. 明确文本共享与 R05 图像共享边界，按子模型预算构造请求；子工具权限仅可继承并收窄，
-   重新走审批，审计关联父子身份。需要确定规则触发时另设计显式策略，不能暗改现有模型委托语义。
+2. ✅ 文本与图片共享边界已明确：最近父对话文本按字符/消息数截断，图片按 10 张/10 MiB
+  构造独立用户图片块，并与文本使用同一最近 12 条相关消息窗口。共享关闭时两类上下文都不进入子请求；
+  子模型能力不足在提供商调用前失败。
+   子工具权限仍仅可继承并收窄，重新走审批，审计关联父子身份。
 3. 父取消等待子模型和子工具退出；导航或关闭后迟到进度不得写进另一任务。
    历史分别显示运行、失败、取消、中断和未知工具结果；重试创建新 run，不重放旧工具。
 4. 通过保存后的配置验证名称/触发指导/提示词/非默认模型/自定义强度/共享开关进入实际请求，
@@ -450,6 +511,11 @@ Infrastructure 和 App/UI 定向测试均通过；repository 测试还拒绝当�
 另一实例仅在 Running 状态和不同 owner 条件下可完成人工核实的条件更新。该证据不替代
 真实外部提供商、原生窗口或崩溃进程测试。
 
+**本轮图片共享证据：** Agent 全套 170 项通过；新增测试覆盖图片预算、最近消息窗口、最近十张截断、
+共享开关、子模型能力拒绝以及父图片进入子请求。App 子代理协议 49 项通过，四种协议的
+确定性服务均验证共享开启时请求包含图片、关闭时不含图片；共享图片加不支持图片的子模型时
+子服务请求数为零。该证据不证明真实模型能够正确理解图片。
+
 ### R10：定时任务的关闭、并发、时间和恢复
 
 **现状：** 创建/编辑/启停/手动运行/停止/结果已通；应用关闭后不是持续后台执行服务。
@@ -463,8 +529,9 @@ Infrastructure 和 App/UI 定向测试均通过；repository 测试还拒绝当�
    `authorization-changed` 的运行，需用户核对后重新保存确认；跟随项目只能由用户显式选择。
 3. 暂停仅影响未来计划，停止仅取消本次运行，分别展示；关闭先禁止新认领，再取消并等待已有
    runner 和工具资源，之后释放调度租约。未知副作用显示中断记录，不自动补跑。
-4. 覆盖定时与“立即运行”碰撞、重复 tick、多实例、运行中编辑/删除、时钟前后跳和 DST。
-   使用可控时钟验证时间算法；数据库认领失败不得产生模型请求或丢失前台输入。
+4. ✅ 已覆盖定时与“立即运行”碰撞、并发/重复 tick、多实例、时钟回拨后跨过到期点
+   以及 DST 春季缺口/秋季重叠；使用可控时钟验证时间算法。数据库认领失败不产生模型请求，
+   手动运行与前台草稿状态保持分离。
 5. 若需要关闭应用后继续执行，另建可选后台宿主及 IPC/单实例所有权、安装/更新/退出方案，
    与现有前台调度共享状态但不重复认领；该能力在单独设计与验收前保持未实现。
 
@@ -486,12 +553,23 @@ Infrastructure 和 App/UI 定向测试均通过；repository 测试还拒绝当�
 - 验证：`MossAgent.Infrastructure.Tests` 的 Automation 相关 46 项通过（新增 5 项覆盖固定快照阻止、
   未变化时正常认领、跟随项目放行、旧计划兼容与重存后生效、非法快照拒绝）；
   `MossAgent.App.Tests` 的 Automation 相关 152 项与新增编辑器快照 4 项通过。
-  未验证：独立原生实例的关闭/强制终止、DST 与多实例组合，以及真实提供商上的计划级参数复现。
+  未验证：独立原生实例的强制终止/重启组合，以及真实提供商上的计划级参数复现。
 
 **验收：** 保存非默认模型/提示词/授权，实际请求和文件工具使用该快照；另一任务、当前选项及
 未发送草稿保留。保存后模型参数/项目根变化覆盖拒绝或显式采用策略，不自动扩大旧计划范围。
 独立原生正常关闭/强制终止/重启查看结果，零自动补跑；新手动运行使用新 run ID。
 参考：[定时 UI](archive/AGENTS_AUTOMATIONS.md#automation-ui-workflow-acceptance)、[修改行为](archive/AGENTS_AUTOMATIONS.md#automation-mutation-acceptance)。
+
+**R10 本轮时间与碰撞证据：**
+
+- 春季不存在的本地时间推进到首个有效分钟，秋季重复时间只选择一个后续 UTC occurrence；
+  hourly 仍按 UTC 间隔运行。
+- 定时运行持有时“立即运行”返回 busy，不产生第二条执行；两个并发 tick 经过调度 gate
+  和数据库条件认领后只启动一个 runner。
+- 时钟回拨期间不补跑；重新跨过原 `next_run_at` 后只认领一次并推进下一周期。
+- Automation 相关 Infrastructure 49 项通过，延续已有多实例、关闭 drain、迟到认领、
+  timeout、取消、持久化失败和冻结快照测试。
+- 未验证：独立原生 EXE 强制终止、系统时钟真实跳变、真实提供商运行及 DST 期间桌面通知。
 
 ### R11：Git 区块、远端、凭据和提交草稿
 
@@ -624,7 +702,8 @@ toast 全覆盖；目标完成需有可检查结果和终止条件，不能仅�
 
 ### R19：可信文档预览、交互可视化及保存/导出
 
-**现状：** 有文本/代码/差异和图片缩略图；完整 PDF/Office、交互内容与通用生成文件导出尚缺。
+**现状：** 有文本/代码/差异、图片缩略图和 PDF 原生模型输入；PDF 页面渲染、Office、交互内容
+与通用生成文件导出尚缺。不能把“可发送给模型”等同于“可在应用内可信预览”。
 
 1. Application/Infrastructure 统一 task/message/tool/artifact 所有权、MIME、hash、大小与来源；
    App 共享预览宿主按文件类型分派，格式不支持明确说明，不把代码窗口当作所有文档预览。
@@ -729,7 +808,7 @@ restore 裁切有修复前后同场景证据，DPI转换与稳定后布局通过
 
 | 阶段 | 工作 | 交付物和退出条件 |
 | --- | --- | --- |
-| S0：闭合本地安全边界 | 环境未就绪时继续 R02，并优先研究 R04 的创建认领/清理交接；同时准备 R01 独立环境探针 | 端口/阶段设计、迁移、受控竞态反例和生产管线验证；未证明的边界仍明确开放 |
+| S0：闭合本地安全边界 | 环境未就绪时继续 R02；R04 本地创建/清理交接和 schema 33 恢复已完成，继续补真实多进程中断矩阵；同时准备 R01 独立环境探针 | 端口/阶段设计、迁移、受控竞态反例和生产管线验证；未证明的边界仍明确开放 |
 | S1：命令隔离 | 支持 MXC 的独立环境到位后实现 R01，并复验所有代码执行入口 | pwsh/SDK/Git/PTY 正常，根外/子进程/继承句柄越权拒绝，无弱回退；本地文件工具安全不被误当替代 |
 | S2：核心工作流完整性 | R03–R10，结合 R05/R06 的文件和协议能力；分支发现与工作树恢复收尾 | 每项设置/保存→真实运行→结果→取消/并发→手动恢复闭环；逐项原生及真实依赖证据 |
 | S3：协作和扩展 | R11–R14：Git细粒度操作、PR、插件和桌面控制 | 预览/明确确认/写入/失败核实及权限边界可验证；本地基础能力与官方/远端接入分别验收 |

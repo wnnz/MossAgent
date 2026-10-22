@@ -112,7 +112,7 @@ public sealed class SqliteConversationDraftTests
         await fixture.ExecuteAsync("DROP TABLE conversation_draft_attachments; DROP TABLE conversation_attachments; DROP INDEX ix_messages_identity; DROP TABLE conversation_drafts; DROP TRIGGER project_authorization_changed; ALTER TABLE projects DROP COLUMN authorization_revision; DELETE FROM schema_versions WHERE version>=13;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(32, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(34, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(message, Assert.Single(await fixture.Repository.GetMessagesAsync(fixture.Task.Id, fixture.Token)));
         var repository = new SqliteConversationDraftRepository(fixture.Connections);
         Assert.True(await repository.SaveAsync([new(new(fixture.Project.Id, fixture.Task.Id), "task draft", 0),
@@ -141,6 +141,6 @@ public sealed class SqliteConversationDraftTests
         Assert.Equal(fixture.Task, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)));
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_thirteen;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(32, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(34, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
     }
 }

@@ -10,24 +10,23 @@ namespace MossAgent.Infrastructure.Git;
 public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git, TimeProvider? timeProvider = null,
     IRootIdentitySessionFactory? roots = null, SqliteConnectionFactory? connections = null,
     ProjectAuthorizationMonitor? authorizations = null,
-    IExclusiveDirectoryClaimFactory? exclusiveDirectories = null)
+    IExclusiveDirectoryClaimFactory? exclusiveDirectories = null, IPathQuarantineSessionFactory? quarantineSessions = null,
+    IPathDeleteSessionFactory? deleteSessions = null, IWorktreeCleanupIntentService? cleanupIntents = null,
+    IProjectAuthorizationChanges? authorizationChanges = null)
     : IGitWorktreeService, IGitWorktreeAuthorizationService, IWorktreeCreationIntentService
 {
     private readonly GitWorktreeInspector _inspector = new(git);
     private readonly SqliteWorktreeCreationIntentStore? _intents = connections is null ? null
         : new(connections, timeProvider ?? TimeProvider.System);
     private readonly GitWorktreeRootAuthorization? _authorization = roots is not null && connections is not null
-        ? new(roots, connections) : roots is null && connections is null ? null
+        ? new(roots, connections, authorizationChanges) : roots is null && connections is null ? null
         : throw new ArgumentException("Worktree identity and persistence must be configured together.");
-
     public Task<WorktreeRootAuthorization?> ReadAuthorizationAsync(Guid taskId, CancellationToken token) =>
         Task.Run(() => (_authorization ?? throw new WorktreeAuthorizationException()).ReadAsync(taskId, token), token);
-
     public async Task ValidateAsync(ProjectProfile project, Guid taskId, string worktreePath, CancellationToken cancellationToken)
     {
         await using var lease = await AcquireAsync(project, taskId, worktreePath, cancellationToken).ConfigureAwait(false);
     }
-
     public Task<ITaskWorkspaceLease> AcquireAsync(ProjectProfile project, Guid taskId, string path, CancellationToken token)
     {
         var snapshot = project with { AuthorizedDirectories = project.AuthorizedDirectories.ToArray() };
@@ -90,6 +89,9 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
             ct => _inspector.ValidateTargetAsync(source, target, ct), scope.Token).ConfigureAwait(false);
     }, token);
 
+    public Task<WorktreeRootReauthorization> ReauthorizeAsync(ProjectProfile project, AgentTask task, CancellationToken token) =>
+        new GitWorktreeReauthorizer(paths, _inspector, _authorization ?? throw new WorktreeAuthorizationException(), authorizations, timeProvider ?? TimeProvider.System).ReauthorizeAsync(project, task, token);
+
     public Task<string> CreateAsync(
         ProjectProfile project,
         Guid taskId,
@@ -138,8 +140,13 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
                 await _intents.MarkGitCreatedAsync(taskId, target, token).ConfigureAwait(false);
             await _inspector.ValidateTargetAsync(source, target, token).ConfigureAwait(false);
             if (_authorization is not null)
+            {
+                var expectedIdentity = claim?.Identity;
+                claim?.Dispose();
                 await _authorization.EnrollAsync(project, taskId, target, null,
-                    ct => _inspector.ValidateTargetAsync(source, target, ct), token).ConfigureAwait(false);
+                    ct => _inspector.ValidateTargetAsync(source, target, ct), token,
+                    expectedIdentity).ConfigureAwait(false);
+            }
             return target;
         }
         catch (Exception failure)
@@ -149,7 +156,8 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
                 try
                 {
                     await _intents.MarkFailedAsync(
-                        taskId, target, ErrorCode(failure), CancellationToken.None).ConfigureAwait(false);
+                        taskId, target, GitWorktreeFailureCode.FromException(failure),
+                        CancellationToken.None).ConfigureAwait(false);
                 }
                 catch { }
             }
@@ -181,16 +189,6 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
     public Task AcknowledgeAsync(Guid taskId, string worktreePath, CancellationToken cancellationToken) =>
         _intents?.AcknowledgeAsync(taskId, worktreePath, cancellationToken) ?? Task.CompletedTask;
 
-    private static string ErrorCode(Exception exception) => exception switch
-    {
-        OperationCanceledException => "cancelled",
-        TimeoutException => "timeout",
-        UnauthorizedAccessException or WorkspaceAuthorizationException => "authorization",
-        FileMutationSessionException => "unsafe_target",
-        IOException => "target_unavailable",
-        _ => "worktree_creation_failed"
-    };
-
     public Task RemoveAsync(
         ProjectProfile project,
         string worktreePath,
@@ -210,7 +208,7 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
             using var scope = CancellationTokenSource.CreateLinkedTokenSource(operation.Token, projectLease?.Revocation ?? default);
             var token = scope.Token;
             var target = GitWorktreePaths.ManagedTarget(paths, worktreePath, true);
-            using var identity = _authorization is null ? null : await _authorization.OpenAsync(project,
+            using var observedIdentity = _authorization is null ? null : await _authorization.OpenAsync(project,
                 Guid.ParseExact(Path.GetFileName(target), "N"), target, token).ConfigureAwait(false);
             var source = await _inspector.ReadProjectAsync(project, false, token).ConfigureAwait(false);
             if (GitWorktreePaths.Within(source.Root, target))
@@ -218,11 +216,27 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
             await _inspector.ValidateTargetAsync(source, target, token).ConfigureAwait(false);
             GitWorktreePaths.ManagedTarget(paths, target, true);
             GitWorktreePaths.ValidateRepository(source);
+            await _inspector.EnsureRemovableAsync(target, token).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
-            // Git must delete this directory. The final release-to-remove race is documented separately.
-            identity?.Dispose();
-            var result = await git.RunAsync(source.Root, source.Command("worktree", "remove", target), token).ConfigureAwait(false);
-            if (result.ExitCode != 0) throw new InvalidOperationException("Git worktree removal failed; the directory was retained for inspection.");
+            observedIdentity?.Dispose();
+            using var identity = _authorization is null ? null
+                : await _authorization.OpenTransferableAsync(project,
+                    Guid.ParseExact(Path.GetFileName(target), "N"), target, token)
+                    .ConfigureAwait(false);
+            var quarantineFactory =
+                identity as IPathQuarantineSessionFactory ?? quarantineSessions;
+            if (quarantineFactory is null || deleteSessions is null || cleanupIntents is null)
+                throw new NotSupportedException("Handle-safe Git worktree removal is not configured.");
+            var handoff = new GitWorktreeRemovalHandoff(
+                quarantineFactory, deleteSessions, cleanupIntents);
+            await handoff.RemoveAsync(project.Id,
+                Guid.ParseExact(Path.GetFileName(target), "N"), target, source,
+                GitWorktreePaths.Normalize(paths.WorktreesPath), identity is null ? static () => { } : identity.Dispose,
+                validateAuthorization: validationToken =>
+                {
+                    validationToken.ThrowIfCancellationRequested();
+                    return Task.CompletedTask;
+                }, token).ConfigureAwait(false);
         }
         catch (OperationCanceledException failure) when (cancellationToken.IsCancellationRequested)
         {

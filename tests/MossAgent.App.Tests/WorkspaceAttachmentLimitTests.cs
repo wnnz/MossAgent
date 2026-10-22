@@ -1,5 +1,7 @@
 using MossAgent.App.ViewModels;
 using MossAgent.Application.Attachments;
+using MossAgent.Application.Models;
+using MossAgent.Domain;
 using Xunit;
 
 namespace MossAgent.App.Tests;
@@ -69,6 +71,35 @@ public sealed class WorkspaceAttachmentLimitTests
         Assert.Equal(WorkspaceText.Get(unauthorized ? "AttachmentUnauthorized" : "AttachmentMissing"), manager.Status);
         Assert.DoesNotContain("synthetic-private-path", manager.Status);
         Assert.Empty(manager.Items);
+    }
+
+    [Fact]
+    public async Task PdfCountLimitIncludesAlreadySelectedAttachmentsAndPublishesNothing()
+    {
+        var project = WorkspaceAttachmentLifecycleTests.Project();
+        var probe = new WorkspaceAttachmentOperationProbe();
+        var document = AttachmentDocument.FromDecodedBytes(
+            AttachmentDocument.PdfMediaType,
+            "%PDF-1.7\n1 0 obj\n<<>>\nendobj\n%%EOF\n"u8);
+        using var manager = new WorkspaceAttachmentManagerViewModel(probe, probe);
+        manager.SetContext(project, null);
+        manager.SetModel(new ModelProfile(Guid.NewGuid(), Guid.NewGuid(), "file-model",
+            "file-model", 16_000, 2_000, "off", null, null, false, true, true, true, "{}"));
+        for (var index = 0; index < AttachmentDocument.MaximumCount - 1; index++)
+        {
+            manager.Items.Add(manager.CreateItem(new WorkspaceAttachmentContent(
+                $"never-read-{index}.pdf", $"existing-{index}.pdf", "", document.ByteCount,
+                Document: document)));
+        }
+        probe.Paths = [Path.Combine(project.PrimaryDirectory, "new-a.pdf"),
+            Path.Combine(project.PrimaryDirectory, "new-b.pdf")];
+        probe.Contents = probe.Paths.Select(path => new WorkspaceAttachmentContent(
+            path, Path.GetFileName(path), "", document.ByteCount, Document: document)).ToArray();
+
+        await manager.AddFilesCommand.ExecuteAsync(project);
+
+        Assert.Equal(AttachmentDocument.MaximumCount - 1, manager.Items.Count);
+        Assert.Equal(WorkspaceText.Get("AttachmentDocumentSizeLimit"), manager.Status);
     }
 
     [Theory]

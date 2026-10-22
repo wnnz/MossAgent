@@ -125,7 +125,6 @@ public sealed class GitWorktreeLifetimeBoundaryTests
             var target = await execution.WaitAsync(TimeSpan.FromSeconds(10), fixture.Token);
             Assert.True(Directory.Exists(target));
             Assert.Equal(0, context.Posts);
-            await fixture.Service.RemoveAsync(fixture.Project, target, fixture.Token);
         }
         finally { context.Drain(); }
     }

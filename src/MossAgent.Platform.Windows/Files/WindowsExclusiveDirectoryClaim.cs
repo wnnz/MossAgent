@@ -16,8 +16,8 @@ internal sealed class WindowsExclusiveDirectoryClaim : IExclusiveDirectoryClaim
         _parent = parent;
         Path = path;
         var name = System.IO.Path.GetFileName(path);
-        _handle = WindowsRelativeFile.Open(parent.Parent, name, WindowsRelativeFile.DirectoryAccess,
-            FileShare.ReadWrite, 2, true, false)
+        _handle = WindowsRelativeFile.Open(parent.Parent, name,
+            WindowsRelativeFile.DirectoryAccess, FileShare.ReadWrite, 2, true, false)
             ?? throw new FileMutationSessionException(WindowsFileText.Get("WriteHandleDenied"), "directory_claim_failed");
         try { Identity = WindowsDirectoryObjectIdentity.Read(_handle, path); }
         catch

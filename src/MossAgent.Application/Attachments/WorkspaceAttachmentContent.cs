@@ -7,7 +7,9 @@ public sealed record WorkspaceAttachmentContent(
     string DisplayPath,
     string Content,
     long ByteCount,
-    [property: System.Text.Json.Serialization.JsonIgnore] AttachmentImage? Image = null)
+    [property: System.Text.Json.Serialization.JsonIgnore] AttachmentImage? Image = null,
+    [property: System.Text.Json.Serialization.JsonIgnore] AttachmentDocument? Document = null)
 {
-    public string MediaType { get; init; } = Image?.MediaType ?? "text/plain";
+    public string MediaType { get; init; } =
+        Image?.MediaType ?? Document?.MediaType ?? "text/plain";
 }

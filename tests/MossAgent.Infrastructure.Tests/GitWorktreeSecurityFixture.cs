@@ -18,7 +18,10 @@ internal sealed class GitWorktreeSecurityFixture : IDisposable
         Outside = Path.Combine(Root, "outside");
         Paths = new AppDataPaths(Path.Combine(Root, "app-data"));
         Project = new ProjectProfile(Guid.NewGuid(), "fixture", Repository, [Repository], DateTimeOffset.UtcNow);
-        Service = new GitWorktreeService(Paths, _git);
+        var removal = new TestGitWorktreeRemovalFactory();
+        Service = new GitWorktreeService(Paths, _git,
+            quarantineSessions: removal, deleteSessions: removal,
+            cleanupIntents: new InMemoryWorktreeCleanupIntentService());
     }
 
     public string Root { get; }

@@ -67,13 +67,21 @@ public sealed class WorkspaceWorktreeRecoveryViewModel : ObservableObject, IDisp
         if (showBusy) await AvaloniaUiThread.RunAsync(() => IsBusy = true, CancellationToken.None);
         try
         {
-            var intents = await _projects.InspectWorktreeRecoveryAsync(id, linked.Token);
+            var creationTask = _projects.InspectWorktreeRecoveryAsync(id, linked.Token);
+            var cleanupTask = _projects.InspectWorktreeCleanupRecoveryAsync(id, linked.Token);
+            await Task.WhenAll(creationTask, cleanupTask);
+            var intents = await creationTask;
+            var cleanups = await cleanupTask;
             await AvaloniaUiThread.RunAsync(() =>
             {
                 if (_disposed || generation != _generation || _projectId != id) return;
                 Items.Clear();
                 foreach (var intent in intents)
                     Items.Add(new(intent, AcknowledgeAsync));
+                foreach (var cleanup in cleanups)
+                    Items.Add(new(cleanup,
+                        _projects.CanAcknowledgeWorktreeCleanup(cleanup),
+                        AcknowledgeAsync));
                 HasError = false;
                 NotifyStateChanged();
             }, CancellationToken.None);
@@ -97,7 +105,12 @@ public sealed class WorkspaceWorktreeRecoveryViewModel : ObservableObject, IDisp
     private async Task AcknowledgeAsync(WorkspaceWorktreeRecoveryItemViewModel item,
         CancellationToken cancellationToken)
     {
-        await _projects.AcknowledgeWorktreeRecoveryAsync(item.Intent, cancellationToken);
+        if (item.CreationIntent is { } creation)
+            await _projects.AcknowledgeWorktreeRecoveryAsync(creation, cancellationToken);
+        else if (item.CleanupIntent is { } cleanup)
+            await _projects.AcknowledgeWorktreeCleanupRecoveryAsync(cleanup, cancellationToken);
+        else
+            throw new InvalidOperationException("Worktree recovery record is invalid.");
         await AvaloniaUiThread.RunAsync(() =>
         {
             Items.Remove(item);

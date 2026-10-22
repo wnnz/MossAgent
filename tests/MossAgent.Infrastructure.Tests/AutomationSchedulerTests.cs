@@ -105,6 +105,74 @@ public sealed class AutomationSchedulerTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ManualRunAtDueTimeCannotOverlapTheScheduledOccurrence()
+    {
+        _runner.Block = true;
+        var plan = Schedule();
+        await _repository.SaveAsync(plan, Token);
+        _clock.Advance(TimeSpan.FromMinutes(1));
+        await _scheduler.TickAsync(Token);
+        await _runner.Started.Task.WaitAsync(Token);
+
+        Assert.False(await _scheduler.RunNowAsync(plan.Id, Token));
+        Assert.Single(_runner.Requests);
+
+        _runner.Block = false;
+        _runner.Finish.TrySetResult(AutomationRunStatus.Completed);
+        await WaitFinishedAsync(plan.Id);
+
+        var run = Assert.Single(await _repository.GetRunsAsync(plan.Id, 50, Token));
+        Assert.False(run.IsManual);
+        Assert.Equal(AutomationRunStatus.Completed, run.Status);
+        Assert.Equal(_clock.GetUtcNow().AddHours(1),
+            Assert.Single(await _repository.GetAllAsync(Token)).NextRunAt);
+    }
+
+    [Fact]
+    public async Task ClockRollbackDoesNotReplayButCrossingTheDuePointClaimsExactlyOnce()
+    {
+        var plan = Schedule();
+        await _repository.SaveAsync(plan, Token);
+
+        _clock.Advance(TimeSpan.FromHours(-2));
+        await _scheduler.TickAsync(Token);
+        Assert.Empty(_runner.Requests);
+        await _scheduler.TickAsync(Token);
+        Assert.Empty(_runner.Requests);
+
+        _clock.Advance(TimeSpan.FromHours(3));
+        await _scheduler.TickAsync(Token);
+        await WaitFinishedAsync(plan.Id);
+        await _scheduler.TickAsync(Token);
+
+        Assert.Single(_runner.Requests);
+        Assert.False(Assert.Single(await _repository.GetRunsAsync(plan.Id, 50, Token)).IsManual);
+        Assert.Equal(_clock.GetUtcNow().AddHours(1),
+            Assert.Single(await _repository.GetAllAsync(Token)).NextRunAt);
+    }
+
+    [Fact]
+    public async Task ConcurrentDueTicksClaimOnlyOneRun()
+    {
+        _runner.Block = true;
+        var plan = Schedule();
+        await _repository.SaveAsync(plan, Token);
+        _clock.Advance(TimeSpan.FromMinutes(1));
+
+        await Task.WhenAll(
+            _scheduler.TickAsync(Token),
+            _scheduler.TickAsync(Token));
+        await _runner.Started.Task.WaitAsync(Token);
+        await _scheduler.TickAsync(Token);
+
+        Assert.Single(_runner.Requests);
+        _runner.Block = false;
+        _runner.Finish.TrySetResult(AutomationRunStatus.Completed);
+        await WaitFinishedAsync(plan.Id);
+        Assert.Single(await _repository.GetRunsAsync(plan.Id, 50, Token));
+    }
+
+    [Fact]
     public async Task Timeout_IsRecordedWithoutWaitingForRealTime()
     {
         _runner.Block = true;

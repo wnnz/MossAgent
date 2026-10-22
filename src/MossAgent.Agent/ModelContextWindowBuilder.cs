@@ -133,6 +133,7 @@ internal static class ModelContextWindowBuilder
         32 + (message.ToolCallId?.Length ?? 0) + (message.ToolName?.Length ?? 0)
         + (message.Continuation is { } continuation ? continuation.CharacterCount + message.Content.Length : 0)
         + (message.Images.IsDefaultOrEmpty ? 0 : message.Images.Sum(static image => image.ContextCharacterCost))
+        + (message.Files.IsDefaultOrEmpty ? 0 : message.Files.Sum(static file => file.ContextCharacterCost))
         + (message.ToolCalls?.Sum(static call =>
             call.CallId.Length + call.Name.Length + call.Arguments.GetRawText().Length
             + (call.ProviderCallId?.Length ?? 0) + 32) ?? 0);

@@ -60,6 +60,19 @@ internal sealed class GitWorktreeInspector(GitProcessRunner git)
             throw new UnauthorizedAccessException("The managed worktree Git identity does not match its registration.");
     }
 
+    public async Task EnsureRemovableAsync(string target, CancellationToken cancellationToken)
+    {
+        var result = await git.RunAsync(target,
+            ["--no-optional-locks", "-c", "core.quotepath=false", "status",
+                "--porcelain=v1", "-z", "--untracked-files=all", "--ignored=traditional",
+                "--ignore-submodules=none"],
+            cancellationToken).ConfigureAwait(false);
+        if (result.ExitCode != 0 || result.OutputTruncated
+            || result.StandardOutput.Length != 0)
+            throw new InvalidOperationException(
+                "Git worktree removal requires a clean worktree without untracked or ignored files.");
+    }
+
     private static bool ContainsRegistration(string output, string target)
     {
         if (!output.EndsWith("\0\0", StringComparison.Ordinal)) return false;
