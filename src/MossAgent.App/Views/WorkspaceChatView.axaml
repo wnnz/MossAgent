@@ -103,6 +103,8 @@
         </ui:AppScrollViewer.MaxHeight>
         <views:WorkspaceComposerView />
       </ui:AppScrollViewer>
+      <views:WorkspaceAttachmentPreviewView Grid.RowSpan="3" ZIndex="50"
+                                            DataContext="{Binding Attachments.Preview}" />
     </Grid>
   </ui:AppBorder>
 </ui:AppUserControl>

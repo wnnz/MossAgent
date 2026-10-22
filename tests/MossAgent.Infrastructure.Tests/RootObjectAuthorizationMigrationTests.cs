@@ -20,7 +20,7 @@ public sealed class RootObjectAuthorizationMigrationTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_v27;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(31, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(32, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var project = Assert.Single(await fixture.Repository.GetProjectsAsync(fixture.Token));
         Assert.Empty(project.RootAuthorizations);
         Assert.Equal(fixture.Project.AuthorizationRevision, project.AuthorizationRevision);

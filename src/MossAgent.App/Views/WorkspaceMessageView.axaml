@@ -15,7 +15,8 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate><ui:AppAttachmentChip DisplayPath="{Binding DisplayPath}" SizeLabel="{Binding SizeLabel}"
-                                                 Thumbnail="{Binding Thumbnail}" /></DataTemplate>
+                                                 Thumbnail="{Binding Thumbnail}"
+                                                 OpenCommand="{Binding $parent[views:WorkspaceChatView].DataContext.Attachments.Preview.OpenCommand}" /></DataTemplate>
             </ItemsControl.ItemTemplate>
           </ui:AppItemsControl>
           <ui:AppSelectableText Classes="content-font type-15 line-24" Text="{Binding Content}" TextWrapping="Wrap" />
@@ -41,6 +42,16 @@
                                       IsVisible="{Binding HasToolSummaryDetails}" TextWrapping="Wrap" />
                 <ui:AppSelectableText Classes="type-11-5 code-font" Text="{Binding Tool.Details}"
                                       IsVisible="{Binding Tool.HasDetails}" TextWrapping="Wrap" />
+                <ui:AppBorder Classes="subagent-event-row" IsVisible="{Binding Tool.HasSubagentRun}">
+                  <Grid ColumnDefinitions="14,*" ColumnSpacing="8">
+                    <ui:AppIcon Classes="ui-icon icon-small" Data="{StaticResource UiIconBranch}" />
+                    <StackPanel Grid.Column="1" Spacing="2">
+                      <ui:AppText Classes="type-10-5 weight-semibold" Text="子代理运行" />
+                      <ui:AppText Classes="type-11 text-muted" Text="{Binding Tool.SubagentRunIdentity}"
+                                  TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Grid>
+                </ui:AppBorder>
                 <views:SubagentDialogueView CopyCodeCommand="{Binding $parent[views:WorkspaceChatView].CopyCodeCommand}"
                                             IsVisible="{Binding Tool.HasDialogue}" />
               </StackPanel>

@@ -54,7 +54,8 @@ public sealed class WorkspaceRunExecutor(
                 messages,
                 context,
                 AgentInstructions: review is null ? state.AgentInstructions : sourceReads ? SourceReviewContextBuilder.ReadOnlyInstructions : SourceReviewContextBuilder.Instructions,
-                PinnedUserContext: review?.Context, Steering: state.Steering);
+                PinnedUserContext: review?.Context, Steering: state.Steering,
+                RunId: state.Steering?.RunId ?? Guid.NewGuid());
             var failed = false;
             TaskFailureReason? failureReason = null;
             await foreach (var agentEvent in agent.RunAsync(request, cancellationToken))

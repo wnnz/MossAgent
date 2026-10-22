@@ -18,17 +18,20 @@ public sealed class AttachmentHistoryThumbnailBoundaryTests
         {
             ReadHandler = _ => Task.FromResult<IReadOnlyList<WorkspaceAttachmentContent>>([content])
         };
-        var factory = new ConversationAttachmentThumbnailFactory(store, new SkiaAttachmentThumbnailRenderer());
+        var factory = new ConversationAttachmentPreviewFactory(store, new SkiaAttachmentThumbnailRenderer());
         var row = Assert.Single(WorkspaceConversationMapper.ToChatMessage(message, factory).Attachments);
         Assert.Empty(store.ReadMessages);
 
-        var result = await Assert.IsType<AttachmentThumbnailSource>(row.Thumbnail).LoadAsync(Token);
+        var result = await Assert.IsType<AttachmentPreviewSource>(row.Thumbnail).LoadAsync(Token);
+        var full = await Assert.IsType<AttachmentPreviewSource>(row.Thumbnail).LoadImageAsync(Token);
 
-        Assert.Equal([message.Id], store.ReadMessages);
+        Assert.Equal([message.Id, message.Id], store.ReadMessages);
         Assert.Equal(attachment.DisplayPath, row.DisplayPath);
         Assert.Equal("image/png", result.MediaType);
         Assert.Equal(1, result.Width);
         Assert.Equal(1, result.Height);
+        Assert.Equal(result.MediaType, full.MediaType);
+        Assert.Equal(1, full.Width);
     }
 
     [Theory]
@@ -38,10 +41,10 @@ public sealed class AttachmentHistoryThumbnailBoundaryTests
     {
         var (message, attachment, _) = Create();
         var store = new RecordingConversationAttachmentStore();
-        var factory = new ConversationAttachmentThumbnailFactory(store, new ThumbnailTestRenderer());
+        var factory = new ConversationAttachmentPreviewFactory(store, new ThumbnailTestRenderer());
         var invalid = otherTask ? attachment with { TaskId = Guid.NewGuid() }
             : attachment with { MessageId = Guid.NewGuid() };
-        var source = Assert.IsType<AttachmentThumbnailSource>(factory.Create(message, invalid));
+        var source = Assert.IsType<AttachmentPreviewSource>(factory.Create(message, invalid));
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => source.LoadAsync(Token));
 
@@ -56,7 +59,7 @@ public sealed class AttachmentHistoryThumbnailBoundaryTests
     {
         var (message, attachment, _) = Create();
         var store = new RecordingConversationAttachmentStore();
-        var factory = new ConversationAttachmentThumbnailFactory(store, new ThumbnailTestRenderer());
+        var factory = new ConversationAttachmentPreviewFactory(store, new ThumbnailTestRenderer());
 
         Assert.Null(factory.Create(message with { Role = role }, attachment));
         Assert.Null(factory.Create(message, attachment with { MediaType = "text/plain" }));
@@ -78,8 +81,9 @@ public sealed class AttachmentHistoryThumbnailBoundaryTests
         };
         var store = new RecordingConversationAttachmentStore { ReadHandler = _ => Task.FromResult(invalid) };
         var renderer = new ThumbnailTestRenderer();
-        var source = new ConversationAttachmentThumbnailFactory(store, renderer).Create(message, attachment)!;
+        var source = new ConversationAttachmentPreviewFactory(store, renderer).Create(message, attachment)!;
 
+        await Assert.ThrowsAsync<InvalidDataException>(() => source.LoadImageAsync(Token));
         await Assert.ThrowsAsync<InvalidDataException>(() => source.LoadAsync(Token));
         Assert.Empty(renderer.Requests);
         store.ReadHandler = _ => Task.FromResult<IReadOnlyList<WorkspaceAttachmentContent>>([content]);
@@ -96,7 +100,7 @@ public sealed class AttachmentHistoryThumbnailBoundaryTests
         var completion = new TaskCompletionSource<IReadOnlyList<WorkspaceAttachmentContent>>(
             TaskCreationOptions.RunContinuationsAsynchronously);
         var store = new RecordingConversationAttachmentStore { ReadHandler = _ => completion.Task };
-        var source = new ConversationAttachmentThumbnailFactory(store, new SkiaAttachmentThumbnailRenderer())
+        var source = new ConversationAttachmentPreviewFactory(store, new SkiaAttachmentThumbnailRenderer())
             .Create(message, attachment)!;
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(Token);
         var first = source.LoadAsync(cancellation.Token);
@@ -121,7 +125,7 @@ public sealed class AttachmentHistoryThumbnailBoundaryTests
         {
             ReadHandler = _ => Task.FromResult<IReadOnlyList<WorkspaceAttachmentContent>>([content])
         };
-        var source = new ConversationAttachmentThumbnailFactory(store, new SkiaAttachmentThumbnailRenderer())
+        var source = new ConversationAttachmentPreviewFactory(store, new SkiaAttachmentThumbnailRenderer())
             .Create(message, attachment)!;
         using var cancellation = new CancellationTokenSource();
         await cancellation.CancelAsync();

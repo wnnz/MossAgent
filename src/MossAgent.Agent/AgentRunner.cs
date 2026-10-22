@@ -90,6 +90,7 @@ public sealed class AgentRunner(
             AppendAssistantToolCall(messages, state);
             var context = request.ToolContext with
             {
+                RunId = request.RunId,
                 ConversationContext = !hasSubagents
                     ? null
                     : SubagentConversationContextBuilder.Build(messages),

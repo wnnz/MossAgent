@@ -16,7 +16,7 @@ internal sealed class WorkspaceFollowupDispatcher(
     WorkspaceTaskPanelCoordinator panels,
     WorkspaceCatalogViewModel catalog,
     WorkspaceRunPresentation presentation,
-    ConversationAttachmentThumbnailFactory? thumbnails)
+    ConversationAttachmentPreviewFactory? thumbnails)
 {
     public async Task DispatchAsync(Guid taskId, Action<WorkspaceRunState> arm, CancellationToken cancellationToken)
     {

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using MossAgent.Agent;
 using MossAgent.Application.Models;
+using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 using MossAgent.Tools.Abstractions;
 using MossAgent.Tools.BuiltIn.Execution;
@@ -32,6 +33,67 @@ public sealed class SubagentToolTests
         Assert.Equal("Review complete.", result.Content);
         Assert.Equal(ToolRiskLevel.ExternalSideEffect, approval.LastDescriptor!.RiskLevel);
         Assert.Equal(ToolCapability.Network, approval.LastDescriptor.RequiredCapabilities);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_PersistsParentChildConfigurationAndCompletedStatus()
+    {
+        var runs = new InMemorySubagentRunRepository();
+        var setup = CreateSetup([new TextDelta("Review complete.")], runs: runs);
+        var parentRunId = Guid.NewGuid();
+        var result = await ExecuteAsync(
+            CreateExecutor(setup.Tool, new FixedToolApprovalService(true)),
+            """{"agent":"review","task":"检查改动"}""",
+            CreateContext(runId: parentRunId), TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        var reference = Assert.IsType<SubagentRun>(result.SubagentRun);
+        var persisted = Assert.Single(runs.Runs);
+        Assert.Equal(reference.Id, persisted.Id);
+        Assert.Equal(parentRunId, persisted.ParentRunId);
+        Assert.Equal("review", persisted.AgentName);
+        Assert.Equal("检查代码并报告问题。", persisted.SystemPrompt);
+        Assert.Equal("high", persisted.ReasoningEffort);
+        Assert.True(persisted.ShareContext);
+        Assert.Equal(SubagentRunStatus.Completed, persisted.Status);
+        Assert.Equal(SubagentRunStatus.Completed, reference.Status);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_CancellationPersistsCancelledChildMetadata()
+    {
+        var runs = new InMemorySubagentRunRepository();
+        var setup = CreateSetup([new TextDelta("late")], TimeSpan.FromSeconds(1), runs: runs);
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken);
+        cancellation.CancelAfter(TimeSpan.FromMilliseconds(30));
+        var result = await ExecuteAsync(
+            CreateExecutor(setup.Tool, new FixedToolApprovalService(true)),
+            """{"agent":"review","task":"检查"}""",
+            CreateContext(timeout: TimeSpan.FromSeconds(5)), cancellation.Token);
+
+        Assert.Equal("tool_cancelled", result.ErrorCode);
+        Assert.Equal(SubagentRunStatus.Cancelled, result.SubagentRun!.Status);
+        Assert.Equal(SubagentRunStatus.Cancelled, Assert.Single(runs.Runs).Status);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ModelFailurePersistsFailedChildMetadataWithoutLeakingProviderText()
+    {
+        var runs = new InMemorySubagentRunRepository();
+        var setup = CreateSetup([new ModelFailed("invalid_response", "synthetic private provider detail")],
+            runs: runs);
+        var result = await ExecuteAsync(
+            CreateExecutor(setup.Tool, new FixedToolApprovalService(true)),
+            """{"agent":"review","task":"检查"}""", CreateContext(),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal("subagent_model_failed", result.ErrorCode);
+        Assert.DoesNotContain("synthetic private", result.Summary);
+        Assert.Equal("subagent_model_failed", result.SubagentRun!.ErrorCode);
+        var persisted = Assert.Single(runs.Runs);
+        Assert.Equal(SubagentRunStatus.Failed, persisted.Status);
+        Assert.DoesNotContain("synthetic private", persisted.Summary);
     }
 
     [Fact]
@@ -165,7 +227,8 @@ public sealed class SubagentToolTests
         IReadOnlyList<ModelEvent> events,
         TimeSpan delay = default,
         bool shareContext = true,
-        bool enabled = true)
+        bool enabled = true,
+        ISubagentRunRepository? runs = null)
     {
         var provider = new AiProvider(
             Guid.NewGuid(), "test", ProviderProtocol.OpenAiResponses,
@@ -182,7 +245,7 @@ public sealed class SubagentToolTests
         var tool = new SubagentTool(
             new InMemorySubagentConfigurationRepository([profile]),
             new InMemoryConfigurationRepository(provider, model),
-            registry);
+            registry, runs);
         return (tool, modelProvider);
     }
 
@@ -207,7 +270,8 @@ public sealed class SubagentToolTests
         string? conversationContext = null,
         int maximumOutputCharacters = 64 * 1024,
         TimeSpan? timeout = null,
-        ApprovalPolicy approvalPolicy = ApprovalPolicy.FullAccess) =>
+        ApprovalPolicy approvalPolicy = ApprovalPolicy.FullAccess,
+        Guid runId = default) =>
         new(Guid.NewGuid(), Path.GetTempPath(), [Path.GetTempPath()], approvalPolicy,
-            maximumOutputCharacters, timeout, ConversationContext: conversationContext);
+            maximumOutputCharacters, timeout, ConversationContext: conversationContext, RunId: runId);
 }

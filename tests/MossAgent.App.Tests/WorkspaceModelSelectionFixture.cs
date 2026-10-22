@@ -41,7 +41,7 @@ internal sealed class WorkspaceModelSelectionFixture : IAsyncDisposable
         IConversationAttachmentStore? preparationAttachments = null) => new(repository,
         preparationAttachments is null ? _services!.GetRequiredService<MossAgent.Application.Conversations.ConversationFollowupPreparer>()
             : ActivatorUtilities.CreateInstance<MossAgent.Application.Conversations.ConversationFollowupPreparer>(_services!, preparationAttachments),
-        _services!.GetRequiredService<ConversationAttachmentThumbnailFactory>());
+        _services!.GetRequiredService<ConversationAttachmentPreviewFactory>());
     public WorkspaceRunTracker Runs => _services!.GetRequiredService<WorkspaceRunTracker>();
     public AutomationScheduler Scheduler => _services!.GetRequiredService<AutomationScheduler>();
     public IAutomationRepository Automations => _services!.GetRequiredService<IAutomationRepository>();

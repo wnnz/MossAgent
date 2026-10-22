@@ -101,8 +101,10 @@ public sealed class SubagentWorkspaceFlowTests
         Assert.Equal(approved ? "完成" : "失败", card.ToolStatus);
         Assert.True(state.Messages.IndexOf(card) < state.Messages.IndexOf(state.Assistant));
         if (!approved) return;
+        Assert.Equal(SubagentRunStatus.Completed, card.Tool!.SubagentRun!.Status);
+        Assert.NotEqual(Guid.Empty, card.Tool.SubagentRun.ParentRunId);
         Assert.Contains(state.Messages.Take(state.Messages.IndexOf(card)), message => message.Content == "准备审查。");
-        Assert.Contains(card.Tool!.Dialogue!, message => message.Content == "检查完成");
+        Assert.Contains(card.Tool.Dialogue!, message => message.Content == "检查完成");
     }
 
     private static async Task<WorkspaceRunState> CreateStateAsync(
@@ -168,11 +170,26 @@ public sealed class SubagentWorkspaceFlowTests
         var reloaded = WorkspaceConversationMapper.ToChatMessage(toolMessage);
         Assert.Equal("call-sub", reloaded.ToolCallId);
         Assert.Equal(approved, reloaded.Tool?.IsSuccess);
+        var runs = await services.GetRequiredService<ISubagentRunRepository>()
+            .GetRecentAsync(task.Id, 10, cancellationToken);
         if (approved)
         {
             Assert.True(reloaded.Tool!.HasDialogue);
             Assert.Contains(reloaded.Tool.Dialogue!, message => message.Content == "检查完成");
+            var reference = Assert.IsType<SubagentRun>(reloaded.Tool.SubagentRun);
+            var persisted = Assert.Single(runs);
+            Assert.Equal(reference.Id, persisted.Id);
+            Assert.Equal(SubagentRunStatus.Completed, persisted.Status);
+            Assert.Equal("review", persisted.AgentName);
+            Assert.Equal("child-fixture", persisted.ModelId);
+            Assert.Equal("high", persisted.ReasoningEffort);
+            Assert.False(string.IsNullOrWhiteSpace(persisted.OwnerInstanceId));
+            var parent = await services.GetRequiredService<IConversationSteeringRepository>()
+                .GetRunAsync(task.Id, persisted.ParentRunId, cancellationToken);
+            Assert.NotNull(parent);
+            Assert.Equal(task.Id, parent.TaskId);
         }
+        else Assert.Empty(runs);
         Assert.Contains(history, message => message.Role == MessageRole.Assistant
             && message.Content == "已汇总");
 

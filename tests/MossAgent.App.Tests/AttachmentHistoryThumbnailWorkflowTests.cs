@@ -32,7 +32,7 @@ public sealed class AttachmentHistoryThumbnailWorkflowTests
         picker.Paths = [path];
         await workspace.Attachments.AddFilesCommand.ExecuteAsync(workspace.Catalog.SelectedProject);
         var selected = Assert.Single(workspace.Attachments.Items);
-        var selectedSource = Assert.IsType<AttachmentThumbnailSource>(selected.Thumbnail);
+        var selectedSource = Assert.IsType<AttachmentPreviewSource>(selected.Thumbnail);
         workspace.ComposerText = "sent image evidence";
         workspace.PrimaryActionCommand.Execute(null);
         await fixture.WaitUntilAsync(() => fixture.Server.Requests.Count == 1 && !workspace.IsRunning);
@@ -44,6 +44,7 @@ public sealed class AttachmentHistoryThumbnailWorkflowTests
         await fixture.Scheduler.StopAsync();
         File.Delete(path);
         Assert.Equal(1, (await selectedSource.LoadAsync(fixture.Token)).Width);
+        Assert.Equal(1, (await selectedSource.LoadImageAsync(fixture.Token)).Width);
 
         await using var restarted = AppComposition.CreateServices(fixture.DataRoot);
         await restarted.GetRequiredService<IDatabaseInitializer>().InitializeAsync(fixture.Token);
@@ -53,11 +54,15 @@ public sealed class AttachmentHistoryThumbnailWorkflowTests
         await fixture.WaitUntilAsync(() => reopened.Messages.Any(message => message.IsUserMessage));
         var restoredMessage = reopened.Messages.First(message => message.IsUserMessage);
         var restored = Assert.Single(restoredMessage.Attachments);
-        var thumbnail = await Assert.IsType<AttachmentThumbnailSource>(restored.Thumbnail).LoadAsync(fixture.Token);
+        var restoredSource = Assert.IsType<AttachmentPreviewSource>(restored.Thumbnail);
+        var thumbnail = await restoredSource.LoadAsync(fixture.Token);
+        var fullImage = await restoredSource.LoadImageAsync(fixture.Token);
 
         Assert.Equal("image/png", thumbnail.MediaType);
         Assert.Equal(1, thumbnail.Width);
         Assert.Equal(1, thumbnail.Height);
+        Assert.Equal(1, fullImage.Width);
+        Assert.Equal(1, fullImage.Height);
         Assert.Equal("sent image evidence", restoredMessage.Content);
         Assert.False(File.Exists(path));
         Assert.Equal(projectless, reopened.Catalog.SelectedProject is null);

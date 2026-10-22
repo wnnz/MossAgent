@@ -5,6 +5,7 @@ using Avalonia.VisualTree;
 using MossAgent.App.Controls;
 using MossAgent.App.ViewModels;
 using MossAgent.App.Views;
+using MossAgent.Domain;
 using MossAgent.Tools.Abstractions;
 using Xunit;
 
@@ -63,4 +64,47 @@ public sealed class SubagentAnswerRenderingTests : IAsyncLifetime
             }
             finally { window.Close(); }
         }, TestContext.Current.CancellationToken);
+
+    [Theory]
+    [InlineData("Light")]
+    [InlineData("Dark")]
+    public Task CompletedAndCancelledRunMetadataIsVisibleInToolHistory(string theme) =>
+        _session.Dispatch(() =>
+        {
+            var run = CreateRun(SubagentRunStatus.Cancelled);
+            var payload = new ToolConversationPayload("subagent.run", false,
+                "父任务已取消，子代理停止等待；不自动重试。", null,
+                [new ToolDialogueMessage("状态", "已取消")], "tool_cancelled",
+                SubagentRun: run);
+            var message = ChatMessageViewModel.CreateTool(payload);
+            message.IsToolExpanded = true;
+            var view = new WorkspaceMessageView { DataContext = message };
+            var window = new Window
+            {
+                Width = 740,
+                Height = 500,
+                Content = view,
+                RequestedThemeVariant = theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light
+            };
+            window.Show();
+            try
+            {
+                window.UpdateLayout();
+                Assert.Contains(view.GetVisualDescendants().OfType<AppText>(),
+                    text => text.Text == payload.SubagentRunIdentity);
+                Assert.Contains("已取消", payload.SubagentRunIdentity);
+                Assert.True(payload.HasSubagentRun);
+            }
+            finally { window.Close(); }
+        }, TestContext.Current.CancellationToken);
+
+    private static SubagentRun CreateRun(SubagentRunStatus status)
+    {
+        var now = DateTimeOffset.UtcNow;
+        return new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "call",
+            Guid.NewGuid(), "review", "trigger", "prompt", Guid.NewGuid(), "provider",
+            ProviderProtocol.OpenAiResponses, Guid.NewGuid(), "model", 128000, 4096,
+            "high", true, Guid.NewGuid().ToString("N"), status,
+            "cancelled", "tool_cancelled", now, now, now);
+    }
 }

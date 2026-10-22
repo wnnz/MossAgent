@@ -32,6 +32,7 @@
           <DataTemplate>
             <ui:AppAttachmentChip DisplayPath="{Binding DisplayPath}" SizeLabel="{Binding SizeLabel}"
                                    Thumbnail="{Binding Thumbnail}"
+                                   OpenCommand="{Binding $parent[views:WorkspaceComposerView].DataContext.Attachments.Preview.OpenCommand}"
                                    RemoveCommand="{Binding RemoveCommand}" />
           </DataTemplate>
         </ItemsControl.ItemTemplate>

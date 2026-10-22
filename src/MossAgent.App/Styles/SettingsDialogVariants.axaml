@@ -43,4 +43,11 @@
   <Style Selector="ui|AppSettingsDialog.wide /template/ ui|AppCard.settings-dialog-surface">
     <Setter Property="Width" Value="480" />
   </Style>
+  <Style Selector="ui|AppSettingsDialog.attachment-preview /template/ ui|AppCard.settings-dialog-surface">
+    <Setter Property="Width" Value="900" />
+  </Style>
+  <Style Selector="Grid.attachment-preview-body">
+    <Setter Property="Height" Value="420" />
+    <Setter Property="MinHeight" Value="280" />
+  </Style>
 </Styles>

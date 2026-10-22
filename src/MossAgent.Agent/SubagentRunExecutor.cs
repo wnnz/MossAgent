@@ -7,7 +7,9 @@ using MossAgent.Agent.Resources;
 
 namespace MossAgent.Agent;
 
-internal sealed class SubagentRunExecutor(IModelProviderRegistry providers)
+internal sealed class SubagentRunExecutor(
+    IModelProviderRegistry providers,
+    SubagentRunLifecycle lifecycle)
 {
     private const int MaximumTurns = 6;
     private const int MaximumCallsPerTurn = 8;
@@ -21,6 +23,7 @@ internal sealed class SubagentRunExecutor(IModelProviderRegistry providers)
         string task,
         ToolExecutionContext context,
         string parentCallId,
+        SubagentRun run,
         CancellationToken cancellationToken)
     {
         var dialogue = new List<ToolDialogueMessage>();
@@ -29,15 +32,19 @@ internal sealed class SubagentRunExecutor(IModelProviderRegistry providers)
         {
             var result = await RunTurnsAsync(profile, provider, model, task, context,
                 parentCallId, dialogue, changes, cancellationToken);
-            return changes.Apply(result);
+            return await lifecycle.FinishAsync(run, changes.Apply(result), cancellationToken);
         }
         catch (OperationCanceledException)
         {
-            throw new ToolRunInterruptedException(dialogue, cancellationToken, changes.Snapshot(), changes.IsTruncated);
+            var cancelled = await lifecycle.CancelAsync(run);
+            throw new ToolRunInterruptedException(dialogue, cancellationToken, changes.Snapshot(),
+                changes.IsTruncated, cancelled);
         }
         catch (Exception)
         {
-            return changes.Apply(ToolResult.Failure(SubagentText.Get("RunFailed"), "subagent_run_failed", dialogue));
+            var failed = changes.Apply(ToolResult.Failure(SubagentText.Get("RunFailed"),
+                "subagent_run_failed", dialogue));
+            return await lifecycle.FinishAsync(run, failed, cancellationToken);
         }
     }
 

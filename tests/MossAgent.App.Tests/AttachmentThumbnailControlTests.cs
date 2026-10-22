@@ -94,7 +94,7 @@ public sealed class AttachmentThumbnailControlTests : IAsyncLifetime
         {
             var image = chip.FindControl<AppAttachmentThumbnail>("ThumbnailImage")!;
             var first = image.Loading;
-            chip.Thumbnail = new AttachmentThumbnailSource(ThumbnailTestRenderer.Image, renderer);
+            chip.Thumbnail = new AttachmentPreviewSource(ThumbnailTestRenderer.Image, renderer);
             Assert.True(renderer.Tokens[0].IsCancellationRequested);
             Assert.Equal(2, renderer.Requests.Count);
             renderer.Requests[1].SetResult(ThumbnailTestRenderer.Image);
@@ -146,7 +146,7 @@ public sealed class AttachmentThumbnailControlTests : IAsyncLifetime
     private static AppAttachmentChip Chip(ThumbnailTestRenderer renderer) => new()
     {
         DisplayPath = "image.png", SizeLabel = "72 B",
-        Thumbnail = new AttachmentThumbnailSource(ThumbnailTestRenderer.Image, renderer)
+        Thumbnail = new AttachmentPreviewSource(ThumbnailTestRenderer.Image, renderer)
     };
 
     private static void SaveEvidence(AppWindow window, bool dark, bool removable)

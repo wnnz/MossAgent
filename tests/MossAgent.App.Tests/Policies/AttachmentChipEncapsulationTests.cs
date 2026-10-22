@@ -35,7 +35,7 @@ public sealed class AttachmentChipEncapsulationTests
     public void MarkupGuard_AllowsSemanticBindingsAndSurroundingLayout() =>
         Assert.Empty(XDocument.Parse("""
             <AppAttachmentChip DisplayPath='{Binding DisplayPath}' SizeLabel='{Binding SizeLabel}'
-                               RemoveCommand='{Binding RemoveCommand}' Margin='0,4'
+                               RemoveCommand='{Binding RemoveCommand}' OpenCommand='{Binding OpenCommand}' Margin='0,4'
                                IsVisible='{Binding IsVisible}' Grid.Row='1' />
             """).XPathSelectElements(Query()));
 
@@ -49,6 +49,7 @@ public sealed class AttachmentChipEncapsulationTests
             Assert.Equal("{Binding DisplayPath}", chip.Attribute("DisplayPath")?.Value);
             Assert.Equal("{Binding SizeLabel}", chip.Attribute("SizeLabel")?.Value);
             Assert.Empty(chip.Elements());
+            Assert.NotNull(chip.Attribute("OpenCommand"));
             Assert.DoesNotContain(document.Descendants(), element =>
                 element.Attribute("Classes")?.Value.Split(' ').Contains("attachment-chip") == true);
             Assert.Equal(view == "WorkspaceComposerView.axaml" ? "{Binding RemoveCommand}" : null,

@@ -75,6 +75,15 @@
   <data name="SelectedAgentUnavailable" xml:space="preserve"><value>所选代理已停用、移除或模型不可用。请在设置中修复，或明确选择默认代理或其他模型后发送。</value></data>
   <data name="RefreshAgentConfiguration" xml:space="preserve"><value>刷新配置</value></data>
   <data name="AttachmentRemoveLabel" xml:space="preserve"><value>移除附件</value></data>
+  <data name="AttachmentOpenImageLabel" xml:space="preserve"><value>查看图片</value></data>
+  <data name="AttachmentPreviewClose" xml:space="preserve"><value>关闭附件预览</value></data>
+  <data name="AttachmentPreviewTitleFormat" xml:space="preserve"><value>{0} - 附件预览</value></data>
+  <data name="AttachmentPreviewLoading" xml:space="preserve"><value>正在读取已保存的附件快照…</value></data>
+  <data name="AttachmentPreviewFailed" xml:space="preserve"><value>无法显示此附件快照。图像可能已损坏、超出限制或缺少读取权限。</value></data>
+  <data name="AttachmentPreviewCancelled" xml:space="preserve"><value>已取消加载附件。</value></data>
+  <data name="AttachmentPreviewTimedOut" xml:space="preserve"><value>加载附件超时，请关闭后重试。</value></data>
+  <data name="AttachmentPreviewDimensionsFormat" xml:space="preserve"><value>{0} × {1} 像素</value></data>
+  <data name="AttachmentPreviewFit" xml:space="preserve"><value>适应</value></data>
   <data name="AttachmentAccessibleNameFormat" xml:space="preserve"><value>{0}，{1}</value></data>
   <data name="ConversationMoreLabel" xml:space="preserve"><value>更多操作</value></data>
   <data name="ConversationContextLabel" xml:space="preserve"><value>显示或隐藏项目上下文</value></data>

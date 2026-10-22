@@ -11,8 +11,8 @@ namespace MossAgent.App.Controls;
 
 public sealed class AppAttachmentThumbnail : Image
 {
-    public static readonly StyledProperty<AttachmentThumbnailSource?> ThumbnailProperty =
-        AvaloniaProperty.Register<AppAttachmentThumbnail, AttachmentThumbnailSource?>(nameof(Thumbnail));
+    public static readonly StyledProperty<AttachmentPreviewSource?> ThumbnailProperty =
+        AvaloniaProperty.Register<AppAttachmentThumbnail, AttachmentPreviewSource?>(nameof(Thumbnail));
     public static readonly DirectProperty<AppAttachmentThumbnail, bool> HasThumbnailProperty =
         AvaloniaProperty.RegisterDirect<AppAttachmentThumbnail, bool>(nameof(HasThumbnail), control => control.HasThumbnail);
     private CancellationTokenSource? _read;
@@ -23,7 +23,7 @@ public sealed class AppAttachmentThumbnail : Image
     public bool HasThumbnail => _bitmap is not null;
     internal Task Loading { get; private set; } = Task.CompletedTask;
 
-    public AttachmentThumbnailSource? Thumbnail
+    public AttachmentPreviewSource? Thumbnail
     {
         get => GetValue(ThumbnailProperty);
         set => SetValue(ThumbnailProperty, value);
@@ -58,7 +58,7 @@ public sealed class AppAttachmentThumbnail : Image
         Loading = LoadAsync(source, read, read.Token);
     }
 
-    private async Task LoadAsync(AttachmentThumbnailSource source, CancellationTokenSource read, CancellationToken token)
+    private async Task LoadAsync(AttachmentPreviewSource source, CancellationTokenSource read, CancellationToken token)
     {
         try
         {

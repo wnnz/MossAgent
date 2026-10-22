@@ -101,7 +101,8 @@ public sealed class ToolExecutor(
                     var validation = await ToolWorkspaceValidation.ValidateAsync(context, operation.Token, _timeProvider);
                     if (validation is not null && !operation.IsRevoked)
                         result = validation with { Artifacts = result.Artifacts, FileChanges = result.FileChanges,
-                            FileChangesTruncated = result.FileChangesTruncated, Dialogue = result.Dialogue ?? validation.Dialogue };
+                            FileChangesTruncated = result.FileChangesTruncated, Dialogue = result.Dialogue ?? validation.Dialogue,
+                            SubagentRun = result.SubagentRun };
                 }
             }
             if (operation.IsRevoked) result = AuthorizationChanged(result);
@@ -112,7 +113,12 @@ public sealed class ToolExecutor(
     private static ToolResult AuthorizationChanged(ToolResult? result) => ToolResult.Failure(
         ToolExecutionText.Get("WorkspaceAuthorizationChanged") + (result is null ? "" : " " + result.Summary),
         "workspace_authorization_changed", result?.Dialogue) with
-        { Artifacts = result?.Artifacts, FileChanges = result?.FileChanges, FileChangesTruncated = result?.FileChangesTruncated == true };
+        {
+            Artifacts = result?.Artifacts,
+            FileChanges = result?.FileChanges,
+            FileChangesTruncated = result?.FileChangesTruncated == true,
+            SubagentRun = result?.SubagentRun
+        };
 
     private static ToolResult? ValidateArguments(IAgentTool tool, ToolRequest request, CancellationToken cancellationToken)
     {
@@ -200,14 +206,16 @@ public sealed class ToolExecutor(
                 {
                     Artifacts = result.Artifacts,
                     FileChanges = result.FileChanges,
-                    FileChangesTruncated = result.FileChangesTruncated
+                    FileChangesTruncated = result.FileChangesTruncated,
+                    SubagentRun = result.SubagentRun
                 }
                 : result;
         }
         catch (OperationCanceledException exception)
         {
             var interrupted = exception as ToolRunInterruptedException;
-            return InterruptedResult(cancellationToken.IsCancellationRequested, interrupted?.Dialogue) with
+            return InterruptedResult(cancellationToken.IsCancellationRequested, interrupted?.Dialogue,
+                subagentRun: interrupted?.SubagentRun) with
             {
                 FileChanges = interrupted?.FileChanges,
                 FileChangesTruncated = interrupted?.FileChangesTruncated == true
@@ -238,10 +246,10 @@ public sealed class ToolExecutor(
         duration != Timeout.InfiniteTimeSpan && _timeProvider.GetElapsedTime(started) >= duration;
 
     private static ToolResult InterruptedResult(bool cancelled, IReadOnlyList<ToolDialogueMessage>? dialogue = null,
-        string? completedSummary = null) =>
+        string? completedSummary = null, SubagentRun? subagentRun = null) =>
         ToolResult.Failure(ToolExecutionText.Get(cancelled ? "ExecutionCancelled" : "ExecutionTimedOut")
             + (completedSummary is null ? "" : " " + completedSummary),
-            cancelled ? "tool_cancelled" : "tool_timeout", dialogue);
+            cancelled ? "tool_cancelled" : "tool_timeout", dialogue) with { SubagentRun = subagentRun };
 
     private async Task<bool?> RequestApprovalAsync(
         IAgentTool tool,

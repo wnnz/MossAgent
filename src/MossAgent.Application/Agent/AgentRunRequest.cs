@@ -12,4 +12,5 @@ public sealed record AgentRunRequest(
     int MaximumTurns = 20,
     string? AgentInstructions = null,
     string? PinnedUserContext = null,
-    IAgentSteeringInput? Steering = null);
+    IAgentSteeringInput? Steering = null,
+    Guid RunId = default);

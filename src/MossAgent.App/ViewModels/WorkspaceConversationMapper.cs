@@ -8,7 +8,7 @@ internal static class WorkspaceConversationMapper
 {
     public static ChatMessageViewModel ToChatMessage(ConversationMessage message) => ToChatMessage(message, null);
 
-    public static ChatMessageViewModel ToChatMessage(ConversationMessage message, ConversationAttachmentThumbnailFactory? thumbnails)
+    public static ChatMessageViewModel ToChatMessage(ConversationMessage message, ConversationAttachmentPreviewFactory? thumbnails)
     {
         if (message.Role == MessageRole.Tool
             && WorkspaceToolMessageSerializer.TryDeserialize(message.Content, out var tool))

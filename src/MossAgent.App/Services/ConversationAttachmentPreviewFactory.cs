@@ -3,15 +3,18 @@ using MossAgent.Domain;
 
 namespace MossAgent.App.Services;
 
-public sealed class ConversationAttachmentThumbnailFactory(
+public sealed class ConversationAttachmentPreviewFactory(
     IConversationAttachmentStore attachments, IAttachmentThumbnailRenderer renderer)
 {
     private readonly SemaphoreSlim _reads = new(1, 1);
 
-    public AttachmentThumbnailSource? Create(ConversationMessage message, ConversationAttachment attachment)
+    public AttachmentPreviewSource? Create(ConversationMessage message, ConversationAttachment attachment)
     {
         if (message.Role != MessageRole.User || attachment.MediaType == "text/plain") return null;
-        return new(token => LoadAsync(message.TaskId, message.Id, attachment, token));
+        var size = attachment.ByteCount < 1024 ? $"{attachment.ByteCount} B"
+            : $"{attachment.ByteCount / 1024d:0.#} KiB";
+        return new(attachment.DisplayPath, size,
+            token => LoadAsync(message.TaskId, message.Id, attachment, token), renderer);
     }
 
     private async Task<AttachmentImage> LoadAsync(Guid taskId, Guid messageId,
@@ -27,7 +30,7 @@ public sealed class ConversationAttachmentThumbnailFactory(
             var image = contents.Count == 1 ? contents[0].Image : null;
             if (image is null || image.MediaType != attachment.MediaType || image.ByteCount != attachment.ByteCount)
                 throw new InvalidDataException("Attachment snapshot did not contain the expected image.");
-            return await renderer.RenderAsync(image, token).ConfigureAwait(false);
+            return image;
         }
         finally { _reads.Release(); }
     }

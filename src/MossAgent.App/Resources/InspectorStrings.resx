@@ -14,12 +14,14 @@
   <data name="Terminal" xml:space="preserve"><value>终端</value></data>
   <data name="Browser" xml:space="preserve"><value>浏览器</value></data>
   <data name="Audit" xml:space="preserve"><value>执行记录</value></data>
+  <data name="SubagentRuns" xml:space="preserve"><value>子代理运行</value></data>
   <data name="Back" xml:space="preserve"><value>返回来源</value></data>
   <data name="SelectTask" xml:space="preserve"><value>先选择一个对话</value></data>
   <data name="SelectTaskHint" xml:space="preserve"><value>右侧栏显示当前对话的来源、文件变更、终端、浏览器和工具执行记录。</value></data>
   <data name="NoChanges" xml:space="preserve"><value>暂无文件变更</value></data>
   <data name="SelectFile" xml:space="preserve"><value>选择文件查看差异</value></data>
   <data name="NoAudit" xml:space="preserve"><value>暂无执行记录</value></data>
+  <data name="NoSubagentRuns" xml:space="preserve"><value>当前对话暂无子代理运行记录。</value></data>
   <data name="NoArtifacts" xml:space="preserve"><value>暂无生成产物</value></data>
   <data name="TerminalIdle" xml:space="preserve"><value>终端尚未启动</value></data>
   <data name="NoBrowser" xml:space="preserve"><value>当前对话没有内置浏览器</value></data>
@@ -35,6 +37,14 @@
   <data name="NoAuditHint" xml:space="preserve"><value>当前对话还没有工具调用。运行工具后刷新查看授权、结果和生成产物。</value></data>
   <data name="AuditCount" xml:space="preserve"><value>最近 {0} 条工具执行记录</value></data>
   <data name="AuditFailed" xml:space="preserve"><value>执行记录读取失败，请刷新重试。</value></data>
+  <data name="SubagentRunsCount" xml:space="preserve"><value>最近 {0} 次子代理运行</value></data>
+  <data name="SubagentRunsFailed" xml:space="preserve"><value>子代理运行记录读取失败，请刷新重试。</value></data>
+  <data name="SubagentRunNeedsReview" xml:space="preserve"><value>需要核实</value></data>
+  <data name="SubagentRunAcknowledge" xml:space="preserve"><value>我已核实</value></data>
+  <data name="SubagentRunConfirmInterrupted" xml:space="preserve"><value>确认标记为已中断</value></data>
+  <data name="SubagentRunAcknowledgeFailed" xml:space="preserve"><value>子代理运行状态已变化或无法更新，请刷新后重新核实。</value></data>
+  <data name="SubagentRunOwnerFormat" xml:space="preserve"><value>旧实例 {0}</value></data>
+  <data name="SubagentRunRecoveryHint" xml:space="preserve"><value>请先确认该实例已停止，并人工核对模型和工具副作用。标记不会自动重试或撤回操作。</value></data>
   <data name="AuditCancelled" xml:space="preserve"><value>已取消</value></data>
   <data name="AuditDenied" xml:space="preserve"><value>已拒绝</value></data>
   <data name="AuditCancelledHint" xml:space="preserve"><value>执行已取消；已经产生的操作不会自动撤回。</value></data>

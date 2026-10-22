@@ -178,16 +178,60 @@
       </Grid>
 
       <!-- 6. 审计与产物详情视图 -->
-      <Grid RowDefinitions="Auto,*,Auto,120" Classes="inspector-content" IsVisible="{Binding IsInspectorAudit}">
+      <Grid RowDefinitions="Auto,Auto,*,Auto,120" Classes="inspector-content" IsVisible="{Binding IsInspectorAudit}">
         <Grid ColumnDefinitions="*,Auto" Margin="2,0,2,8">
           <ui:AppText Text="{Binding Audit.Status}" Classes="muted type-12" VerticalAlignment="Center" />
           <ui:AppIconButton Grid.Column="1" Command="{Binding Audit.RefreshCommand}"
                             Label="刷新审计记录" IconData="{StaticResource UiIconRefresh}" />
         </Grid>
 
-        <ui:AppEmptyState Grid.Row="1" Title="{x:Static text:InspectorText.NoAudit}" Description="{Binding Audit.Status}"
+        <StackPanel Grid.Row="1" Spacing="4" Margin="2,0,2,8">
+          <StackPanel.IsVisible>
+            <MultiBinding Converter="{x:Static BoolConverters.Or}">
+              <Binding Path="Audit.HasSubagentRuns" />
+              <Binding Path="Audit.HasSubagentRunsStatus" />
+            </MultiBinding>
+          </StackPanel.IsVisible>
+          <ui:AppText Text="{Binding Audit.SubagentRunsStatus}"
+                      Classes="type-11 subtle line-18" TextWrapping="Wrap"
+                      IsVisible="{Binding Audit.HasSubagentRunsStatus}" />
+          <ui:AppExpander Header="{x:Static text:InspectorText.SubagentRuns}"
+                          IsExpanded="False" IsVisible="{Binding Audit.HasSubagentRuns}">
+            <ui:AppItemsControl ItemsSource="{Binding Audit.SubagentRuns}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <ui:AppBorder Classes="subagent-event-row" Margin="0,0,0,4">
+                    <Grid ColumnDefinitions="14,*,Auto" ColumnSpacing="8">
+                      <ui:AppIcon Classes="ui-icon icon-small" Data="{StaticResource UiIconBranch}" />
+                      <StackPanel Grid.Column="1" Spacing="2">
+                        <ui:AppText Text="{Binding AgentName}" Classes="type-11 weight-semibold" />
+                        <ui:AppText Text="{Binding DisplayMetadata}" Classes="type-10-5 text-muted"
+                                    TextTrimming="CharacterEllipsis" />
+                        <ui:AppText Text="{Binding Summary}" Classes="type-11 subtle line-18"
+                                    TextWrapping="Wrap" />
+                        <ui:AppText Text="{Binding Reference}" Classes="type-9-5 text-muted code-font" />
+                      </StackPanel>
+                      <StackPanel Grid.Column="2" Spacing="4" MaxWidth="190" HorizontalAlignment="Right">
+                        <ui:AppText Text="{Binding StatusLabel}" Classes="type-10-5 text-muted" />
+                        <ui:AppText Text="{Binding OwnerLabel}" Classes="type-9-5 text-muted code-font"
+                                    IsVisible="{Binding NeedsRecovery}" />
+                        <ui:AppText Text="{Binding RecoveryHint}" Classes="type-9-5 text-muted"
+                                    TextWrapping="Wrap" IsVisible="{Binding NeedsRecovery}" />
+                        <ui:AppButton Classes="ghost button-xs" Content="{Binding AcknowledgeLabel}"
+                                      Command="{Binding AcknowledgeCommand}" CommandParameter="{Binding}"
+                                      IsVisible="{Binding NeedsRecovery}" />
+                      </StackPanel>
+                    </Grid>
+                  </ui:AppBorder>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ui:AppItemsControl>
+          </ui:AppExpander>
+        </StackPanel>
+
+        <ui:AppEmptyState Grid.Row="2" Title="{x:Static text:InspectorText.NoAudit}" Description="{Binding Audit.Status}"
                           IconData="{StaticResource UiIconBell}" IsVisible="{Binding !Audit.HasExecutions}" />
-        <ui:AppBorder Grid.Row="1" Classes="inspector-list-surface" Padding="4" IsVisible="{Binding Audit.HasExecutions}">
+        <ui:AppBorder Grid.Row="2" Classes="inspector-list-surface" Padding="4" IsVisible="{Binding Audit.HasExecutions}">
           <ui:AppListBox Classes="audit-history-list thin-scrollbar" ItemsSource="{Binding Audit.ExecutionItems}" SelectedItem="{Binding Audit.SelectedItem}">
             <ListBox.ItemTemplate>
               <DataTemplate>
@@ -198,13 +242,13 @@
           </ui:AppListBox>
         </ui:AppBorder>
 
-        <StackPanel Grid.Row="2" Spacing="4" Margin="2,8,2,4">
+        <StackPanel Grid.Row="3" Spacing="4" Margin="2,8,2,4">
           <ui:AppText Text="生成产物" Classes="muted type-12 weight-semibold" />
           <ui:AppText Text="{Binding Audit.ArtifactsStatus}" IsVisible="{Binding Audit.HasArtifacts}" Classes="type-11 subtle line-18" TextWrapping="Wrap" />
         </StackPanel>
-        <ui:AppEmptyState Grid.Row="3" Classes="compact" Title="{x:Static text:InspectorText.NoArtifacts}" Description="{Binding Audit.ArtifactsStatus}"
+        <ui:AppEmptyState Grid.Row="4" Classes="compact" Title="{x:Static text:InspectorText.NoArtifacts}" Description="{Binding Audit.ArtifactsStatus}"
                           IconData="{StaticResource UiIconDocument}" IsVisible="{Binding !Audit.HasArtifacts}" />
-        <ui:AppBorder Grid.Row="3" Classes="inspector-list-surface" Padding="4" IsVisible="{Binding Audit.HasArtifacts}">
+        <ui:AppBorder Grid.Row="4" Classes="inspector-list-surface" Padding="4" IsVisible="{Binding Audit.HasArtifacts}">
           <ui:AppListBox ItemsSource="{Binding Audit.Artifacts}">
             <ListBox.ItemTemplate>
               <DataTemplate>
@@ -234,11 +278,17 @@
         <ui:AppItemsControl ItemsSource="{Binding Workspace.Attachments.Items}">
           <ItemsControl.ItemTemplate>
             <DataTemplate>
-              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="0,5">
+              <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8" Margin="0,5">
                 <ui:AppIcon Classes="ui-icon" Data="{StaticResource UiIconDocument}" />
                 <ui:AppButton Classes="ghost align-leading" Grid.Column="1" Content="{Binding DisplayPath}"
                               Command="{Binding $parent[views:InspectorPane].DataContext.Workspace.FilePreview.OpenCommand}" CommandParameter="{Binding FullPath}" />
-                <ui:AppIconButton Grid.Column="2" Command="{Binding RemoveCommand}"
+                <ui:AppIconButton Grid.Column="2" Classes="icon-micro"
+                                  Command="{Binding $parent[views:InspectorPane].DataContext.Workspace.Attachments.Preview.OpenCommand}"
+                                  CommandParameter="{Binding Thumbnail}"
+                                  Label="{x:Static text:AttachmentChipText.OpenImageLabel}"
+                                  IconData="{StaticResource FilePreviewImageIcon}"
+                                  IsVisible="{Binding Thumbnail, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                <ui:AppIconButton Grid.Column="3" Command="{Binding RemoveCommand}"
                                   Label="移除来源" IconData="{StaticResource UiIconClose}" />
               </Grid>
             </DataTemplate>

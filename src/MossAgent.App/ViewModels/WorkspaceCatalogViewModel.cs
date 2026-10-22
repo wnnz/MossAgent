@@ -10,7 +10,7 @@ namespace MossAgent.App.ViewModels;
 public sealed class WorkspaceCatalogViewModel : ObservableObject
 {
     private readonly IWorkspaceRepository _workspaces;
-    private readonly ConversationAttachmentThumbnailFactory? _thumbnails;
+    private readonly ConversationAttachmentPreviewFactory? _thumbnails;
     private readonly WorkspaceWorktreeCleanupService _worktreeCleanup;
     private ProjectProfile? _selectedProject;
     private AgentTask? _selectedTask;
@@ -26,7 +26,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public WorkspaceCatalogViewModel(
         IWorkspaceRepository workspaces,
         WorkspaceWorktreeCleanupService worktreeCleanup,
-        WorkspaceProjectService projectService, ConversationAttachmentThumbnailFactory? thumbnails = null, IGitReferenceDiscoveryService? gitReferences = null)
+        WorkspaceProjectService projectService, ConversationAttachmentPreviewFactory? thumbnails = null, IGitReferenceDiscoveryService? gitReferences = null)
     {
         _workspaces = workspaces; _thumbnails = thumbnails; _worktreeCleanup = worktreeCleanup;
         Environment = new(gitReferences); WorktreeAuthorization = new(worktreeCleanup.Authorizations);

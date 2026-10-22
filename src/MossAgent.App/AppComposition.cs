@@ -127,6 +127,7 @@ internal static class AppComposition
         services.AddSingleton<IProxyConnectionTester, ProxyConnectionTester>();
         services.AddSingleton<IToolExecutionAuditSink, SqliteToolExecutionAuditSink>();
         services.AddSingleton<IToolExecutionAuditReader, SqliteToolExecutionAuditReader>();
+        services.AddSingleton<ISubagentRunRepository, SqliteSubagentRunRepository>();
         services.AddSingleton<IModelDiscoveryService, ModelDiscoveryService>();
         services.AddSingleton<OpenAiResponsesProvider>();
         services.AddSingleton<IModelProvider>(static provider => provider.GetRequiredService<OpenAiResponsesProvider>());
@@ -259,7 +260,7 @@ internal static class AppComposition
         services.AddSingleton<WorkspaceProjectService>();
         services.AddSingleton<WorkspaceAttachmentManagerViewModel>();
         services.AddSingleton<ComposerPreferenceViewModel>();
-        services.AddSingleton<ConversationAttachmentThumbnailFactory>();
+        services.AddSingleton<ConversationAttachmentPreviewFactory>();
         services.AddSingleton<WorkspaceRunTracker>();
         services.AddSingleton<WorkspaceRunExecutor>();
         services.AddSingleton<WorkspaceRunController>();

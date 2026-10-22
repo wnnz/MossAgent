@@ -34,7 +34,7 @@ public sealed class AttachmentThumbnailWorkflowTests
         await drafts.LoadCurrentAsync();
 
         var restored = Assert.Single(manager.Items);
-        var thumbnail = await Assert.IsType<AttachmentThumbnailSource>(restored.Thumbnail).LoadAsync(Token);
+        var thumbnail = await Assert.IsType<AttachmentPreviewSource>(restored.Thumbnail).LoadAsync(Token);
 
         Assert.False(File.Exists(path));
         Assert.Equal(attachment.Id, restored.SelectionId);
@@ -73,7 +73,7 @@ public sealed class AttachmentThumbnailWorkflowTests
         var image = ThumbnailTestRenderer.Image;
         var row = manager.CreateItem(new("never-read.png", "never-read.png", "", image.ByteCount, image));
 
-        var result = await Assert.IsType<AttachmentThumbnailSource>(row.Thumbnail).LoadAsync(Token);
+        var result = await Assert.IsType<AttachmentPreviewSource>(row.Thumbnail).LoadAsync(Token);
 
         Assert.Equal(1, result.Height);
         Assert.False(Directory.Exists(root));

@@ -47,7 +47,7 @@ public sealed class AttachmentHistoryThumbnailControlTests : IAsyncLifetime
                 else File.Delete(snapshot);
             }
             var mapped = WorkspaceConversationMapper.ToChatMessage(message,
-                new ConversationAttachmentThumbnailFactory(store, new SkiaAttachmentThumbnailRenderer()));
+                new ConversationAttachmentPreviewFactory(store, new SkiaAttachmentThumbnailRenderer()));
             var view = new WorkspaceMessageView { DataContext = mapped };
             var window = new AppWindow { Width = 526, Height = 240, Content = view,
                 RequestedThemeVariant = dark ? ThemeVariant.Dark : ThemeVariant.Light };

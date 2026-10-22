@@ -7,6 +7,8 @@ using Avalonia.Styling;
 using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.App.Controls;
+using MossAgent.App.Resources;
+using MossAgent.App.Services;
 using Xunit;
 
 namespace MossAgent.App.Tests;
@@ -77,6 +79,35 @@ public sealed class AttachmentChipComponentTests : IAsyncLifetime
             PressSpace(button);
             Assert.Equal(11, invoked);
             Assert.False(string.IsNullOrWhiteSpace(button.Label));
+        }
+        finally { window.Close(); }
+    }, TestContext.Current.CancellationToken);
+
+    [Fact]
+    public Task ImageOpenCommandIsKeyboardAccessibleAndDisappearsWithoutARequest() => _session.Dispatch(() =>
+    {
+        var invoked = 0;
+        var chip = new AppAttachmentChip
+        {
+            DisplayPath = "image.png",
+            SizeLabel = "68 B",
+            Thumbnail = new AttachmentPreviewSource(ThumbnailTestRenderer.Image, new ThumbnailTestRenderer()),
+            OpenCommand = new RelayCommand(() => invoked++)
+        };
+        var window = new AppWindow { Content = chip };
+        window.Show();
+        try
+        {
+            var open = chip.FindControl<AppButton>("OpenButton")!;
+            Assert.True(chip.HasOpenAction);
+            Assert.True(open.IsEffectivelyVisible);
+            Assert.Equal(AttachmentChipText.OpenImageLabel, AutomationProperties.GetName(open));
+            Assert.True(open.Focus());
+            PressSpace(open);
+            Assert.Equal(1, invoked);
+            chip.OpenCommand = null;
+            Assert.False(chip.HasOpenAction);
+            Assert.False(open.IsVisible);
         }
         finally { window.Close(); }
     }, TestContext.Current.CancellationToken);

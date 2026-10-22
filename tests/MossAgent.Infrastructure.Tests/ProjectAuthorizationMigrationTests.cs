@@ -16,7 +16,7 @@ public sealed class ProjectAuthorizationMigrationTests
         await RestoreVersion25Async(fixture);
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(31, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(32, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var project = Assert.Single(await fixture.Repository.GetProjectsAsync(fixture.Token));
         Assert.Equal(1, project.AuthorizationRevision);
         Assert.Equal(fixture.Project.Id, project.Id);
@@ -46,7 +46,7 @@ public sealed class ProjectAuthorizationMigrationTests
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM sqlite_master WHERE name IN ('project_authorization_changed','agent_task_failures_v26');"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_v26;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(31, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(32, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(fixture.Task, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)));
     }
 
@@ -62,7 +62,7 @@ public sealed class ProjectAuthorizationMigrationTests
             """);
 
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Initializer.InitializeAsync(fixture.Token));
-        Assert.Equal(30, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(31, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='authorization_resource_leases';"));
 
@@ -70,7 +70,7 @@ public sealed class ProjectAuthorizationMigrationTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(31, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(32, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='authorization_resource_leases';"));
     }

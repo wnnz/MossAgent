@@ -1,3 +1,5 @@
+using MossAgent.Domain;
+
 namespace MossAgent.Tools.Abstractions;
 
 public sealed record ToolResult(
@@ -8,7 +10,8 @@ public sealed record ToolResult(
     string? ErrorCode = null,
     IReadOnlyList<ToolDialogueMessage>? Dialogue = null,
     IReadOnlyList<ToolFileChange>? FileChanges = null,
-    bool FileChangesTruncated = false)
+    bool FileChangesTruncated = false,
+    SubagentRun? SubagentRun = null)
 {
     public int OutputCharacterCount =>
         Summary.Length + (Content?.Length ?? 0)

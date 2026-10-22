@@ -5,7 +5,7 @@ using MossAgent.Application.Persistence;
 namespace MossAgent.App.ViewModels;
 
 public sealed class WorkspaceFollowupServices(IConversationFollowupRepository repository,
-    ConversationFollowupPreparer preparer, ConversationAttachmentThumbnailFactory thumbnails)
+    ConversationFollowupPreparer preparer, ConversationAttachmentPreviewFactory thumbnails)
 {
     internal WorkspaceFollowupQueueViewModel Create(WorkspaceViewModel workspace, WorkspaceTaskFactory tasks,
         WorkspaceRunTracker runs, WorkspaceRunController controller, WorkspaceTaskPanelCoordinator panels,

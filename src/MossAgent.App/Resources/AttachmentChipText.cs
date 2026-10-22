@@ -9,6 +9,8 @@ public static class AttachmentChipText
         "MossAgent.App.Resources.WorkspaceStrings", typeof(AttachmentChipText).Assembly);
 
     public static string RemoveLabel => Get("AttachmentRemoveLabel");
+    public static string OpenImageLabel => Get("AttachmentOpenImageLabel");
+    public static string ClosePreviewLabel => Get("AttachmentPreviewClose");
 
     public static string AccessibleName(string path, string size) => string.IsNullOrWhiteSpace(size)
         ? path

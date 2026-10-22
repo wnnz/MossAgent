@@ -21,6 +21,8 @@ public static class InspectorText
     public static string Terminal => Get("Terminal");
     public static string Browser => Get("Browser");
     public static string Audit => Get("Audit");
+    public static string SubagentRuns => Get("SubagentRuns");
+    public static string NoSubagentRuns => Get("NoSubagentRuns");
     public static string Back => Get("Back");
     public static string SelectTask => Get("SelectTask");
     public static string SelectTaskHint => Get("SelectTaskHint");

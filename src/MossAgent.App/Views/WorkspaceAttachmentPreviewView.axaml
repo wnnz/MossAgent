@@ -1,0 +1,50 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Views.WorkspaceAttachmentPreviewView"
+                   x:CompileBindings="False">
+  <ui:AppSettingsDialog Classes="attachment-preview"
+                        IsOpen="{Binding IsOpen}"
+                        Title="{Binding Title}"
+                        CloseCommand="{Binding CloseCommand}"
+                        CloseLabel="{x:Static text:AttachmentChipText.ClosePreviewLabel}">
+    <Grid Classes="attachment-preview-body" RowDefinitions="Auto,*,Auto">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,0,0,10">
+        <StackPanel Spacing="2">
+          <ui:AppText Text="{Binding DisplayPath}" Classes="type-12 weight-semibold"
+                      TextTrimming="CharacterEllipsis" />
+          <ui:AppText Text="{Binding Dimensions}" Classes="type-10-5 text-muted" />
+        </StackPanel>
+        <ui:AppText Grid.Column="1" Text="{Binding SizeLabel}" Classes="type-10-5 text-muted"
+                    VerticalAlignment="Center" />
+      </Grid>
+      <Grid Grid.Row="1">
+        <ui:AppImagePreview Source="{Binding Image}" IsFit="{Binding IsFit}" Scale="{Binding Scale}" />
+        <ui:AppBorder Classes="attachment-preview-state" IsVisible="{Binding IsStateVisible}">
+          <ui:AppText Text="{Binding Status}" Classes="type-12 text-muted"
+                      TextWrapping="Wrap" TextAlignment="Center"
+                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </ui:AppBorder>
+      </Grid>
+      <ui:AppBorder Grid.Row="2" Classes="attachment-preview-toolbar"
+                    HorizontalAlignment="Center" IsVisible="{Binding HasImage}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <ui:AppIconButton Classes="icon-compact"
+                            Label="{x:Static text:InspectorText.PreviewZoomOut}"
+                            IconData="{StaticResource FilePreviewMinusIcon}"
+                            Command="{Binding ZoomOutCommand}" />
+          <ui:AppText Text="{Binding ZoomLabel}" Classes="file-zoom-label" />
+          <ui:AppIconButton Classes="icon-compact"
+                            Label="{x:Static text:InspectorText.PreviewZoomIn}"
+                            IconData="{StaticResource UiIconPlus}"
+                            Command="{Binding ZoomInCommand}" />
+          <ui:AppButton Content="{x:Static text:InspectorText.PreviewFit}" Classes="ghost button-xs"
+                        Command="{Binding FitCommand}" />
+          <ui:AppButton Content="{x:Static text:InspectorText.PreviewActualSize}" Classes="ghost button-xs"
+                        Command="{Binding ActualSizeCommand}" />
+        </StackPanel>
+      </ui:AppBorder>
+    </Grid>
+  </ui:AppSettingsDialog>
+</ui:AppUserControl>

@@ -10,7 +10,9 @@ namespace MossAgent.Agent;
 public sealed class SubagentTool(
     ISubagentConfigurationRepository subagents,
     IConfigurationRepository configurations,
-    IModelProviderRegistry providers) : IAgentTool
+    IModelProviderRegistry providers,
+    ISubagentRunRepository? runs = null,
+    TimeProvider? timeProvider = null) : IAgentTool
 {
     public const string ToolName = "subagent.run";
     private const int MaximumTaskCharacters = 12_000;
@@ -62,8 +64,22 @@ public sealed class SubagentTool(
             return ToolResult.Failure(SubagentText.Get("ReasoningUnavailable"), "subagent_reasoning_unavailable");
         }
 
-        return await new SubagentRunExecutor(providers).RunAsync(
-            profile, provider, model, task, context, request.CallId, cancellationToken);
+        var lifecycle = new SubagentRunLifecycle(runs, timeProvider);
+        SubagentRun run;
+        try
+        {
+            run = await lifecycle.StartAsync(profile, provider, model, context, request.CallId,
+                cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            var local = lifecycle.StartFailure(profile, provider, model, context, request.CallId,
+                "subagent_run_unavailable");
+            return ToolResult.Failure("无法保存子代理运行状态，未启动模型请求。",
+                "subagent_run_unavailable") with { SubagentRun = local };
+        }
+        return await new SubagentRunExecutor(providers, lifecycle).RunAsync(
+            profile, provider, model, task, context, request.CallId, run, cancellationToken);
     }
 
     private async Task<SubagentProfile?> FindProfileAsync(

@@ -68,13 +68,13 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 | --- | --- | --- |
 | C19 | 多提供商、多 HTTP/SOCKS5 代理、默认代理及明确直连；设置分组、展开、逐项编辑、持久化和真实适配器请求；代理失效不静默直连 | [提供商 UI](archive/PROVIDERS.md#provider-ui-workflow-acceptance)、[认证代理](archive/PROVIDERS.md#authenticated-provider-proxy-acceptance)；真实远端与配置并发矩阵见 R06 |
 | C20 | OpenAI Responses、兼容 Chat、Gemini GenerateContent、Anthropic Messages；模型发现/手工添加、上下文/输出限制、选项或自定义思考强度及其他参数参与请求或校验 | [思考与能力](archive/PROVIDERS.md#model-reasoning-capability-acceptance)、[Gemini 续轮](archive/PROVIDERS.md#gemini-continuation-acceptance)、[模型配置](archive/PROVIDERS.md#model-configuration-native-acceptance)；完整协议和远端支持见 R06 |
-| C21 | UTF-8 及静态 PNG/JPEG/GIF/WebP 明确选择、解码/限额、任务快照、草稿和历史恢复、能力不足拒绝；后台缩略图及 JPEG EXIF 八方向处理，源文件删除不破坏已保存快照 | [图像附件](archive/CONVERSATIONS.md#image-attachment-workflow-acceptance)、[方向](archive/CONVERSATIONS.md#image-orientation-acceptance)、[历史缩略图](archive/CONVERSATIONS.md#attachment-thumbnail-acceptance--sent-message-and-history-extension)；PDF、全图、共享与回收见 R05 |
+| C21 | UTF-8 及静态 PNG/JPEG/GIF/WebP 明确选择、解码/限额、任务快照、草稿和历史恢复、能力不足拒绝；后台缩略图及 JPEG EXIF 八方向处理；编辑区、历史和来源面板可从同一安全快照打开全图，支持适应/缩放/实际大小、取消、超时和损坏安全失败，源文件删除不破坏预览 | [图像附件](archive/CONVERSATIONS.md#image-attachment-workflow-acceptance)、[方向](archive/CONVERSATIONS.md#image-orientation-acceptance)、[历史缩略图](archive/CONVERSATIONS.md#attachment-thumbnail-acceptance--sent-message-and-history-extension)；PDF、子代理共享与回收见 R05 |
 | C22 | 统一工具查找/schema/能力与路径/风险/审批/取消与超时/输出限制/产物/审计；主/子代理工具 allowlist，UI 展示等待、审批、执行和结果 | [工具 schema](archive/TERMINAL_TOOLS.md#tool-schema-acceptance)、[工具范围](archive/TERMINAL_TOOLS.md#tool-scope-acceptance)、[审批展示](archive/TERMINAL_TOOLS.md#global-approval-presentation-acceptance)；入口全面审计及 OS 边界见 R01/R02 |
 | C23 | schema 24 启动恢复遗留进行中工具审计为结果未知，保留人工核实提示；不显示为成功、不自动重做 | [中断审计](archive/TERMINAL_TOOLS.md#audit-interruption-recovery-acceptance)；全副作用时序仍见 R02/R03/R07 |
 | C24 | 内嵌 WebView2、受管外部 Chrome/Edge、显式 CDP 和任务标签页；DOM 操作/截图/下载与接管栏；取消/超时后旧会话失效并清理实际 SDK 资源 | [浏览器取消](archive/BROWSER_MCP.md#browser-operation-cancellation-acceptance)、[Queue 浏览器链路](archive/BROWSER_MCP.md#queue-browser-runtime-acceptance)、[已提交副作用恢复](archive/BROWSER_MCP.md#browser-committed-effect-recovery-acceptance)；模式切换/接管完整矩阵见 R07 |
 | C25 | 浏览器截图/下载进入任务所属产物会话，审批后创建、有界导出、hash、SDK 暂存清理及最终复核；清理未知不伪装成功 | [浏览器产物](archive/BROWSER_MCP.md#browser-artifact-session-acceptance)；网络/缓存配额、未知状态持久化和崩溃回收见 R02/R07 |
 | C26 | MCP stdio/Streamable HTTP 配置、headers/代理、发现、动态注册和标准管线执行；故障提示、显式重连、重载及迟到结果抑制 | [MCP 执行](archive/BROWSER_MCP.md#mcp-execution-acceptance)、[UI 恢复](archive/BROWSER_MCP.md#mcp-ui-recovery-acceptance)；认证、配置代际和传输中断见 R08 |
-| C27 | 自定义子代理名称、触发指导、提示词、模型、强度和上下文共享；`subagent.run` 选定子模型执行，子工具继承并收窄权限，父对话展示过程和结果，禁止递归委托 | [设置到运行](archive/AGENTS_AUTOMATIONS.md#subagent-settings-to-runtime-acceptance)、[生命周期](archive/AGENTS_AUTOMATIONS.md#subagent-lifecycle-native-acceptance)；触发依赖主模型选择，非确定规则引擎；完整状态矩阵及图片共享见 R09/R05 |
+| C27 | 自定义子代理名称、触发指导、提示词、模型、强度和上下文共享；`subagent.run` 选定子模型执行，子工具继承并收窄权限，父对话展示过程和结果，禁止递归委托；schema 32 保存父子 run、配置快照、所属实例及成功/失败/取消/待核实终态 | [设置到运行](archive/AGENTS_AUTOMATIONS.md#subagent-settings-to-runtime-acceptance)、[生命周期](archive/AGENTS_AUTOMATIONS.md#subagent-lifecycle-native-acceptance)；触发依赖主模型选择，非确定性规则引擎；跨进程接管、完整状态矩阵及图片共享见 R09/R05 |
 
 ### 2.4 定时任务、PR 和桌面基础
 
@@ -122,11 +122,11 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | R02 | 部分完成；schema 30 持久资源登记、跨实例限时排空及陈旧登记二次确认恢复已实现 | 真实进程崩溃核验、迟到资源、最终路径竞争、完整入口审计、产物/缓存回收与配额 | P0；复用已有句柄端口和 schema 26–30 |
 | R03 | 附件 Steer、发送偏好，以及最终关闭对 Queue/Steer 的两种确定顺序已实现并验证 | 编辑/排序/并发认领矩阵、事务/副作用中崩溃 | P1；R02/R05 |
 | R04 | 部分完成；本地引用浏览、schema 31 intent、独占/原子认领及恢复 UI 已实现 | 清理交接、远端 ref 获取、替换对象重新授权及完整崩溃生命周期 | P1；R01/R02 |
-| R05 | 部分完成 | PDF/其他文件、全图查看、子代理图像共享、未引用快照安全回收 | P1；模型协议与产物会话 |
+| R05 | 部分完成；图像全图查看已实现并通过附件/Headless 回归 | PDF/其他文件、子代理图像共享、未引用快照安全回收；全图原生窗口与真实模型理解仍待验收 | P1；模型协议与产物会话 |
 | R06 | 部分完成；流帧异常已收口，其他部分未验证 | 真实提供商/模型能力和代理配置竞争矩阵 | P1；获准真实服务账号 |
 | R07 | 部分完成、部分未验证 | 内外/CDP 切换、可靠人工接管、其他创建/副作用崩溃与重启组合 | P1；R01/R02 |
 | R08 | 部分完成 | MCP 认证恢复、配置 CAS/代际、断流/进程退出/并发取消的完整闭环 | P1；R01/R02 |
-| R09 | 部分完成、部分未验证 | 子代理当前版本全触发/审批/失败/取消/共享/并发/恢复矩阵 | P1；R05/R06 |
+| R09 | 部分完成；schema 32 已持久父子 run、配置快照和终态，工具历史与审计面板可查看，其他实例遗留运行标为待核实 | 固定规则触发、图片共享、跨进程实时心跳/接管、完整并发与原生/真实提供商矩阵 | P1；R05/R06 |
 | R10 | 部分完成；计划级授权/参数快照已实现，关闭并发等组合待验 | 关闭/中断/并发/多实例、时区与 DST，以及关闭后的行为实机验收 | P1；R02/R06 |
 | R11 | 部分完成 | Git 区块/整组操作、远端/凭据管理、提交消息草稿重开及原生验收 | P2；R01/R02 |
 | R12 | 部分完成 | PR 收件箱、reviews/activity、版本标记、确认写入、OAuth/GitLab/云审阅 | P2；独立写授权与公开接口 |
@@ -331,12 +331,15 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 
 ### R05：PDF、其他附件、全图查看和快照回收
 
-**现状：** 文本和静态图像链路已有实现，PDF/其他原生文件、全图查看、子代理图片共享和安全回收尚缺。
+**现状：** 文本和静态图像链路已有实现，图像可从编辑区、历史消息和来源面板通过不可变快照打开
+共享全图查看器。PDF/其他原生文件、子代理图片共享和安全回收尚缺。
 
 1. Domain/Application 定义格式、MIME/真实内容、来源、大小/页数/像素/解压展开量限额。
    Providers 为每协议明确原生文件块支持；不支持时仅允许用户明确选择有界文字提取，UI 说明语义差异。
 2. Infrastructure 将解析和快照写入放在后台可取消操作；拒绝脚本、损坏和伪装文件。
-   App 复用共享预览容器增加全图适应/缩放、PDF 分页、加载/错误/禁用状态和有界解码缓存；历史只读快照。
+   已完成的图像全图查看使用快照读取源与共享 `AppImagePreview`，提供适应、10%–400% 缩放、实际大小、
+   键盘关闭、加载/错误状态、15 秒时限和迟到结果隔离；历史只读快照不依赖原文件。
+   剩余工作是在同一预览宿主增加 PDF 分页与有界解码缓存。
 3. 子代理共享使用任务归属的只读快照引用，分别验证共享开关、子模型能力和预算；
    不共享时请求中不得包含图片，能力不足明确失败，不能偷偷换用父模型。
 4. 用数据库引用集合、活动租约、宽限期及删除前复核回收快照，覆盖草稿/消息/Queue/Steer/
@@ -345,6 +348,10 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 **验收：** 损坏、伪装、超限、压缩炸弹、缺失/篡改、源文件变化、无项目明确选择、共享关闭、
 并发回收和重启均覆盖；另验证原生选择器/预览和真实模型图片/PDF理解。请求块形状正确不等于理解成功。
 依赖 R02/R06/R09；参考：[图像附件](archive/CONVERSATIONS.md#image-attachment-workflow-acceptance)、[无项目附件](archive/CONVERSATIONS.md#projectless-attachments-acceptance)。
+
+**本轮图像全图证据：** `AttachmentPreviewViewModelTests`、`WorkspaceAttachmentPreviewViewTests`、
+`WorkspaceAttachmentPreviewFlowTests`、附件 chip、历史快照、策略、明暗/窄宽 Headless 和完整构建；
+共 183 项附件及预览相关筛选测试通过。该证据不覆盖原生鼠标/DPI、真实模型图像理解或 PDF。
 
 ### R06：提供商、模型参数、代理和断流恢复
 
@@ -415,11 +422,15 @@ host/browser 崩溃和多任务；另一会话与草稿不受影响。独立原�
 
 ### R09：子代理触发、共享及完整生命周期
 
-**现状：** 保存配置到子模型/工具/父对话已有链路。触发条件目前是交给主模型选择的指导，
-不能宣传为确定规则匹配；当前版本完整审批、并发、失败和恢复组合仍待验。
+**现状：** 保存配置到子模型/工具/父对话已有链路。schema 32 已持久化父子 run ID、
+代理名称/触发指导/系统提示词、provider/model/上下文/输出/思考强度、共享开关、所属实例
+及终态；工具消息和审计面板可显示运行状态。其他实例遗留的 Running 运行只显示“需要核实”，
+不会因另一次应用启动被改写，也不会自动重放；用户确认旧实例已停止并核对实际副作用后，
+可经二次确认持久化为“已中断”，当前实例拥有的 run 不能被冒领。触发条件仍由主模型选择，不宣传为确定规则匹配；
+跨进程实时心跳/接管、图片共享和完整原生/真实提供商矩阵仍待完成。
 
-1. Agent/Application 复用 `SubagentTool` 和 gateway，持久保存父子 run ID、配置快照、选定
-   provider/model/强度及状态投影；用可控模型真实选择 `subagent.run` 验证触发，禁用模型明确失败。
+1. 已完成 Agent/Application 的 run 生命周期和 SQLite schema 32；保留剩余工作：
+   跨进程运行心跳/接管、运行中实时审计刷新，并扩展可控模型取消/超时/恢复矩阵。
 2. 明确文本共享与 R05 图像共享边界，按子模型预算构造请求；子工具权限仅可继承并收窄，
    重新走审批，审计关联父子身份。需要确定规则触发时另设计显式策略，不能暗改现有模型委托语义。
 3. 父取消等待子模型和子工具退出；导航或关闭后迟到进度不得写进另一任务。
@@ -430,6 +441,14 @@ host/browser 崩溃和多任务；另一会话与草稿不受影响。独立原�
 **验收：** 允许/拒绝审批、能力不足、模型禁用、错误/超时、父子独立取消、两个委托并发、
 授权变更、EXE 重启及共享开/关都保留可查看终态；分别记录模拟模型、真实提供商及原生窗口证据。
 参考：[设置到运行](archive/AGENTS_AUTOMATIONS.md#subagent-settings-to-runtime-acceptance)、[手动审批](archive/AGENTS_AUTOMATIONS.md#subagent-manual-approval-acceptance)。
+
+**本轮生命周期证据：** `SubagentToolTests` 验证真实 `ToolExecutor` 下成功、失败和取消的
+配置快照及终态；`SubagentWorkspaceFlowTests` 从设置保存、真实本地模型服务、子工具审批到
+SQLite 父子 run 与父对话重开；repository/migration 测试覆盖失败迁移回滚、跨实例归属和
+终态持久化；审计面板测试覆盖当前任务过滤、待核实状态及审计读取失败隔离。相关 Agent、
+Infrastructure 和 App/UI 定向测试均通过；repository 测试还拒绝当前持有实例自行标记中断，
+另一实例仅在 Running 状态和不同 owner 条件下可完成人工核实的条件更新。该证据不替代
+真实外部提供商、原生窗口或崩溃进程测试。
 
 ### R10：定时任务的关闭、并发、时间和恢复
 

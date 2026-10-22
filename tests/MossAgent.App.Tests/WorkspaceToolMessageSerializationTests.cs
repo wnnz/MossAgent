@@ -69,6 +69,29 @@ public sealed class WorkspaceToolMessageSerializationTests
         Assert.Contains(answer.Blocks, block => block is ChatTableBlockViewModel);
     }
 
+    [Fact]
+    public void RoundTrip_PreservesSubagentRunSnapshotAndStatus()
+    {
+        var run = CreateRun(SubagentRunStatus.Completed);
+        var tool = CreateEvent(true, CreateDialogue(), "原始详情", run);
+
+        var content = WorkspaceToolMessageSerializer.Serialize(tool);
+        Assert.DoesNotContain("private-system-prompt", content);
+        Assert.DoesNotContain("private-trigger-condition", content);
+        Assert.DoesNotContain("private-owner-instance", content);
+        Assert.True(WorkspaceToolMessageSerializer.TryDeserialize(content, out var payload));
+
+        var restored = Assert.IsType<SubagentRun>(payload!.SubagentRun);
+        Assert.True(payload.HasSubagentRun);
+        Assert.Equal(run.Id, restored.Id);
+        Assert.Equal(run.ParentRunId, restored.ParentRunId);
+        Assert.Equal("review", restored.AgentName);
+        Assert.Equal("model", restored.ModelId);
+        Assert.Equal(SubagentRunStatus.Completed, restored.Status);
+        Assert.Contains("已完成", payload.SubagentRunIdentity);
+        Assert.Equal(Answer, payload.Dialogue![^1].Content);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -122,7 +145,20 @@ public sealed class WorkspaceToolMessageSerializationTests
         new("子代理", Answer)
     ];
 
-    private static AgentToolEvent CreateEvent(bool isSuccess, IReadOnlyList<ToolDialogueMessage>? dialogue, string? details) =>
+    private static AgentToolEvent CreateEvent(bool isSuccess, IReadOnlyList<ToolDialogueMessage>? dialogue,
+        string? details, SubagentRun? run = null) =>
         new("subagent.run", "call-serialization",
-            new ToolResult(isSuccess, "工具运行结果", details, ErrorCode: isSuccess ? null : "tool_failed", Dialogue: dialogue));
+            new ToolResult(isSuccess, "工具运行结果", details, ErrorCode: isSuccess ? null : "tool_failed",
+                Dialogue: dialogue, SubagentRun: run));
+
+    private static SubagentRun CreateRun(SubagentRunStatus status)
+    {
+        var now = DateTimeOffset.UtcNow;
+        return new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "call",
+            Guid.NewGuid(), "review", "private-trigger-condition", "private-system-prompt",
+            Guid.NewGuid(), "provider",
+            ProviderProtocol.OpenAiResponses, Guid.NewGuid(), "model", 128000, 4096,
+            "high", true, "private-owner-instance", status,
+            "finished", null, now, now, now);
+    }
 }

@@ -94,6 +94,6 @@ public sealed class AttachmentThumbnailLifetimeTests : IAsyncLifetime
         finally { window.Close(); }
     }, Token);
 
-    private static AttachmentThumbnailSource Source(ThumbnailTestRenderer renderer) => new(ThumbnailTestRenderer.Image, renderer);
+    private static AttachmentPreviewSource Source(ThumbnailTestRenderer renderer) => new(ThumbnailTestRenderer.Image, renderer);
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 }

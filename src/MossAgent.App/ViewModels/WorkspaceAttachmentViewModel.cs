@@ -18,14 +18,14 @@ public sealed class WorkspaceAttachmentViewModel
         IsAvailable = isAvailable;
         RemoveCommand = new RelayCommand(() => remove(this));
         Thumbnail = isAvailable && content.Image is { } image && thumbnailRenderer is not null
-            ? new AttachmentThumbnailSource(image, thumbnailRenderer) : null;
+            ? new AttachmentPreviewSource(content.DisplayPath, SizeLabel, image, thumbnailRenderer) : null;
     }
 
     internal WorkspaceAttachmentContent Content { get; }
     internal Guid SelectionId { get; }
     internal string AuthorizationStamp { get; }
     public bool IsAvailable { get; }
-    public AttachmentThumbnailSource? Thumbnail { get; }
+    public AttachmentPreviewSource? Thumbnail { get; }
 
     public string DisplayPath => Content.DisplayPath;
     public string FullPath => Content.FullPath;

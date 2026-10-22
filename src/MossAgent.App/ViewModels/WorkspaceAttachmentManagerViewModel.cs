@@ -34,7 +34,8 @@ public sealed class WorkspaceAttachmentManagerViewModel : ObservableObject, IDis
         TimeSpan? operationTimeout = null,
         TimeProvider? timeProvider = null,
         ISelectedAttachmentReader? selectedReader = null,
-        IAttachmentThumbnailRenderer? thumbnailRenderer = null)
+        IAttachmentThumbnailRenderer? thumbnailRenderer = null,
+        AttachmentPreviewViewModel? preview = null)
     {
         _filePicker = filePicker;
         _reader = reader;
@@ -42,12 +43,14 @@ public sealed class WorkspaceAttachmentManagerViewModel : ObservableObject, IDis
         _thumbnailRenderer = thumbnailRenderer;
         _timeProvider = timeProvider ?? TimeProvider.System;
         _operationTimeout = operationTimeout ?? TimeSpan.FromMinutes(5);
+        Preview = preview ?? new AttachmentPreviewViewModel(timeProvider: _timeProvider);
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(_operationTimeout, TimeSpan.Zero);
         AddFilesCommand = new AsyncRelayCommand<ProjectProfile?>(AddFilesAsync, CanAddFiles);
         Items.CollectionChanged += HandleItemsChanged;
     }
 
     public ObservableCollection<WorkspaceAttachmentViewModel> Items { get; } = [];
+    public AttachmentPreviewViewModel Preview { get; }
 
     public IAsyncRelayCommand<ProjectProfile?> AddFilesCommand { get; }
     public string AddFilesLabel => WorkspaceText.Get(nameof(AddFilesLabel));
@@ -80,6 +83,7 @@ public sealed class WorkspaceAttachmentManagerViewModel : ObservableObject, IDis
 
     public void Clear()
     {
+        Preview.Close();
         InvalidateSelection();
         Items.Clear();
         Status = string.Empty;
@@ -94,6 +98,7 @@ public sealed class WorkspaceAttachmentManagerViewModel : ObservableObject, IDis
         _primaryDirectory = project?.PrimaryDirectory;
         _authorizedDirectories = project?.AuthorizedDirectories.ToArray() ?? [];
         _taskId = taskId;
+        Preview.Close();
         InvalidateSelection();
         if (!preserveItems || !sameProject) Items.Clear();
         Status = string.Empty;
@@ -200,6 +205,7 @@ public sealed class WorkspaceAttachmentManagerViewModel : ObservableObject, IDis
     {
         if (_stopping) return;
         _stopping = true;
+        Preview.Close();
         InvalidateSelection();
         AddFilesCommand.NotifyCanExecuteChanged();
     }
@@ -225,6 +231,7 @@ public sealed class WorkspaceAttachmentManagerViewModel : ObservableObject, IDis
     public void Dispose()
     {
         if (_disposed) return;
+        Preview.Dispose();
         Stop();
         _disposed = true;
         Items.CollectionChanged -= HandleItemsChanged;
