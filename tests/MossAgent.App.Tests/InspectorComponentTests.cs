@@ -135,7 +135,7 @@ public sealed class InspectorComponentTests : IAsyncLifetime
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "MossAgent.slnx"))) directory = directory.Parent;
         Assert.NotNull(directory);
-        var project = XDocument.Load(Path.Combine(directory.FullName, "src", "MossAgent.App", "MossAgent.App.csproj"));
+        var project = AppBuildDefinition.Load();
         var query = Assert.Single(project.Descendants(), element => element.Attribute("Name")?.Value == "ValidateSharedInspectorComponents")
             .Elements().Single(element => element.Name.LocalName == "XmlPeek").Attribute("Query")!.Value;
         var document = XDocument.Parse("""

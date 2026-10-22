@@ -8,7 +8,7 @@ public sealed class WindowsManifestTests
     [Fact]
     public void AppBuild_EmbedsWindowsCompatibilityManifest()
     {
-        var project = XDocument.Load(Path.Combine(AppPath(), "MossAgent.App.csproj"));
+        var project = AppBuildDefinition.Load();
         var manifest = Assert.Single(project.Descendants("ApplicationManifest"));
 
         Assert.Equal("app.manifest", manifest.Value);

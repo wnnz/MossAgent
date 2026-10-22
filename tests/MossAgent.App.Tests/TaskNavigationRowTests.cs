@@ -136,7 +136,7 @@ public sealed class TaskNavigationRowTests : IAsyncLifetime
     [Fact]
     public void MarkupGuard_RejectsRowOverridesButAllowsBindings()
     {
-        var project = XDocument.Load(Path.Combine(AppPath(), "MossAgent.App.csproj"));
+        var project = AppBuildDefinition.Load();
         var target = Assert.Single(project.Descendants("Target"),
             element => element.Attribute("Name")?.Value == "ValidateSharedTaskNavigationRows");
         var query = Assert.Single(target.Elements("XmlPeek")).Attribute("Query")!.Value;

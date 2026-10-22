@@ -1,0 +1,223 @@
+<Project>
+  <Target Name="ValidateSharedStyleClassIdentity" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_StyleClassIdentityMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                                 Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/Controls/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_StyleClassIdentityMarkup.FullPath)"
+             Query="//*[@*[contains(local-name(), 'Classes.app-') or ((local-name()='Classes' or substring-after(local-name(), '.')='Classes') and (starts-with(normalize-space(.), 'app-') or contains(normalize-space(.), ' app-')))]] | //*[contains(local-name(), 'Classes.app-') or (substring-after(local-name(), '.')='Classes' and (starts-with(normalize-space(.), 'app-') or contains(normalize-space(.), ' app-')))]">
+      <Output TaskParameter="Result" ItemName="_OverriddenStyleClassIdentity" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenStyleClassIdentity)' != ''"
+           Text="Shared components own their app-* style identity; business markup may select shared variants but cannot bind or impersonate reserved classes: @(_OverriddenStyleClassIdentity)" />
+  </Target>
+  <Target Name="ValidateSharedWorkspacePanes" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_WorkspacePaneMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                           Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_WorkspacePaneMarkup.FullPath)"
+             Query="//*[(local-name()='AppWorkspacePanes' and ((@* | *)[contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|MinimumPrimaryWidth|MinimumInspectorWidth|DefaultInspectorFraction|FloatingInspectorWidth|FloatingInspectorMargin|', concat('|', local-name(), '|')) or contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|MinimumPrimaryWidth|MinimumInspectorWidth|DefaultInspectorFraction|FloatingInspectorWidth|FloatingInspectorMargin|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))])) or (local-name()='AppPaneSplitter' and (@* | *)[contains('|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|ResizeDirection|ResizeBehavior|DragIncrement|KeyboardIncrement|ShowsPreview|', concat('|', local-name(), '|')) or contains('|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|ResizeDirection|ResizeBehavior|DragIncrement|KeyboardIncrement|ShowsPreview|', concat('|', substring-after(local-name(), '.'), '|'))])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenWorkspacePane" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenWorkspacePane)' != ''"
+           Text="Workspace panes own their columns, resizing and floating inspector geometry; use PrimaryPane, InspectorPane and IsInspectorOpen: @(_OverriddenWorkspacePane)" />
+  </Target>
+  <Target Name="ValidateSharedWorkspacePrompts" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_WorkspacePromptMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                              Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_WorkspacePromptMarkup.FullPath)"
+             Query="//*[(local-name()='AppProjectPrompt' or local-name()='AppApprovalPolicyButton' or local-name()='AppComposerContextBar' or local-name()='AppModelPickerMenu') and ((@* | *)[contains('|Content|DataTemplates|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Content|DataTemplates|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))] or (local-name()='AppApprovalPolicyButton' and (@* | *)[contains('|Flyout|Command|CommandParameter|', concat('|', local-name(), '|')) or contains('|Flyout|Command|CommandParameter|', concat('|', substring-after(local-name(), '.'), '|'))]))]">
+      <Output TaskParameter="Result" ItemName="_OverriddenWorkspacePrompt" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenWorkspacePrompt)' != ''"
+           Text="Workspace prompts and model menus own their composition and geometry; bind data and semantic commands instead of replacing content, templates, actions or appearance: @(_OverriddenWorkspacePrompt)" />
+  </Target>
+  <Target Name="ValidateSharedConversationHeaders" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_ConversationHeaderMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                                  Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_ConversationHeaderMarkup.FullPath)"
+             Query="//*[local-name()='AppConversationHeader' and ((@* | *)[contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenConversationHeader" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenConversationHeader)' != ''"
+           Text="Conversation headers own their bounded heading, status and action geometry; use semantic data, commands and shared styles: @(_OverriddenConversationHeader)" />
+  </Target>
+  <Target Name="ValidateSharedConversationTabs" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_ConversationTabMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                               Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_ConversationTabMarkup.FullPath)"
+             Query="//*[local-name()='AppConversationTab' and ((@* | *)[contains('|Content|ContextMenu|Flyout|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Content|ContextMenu|Flyout|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenConversationTab" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenConversationTab)' != ''"
+           Text="Conversation tabs own their geometry and menu; bind title, selection, target and commands instead of replacing content or appearance: @(_OverriddenConversationTab)" />
+  </Target>
+  <Target Name="ValidateSharedTaskFailureNotices" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_FailureNoticeMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                            Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_FailureNoticeMarkup.FullPath)"
+             Query="//*[local-name()='AppTaskFailureNotice' and ((@* | *)[contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenFailureNotice" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenFailureNotice)' != ''"
+           Text="Task failure notices own their warning icon, wrapping hint and dimensions; use Hint and shared styles: @(_OverriddenFailureNotice)" />
+  </Target>
+  <Target Name="ValidateSharedFileChangeSummaries" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_FileChangeSummaryMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                                Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_FileChangeSummaryMarkup.FullPath)"
+             Query="//*[local-name()='AppFileChangeSummary' and ((@* | *)[contains('|Content|DataTemplates|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Content|DataTemplates|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenFileChangeSummary" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenFileChangeSummary)' != ''"
+           Text="File change summaries own their file rows, actions and appearance; bind Summary instead of replacing content or geometry: @(_OverriddenFileChangeSummary)" />
+  </Target>
+  <Target Name="ValidateSharedProviderSettingsRows" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_ProviderRowMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                          Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_ProviderRowMarkup.FullPath)"
+             Query="//*[(local-name()='AppProviderSettingsHeader' or local-name()='AppModelSettingsRow' or local-name()='AppSettingsItemRow' or local-name()='AppSettingsPageHeader') and ((@* | *)[contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenProviderRow" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenProviderRow)' != ''"
+           Text="Settings page headers, item rows, provider headers and model rows own their bounded labels, actions and dimensions; use data, commands and shared styles: @(_OverriddenProviderRow)" />
+  </Target>
+  <Target Name="ValidateSharedEditMenus" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_EditMenuMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                       Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_EditMenuMarkup.FullPath)"
+             Query="//*[local-name()='AppEditMenu' and ((@* | *)[contains('|Content|Flyout|Command|CommandParameter|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Content|Flyout|Command|CommandParameter|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenEditMenu" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenEditMenu)' != ''"
+           Text="AppEditMenu owns its localized content, flyout, editing commands and dimensions; use shared variants: @(_OverriddenEditMenu)" />
+  </Target>
+  <Target Name="ValidateSharedNavigationRail" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_NavigationRailMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                             Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_NavigationRailMarkup.FullPath)"
+             Query="//*[local-name()='AppNavigationRail' and ((@* | *)[contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenNavigationRail" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenNavigationRail)' != ''"
+           Text="Navigation rails own button geometry, localized labels and menus; bind semantic commands and HelpContent: @(_OverriddenNavigationRail)" />
+  </Target>
+  <Target Name="ValidateSharedInspectorComponents" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_InspectorComponentMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                                Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_InspectorComponentMarkup.FullPath)"
+Query="//*[(local-name()='AppInspectorHeader' or local-name()='AppEmptyState' or local-name()='AppAuditExecutionRow' or local-name()='AppFilePreview' or local-name()='AppCodePreview' or local-name()='AppImagePreview' or local-name()='AppFileBreadcrumb') and ((@* | *)[contains('|Content|Children|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Content|Children|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenInspectorComponents" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenInspectorComponents)' != ''"
+           Text="Inspector headers and empty states own their composition and geometry; bind semantic content and commands: @(_OverriddenInspectorComponents)" />
+  </Target>
+  <Target Name="ValidateSharedSidebarSearch" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_SidebarSearchMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                            Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_SidebarSearchMarkup.FullPath)"
+             Query="//*[local-name()='AppSidebarSearch' and ((@* | *)[contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenSidebarSearch" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenSidebarSearch)' != ''"
+           Text="Sidebar search owns its trigger, popup and field appearance; bind Query, HasMatches and ClearCommand: @(_OverriddenSidebarSearch)" />
+  </Target>
+  <Target Name="ValidateSharedProjectNavigationRows" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_ProjectNavigationMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                                Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_ProjectNavigationMarkup.FullPath)"
+             Query="//*[local-name()='AppProjectNavigationRow' and ((@* | *)[contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenProjectNavigation" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenProjectNavigation)' != ''"
+           Text="Project navigation rows own their bounded labels, expansion action, summary flyout and dimensions; bind semantic data, commands and SummaryContent: @(_OverriddenProjectNavigation)" />
+  </Target>
+  <Target Name="ValidateSharedPageSwitchers" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_PageSwitcherMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                           Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_PageSwitcherMarkup.FullPath)"
+             Query="//*[local-name()='AppPageSwitcher' and (@Content or *[not(contains(local-name(), '.')) or substring-after(local-name(), '.')='Content'])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenPageSwitcher" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenPageSwitcher)' != ''"
+           Text="Page switchers own their presenters and focus handling; use PrimaryPage and SecondaryPage: @(_OverriddenPageSwitcher)" />
+  </Target>
+  <Target Name="ValidateSharedToolActivityRows" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_ToolActivityMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                           Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_ToolActivityMarkup.FullPath)"
+             Query="//*[local-name()='AppToolActivityRow' and (@Content or @Width or @Height or @MinWidth or @MaxWidth or @MinHeight or @MaxHeight or *[not(contains(local-name(), '.')) or substring-after(local-name(), '.')='Content' or substring-after(local-name(), '.')='Width' or substring-after(local-name(), '.')='Height' or substring-after(local-name(), '.')='MinWidth' or substring-after(local-name(), '.')='MaxWidth' or substring-after(local-name(), '.')='MinHeight' or substring-after(local-name(), '.')='MaxHeight'])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenToolActivityRow" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenToolActivityRow)' != ''"
+           Text="Tool activity rows own their compact header and dimensions; use semantic properties and shared styles: @(_OverriddenToolActivityRow)" />
+  </Target>
+  <Target Name="ValidateSharedTaskNavigationRows" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_TaskRowMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                      Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_TaskRowMarkup.FullPath)"
+             Query="//*[local-name()='AppTaskNavigationRow' and ((@* | *)[contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|', concat('|', local-name(), '|')) or contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenTaskRow" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenTaskRow)' != ''"
+           Text="Task navigation rows own their content and dimensions; use semantic properties and shared styles: @(_OverriddenTaskRow)" />
+  </Target>
+  <Target Name="ValidateSharedAttachmentChips" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_AttachmentChipMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                             Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_AttachmentChipMarkup.FullPath)"
+             Query="//*[local-name()='AppAttachmentChip' and ((@* | *)[contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Content|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenAttachmentChip" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenAttachmentChip)' != ''"
+           Text="Attachment chips own their file icon, labels, removal action and dimensions; use semantic bindings and shared styles: @(_OverriddenAttachmentChip)" />
+  </Target>
+</Project>

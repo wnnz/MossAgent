@@ -98,7 +98,7 @@ public sealed class SidebarFidelityLayoutTests : IAsyncLifetime
     [Fact]
     public void SharedAnimationPrimitives_DoNotPermitNativeVisualControls()
     {
-        var project = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App", "MossAgent.App.csproj"));
+        var project = AppBuildDefinition.Load();
         var target = Assert.Single(project.Descendants("Target"), element =>
             element.Attribute("Name")?.Value == "ValidateSharedVisualControls");
         var query = Assert.Single(target.Elements("XmlPeek")).Attribute("Query")!.Value;
@@ -169,7 +169,7 @@ public sealed class SidebarFidelityLayoutTests : IAsyncLifetime
     [Fact]
     public void NavigationSections_ShareOneUnboundedScrollFlow()
     {
-        var document = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App", "Views", "WorkspaceSidebar.axaml"));
+        var document = XDocument.Load(Path.Combine(AppBuildDefinition.RepositoryRoot, "src", "MossAgent.App", "Views", "WorkspaceSidebar.axaml"));
         var pinned = Assert.Single(document.Descendants(), element =>
             element.Attribute("ItemsSource")?.Value == "{Binding TaskManagement.PinnedTasks.Items}");
         var projects = Assert.Single(document.Descendants(), element =>
@@ -247,12 +247,4 @@ public sealed class SidebarFidelityLayoutTests : IAsyncLifetime
         }
     }, TestContext.Current.CancellationToken);
 
-    private static string RepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "MossAgent.slnx")))
-            directory = directory.Parent;
-        Assert.NotNull(directory);
-        return directory.FullName;
-    }
 }

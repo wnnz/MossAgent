@@ -99,7 +99,7 @@ public sealed class ToolActivityPresentationTests
     [Fact]
     public void Markup_UsesSharedRowAndKeepsSummaryInExpandedDetails()
     {
-        var root = RepositoryRoot();
+        var root = AppBuildDefinition.RepositoryRoot;
         var view = XDocument.Load(Path.Combine(root, "src", "MossAgent.App", "Views", "WorkspaceMessageView.axaml"));
         var row = Assert.Single(view.Descendants(), element => element.Name.LocalName == "AppToolActivityRow");
         Assert.Equal("{Binding ToolSummary}", row.Attribute("Summary")?.Value);
@@ -128,7 +128,7 @@ public sealed class ToolActivityPresentationTests
     [Fact]
     public void BuildGuard_RejectsToolRowCompositionAndSizingOverrides()
     {
-        var project = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App", "MossAgent.App.csproj"));
+        var project = AppBuildDefinition.Load();
         var target = Assert.Single(project.Descendants(), element => element.Name.LocalName == "Target"
             && element.Attribute("Name")?.Value == "ValidateSharedToolActivityRows");
         Assert.Equal("CoreCompile", target.Attribute("BeforeTargets")?.Value);
@@ -146,12 +146,4 @@ public sealed class ToolActivityPresentationTests
         Assert.Equal(4, sample.XPathSelectElements(query).Count());
     }
 
-    private static string RepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "MossAgent.slnx")))
-            directory = directory.Parent;
-        Assert.NotNull(directory);
-        return directory.FullName;
-    }
 }

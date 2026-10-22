@@ -51,7 +51,7 @@ public sealed class AppSettingsDialogTests
     [Fact]
     public void SettingsEditorsUseOneSharedDialogWithSeparateBodyAndFooter()
     {
-        var views = Path.Combine(RepositoryRoot(), "src", "MossAgent.App", "Views");
+        var views = Path.Combine(AppBuildDefinition.RepositoryRoot, "src", "MossAgent.App", "Views");
         var dialogs = new[] { "ProxySettingsPane", "ProviderAndModelSettingsPane", "McpSettingsPane", "AgentSettingsPane", "SubagentSettingsPane" }
             .SelectMany(page => XDocument.Load(Path.Combine(views, $"{page}.axaml")).Descendants()
                 .Where(element => element.Name.LocalName == "AppSettingsDialog")).ToArray();
@@ -66,7 +66,7 @@ public sealed class AppSettingsDialogTests
             Assert.DoesNotContain(dialog.Descendants(), element => element.Name.LocalName is "AppCard" or "AppScrollViewer");
         });
 
-        var styles = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App",
+        var styles = XDocument.Load(Path.Combine(AppBuildDefinition.RepositoryRoot, "src", "MossAgent.App",
             "Styles", "SettingsDialogVariants.axaml"));
         var scroll = Assert.Single(styles.Descendants(), element => element.Name.LocalName == "AppScrollViewer");
         Assert.Equal("1", scroll.Attribute("Grid.Row")?.Value);
@@ -88,7 +88,7 @@ public sealed class AppSettingsDialogTests
     [InlineData("SubagentSettingsPane")]
     public void DialogsFillTheSettingsViewportInsteadOfTheContentColumn(string page)
     {
-        var views = Path.Combine(RepositoryRoot(), "src", "MossAgent.App", "Views");
+        var views = Path.Combine(AppBuildDefinition.RepositoryRoot, "src", "MossAgent.App", "Views");
         var shell = XDocument.Load(Path.Combine(views, "SettingsOverlay.axaml"));
         var pane = Assert.Single(shell.Descendants(), element => element.Name.LocalName == page);
         if (page != "ProviderAndModelSettingsPane")
@@ -107,7 +107,7 @@ public sealed class AppSettingsDialogTests
     [Fact]
     public void BuildGuardRejectsPageOwnedDialogsAndAppearanceBypasses()
     {
-        var project = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App", "MossAgent.App.csproj"));
+        var project = AppBuildDefinition.Load();
         var target = Assert.Single(project.Descendants(), element => element.Name.LocalName == "Target"
             && element.Attribute("Name")?.Value == "ValidateSharedSettingsDialogs");
         var queries = target.Elements().Where(element => element.Name.LocalName == "XmlPeek")
@@ -127,12 +127,4 @@ public sealed class AppSettingsDialogTests
         Assert.Equal(3, sample.XPathSelectElements(queries[1]).Count());
     }
 
-    private static string RepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "MossAgent.slnx")))
-            directory = directory.Parent;
-        Assert.NotNull(directory);
-        return directory.FullName;
-    }
 }

@@ -1,0 +1,105 @@
+<Project>
+  <Target Name="ValidateSharedAppearanceTokens" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_AppearanceTokenMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                              Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_AppearanceTokenMarkup.FullPath)"
+             Query="//*[(contains(local-name(), '.') and contains('|Background|Foreground|BorderBrush|BorderThickness|CornerRadius|BoxShadow|FontSize|FontWeight|FontFamily|CodeFontFamily|CodeFontSize|CodeBackground|CodeBackgroundPadding|CodeCornerRadius|SelectionBrush|SelectionForegroundBrush|LineHeight|Stroke|Fill|StrokeThickness|StrokeLineCap|StrokeJoin|StrokeMiterLimit|StrokeDashArray|StrokeDashOffset|RenderTransform|RenderTransformOrigin|Cursor|FocusAdorner|Template|Theme|', concat('|', substring-after(local-name(), '.'), '|'))) or @*[contains('|Background|Foreground|BorderBrush|BorderThickness|CornerRadius|BoxShadow|FontSize|FontWeight|FontFamily|CodeFontFamily|CodeFontSize|CodeBackground|CodeBackgroundPadding|CodeCornerRadius|SelectionBrush|SelectionForegroundBrush|LineHeight|Stroke|Fill|StrokeThickness|StrokeLineCap|StrokeJoin|StrokeMiterLimit|StrokeDashArray|StrokeDashOffset|RenderTransform|RenderTransformOrigin|Cursor|FocusAdorner|Template|Theme|', concat('|', local-name(), '|')) or (contains(local-name(), '.') and contains('|Background|Foreground|BorderBrush|BorderThickness|CornerRadius|BoxShadow|FontSize|FontWeight|FontFamily|CodeFontFamily|CodeFontSize|CodeBackground|CodeBackgroundPadding|CodeCornerRadius|SelectionBrush|SelectionForegroundBrush|LineHeight|Stroke|Fill|StrokeThickness|StrokeLineCap|StrokeJoin|StrokeMiterLimit|StrokeDashArray|StrokeDashOffset|RenderTransform|RenderTransformOrigin|Cursor|FocusAdorner|Template|Theme|', concat('|', substring-after(local-name(), '.'), '|')))]]">
+      <Output TaskParameter="Result" ItemName="_ForbiddenAppearanceToken" />
+    </XmlPeek>
+    <Error Condition="'@(_ForbiddenAppearanceToken)' != ''"
+           Text="Visual appearance tokens belong in shared Styles/ variants, including inherited and owner-qualified properties: @(_ForbiddenAppearanceToken)" />
+  </Target>
+  <Target Name="ValidateSharedComponentAppearance" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_AppearanceMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                         Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_AppearanceMarkup.FullPath)"
+             Query="//*[(@* | *)[contains('|Background|Foreground|BorderBrush|BorderThickness|CornerRadius|BoxShadow|FontSize|FontWeight|FontFamily|CodeFontFamily|CodeFontSize|CodeBackground|CodeBackgroundPadding|CodeCornerRadius|SelectionBrush|SelectionForegroundBrush|LineHeight|Stroke|Fill|StrokeThickness|StrokeLineCap|StrokeJoin|StrokeMiterLimit|StrokeDashArray|StrokeDashOffset|RenderTransform|RenderTransformOrigin|Cursor|FocusAdorner|Template|Theme|', concat('|', local-name(), '|')) or contains('|Background|Foreground|BorderBrush|BorderThickness|CornerRadius|BoxShadow|FontSize|FontWeight|FontFamily|CodeFontFamily|CodeFontSize|CodeBackground|CodeBackgroundPadding|CodeCornerRadius|SelectionBrush|SelectionForegroundBrush|LineHeight|Stroke|Fill|StrokeThickness|StrokeLineCap|StrokeJoin|StrokeMiterLimit|StrokeDashArray|StrokeDashOffset|RenderTransform|RenderTransformOrigin|Cursor|FocusAdorner|Template|Theme|', concat('|', substring-after(local-name(), '.'), '|'))] or (contains('|AppButton|AppIconButton|AppActionButton|AppSettingsNavButton|AppCheckBox|AppToggleButton|AppIcon|AppIconLabel|AppColorSwatch|AppViewbox|AppToolActivityRow|AppSettingsDialog|', concat('|', local-name(), '|')) and (@* | *)[contains('|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))]) or (contains('|AppButton|AppIconButton|AppActionButton|AppSettingsNavButton|AppCheckBox|AppToggleButton|AppInput|AppComboBox|AppNumericUpDown|AppListBox|AppCard|AppSettingsDialog|', concat('|', local-name(), '|')) and (@* | *)[local-name()='Padding' or substring-after(local-name(), '.')='Padding']) or (local-name()='AppIcon' and (@* | *)[local-name()='Size' or substring-after(local-name(), '.')='Size']) or (local-name()='Setter' and (local-name(..)='Style' or local-name(..)='ControlTheme') and contains('|Background|Foreground|BorderBrush|BorderThickness|CornerRadius|Padding|FontSize|FontWeight|FontFamily|CodeFontFamily|CodeFontSize|CodeBackground|CodeBackgroundPadding|CodeCornerRadius|SelectionBrush|SelectionForegroundBrush|LineHeight|BoxShadow|StrokeThickness|HorizontalContentAlignment|VerticalContentAlignment|Template|FocusAdorner|Cursor|Width|Height|', concat('|', @Property, '|')))]">
+      <Output TaskParameter="Result" ItemName="_ForbiddenAppearanceMarkup" />
+    </XmlPeek>
+    <Error Condition="'@(_ForbiddenAppearanceMarkup)' != ''"
+           Text="View appearance must use shared component variants, not inline attributes or local styles: @(_ForbiddenAppearanceMarkup)" />
+  </Target>
+  <Target Name="ValidateSharedBorderAppearance" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_BorderMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                     Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_BorderMarkup.FullPath)"
+             Query="//*[local-name()='AppBorder' and (@Background or @BorderBrush or @BorderThickness or @CornerRadius or @BoxShadow)]">
+      <Output TaskParameter="Result" ItemName="_InlineBorderAppearance" />
+    </XmlPeek>
+    <Error Condition="'@(_InlineBorderAppearance)' != ''"
+           Text="AppBorder appearance must use shared component variants: @(_InlineBorderAppearance)" />
+  </Target>
+  <Target Name="ValidateSharedPropertyElements" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_PropertyMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                       Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_PropertyMarkup.FullPath)"
+             Query="//*[(starts-with(local-name(), 'App') or starts-with(local-name(), 'MarkdownSelectableTextBlock.') or starts-with(local-name(), 'SyntaxHighlightedSelectableTextBlock.')) and contains(local-name(), '.') and (substring-after(local-name(), '.')='Background' or substring-after(local-name(), '.')='Foreground' or substring-after(local-name(), '.')='BorderBrush' or substring-after(local-name(), '.')='BorderThickness' or substring-after(local-name(), '.')='CornerRadius' or substring-after(local-name(), '.')='BoxShadow' or substring-after(local-name(), '.')='FontSize' or substring-after(local-name(), '.')='FontWeight' or substring-after(local-name(), '.')='FontFamily' or substring-after(local-name(), '.')='LineHeight' or substring-after(local-name(), '.')='Stroke' or substring-after(local-name(), '.')='Fill' or substring-after(local-name(), '.')='StrokeThickness' or substring-after(local-name(), '.')='Cursor' or substring-after(local-name(), '.')='FocusAdorner' or substring-after(local-name(), '.')='Template' or (substring-after(local-name(), '.')='Padding' and (starts-with(local-name(), 'AppButton.') or starts-with(local-name(), 'AppIconButton.') or starts-with(local-name(), 'AppActionButton.') or starts-with(local-name(), 'AppSettingsNavButton.') or starts-with(local-name(), 'AppCard.') or starts-with(local-name(), 'AppInput.') or starts-with(local-name(), 'AppComboBox.') or starts-with(local-name(), 'AppNumericUpDown.') or starts-with(local-name(), 'AppCheckBox.') or starts-with(local-name(), 'AppToggleButton.') or starts-with(local-name(), 'AppListBox.'))) or ((substring-after(local-name(), '.')='Width' or substring-after(local-name(), '.')='Height' or substring-after(local-name(), '.')='MinWidth' or substring-after(local-name(), '.')='MaxWidth' or substring-after(local-name(), '.')='MinHeight' or substring-after(local-name(), '.')='MaxHeight' or substring-after(local-name(), '.')='HorizontalContentAlignment' or substring-after(local-name(), '.')='VerticalContentAlignment') and (starts-with(local-name(), 'AppButton.') or starts-with(local-name(), 'AppIconButton.') or starts-with(local-name(), 'AppActionButton.') or starts-with(local-name(), 'AppSettingsNavButton.') or starts-with(local-name(), 'AppIcon.') or starts-with(local-name(), 'AppColorSwatch.') or starts-with(local-name(), 'AppViewbox.'))) or (local-name()='AppIcon.Size') )]">
+      <Output TaskParameter="Result" ItemName="_ForbiddenPropertyElements" />
+    </XmlPeek>
+    <Error Condition="'@(_ForbiddenPropertyElements)' != ''"
+           Text="Shared component appearance cannot be overridden through AXAML property elements: @(_ForbiddenPropertyElements)" />
+  </Target>
+  <Target Name="ValidateInheritedAppearancePropertyElements" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_InheritedPropertyMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                                Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_InheritedPropertyMarkup.FullPath)"
+             Query="//*[contains(local-name(), '.') and (starts-with(namespace-uri(..), 'clr-namespace:MossAgent.App.Controls') or starts-with(namespace-uri(..), 'using:MossAgent.App.Controls') or starts-with(namespace-uri(..), 'clr-namespace:MossAgent.App.Views') or starts-with(namespace-uri(..), 'using:MossAgent.App.Views')) and (namespace-uri()='https://github.com/avaloniaui' or starts-with(namespace-uri(), 'clr-namespace:Avalonia.Controls') or starts-with(namespace-uri(), 'using:Avalonia.Controls')) and (substring-after(local-name(), '.')='Background' or substring-after(local-name(), '.')='Foreground' or substring-after(local-name(), '.')='BorderBrush' or substring-after(local-name(), '.')='BorderThickness' or substring-after(local-name(), '.')='CornerRadius' or substring-after(local-name(), '.')='BoxShadow' or substring-after(local-name(), '.')='FontSize' or substring-after(local-name(), '.')='FontWeight' or substring-after(local-name(), '.')='FontFamily' or substring-after(local-name(), '.')='LineHeight' or substring-after(local-name(), '.')='Stroke' or substring-after(local-name(), '.')='Fill' or substring-after(local-name(), '.')='StrokeThickness' or substring-after(local-name(), '.')='Cursor' or substring-after(local-name(), '.')='FocusAdorner' or substring-after(local-name(), '.')='Template' or ((substring-after(local-name(), '.')='Padding' or substring-after(local-name(), '.')='Width' or substring-after(local-name(), '.')='Height' or substring-after(local-name(), '.')='MinWidth' or substring-after(local-name(), '.')='MaxWidth' or substring-after(local-name(), '.')='MinHeight' or substring-after(local-name(), '.')='MaxHeight' or substring-after(local-name(), '.')='HorizontalContentAlignment' or substring-after(local-name(), '.')='VerticalContentAlignment') and (local-name(..)='AppButton' or local-name(..)='AppIconButton' or local-name(..)='AppActionButton' or local-name(..)='AppSettingsNavButton' or local-name(..)='AppIcon' or local-name(..)='AppColorSwatch' or local-name(..)='AppViewbox')) or (substring-after(local-name(), '.')='Padding' and local-name(..)='AppCard'))]">
+      <Output TaskParameter="Result" ItemName="_InheritedAppearancePropertyElement" />
+    </XmlPeek>
+    <Error Condition="'@(_InheritedAppearancePropertyElement)' != ''"
+           Text="Shared component appearance cannot be overridden through native base-class property elements: @(_InheritedAppearancePropertyElement)" />
+  </Target>
+  <Target Name="ValidateSharedSurfaceShadows" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_SurfaceShadowMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                            Exclude="$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_SurfaceShadowMarkup.FullPath)"
+             Query="//*[local-name()='Setter' and @Property='BoxShadow' and (not(@Value) or not(@Value='{StaticResource SharedSurfaceShadow}' or @Value='None' or (@Value='{StaticResource SharedWindowFrameShadow}' and ../@Selector='controls|AppBorder.window-content-frame')))]">
+      <Output TaskParameter="Result" ItemName="_IndependentSurfaceShadow" />
+    </XmlPeek>
+    <Error Condition="'@(_IndependentSurfaceShadow)' != ''"
+           Text="Surface shadows must use SharedSurfaceShadow or None; only the shared window frame may use SharedWindowFrameShadow: @(_IndependentSurfaceShadow)" />
+  </Target>
+  <Target Name="ValidateSharedComponentResources" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_ComponentResourceMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                                Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_ComponentResourceMarkup.FullPath)"
+             Query="//*[contains('|SolidColorBrush|BoxShadows|StreamGeometry|FontFamily|ResourceInclude|StyleInclude|', concat('|', local-name(), '|')) or @*[local-name()='Resources' or substring-after(local-name(), '.')='Resources']]">
+      <Output TaskParameter="Result" ItemName="_LocalVisualResource" />
+    </XmlPeek>
+    <Error Condition="'@(_LocalVisualResource)' != ''"
+           Text="Visual resources belong in shared App.axaml or Styles/; business markup cannot shadow or import component appearance tokens: @(_LocalVisualResource)" />
+  </Target>
+  <Target Name="ValidateSharedTerminalPane" BeforeTargets="CoreCompile" Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_TerminalPaneMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                           Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_TerminalPaneMarkup.FullPath)"
+             Query="//*[((local-name()='AppTerminalPane' or local-name()='AppTerminalViewport' or local-name()='AppTerminalScreen') and (@*[contains('|Content|DataTemplates|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|'))] or *[not(contains(local-name(), '.')) or contains('|Content|DataTemplates|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))])) or (local-name()='AppTerminalScreen' and (@CellHeight or *[substring-after(local-name(), '.')='CellHeight']))]">
+      <Output TaskParameter="Result" ItemName="_TerminalPaneReplacement" />
+    </XmlPeek>
+    <Error Condition="'@(_TerminalPaneReplacement)' != ''"
+           Text="Terminal pane composition and geometry belong to the shared component: @(_TerminalPaneReplacement)" />
+  </Target>
+</Project>

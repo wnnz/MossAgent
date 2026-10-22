@@ -53,7 +53,6 @@ public sealed class WorkspaceTaskPanelCoordinator(
     }
 
     public void ShowDiff(string content) => diff.Show(content);
-    public Task ReviewDiffAsync(Guid taskId, CancellationToken cancellationToken) => diff.ReviewAsync(taskId, cancellationToken);
 
     public void ClearSelection()
     {

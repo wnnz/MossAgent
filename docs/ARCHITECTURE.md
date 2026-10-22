@@ -40,6 +40,11 @@ UI 负责交互和服务装配；文件、SQLite、HTTP、进程与 Windows API 
 实现模块不得引用 App。新行为先确定归属、复用端口、安全规则和验证方式，再修改实现。
 手写 `.cs` 一文件一类型；文件、方法、AXAML 规模限制以 AGENTS.md 为准。
 
+App 项目文件只保留依赖、平台和显式导入；`src/MossAgent.App/Build/` 分别承载共享组件
+封装、视觉边界和外观边界的 MSBuild 规则。导入保持规则名称、条件、执行顺序和覆盖范围。
+`tests/MossAgent.App.Tests/Policies/` 集中相关边界测试，`Testing/AppBuildDefinition.cs`
+读取实际项目及显式规则文件，替代各测试重复查找仓库与假定规则内嵌在 csproj 的读取方式。
+
 ## 对话、任务与并发
 
 - 任务拥有独立取消令牌、事件流、进程树和浏览器会话。UI 只在 dispatcher 上发布可观察状态，

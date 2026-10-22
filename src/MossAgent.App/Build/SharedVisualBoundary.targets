@@ -1,0 +1,150 @@
+<Project>
+  <Target Name="ValidateSharedVisualTemplates" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_TemplateBoundaryMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                               Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_TemplateBoundaryMarkup.FullPath)"
+             Query="//*[not(contains(local-name(), '.')) and (@Theme or @Template or @FocusAdorner or @Styles or @FlyoutPresenterTheme or @FlyoutPresenterClasses or @*[substring-after(local-name(), '.')='FlyoutPresenterTheme' or substring-after(local-name(), '.')='FlyoutPresenterClasses'])] | //*[local-name()='Styles' or local-name()='Style' or local-name()='StyleInclude' or local-name()='ControlTheme'] | //*[contains(local-name(), '.') and (substring-after(local-name(), '.')='Theme' or substring-after(local-name(), '.')='Template' or substring-after(local-name(), '.')='FocusAdorner' or substring-after(local-name(), '.')='Styles' or substring-after(local-name(), '.')='FlyoutPresenterTheme' or substring-after(local-name(), '.')='FlyoutPresenterClasses')]">
+      <Output TaskParameter="Result" ItemName="_ForbiddenTemplateOverride" />
+    </XmlPeek>
+    <Error Condition="'@(_ForbiddenTemplateOverride)' != ''"
+           Text="Visual templates and local styles belong in shared Styles/ variants; view markup cannot replace them: @(_ForbiddenTemplateOverride)" />
+  </Target>
+  <Target Name="ValidateSharedSettingsDialogs" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_SettingsDialogMarkup Include="$(MSBuildProjectDirectory)/Views/**/*SettingsPane.axaml" />
+      <_DialogAppearanceMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                               Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_SettingsDialogMarkup.FullPath)"
+             Query="//*[local-name()='AppBorder' and contains(concat(' ', normalize-space(@Classes), ' '), ' overlay-scrim ')]">
+      <Output TaskParameter="Result" ItemName="_InlineSettingsDialog" />
+    </XmlPeek>
+    <XmlPeek XmlInputPath="%(_DialogAppearanceMarkup.FullPath)"
+             Query="//*[local-name()='AppSettingsDialog' and (@Width or @Height or @MinWidth or @MaxWidth or @MinHeight or @MaxHeight or @Padding or @Background or @Foreground or @BorderBrush or @BorderThickness or @CornerRadius or @BoxShadow or @Template or @Theme)] | //*[contains(local-name(), '.') and (local-name(..)='AppSettingsDialog' or starts-with(local-name(), 'AppSettingsDialog.')) and (substring-after(local-name(), '.')='Width' or substring-after(local-name(), '.')='Height' or substring-after(local-name(), '.')='MinWidth' or substring-after(local-name(), '.')='MaxWidth' or substring-after(local-name(), '.')='MinHeight' or substring-after(local-name(), '.')='MaxHeight' or substring-after(local-name(), '.')='Padding' or substring-after(local-name(), '.')='Template' or substring-after(local-name(), '.')='Theme')]">
+      <Output TaskParameter="Result" ItemName="_InlineDialogAppearance" />
+    </XmlPeek>
+    <Error Condition="'@(_InlineSettingsDialog)' != '' or '@(_InlineDialogAppearance)' != ''"
+           Text="Settings dialogs must use AppSettingsDialog and shared variants instead of page-owned overlays or appearance: @(_InlineSettingsDialog);@(_InlineDialogAppearance)" />
+  </Target>
+  <Target Name="ValidateSharedResponseContent" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_ResponseContentMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                              Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_ResponseContentMarkup.FullPath)"
+             Query="//*[(local-name()='AppResponseContent' or local-name()='AppResponseTable') and ((@* | *)[contains('|Content|DataTemplates|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Content|DataTemplates|Padding|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenResponseContent" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenResponseContent)' != ''"
+           Text="Response components own their block templates and geometry; bind Blocks, CopyCodeCommand or table data and use shared variants: @(_OverriddenResponseContent)" />
+  </Target>
+  <Target Name="ValidateSharedRepeatButtons" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_RepeatButtonMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                           Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_RepeatButtonMarkup.FullPath)"
+             Query="//*[local-name()='AppRepeatButton' and (@* | *)[contains('|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|Padding|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|Padding|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))]]">
+      <Output TaskParameter="Result" ItemName="_OverriddenRepeatButton" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenRepeatButton)' != ''"
+           Text="Repeat button geometry belongs in shared Styles/ variants, not business markup: @(_OverriddenRepeatButton)" />
+  </Target>
+  <Target Name="ValidateSharedVisualControls" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_VisualMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                     Exclude="$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_VisualMarkup.FullPath)"
+             Query="//*[ (namespace-uri()='https://github.com/avaloniaui' or starts-with(namespace-uri(), 'clr-namespace:Avalonia.Controls') or starts-with(namespace-uri(), 'using:Avalonia.Controls')) and not(contains(local-name(), '.')) and not(local-name()='Application' or local-name()='ResourceDictionary' or local-name()='ResourceInclude' or local-name()='StyleInclude' or local-name()='Styles' or local-name()='FluentTheme' or local-name()='SolidColorBrush' or local-name()='LinearGradientBrush' or local-name()='GradientStop' or local-name()='RotateTransform' or local-name()='TranslateTransform' or local-name()='Animation' or local-name()='KeyFrame' or local-name()='BoxShadows' or local-name()='StreamGeometry' or local-name()='FontFamily' or local-name()='TextDecorationCollection' or local-name()='TextDecoration' or local-name()='Grid' or local-name()='StackPanel' or local-name()='WrapPanel' or local-name()='Panel' or local-name()='ContentPresenter' or local-name()='Template' or local-name()='DataTemplate' or local-name()='ItemsPanelTemplate' or local-name()='ColumnDefinition' or local-name()='ControlTemplate' or local-name()='ControlTheme' or local-name()='Style' or local-name()='Setter' or local-name()='KeyBinding' or local-name()='Binding' or local-name()='MultiBinding') and not((local-name()='DrawingGroup' or local-name()='GeometryDrawing') and ancestor::*[local-name()='Styles.Resources' or local-name()='Application.Resources' or local-name()='ResourceDictionary'])]">
+      <Output TaskParameter="Result" ItemName="_ForbiddenVisualMarkup" />
+    </XmlPeek>
+    <Error Condition="'@(_ForbiddenVisualMarkup)' != ''"
+           Text="Views and reusable controls must use MossAgent.App.Controls wrappers; native Avalonia visual elements are forbidden: @(_ForbiddenVisualMarkup)" />
+  </Target>
+  <Target Name="ValidateSharedVisualNamespaces" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_VisualNamespaceMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                              Exclude="$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_VisualNamespaceMarkup.FullPath)"
+             Query="//*[not(namespace-uri()='https://github.com/avaloniaui' or namespace-uri()='clr-namespace:MossAgent.App.Controls' or starts-with(namespace-uri(), 'clr-namespace:MossAgent.App.Controls;') or namespace-uri()='using:MossAgent.App.Controls' or namespace-uri()='clr-namespace:MossAgent.App.Views' or starts-with(namespace-uri(), 'clr-namespace:MossAgent.App.Views;') or namespace-uri()='using:MossAgent.App.Views')]">
+      <Output TaskParameter="Result" ItemName="_ForbiddenVisualNamespace" />
+    </XmlPeek>
+    <Error Condition="'@(_ForbiddenVisualNamespace)' != ''"
+           Text="Views and reusable controls may only use shared MossAgent.App.Controls visual components and App view hosts: @(_ForbiddenVisualNamespace)" />
+  </Target>
+  <Target Name="ValidateSharedComposedControls" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_ComposedMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                       Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_ComposedMarkup.FullPath)"
+             Query="//*[(local-name()='AppIconLabel' and ((@* | *)[contains('|Spacing|Orientation|ColumnSpacing|RowSpacing|Children|ColumnDefinitions|RowDefinitions|Background|Foreground|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|', concat('|', local-name(), '|')) or contains('|Spacing|Orientation|ColumnSpacing|RowSpacing|Children|ColumnDefinitions|RowDefinitions|Background|Foreground|Width|Height|MinWidth|MaxWidth|MinHeight|MaxHeight|', concat('|', substring-after(local-name(), '.'), '|'))] or *[not(contains(local-name(), '.'))])) or ((local-name()='AppIconButton' or local-name()='AppActionButton' or local-name()='AppSettingsNavButton' or local-name()='AppBrowserToolbar') and ((@* | *)[local-name()='Content' or substring-after(local-name(), '.')='Content'] or *[not(contains(local-name(), '.'))]))]">
+      <Output TaskParameter="Result" ItemName="_BypassedComposedControl" />
+    </XmlPeek>
+    <Error Condition="'@(_BypassedComposedControl)' != ''"
+           Text="Composed icon controls own their content and icon-label layout; use shared variants instead of overriding them: @(_BypassedComposedControl)" />
+  </Target>
+  <Target Name="ValidateSharedFieldSizing" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_FieldSizingMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                          Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_FieldSizingMarkup.FullPath)"
+             Query="//*[(local-name()='AppInput' or local-name()='AppComboBox' or local-name()='AppNumericUpDown') and ((@* | *)[contains('|Height|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', local-name(), '|')) or contains('|Height|MinHeight|MaxHeight|HorizontalContentAlignment|VerticalContentAlignment|', concat('|', substring-after(local-name(), '.'), '|'))])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenFieldSizing" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenFieldSizing)' != ''"
+           Text="Field heights and content alignment belong in shared Styles/ variants; business markup cannot override them: @(_OverriddenFieldSizing)" />
+  </Target>
+  <Target Name="ValidateSharedLabelSizing" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_LabelSizingMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                          Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_LabelSizingMarkup.FullPath)"
+             Query="//*[(local-name()='AppIconLabel' or local-name()='AppActionButton') and (@*[local-name()='LabelMaxWidth' or substring-after(local-name(), '.')='LabelMaxWidth'] or *[substring-after(local-name(), '.')='LabelMaxWidth'])]">
+      <Output TaskParameter="Result" ItemName="_OverriddenLabelSizing" />
+    </XmlPeek>
+    <Error Condition="'@(_OverriddenLabelSizing)' != ''"
+           Text="Icon-label sizing belongs in shared Styles/ variants; do not override LabelMaxWidth on view instances: @(_OverriddenLabelSizing)" />
+  </Target>
+  <Target Name="ValidateNoViewLocalStyles" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_ViewMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                   Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_ViewMarkup.FullPath)"
+             Query="//*[local-name()='Style' or local-name()='ControlTheme']">
+      <Output TaskParameter="Result" ItemName="_LocalViewStyle" />
+    </XmlPeek>
+    <Error Condition="'@(_LocalViewStyle)' != ''"
+           Text="View and control markup must use shared styles from Styles/ instead of local Style or ControlTheme declarations: @(_LocalViewStyle)" />
+  </Target>
+  <Target Name="ValidateLayoutPrimitivesRemainStructural" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_LayoutMarkup Include="$(MSBuildProjectDirectory)/**/*.axaml"
+                     Exclude="$(MSBuildProjectDirectory)/App.axaml;$(MSBuildProjectDirectory)/Styles/**/*.axaml;$(MSBuildProjectDirectory)/bin/**/*.axaml;$(MSBuildProjectDirectory)/obj/**/*.axaml" />
+    </ItemGroup>
+    <XmlPeek XmlInputPath="%(_LayoutMarkup.FullPath)"
+             Query="//*[ ((local-name()='Grid' or local-name()='StackPanel' or local-name()='WrapPanel' or local-name()='Panel' or local-name()='ContentPresenter') and (@Background or @Foreground or @BorderBrush or @BorderThickness or @CornerRadius or @BoxShadow)) or (contains(local-name(), '.') and (substring-before(local-name(), '.')='Grid' or substring-before(local-name(), '.')='StackPanel' or substring-before(local-name(), '.')='WrapPanel' or substring-before(local-name(), '.')='Panel' or substring-before(local-name(), '.')='ContentPresenter') and (substring-after(local-name(), '.')='Background' or substring-after(local-name(), '.')='Foreground' or substring-after(local-name(), '.')='BorderBrush' or substring-after(local-name(), '.')='BorderThickness' or substring-after(local-name(), '.')='CornerRadius' or substring-after(local-name(), '.')='BoxShadow'))]">
+      <Output TaskParameter="Result" ItemName="_StyledLayoutPrimitive" />
+    </XmlPeek>
+    <Error Condition="'@(_StyledLayoutPrimitive)' != ''"
+           Text="Layout primitives cannot own visual appearance; use a shared MossAgent.App.Controls surface: @(_StyledLayoutPrimitive)" />
+  </Target>
+</Project>

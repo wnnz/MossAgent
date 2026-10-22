@@ -87,9 +87,16 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 
 ## 3. 当前验证证据及限制
 
-最新运行检查点为 `artifacts/worktree-object-authorization-20261021/`，提交记录确认该候选
+2026-10-22 代码精简与结构整理后，完整 Debug 解决方案构建零警告、零错误，1,483 项相关
+测试通过，36 条构建规则及实际拒绝路径验证通过。验证时记录曾保存在
+`artifacts/latest-validation/`，本机原始产物目前已清理，入库保留本节摘要；
+本次未运行全部解决方案测试、原生 GUI、真实提供商账号或 Release 发布验证。
+
+最近的产品运行检查点原路径为 `artifacts/worktree-object-authorization-20261021/`，提交记录确认该候选
 代码进入 `7949b87`。Debug 使用独立输出目录。原始产物是本机忽略文件，不随 Git 克隆分发；
 入库摘要见[工作树授权验收](archive/GIT_WORKTREES.md#worktree-object-authorization-acceptance)。
+该目录及其他历史产物曾汇总到本机 `artifacts/history-20261022.zip`，该归档随后也已移除。
+下表记录的是该产品运行检查点，不能将其验证范围与后续维护测试合并为一次全量验收。
 
 | 检查 | 已有结果 | 不能推断的内容 |
 | --- | --- | --- |

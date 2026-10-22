@@ -136,7 +136,7 @@ public sealed class BrowserToolbarComponentTests : IAsyncLifetime
     [Fact]
     public void MarkupGuard_RejectsContentOverridesButAllowsFunctionalBindings()
     {
-        var project = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App", "MossAgent.App.csproj"));
+        var project = AppBuildDefinition.Load();
         var target = Assert.Single(project.Descendants("Target"), element =>
             element.Attribute("Name")?.Value == "ValidateSharedComposedControls");
         var query = Assert.Single(target.Elements("XmlPeek")).Attribute("Query")!.Value;
@@ -152,11 +152,4 @@ public sealed class BrowserToolbarComponentTests : IAsyncLifetime
     private static Rect Bounds(Control control, Control root) =>
         new(control.TranslatePoint(default, root)!.Value, control.Bounds.Size);
 
-    private static string RepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "MossAgent.slnx")))
-            directory = directory.Parent;
-        return directory!.FullName;
-    }
 }
