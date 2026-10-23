@@ -68,7 +68,8 @@ public sealed class WorkspaceTaskEnvironmentControlTests : IAsyncLifetime
                 var flyout = Assert.IsType<AppFlyout>(button.Flyout);
                 Assert.True(flyout.IsOpen);
                 var content = Assert.IsType<AppCard>(flyout.Content);
-                var actions = content.GetVisualDescendants().OfType<AppActionButton>().ToArray();
+                var actions = content.GetVisualDescendants().OfType<AppActionButton>()
+                    .Where(action => action.IsEffectivelyVisible).ToArray();
                 Assert.Equal(2, actions.Length);
                 var worktree = Assert.Single(actions, action => ReferenceEquals(action.Command, workspace.Catalog.Environment.UseWorktreeCommand));
                 Assert.True(worktree.IsEffectivelyEnabled);

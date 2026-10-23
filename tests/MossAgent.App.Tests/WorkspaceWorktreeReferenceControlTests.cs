@@ -12,6 +12,7 @@ using Avalonia.VisualTree;
 using MossAgent.App.Controls;
 using MossAgent.App.ViewModels;
 using MossAgent.App.Views;
+using MossAgent.Application.Git;
 using MossAgent.Domain;
 using Xunit;
 
@@ -46,7 +47,8 @@ public sealed class WorkspaceWorktreeReferenceControlTests : IAsyncLifetime
             flyout.ShowAt(button);
             Dispatcher.UIThread.RunJobs();
             var card = Assert.IsType<AppCard>(flyout.Content);
-            var input = Assert.Single(card.GetVisualDescendants().OfType<AppInput>());
+            var input = Assert.Single(card.GetVisualDescendants().OfType<AppInput>(),
+                item => item.Name == "BaseReferenceInput");
             Assert.True(input.IsEffectivelyVisible);
             Assert.True(input.Focus(NavigationMethod.Tab));
             window.KeyTextInput("selected-base");
@@ -83,11 +85,51 @@ public sealed class WorkspaceWorktreeReferenceControlTests : IAsyncLifetime
         finally { window.Close(); }
     }, TestContext.Current.CancellationToken);
 
+    [Fact]
+    public Task DiscoveredReferencesRenderAndSelectBaseReference() => _session.Dispatch(async () =>
+    {
+        var environment = new WorkspaceTaskEnvironmentViewModel(new StubDiscovery());
+        environment.SetContext(new ProjectProfile(Guid.NewGuid(), "project", "root", ["root"], DateTimeOffset.UtcNow), null);
+        var view = new WorkspaceTaskEnvironmentView { DataContext = environment,
+            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom };
+        var window = new AppWindow { Width = 526, Height = 480, Content = view, RequestedThemeVariant = ThemeVariant.Light };
+        window.Show();
+        try
+        {
+            window.UpdateLayout();
+            var button = view.FindControl<AppActionButton>("EnvironmentButton")!;
+            var flyout = Assert.IsType<AppFlyout>(button.Flyout);
+            flyout.ShowAt(button);
+            Dispatcher.UIThread.RunJobs();
+            await environment.References.RefreshAsync();
+            Dispatcher.UIThread.RunJobs();
+            var card = Assert.IsType<AppCard>(flyout.Content);
+            var list = Assert.Single(card.GetVisualDescendants().OfType<AppListBox>());
+            Assert.True(list.IsEffectivelyVisible);
+            Assert.Equal(2, list.ItemCount);
+            var search = Assert.Single(card.GetVisualDescendants().OfType<AppInput>(),
+                input => input.Name == "ReferenceSearchInput");
+            Assert.Equal(environment.References.Label, AutomationProperties.GetName(search));
+            environment.References.SelectedItem = environment.References.Items[1];
+            Assert.Equal("refs/heads/ref-1", environment.BaseReference);
+        }
+        finally { window.Close(); }
+    }, TestContext.Current.CancellationToken);
+
     private static void Activate(AppWindow window, AppActionButton action)
     {
         Assert.True(action.Focus(NavigationMethod.Tab));
         window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
         window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
         Dispatcher.UIThread.RunJobs();
+    }
+
+    private sealed class StubDiscovery : IGitWorktreeReferenceDiscovery
+    {
+        public Task<GitWorktreeReferencePage> SearchAsync(ProjectProfile project, string? search, int skip, int take,
+            CancellationToken cancellationToken) => Task.FromResult(new GitWorktreeReferencePage(
+            [new GitWorktreeReference("ref-0", "refs/heads/ref-0", GitWorktreeReferenceKind.Branch, new string('a', 40), "subject"),
+             new GitWorktreeReference("ref-1", "refs/heads/ref-1", GitWorktreeReferenceKind.Branch, new string('b', 40), "subject")],
+            2, false, false));
     }
 }

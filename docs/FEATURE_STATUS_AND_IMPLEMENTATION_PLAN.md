@@ -58,7 +58,7 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 | C13 | 任务产物读取、预览、编辑前后快照和最终补丁使用共享会话；完成与调用方保留分离，失败按原句柄清理，复制后校验 hash | [产物读取](archive/SECURITY.md#artifact-handle-path-safety-acceptance)、[共享产物会话](archive/SECURITY.md#owned-artifact-session-acceptance)；崩溃清理/引用回收见 R02/R05 |
 | C14 | Git 状态、已暂存/未暂存差异、任务快照统计、补丁审阅及确认撤销；Git diff/numstat 临时输入持续固定、只共享读取并按句柄清理 | [差异审阅](archive/GIT_WORKTREES.md#diff-review-acceptance)、[撤销](archive/GIT_WORKTREES.md#file-change-undo-acceptance)、[Git 临时输入](archive/GIT_WORKTREES.md#git-diff-input-session-acceptance)；不是 Git 进程隔离，见 R01/R11 |
 | C15 | 文件级暂存/取消暂存、已暂存内容预览确认提交、捕获 commit 的单分支预览确认推送；审批后复核 HEAD/索引/远端，不自动 stage-all 或强推 | [暂存](archive/GIT_WORKTREES.md#git-staging-acceptance)、[提交](archive/GIT_WORKTREES.md#git-commit-acceptance)、[推送](archive/GIT_WORKTREES.md#git-push-acceptance)；区块、远端配置和真实认证见 R11 |
-| C16 | 独立工作树创建、手工选择分支/标签/提交并固定基准 commit、连续对话、重开、工具守卫和确认清理；失败目录保留供核实 | [基准选择](archive/GIT_WORKTREES.md#worktree-base-reference-acceptance)、[工作树路径](archive/GIT_WORKTREES.md#worktree-path-safety-acceptance)；分支发现、创建/清理竞态及崩溃见 R04 |
+| C16 | 独立工作树创建、手工选择分支/标签/提交并固定基准 commit、有界本地分支/标签搜索分页及 commit 预览、连续对话、重开、工具守卫和确认清理；失败目录保留供核实 | [基准选择](archive/GIT_WORKTREES.md#worktree-base-reference-acceptance)、[工作树路径](archive/GIT_WORKTREES.md#worktree-path-safety-acceptance)；远端获取、创建/清理竞态及崩溃见 R04 |
 | C17 | schema 28 绑定工作树自身的 task/project/grant/目录对象身份；恢复拒绝同路径替换，即使复制 Git 元数据；Agent/工具/PTY 持续持有根链；旧工作树明确确认，不消耗草稿或续跑 | [工作树对象授权](archive/GIT_WORKTREES.md#worktree-object-authorization-acceptance)；替换对象重新授权、最终交接见 R02/R04 |
 | C18 | PowerShell 命令及 ConPTY 交互终端基础：输入/输出、VT、剪贴板/输入法、任务所属进程树、时限、有界输出和停止链路 | [命令](archive/TERMINAL_TOOLS.md#command-execution-acceptance)、[终端](archive/TERMINAL_TOOLS.md#terminal-interaction-acceptance)；**不具备严格文件系统隔离**，见 R01 |
 
@@ -121,7 +121,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | R01 | 部分完成；安全阻断 | 命令/PTY/Git hooks/helpers/stdio MCP 等代码执行的真实文件系统隔离 | P0；原生 MXC 独立环境尚未就绪 |
 | R02 | 部分完成、部分未验证 | 最终路径竞争、严格撤权排空、完整入口审计、产物/缓存崩溃回收与配额 | P0；复用已有句柄端口和 schema 26–28 |
 | R03 | 附件 Steer/发送偏好未实现；其他矩阵未验证 | 附件引导、默认发送配置、Queue/Steer 竞争及事务/副作用中崩溃 | P1；R02/R05 |
-| R04 | 部分完成 | 自动分支发现、创建原子认领、句柄级清理、替换对象重新授权及完整崩溃生命周期 | P1；R01/R02 |
+| R04 | 部分完成 | 远端分支获取、创建原子认领、句柄级清理、替换对象重新授权及完整崩溃生命周期 | P1；R01/R02 |
 | R05 | 部分完成 | PDF/其他文件、全图查看、子代理图像共享、未引用快照安全回收 | P1；模型协议与产物会话 |
 | R06 | 部分完成、部分未验证 | 全协议终态与断线、真实提供商/模型能力和代理配置竞争矩阵 | P1；获准真实服务账号 |
 | R07 | 部分完成、部分未验证 | 内外/CDP 切换、可靠人工接管、其他创建/副作用崩溃与重启组合 | P1；R01/R02 |
@@ -232,7 +232,9 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 
 ### R04：工作树创建、清理和完整生命周期
 
-**现状：** 工作树对象 grant 与旧任务确认已完成。创建已改为 Windows 受控目录会话
+**现状：** 工作树对象 grant 与旧任务确认已完成。基准选择器已并入本地分支/标签发现：
+受管 runner 列本地 refs、按名称搜索/分页并预览固定 commit，须授权完整仓库，窗口有界且
+截断明示，不做远端网络获取；手工输入仍独立保留。创建已改为 Windows 受控目录会话
 独占创建空目标（NtCreateFile FILE_CREATE，不接受已存在对象）并持有其卷/文件身份到
 Git 与登记结束，登记前重开名称核对身份；预创建空目录对 `git worktree add` 的兼容性与
 失败语义已用真实 Git 验证。登记前身份核对拒绝被替换的对象并保留目录。schema 29 新增
@@ -246,8 +248,8 @@ Orphaned/Acknowledged）、错误码与更新时间：claim 身份、Git 完成�
 不自动重建或删除。恢复展示面板、清理侧阶段与 `.git` 指针/common-dir 复核尚缺。
 清理需要释放禁止删除共享的句柄再调用 Git，因此最终删除窗口仍有竞态。
 
-1. Infrastructure 增加受管 runner 的本地分支/标签发现、搜索/分页和固定 commit 预览。
-   自动发现与已有手工输入分别保留；远端 ref 获取是单独显式网络动作。
+1. 已落地：受管 runner 的本地分支/标签发现、搜索/分页和固定 commit 预览已并入基准
+   选择器，自动发现与手工输入分别保留。远端 ref 获取仍缺，须做成单独显式网络动作。
 2. Platform.Windows 已落地独占创建空目标并持有身份的会话，预创建空目录与真实 Git
    `worktree add` 的兼容性已验证；未采用接受已有目标的 `CreateDirectory`。Infrastructure
    在目录变更前持久化 task/repository/base commit/target/identity intent（schema 29，
