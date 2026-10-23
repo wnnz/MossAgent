@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MossAgent.Application.Git;
 using MossAgent.Application.Persistence;
 using MossAgent.App.Services;
 using MossAgent.Domain;
@@ -25,9 +26,11 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public WorkspaceCatalogViewModel(
         IWorkspaceRepository workspaces,
         WorkspaceWorktreeCleanupService worktreeCleanup,
-        WorkspaceProjectService projectService, ConversationAttachmentThumbnailFactory? thumbnails = null)
+        WorkspaceProjectService projectService, ConversationAttachmentThumbnailFactory? thumbnails = null,
+        IGitWorktreeReferenceDiscovery? worktreeReferences = null)
     {
         _workspaces = workspaces;
+        Environment = new WorkspaceTaskEnvironmentViewModel(worktreeReferences);
         _thumbnails = thumbnails;
         _worktreeCleanup = worktreeCleanup;
         WorktreeAuthorization = new(worktreeCleanup.Authorizations);
@@ -72,7 +75,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public WorkspaceTaskSearchViewModel TaskSearch { get; }
     public WorkspaceRecentTasksViewModel RecentTasks { get; }
     public WorkspaceTaskManagementViewModel TaskManagement { get; }
-    public WorkspaceTaskEnvironmentViewModel Environment { get; } = new();
+    public WorkspaceTaskEnvironmentViewModel Environment { get; }
     public WorkspaceWorktreeAuthorizationViewModel WorktreeAuthorization { get; }
     public IRelayCommand NewTaskCommand { get; }
     public IRelayCommand NewChatCommand { get; }

@@ -8,6 +8,7 @@ namespace MossAgent.App.ViewModels;
 public sealed class WorkspaceTaskEnvironmentViewModel : ObservableObject
 {
     private Guid? _projectId;
+    private ProjectProfile? _project;
     private Guid? _taskId;
     private bool _taskIsWorktree;
     private bool _useWorktree;
@@ -16,11 +17,14 @@ public sealed class WorkspaceTaskEnvironmentViewModel : ObservableObject
     private string? _preparationNotice;
     private string _baseReference = string.Empty;
 
-    public WorkspaceTaskEnvironmentViewModel()
+    public WorkspaceTaskEnvironmentViewModel(IGitWorktreeReferenceDiscovery? references = null)
     {
         UseProjectDirectoryCommand = new RelayCommand(() => Select(false), () => CanChoose);
         UseWorktreeCommand = new RelayCommand(() => Select(true), () => CanChoose);
+        References = new WorkspaceWorktreeReferencePickerViewModel(references, () => _project, () => CanChoose, SelectReference);
     }
+
+    public WorkspaceWorktreeReferencePickerViewModel References { get; }
 
     public bool HasProject => _projectId is not null;
     public bool CanChoose => HasProject && _taskId is null && !_locked;
@@ -44,7 +48,11 @@ public sealed class WorkspaceTaskEnvironmentViewModel : ObservableObject
     public bool IsPickerOpen
     {
         get => _isPickerOpen;
-        set => SetProperty(ref _isPickerOpen, value && CanChoose);
+        set
+        {
+            if (!SetProperty(ref _isPickerOpen, value && CanChoose) || !value) return;
+            References.NotifyOpened();
+        }
     }
 
     internal void SetContext(ProjectProfile? project, AgentTask? task)
@@ -52,12 +60,14 @@ public sealed class WorkspaceTaskEnvironmentViewModel : ObservableObject
         var worktree = !string.IsNullOrWhiteSpace(task?.WorktreePath);
         if (_projectId == project?.Id && _taskId == task?.Id && _taskIsWorktree == worktree) return;
         _projectId = project?.Id;
+        _project = project;
         _taskId = task?.Id;
         _taskIsWorktree = worktree;
         _useWorktree = false;
         _baseReference = string.Empty;
         OnPropertyChanged(nameof(BaseReference));
         SetPreparationNotice(null);
+        References.ResetContext();
         IsPickerOpen = false;
         OnPropertyChanged(nameof(HasProject));
         OnPropertyChanged(nameof(Hint));
@@ -79,6 +89,12 @@ public sealed class WorkspaceTaskEnvironmentViewModel : ObservableObject
         SetPreparationNotice(null);
         IsPickerOpen = false;
         NotifyChoice();
+    }
+
+    private void SelectReference(GitWorktreeReference reference)
+    {
+        if (!CanChoose) return;
+        BaseReference = reference.RefName;
     }
 
     internal void ClearPreparationNotice() => SetPreparationNotice(null);
