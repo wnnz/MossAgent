@@ -16,6 +16,7 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
     private readonly GitWorktreeRootAuthorization? _authorization = roots is not null && connections is not null
         ? new(roots, connections) : roots is null && connections is null ? null
         : throw new ArgumentException("Worktree identity and persistence must be configured together.");
+    private readonly SqliteWorktreeCreationIntents? _intents = connections is null ? null : new(connections);
 
     public Task<WorktreeRootAuthorization?> ReadAuthorizationAsync(Guid taskId, CancellationToken token) =>
         Task.Run(() => (_authorization ?? throw new WorktreeAuthorizationException()).ReadAsync(taskId, token), token);
@@ -112,9 +113,13 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
             GitWorktreePaths.ManagedTarget(paths, target, false);
             GitWorktreePaths.ValidateRepository(source);
             token.ThrowIfCancellationRequested();
+            if (_intents is not null)
+                await _intents.RecordAsync(taskId, project, source.Root, baseReference, commit, target, token).ConfigureAwait(false);
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             GitWorktreePaths.ManagedTarget(paths, target, false);
             using var claim = targets is null ? null : await targets.CreateAsync(target, token).ConfigureAwait(false);
+            if (claim is not null && _intents is not null)
+                await _intents.RecordIdentityAsync(taskId, target, claim.Identity, token).ConfigureAwait(false);
             var result = await git.RunAsync(
                 source.Root, source.Command("worktree", "add", "-b", $"mossagent/{taskId:N}", target, commit), token).ConfigureAwait(false);
             if (result.ExitCode != 0) throw new InvalidOperationException("Git worktree creation failed.");

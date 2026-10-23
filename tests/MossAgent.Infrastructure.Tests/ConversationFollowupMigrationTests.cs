@@ -31,7 +31,7 @@ public sealed class ConversationFollowupMigrationTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_followup_version;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(28, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(29, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(2, await fixture.CountAsync("SELECT COUNT(*) FROM sqlite_master WHERE name IN ('conversation_followups','conversation_followup_queues');"));
         Assert.Equal(fixture.Task, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Task.ProjectId, fixture.Token)));
         Assert.Equal(message, Assert.Single(await fixture.Repository.GetMessagesAsync(fixture.Task.Id, fixture.Token)));

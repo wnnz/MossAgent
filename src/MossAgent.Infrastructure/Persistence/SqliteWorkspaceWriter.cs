@@ -37,6 +37,8 @@ internal sealed class SqliteWorkspaceWriter(SqliteConnectionFactory connections)
     internal static async Task WriteTaskAsync(SqliteConnection connection, SqliteTransaction transaction,
         AgentTask task, CancellationToken cancellationToken)
     {
+        if (task.ProjectId is not null && task.WorktreePath is not null)
+            await ClaimWorktreeIntentAsync(connection, transaction, task, cancellationToken);
         await using var command = connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = """
@@ -56,6 +58,29 @@ internal sealed class SqliteWorkspaceWriter(SqliteConnectionFactory connections)
         command.Parameters.AddWithValue("$worktree", (object?)task.WorktreePath ?? DBNull.Value);
         if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
             throw new InvalidOperationException("A task cannot change its project scope.");
+    }
+
+    private static async Task ClaimWorktreeIntentAsync(SqliteConnection connection, SqliteTransaction transaction,
+        AgentTask task, CancellationToken cancellationToken)
+    {
+        await using var claim = connection.CreateCommand();
+        claim.Transaction = transaction;
+        claim.CommandText = """
+            UPDATE worktree_creation_intents SET state=1,claimed_at=$claimed
+            WHERE task_id=$task AND project_id=$project AND target=$worktree AND state=0
+              AND NOT EXISTS(SELECT 1 FROM agent_tasks WHERE id=$task);
+            """;
+        claim.Parameters.AddWithValue("$task", task.Id.ToString());
+        claim.Parameters.AddWithValue("$project", (object?)task.ProjectId?.ToString() ?? DBNull.Value);
+        claim.Parameters.AddWithValue("$worktree", task.WorktreePath);
+        claim.Parameters.AddWithValue("$claimed", DateTimeOffset.UtcNow.ToString("O"));
+        if (await claim.ExecuteNonQueryAsync(cancellationToken) == 1) return;
+        await using var existing = connection.CreateCommand();
+        existing.Transaction = transaction;
+        existing.CommandText = "SELECT COUNT(*) FROM agent_tasks WHERE id=$task;";
+        existing.Parameters.AddWithValue("$task", task.Id.ToString());
+        if (Convert.ToInt64(await existing.ExecuteScalarAsync(cancellationToken)) == 0)
+            throw new InvalidOperationException("A worktree task requires a matching recorded creation intent.");
     }
 
     internal static async Task WriteFailureAsync(SqliteConnection connection, SqliteTransaction transaction,

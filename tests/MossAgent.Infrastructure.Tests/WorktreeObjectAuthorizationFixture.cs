@@ -38,11 +38,17 @@ internal sealed class WorktreeObjectAuthorizationFixture : IAsyncDisposable
         catch { git.Dispose(); throw; }
     }
 
-    public async Task<AgentTask> SaveTaskAsync(Guid id, string path)
+    public async Task<AgentTask> SaveTaskAsync(Guid id, string path, bool seedIntent = false)
     {
         var now = DateTimeOffset.UtcNow;
         var task = new AgentTask(id, Project.Id, "worktree object fixture", ApprovalPolicy.ReadOnly,
             AgentTaskStatus.Interrupted, now, now, path);
+        if (seedIntent)
+        {
+            var project = Assert.Single(await Storage.Repository.GetProjectsAsync(Token), item => item.Id == Project.Id);
+            await new SqliteWorktreeCreationIntents(Storage.Connections)
+                .RecordAsync(id, project, project.PrimaryDirectory, null, "seed", path, Token);
+        }
         await Storage.Repository.SaveTaskAsync(task, Token);
         return task;
     }

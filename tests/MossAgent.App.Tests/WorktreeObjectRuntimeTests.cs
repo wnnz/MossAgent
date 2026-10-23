@@ -109,6 +109,11 @@ public sealed class WorktreeObjectRuntimeTests
         var path = await worktrees.CreateAsync(owner.Project, id, fixture.Token);
         var now = DateTimeOffset.UtcNow;
         var task = new AgentTask(id, owner.Project.Id, "worktree object fixture", policy, AgentTaskStatus.Interrupted, now, now, path);
+        if (legacy)
+        {
+            var intents = new SqliteWorktreeCreationIntents(new SqliteConnectionFactory(new AppDataPaths(fixture.DataRoot)));
+            await intents.RecordAsync(id, owner.Project, owner.Project.PrimaryDirectory, null, "seed", path, fixture.Token);
+        }
         await fixture.Tasks.SaveTaskWithMessagesAsync(task,
             [new ConversationMessage(Guid.NewGuid(), id, MessageRole.User, "saved worktree prompt", now)], fixture.Token);
         return task;
