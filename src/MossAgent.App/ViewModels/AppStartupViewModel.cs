@@ -9,24 +9,28 @@ public sealed class AppStartupViewModel : ObservableObject
         "MossAgent.App.Resources.StartupStrings", typeof(AppStartupViewModel).Assembly);
     private bool _isLoading;
     private bool _hasWarning;
+    private bool _worktreeWarning;
 
     public bool IsLoading => _isLoading;
     public bool IsReady => !_isLoading;
     public bool HasWarning => _hasWarning;
-    public bool HasStatus => IsLoading || HasWarning;
-    public string Status => Label(IsLoading ? "ConnectingMcp" : "McpStartupWarning");
+    public bool HasStatus => IsLoading || _hasWarning || _worktreeWarning;
+    public string Status => Label(IsLoading ? "ConnectingMcp"
+        : _hasWarning ? "McpStartupWarning" : "WorktreeRecoveryWarning");
     public string OpenSettingsLabel => Label("OpenMcpSettings");
 
     internal void Begin()
     {
         _hasWarning = false;
+        _worktreeWarning = false;
         _isLoading = true;
         NotifyStateChanged();
     }
 
-    internal void Complete(bool hasWarning)
+    internal void Complete(bool hasWarning, bool worktreeWarning = false)
     {
         _hasWarning = hasWarning;
+        _worktreeWarning = worktreeWarning;
         _isLoading = false;
         NotifyStateChanged();
     }

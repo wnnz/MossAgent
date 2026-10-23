@@ -40,6 +40,7 @@ public sealed class AppStartupService : IAsyncDisposable
     private async Task LoadAsync()
     {
         var hasWarning = false;
+        var worktreeWarning = false;
         try
         {
             await _mcp.ReloadAsync(_shutdown.Token).ConfigureAwait(false);
@@ -51,7 +52,7 @@ public sealed class AppStartupService : IAsyncDisposable
         {
             try { await _creationIntents.ReconcileAsync(_shutdown.Token).ConfigureAwait(false); }
             catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { return; }
-            catch (Exception) { hasWarning = true; }
+            catch (Exception) { worktreeWarning = true; }
         }
         lock (_gate)
         {
@@ -60,7 +61,7 @@ public sealed class AppStartupService : IAsyncDisposable
             {
                 lock (_gate)
                 {
-                    if (!_disposed) _state.Complete(hasWarning);
+                    if (!_disposed) _state.Complete(hasWarning, worktreeWarning);
                 }
             });
         }
