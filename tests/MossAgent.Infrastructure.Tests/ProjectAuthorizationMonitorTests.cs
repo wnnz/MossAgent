@@ -87,14 +87,16 @@ public sealed class ProjectAuthorizationMonitorTests
         var polling = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var pending = new TaskCompletionSource<ProjectProfile?>(TaskCreationOptions.RunContinuationsAsynchronously);
         var time = new ManualToolTimeProvider();
-        reader.Read = (count, _) =>
+        var acquired = false;
+        reader.Read = (_, _) =>
         {
-            if (count <= 2) return Task.FromResult<ProjectProfile?>(project);
+            if (!Volatile.Read(ref acquired)) return Task.FromResult<ProjectProfile?>(project);
             polling.TrySetResult();
             return pending.Task;
         };
         await using var monitor = new ProjectAuthorizationMonitor(reader, new ProjectAuthorizationChanges(), time);
         await using var lease = await monitor.AcquireAsync(project, Token);
+        Volatile.Write(ref acquired, true);
         using var waiting = CancellationTokenSource.CreateLinkedTokenSource(Token);
         waiting.CancelAfter(TimeSpan.FromSeconds(5));
         while (!polling.Task.IsCompleted)

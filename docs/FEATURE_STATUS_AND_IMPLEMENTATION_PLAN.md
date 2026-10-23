@@ -119,7 +119,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | 编号 | 当前状态 | 未完成的功能或边界 | 优先级/依赖 |
 | --- | --- | --- | --- |
 | R01 | 部分完成；安全阻断 | 命令/PTY/Git hooks/helpers/stdio MCP 等代码执行的真实文件系统隔离 | P0；原生 MXC 独立环境尚未就绪 |
-| R02 | 部分完成；schema 30 持久资源登记、跨实例限时排空及陈旧登记二次确认恢复已实现 | 真实进程崩溃核验、迟到资源、最终路径竞争、完整入口审计、产物/缓存回收与配额 | P0；复用已有句柄端口和 schema 26–30 |
+| R02 | 部分完成；持久资源登记、跨实例排空、陈旧登记恢复及 monitor 所属原生根迟到清理已实现 | 其他长驻资源/真实崩溃核验、最终路径竞争、完整入口审计、产物/缓存回收与配额 | P0；复用已有句柄端口和 schema 26–30 |
 | R03 | 附件 Steer、发送偏好，以及最终关闭对 Queue/Steer 的两种确定顺序已实现并验证 | 编辑/排序/并发认领矩阵、事务/副作用中崩溃 | P1；R02/R05 |
 | R04 | 部分完成；本地引用浏览、schema 31 创建 intent、schema 33 清理阶段、独占/原子认领、本地 NTFS 清理交接、替换对象重新授权及恢复 UI 已实现 | 真实强制终止/多实例清理矩阵、远端 ref 获取及完整生命周期 | P1；R01/R02 |
 | R05 | 部分完成；PDF 输入、快照恢复、schema 34 与三协议原生块已实现；图像全图查看及子代理图片/PDF 共享已完成协议/附件回归 | PDF 分页预览、其他文件、未引用快照安全回收；全图原生窗口与真实模型图片/PDF 理解仍待验收 | P1；模型协议与产物会话 |
@@ -230,6 +230,126 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
   Windows PTY 撤权 5 项通过；新增 registry 生命周期、跨实例成功、超时、数据库故障和
   schema 30 回滚用例。证据仍为双实例同库确定性测试；进程崩溃后的人工核实/清理、迟到原生资源、
   浏览器/MCP 持久进程和真实进程崩溃后的资源核验未验证。
+
+**2026-10-23 资源退出与确认原子性修复（当前未提交切片）：**
+
+- 生产入口仍是项目编辑/根确认 → `WorkspaceProjectService.EnsureDrainedAsync` →
+  `ProjectAuthorizationMonitor.WaitForQuiescenceAsync`；工具/Agent 通过
+  `TaskWorkspaceOperation` 持有相同租约，没有新增绕过统一工具管线的入口。
+- `ProjectAuthorizationLease` 现在先等待撤权回调/轮询/心跳结束，再释放本地授权根句柄，
+  最后登记 `released`。根释放延迟时另一实例仍看到 outstanding；根释放失败时不写退出，
+  本地 monitor 也保留失败租约，重复检查不能把它遗忘。失败不自动重试工具或重放副作用。
+- `SqliteAuthorizationResourceRegistry` 的心跳及普通释放同时匹配 lease 和所属 instance；
+  另一实例不能冒领。显式人工确认仍允许处理陈旧登记，但选中集合只要有一项已续心跳、
+  缺失或不再符合条件，就整笔回滚并要求刷新，避免“报错但已部分解除屏障”。无 schema 变更。
+- 新反例先运行原代码：延迟/失败释放 3 项失败，跨实例所有权/部分确认 4 项失败；
+  修复后 Infrastructure 授权/根对象/工作树对象定向 88 项、Infrastructure 全量 925 项通过。
+  Release App 项目编辑/授权运行/二次确认 10 项通过，其中新工作流在两次确认之间续心跳，
+  验证错误可见、两行均保留、刷新后再次确认只处理仍陈旧的一行；没有发出模型请求。
+- 本轮完整 Debug 基线构建、修复后独立输出目录的完整 Debug 构建及完整 Release 构建
+  均为 0 警告/0 错误；当前独立 Debug 的 App 授权/根对象回归 25 项、Release Agent 全量
+  177 项通过，后者也检查当前手写源码一文件一类型与文件规模。
+- 初始完整 Debug 基线最终为 8,726 项、8,719 通过、7 项失败，无跳过；其中 App 为
+  5,397 项、5,390 通过、7 项失败，其余七套通过。6 项设置焦点测试和 1 项跟进统计审计
+  断言均已确定性定位，修复与当前候选复验见下一切片；不抹去初始失败记录，定向通过
+  不能称为当前整套通过。
+  日志与 TRX 位于本机忽略目录 `artifacts/goal-20261023-baseline/`，不随克隆分发；
+  原代码反例日志为 `lease-disposal-red.log`、`resource-ownership-red.log`，通过证据为
+  `authorization-green.log`、`infrastructure-green.log`、`app-authorization-release.log`。
+- 证据种类：确定性 gate、真实临时 SQLite、App ViewModel/模拟本地模型服务测试；
+  **不是**原生 GUI 操作、真实外部提供商、多进程强制终止或操作系统命令隔离验证。
+  R01、真实崩溃/迟到资源及完整 R02 仍保持开放，不据此宣称产品可发布。
+
+**2026-10-23 等待中的原生根与晚到注册修复（当前未提交切片）：**
+
+- 归属与设计自查：生命周期由 Application 的授权 monitor/lease 管理，复用现有
+  `IRootIdentitySessionFactory` 与资源登记端口，Windows 句柄实现保持在 Platform.Windows。
+  工具依然走统一管线；没有增加授权、改变审批或放宽超时/输出限制。无 schema 变更或副作用重放。
+  新增类型各自独立文件，该检查点 monitor 为 244 行；现有规模与依赖门禁在 Agent 测试中检查。
+- 原反例：取消验证/获取时，底层原生打开或巡检的迟到句柄尚未退出，但登记已释放，另一实例
+  可能错误报告排空。现在先注册 lease，再允许根操作进入；所有原生打开、已取得和迟到句柄
+  由同一 lease 跟踪。取消仍可及时返回，后台清理保持归属；失败留在本机 monitor 和持久登记，
+  重复排空检查不能遗忘它。巡检复用原登记，不按 tick 无限创建数据库行。
+- 额外竞态：首次读取旧快照后，其他实例可能先保存新授权并观察到零资源。SQLite 登记改为
+  `INSERT ... SELECT` 当前项目 revision 的单条条件写入；旧/不存在版本拒绝登记，
+  已登记的旧资源仍保留直到真实退出。注册后、首次原生打开前再复核快照，以覆盖注册期间变更。
+- 反例与并发：初始等待根测试 8 项失败；加严后的巡检反例使用旧 Application DLL 的独立副本
+  再次确认失败。注册/版本测试在原代码上 9 项失败；修复后授权专项 44 项、Infrastructure
+  Debug/Release 全量各 945 项通过。新增双验证取消测试按明确进入信号区分操作，避免把调度
+  先后误当成任务归属；一次取消不会释放另一操作的根。Release Agent 177、Tools 709、
+  Platform.Windows 455 项全量通过；最终 Debug/Release 解决方案构建均为 0 警告、0 错误。
+- 真实 Windows 句柄工作流：ReadOnly 文件工具取消不返回内容，项目授权保存后编辑器提示旧
+  资源仍在停止，前台草稿保留；释放迟到句柄后屏障才排空。旧上下文拒绝，新上下文读取成功，
+  原文件不变，三个工具审计均有终态，未发送模型 HTTP 请求，也没有重放读取。
+- 基线修复：字体设置字段随页面增长已处于视口外，6 项焦点测试在打开 drawer 前就失败。
+  测试显式滚动建立可见前提，再滚回顶部建立视口外记忆焦点；继续检查恢复焦点可用且不滚动，
+  未修改生产焦点策略。跟进统计在审批前取消时 `ApprovalGranted=null` 是合法未决状态；
+  新增真实工具/SQLite/本地模拟响应的确定性队列流程重现原断言失败，再按阶段校正断言。
+  成功统计仍必须审批通过；未审批成功、当前失败及非取消错误仍有拒绝断言，未放宽运行策略。
+- 第一轮 App 定向 Debug 80 项通过，但同组 Release 为 79 通过、1 项失败。原始异常确认
+  是未运行 dispatcher 的跟进测试并发枚举队列；9 次独立复跑虽通过，扩大组合后仍可重现，
+  因而没有用重跑通过消除失败。测试现改为真正的 Avalonia Headless dispatcher，并断言
+  workspace/队列可观察状态全部在 UI 线程变更；未改动生产线程或审批策略。
+- 中间候选完整 App Debug 回归现已结束：5,400 项中 5,397 通过、3 项预览探针失败。
+  探针把后台统计的 `edit-*.snapshot` 算作预览读取，并对它错误注入拒绝/取消。路径级证据已确认，现探针只统计/注入
+  `preview-*.snapshot`，其他读取继续经过真实 Windows 校验。四种预览和四种跟进配置
+  竞争的独立 Release 8 项已通过；包含最终测试修复的 Debug/Release 84 项均通过，
+  Release Agent 架构/规模全量 177 项再次通过。
+  中间长跑没有包含这两项最终测试修复，不能冒称当前完整套件通过。最终源码的完整 App Debug
+  回归已另在 verification 输出目录启动，日志为 `app-all-verified-debug.log`，结果尚未产生。
+- 证据目录 `artifacts/goal-20261023-pending-roots/` 保留 red/green 日志和 TRX；最终
+  源码的独立构建目录是 `artifacts/goal-20261023-verification/`。初始、中间和最终定向
+  候选的结果分别计证据，不将它们混算为一次全量验收。最终 Debug/Release 解决方案构建
+  再次为 0 警告、0 错误；只读 MSBuild 属性核实 win-x64、自包含单文件、AOT=false、裁剪=false，
+  本切片没有执行发布、覆盖用户版本、提交或推送。
+- 证据分层：包含真实临时 SQLite、真实本地文件与 Windows 根句柄，以及 Headless/ViewModel
+  和本地模拟提供商；不是原生 GUI 交互、真实提供商账号、多进程强制终止或 MXC 隔离验收。
+  其他长驻进程/产物、混合旧版本实例与真实崩溃仍未验证。下一步按 R02.3 审计项目根登记、
+  工作树等绕过 monitor 的直接根打开及最终交接；R01 和完整 R02 不关闭，产品仍不满足发布验收。
+
+**2026-10-23 工作树原生根与派生清理会话生命周期切片：**
+
+- 已复现并修复：`GitWorktreeService.AcquireCoreAsync` 返回工作树 lease 时，其本地项目
+  lease 已被 `await using` 提前释放；直接根打开的迟到清理也不在 monitor 的登记内。
+  10 个先行反例全部失败：返回 lease 的登记/撤权、获取/校验/创建/旧任务确认/重新授权/
+  移除两次根打开的取消，以及迟到清理失败。日志与 TRX 为 `worktree-lifetime-red.*`。
+- 运行链路：Windows composition root 的 `IGitWorktreeService` →
+  `GitWorktreeAuthorizationScope` → Application 的 `ProjectRootOperationScope` →
+  同一 `ProjectAuthorizationLease`/`ProjectRootSessionLifetime` → 原始平台根工厂。
+  工作树 grant 的 task/project/对象身份校验、30 秒限时、撤权、调用者取消和原有 Git
+  校验均保留；没有新授权、审批绕过、数据库迁移或恢复时副作用重放。
+- 返回的 `WorktreeRootLease` 保留项目 scope 并继承撤权；正常释放会等待真实根清理，
+  重复释放复用同一结果（包括失败）。失败/取消返回可先结束，但 monitor 保留未完成打开、
+  迟到根和失败清理的所有权与持久预留；项目变更、操作超时、应用收尾和另一任务相互独立的
+  确定性用例已补齐。即使 monitor 未装配项目根工厂，显式工作树根仍进入同一登记。
+- 工厂包装仅在原工厂支持时实现 `ITransferableRootIdentitySessionFactory`，并保留会话
+  实际支持的 `IPathQuarantineSessionFactory`。进一步两个反例复现了父根先关闭而派生
+  quarantine 仍持有句柄时的提前排空；现已跟踪转交后的清理会话。父/子任一清理失败，
+  多次本地和另一 registry 查询仍报告 outstanding，不通过重新打开路径或忽略 Dispose
+  失败来获得绿色结果。反例为 `transferred-root-red.*`。
+- Windows 原生测试使用独立临时仓库、真实 Git、SQLite 授权/资源/清理登记和原生根句柄：
+  返回 lease 或迟到根存续时目录不可重命名，真实关闭后才允许；原生移除没有配置路径重开
+  fallback，必须把已固定根转交 quarantine，随后验证工作树/注册目录/隔离目录清理与
+  SQLite 完成状态。另验父根关闭后派生原生会话仍阻止 scope 排空。
+- 测试实例收尾最初因 Git 只读对象文件失败，已只在所属临时目录恢复文件属性后删除，并仅
+  清理自己的 SQLite pool；保存首次失败日志，不把它计为通过。另一次新增撤权用例夹具缺少
+  新目录身份模板，修正模板后才回归。SQLite 会保留 Completed 但仍被任务路径引用的恢复
+  记录，原生测试已改为核对该完成记录而非错误要求列表为空。生产授权、审批和持久化语义均未放宽。
+- 当前候选 Debug/Release 解决方案构建均为 0 警告、0 错误；Infrastructure 两种配置
+  全量各 965 项、Windows 原生两种配置各 459 项、Release Agent 177 项及 Tools 709 项
+  通过，App 相关工作流 Debug/Release 各 144 项均通过。工作树诊断组 64 项
+  全部通过（含在前述 144 项中，不累加为独立覆盖数量）。构建/完整模块/定向工作流结果保存在
+  `artifacts/goal-20261023-worktree-roots/validation-summary.json`，构建产物隔离在
+  `artifacts/goal-20261023-worktree-root-build/`。该目录保留逐路径修改前副本、red/green
+  日志、TRX、源码 hash 和原有脏文件保护核对。测试仍为原生文件/句柄、本地 Git/SQLite、
+  确定性探针及 Headless/模拟提供商；不是原生 GUI、真实服务账号、MXC 或强杀恢复验收。
+- 上一检查点的中间完整 App Debug 回归已结束，5,400 项中 5,397 通过、3 项上述预览
+  探针失败；包含当时最终测试修复的 verification 完整回归仍在原输出目录运行。二者源码
+  均冻结于本次工作树修复之前，只作为旧候选证据，不替代本次相关回归或最终全量验收。
+- **范围仍未闭合：** 无 monitor 的兼容宿主、`ProjectRootEnrollment`（包括新项目尚无
+  持久项目行时的资源预留）、其他直接根打开/清理辅助句柄、产物和长驻进程、最终名称 CAS、
+  混合版本多实例与真实进程崩溃仍需继续审计。R01、完整 R02 和整体产品目标保持未完成；
+  本轮没有提交、推送、发布或操作用户现有窗口。
 
 ### R03：附件 Steer、发送偏好和 Queue/Steer 竞争
 

@@ -89,6 +89,18 @@ App 项目文件只保留依赖、平台和显式导入；`src/MossAgent.App/Bui
   lease 退出，超时会保留新快照并显示资源仍未排空。schema 30 持久登记 lease 的实例、revision、
   心跳和释放状态，使其他应用实例也参与撤权排空；崩溃遗留登记只报告未知，只有用户确认相关
   进程已停止后才能二次确认标记为人工放弃，并保留审计状态。
+- `ProjectAuthorizationMonitor` 的校验、获取和巡检在首次原生根打开前建立所属 lease；
+  SQLite 登记以当前授权 revision 条件插入，登记后再复核快照，避免旧授权在保存屏障之后晚到注册。
+  取消可先返回，但原生打开、迟到句柄及实际清理仍归该 lease；全部退出后才释放持久登记，
+  清理失败保持 outstanding。巡检复用原 lease，不在每次 tick 新建登记。该边界不代表其他长驻
+  进程或全部产物资源已完成崩溃核验。
+- Git 工作树的获取、校验、创建登记、旧任务确认、重新授权和移除通过
+  `ProjectRootOperationScope` 绑定到同一个已登记项目 lease。返回的 `WorktreeRootLease`
+  持有该 scope 并继承撤权令牌；失败/取消可先返回，但 monitor 仍等待迟到根和实际清理。
+  工厂包装只保留实际支持的 transferable 能力；原生根转交到 quarantine 后，派生会话继续
+  保留原登记，直到父根与派生清理会话都退出。派生清理失败同样保持 outstanding，不重新打开
+  路径冒充句柄交接，也不靠重复 Dispose 隐藏失败。没有装配 monitor 的兼容宿主不具备这一保证。
+  本切片不覆盖 `ProjectRootEnrollment` 等其他直接打开、所有清理辅助句柄或真实进程崩溃。
 - schema 27 将显式项目根 grant 绑定卷和目录文件 ID；schema 28 将工作树 grant 绑定
   task/project 和目录对象身份。旧数据要求明确确认，同路径新目录不自动继承旧授权。
   Windows 生产装配持有目录链，兼容宿主未装配可选端口时不能宣称拥有相同边界。

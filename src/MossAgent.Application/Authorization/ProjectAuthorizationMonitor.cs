@@ -30,35 +30,73 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
 
     public async Task ValidateAsync(ProjectProfile expected, CancellationToken cancellationToken)
     {
+        var snapshot = ProjectAuthorizationSnapshotValidator.Capture(expected);
+        await ValidateSnapshotAsync(snapshot, cancellationToken).ConfigureAwait(false);
+        if (_roots is null) return;
+        var lease = await CreateLeaseAsync(snapshot, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lease.Revocation);
+            await ValidateLeaseAsync(snapshot, lease, linked.Token).ConfigureAwait(false);
+        }
+        finally { await lease.DisposeAfterValidationAsync().ConfigureAwait(false); }
+    }
+
+    internal async Task ValidateLeaseAsync(ProjectProfile expected, ProjectAuthorizationLease lease,
+        CancellationToken cancellationToken)
+    {
+        await ValidateSnapshotAsync(expected, cancellationToken).ConfigureAwait(false);
+        await ValidateRootsAsync(expected, lease, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task ValidateSnapshotAsync(ProjectProfile expected, CancellationToken cancellationToken)
+    {
         cancellationToken.ThrowIfCancellationRequested();
         lock (_sync) ObjectDisposedException.ThrowIf(_disposed, this);
-        var current = await _reader.ReadAuthorizationAsync(expected.Id, cancellationToken).WaitAsync(cancellationToken).ConfigureAwait(false);
-        var comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-        if (expected.AuthorizationRevision <= 0 || current is null || current.AuthorizationRevision != expected.AuthorizationRevision
-            || !comparer.Equals(current.PrimaryDirectory, expected.PrimaryDirectory)
-            || !current.AuthorizedDirectories.SequenceEqual(expected.AuthorizedDirectories, comparer)
-            || !current.RootAuthorizations.SequenceEqual(expected.RootAuthorizations))
+        try
         {
-            if (current is not null && current.AuthorizationRevision > expected.AuthorizationRevision)
-                _changes.Publish(expected.Id, current.AuthorizationRevision);
-            RevokeMatching(expected.Id, expected.AuthorizationRevision);
-            throw new WorkspaceAuthorizationException();
+            await ProjectAuthorizationSnapshotValidator.ValidateAsync(_reader, _changes, expected,
+                cancellationToken).ConfigureAwait(false);
         }
-        if (_roots is not null)
-        {
-            try { using var verified = await ProjectRootObjectValidation.OpenAsync(_roots, expected, cancellationToken).ConfigureAwait(false); }
-            catch (OperationCanceledException) { throw; }
-            catch { RevokeMatching(expected.Id, expected.AuthorizationRevision); throw new WorkspaceAuthorizationException(); }
-        }
+        catch (WorkspaceAuthorizationException) { RevokeMatching(expected.Id, expected.AuthorizationRevision); throw; }
+    }
+
+    private async Task ValidateRootsAsync(ProjectProfile expected, ProjectAuthorizationLease lease,
+        CancellationToken cancellationToken)
+    {
+        if (lease.RootSessions is not { } roots) return;
+        try { using var verified = await ProjectRootObjectValidation.OpenAsync(roots, expected, cancellationToken).ConfigureAwait(false); }
+        catch (OperationCanceledException) { throw; }
+        catch { RevokeMatching(expected.Id, expected.AuthorizationRevision); throw new WorkspaceAuthorizationException(); }
         cancellationToken.ThrowIfCancellationRequested();
     }
 
     public async Task<ITaskWorkspaceLease> AcquireAsync(ProjectProfile expected, CancellationToken cancellationToken)
     {
-        var snapshot = expected with { AuthorizedDirectories = expected.AuthorizedDirectories.ToArray(), RootAuthorizations = expected.RootAuthorizations.ToArray() };
-        await ValidateAsync(snapshot, cancellationToken).ConfigureAwait(false);
-        var roots = _roots is null ? null : await ProjectRootObjectValidation.OpenAsync(_roots, snapshot, cancellationToken).ConfigureAwait(false);
-        var lease = new ProjectAuthorizationLease(this, snapshot, _time, roots, _resources);
+        var snapshot = ProjectAuthorizationSnapshotValidator.Capture(expected);
+        await ValidateSnapshotAsync(snapshot, cancellationToken).ConfigureAwait(false);
+        var lease = await CreateLeaseAsync(snapshot, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lease.Revocation);
+            await ValidateLeaseAsync(snapshot, lease, linked.Token).ConfigureAwait(false);
+            if (lease.RootSessions is { } roots)
+                lease.PinRoots(await ProjectRootObjectValidation.OpenAsync(roots, snapshot, linked.Token).ConfigureAwait(false));
+            await ValidateLeaseAsync(snapshot, lease, linked.Token).ConfigureAwait(false);
+            lease.Start();
+            if (lease.IsRevoked) throw new WorkspaceAuthorizationException();
+            return lease;
+        }
+        catch { await lease.DisposeAfterValidationAsync().ConfigureAwait(false); throw; }
+    }
+
+    public async Task<ProjectRootOperationScope> AcquireRootOperationsAsync(
+        ProjectProfile expected, CancellationToken cancellationToken) =>
+        new((ProjectAuthorizationLease)await AcquireAsync(expected, cancellationToken).ConfigureAwait(false));
+
+    private async Task<ProjectAuthorizationLease> CreateLeaseAsync(ProjectProfile snapshot, CancellationToken cancellationToken)
+    {
+        var lease = new ProjectAuthorizationLease(this, snapshot, _time, _roots, _resources);
         try
         {
             await lease.RegisterAsync(cancellationToken).ConfigureAwait(false);
@@ -67,9 +105,7 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
                 ObjectDisposedException.ThrowIf(_disposed, this);
                 _leases.Add(lease);
             }
-            await ValidateAsync(snapshot, cancellationToken).ConfigureAwait(false);
-            lease.Start();
-            if (lease.IsRevoked) throw new WorkspaceAuthorizationException();
+            lease.Start(poll: false);
             return lease;
         }
         catch { await lease.DisposeAsync().ConfigureAwait(false); throw; }
@@ -175,7 +211,11 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
 
     internal void Release(ProjectAuthorizationLease lease)
     {
-        lock (_sync) _leases.Remove(lease);
+        lock (_sync)
+        {
+            if (lease.HasExited) _leases.Remove(lease);
+            else _leases.Add(lease); // Failed cleanup remains visible to subsequent drain checks.
+        }
     }
 
     public ValueTask DisposeAsync()

@@ -45,10 +45,18 @@ internal static class WorkspaceFollowupAuditAssertions
             Assert.StartsWith("statistics-", item.CallId, StringComparison.Ordinal);
             Assert.Equal(ToolRiskLevel.ReadOnly, item.RiskLevel);
             Assert.Equal(ApprovalPolicy.AskEveryTime, item.ApprovalPolicy);
-            Assert.True(item.ApprovalGranted);
             Assert.NotNull(item.IsSuccess);
-            if (item.IsSuccess == true) Assert.Null(item.ErrorCode);
-            else Assert.Equal("tool_cancelled", item.ErrorCode);
+            if (item.IsSuccess == true)
+            {
+                Assert.True(item.ApprovalGranted);
+                Assert.Null(item.ErrorCode);
+            }
+            else
+            {
+                // Superseded requests can be cancelled before the approval stage is reached.
+                Assert.False(item.IsSuccess);
+                Assert.Equal("tool_cancelled", item.ErrorCode);
+            }
         }
         var current = statistics[^1];
         Assert.True(current.IsSuccess, JsonSerializer.Serialize(audits));

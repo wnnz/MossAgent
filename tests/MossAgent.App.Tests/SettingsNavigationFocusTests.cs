@@ -80,11 +80,17 @@ public sealed class SettingsNavigationFocusTests : IAsyncLifetime
         Flush(window);
         var editor = settings.GetVisualDescendants().OfType<AppComboBox>()
             .Single(control => AutomationProperties.GetName(control) == "主题代码字体");
-        Assert.True(AppPageSwitcher.IsAvailableFocusTarget(editor));
+        editor.BringIntoView();
+        Flush(window);
+        Assert.True(AppPageSwitcher.IsAvailableFocusTarget(editor),
+            $"Editor={editor.Bounds}; position={editor.TranslatePoint(default, AppearanceScroll(window))}; "
+            + $"viewport={AppearanceScroll(window).Viewport}; offset={AppearanceScroll(window).Offset}; client={window.ClientSize}");
         Assert.True(editor.Focus());
         Flush(window);
         window.Width = 526;
         window.Height = 601;
+        Flush(window);
+        AppearanceScroll(window).Offset = default;
         Flush(window);
         AssertAtTop(window);
         Assert.True(editor.TranslatePoint(default, AppearanceScroll(window))!.Value.Y > AppearanceScroll(window).Viewport.Height);
@@ -109,6 +115,9 @@ public sealed class SettingsNavigationFocusTests : IAsyncLifetime
 
         Assert.False(settings.Navigation.IsOverlayOpen);
         AssertAtTop(window);
+        var focused = Assert.IsAssignableFrom<Control>(window.FocusManager!.GetFocusedElement());
+        Assert.True(AppPageSwitcher.IsAvailableFocusTarget(focused));
+        Assert.True(settings.Navigation.PrimaryPane!.IsVisualAncestorOf(focused));
         Assert.Empty(fixture.Server.Requests);
     });
 

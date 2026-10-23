@@ -1,17 +1,25 @@
+using System.Collections.Concurrent;
+using Avalonia.Headless;
+using Avalonia.Threading;
 using MossAgent.App.ViewModels;
 using MossAgent.Domain;
 using Xunit;
 
 namespace MossAgent.App.Tests;
 
-public sealed class WorkspaceFollowupDispatchRaceTests
+[Collection("Avalonia visual controls")]
+public sealed class WorkspaceFollowupDispatchRaceTests : IAsyncLifetime
 {
+    private readonly HeadlessUnitTestSession _session = HeadlessUnitTestSession.StartNew(typeof(SharedVisualTestApplication));
+    public ValueTask InitializeAsync() => ValueTask.CompletedTask;
+    public ValueTask DisposeAsync() => _session.DisposeAsync();
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(true, false)]
     [InlineData(false, true)]
     [InlineData(true, true)]
-    public async Task ConfigurationRevokedBeforeClaimKeepsInputQueuedWithoutProviderRequest(bool changeProject, bool beforeClaim)
+    public Task ConfigurationRevokedBeforeClaimKeepsInputQueuedWithoutProviderRequest(bool changeProject, bool beforeClaim) => _session.DispatchAsync(async () =>
     {
         await using var fixture = await WorkspaceModelSelectionFixture.CreateAsync(pauseResponse: true, withProject: changeProject);
         var gate = new FollowupPreparationAttachmentGate(fixture.AttachmentStore);
@@ -21,6 +29,10 @@ public sealed class WorkspaceFollowupDispatchRaceTests
         using var runs = new WorkspaceRunTracker();
         await using var workspace = fixture.CreateWorkspace(fixture.Tasks, runs, conversationDrafts: fixture.Drafts,
             followups: fixture.FollowupServices(probe, beforeClaim ? null : gate));
+        var stateChanges = new ConcurrentQueue<bool>();
+        workspace.Queue.Items.CollectionChanged += (_, _) => stateChanges.Enqueue(Dispatcher.UIThread.CheckAccess());
+        workspace.Queue.PropertyChanged += (_, _) => stateChanges.Enqueue(Dispatcher.UIThread.CheckAccess());
+        workspace.PropertyChanged += (_, _) => stateChanges.Enqueue(Dispatcher.UIThread.CheckAccess());
         await workspace.LoadAsync();
         await workspace.Drafts.LoadCurrentAsync();
         workspace.ComposerText = "initial";
@@ -64,7 +76,9 @@ public sealed class WorkspaceFollowupDispatchRaceTests
         Assert.Single(await fixture.Tasks.GetMessagesAsync(task.Id, fixture.Token), message => message.Id == itemId);
         Assert.Equal("keep-next-draft", workspace.ComposerText);
         await runs.StopAsync();
-    }
+        Assert.NotEmpty(stateChanges);
+        Assert.All(stateChanges, onUiThread => Assert.True(onUiThread));
+    }, TestContext.Current.CancellationToken);
 
     private static async Task ChangeAsync(WorkspaceModelSelectionFixture fixture, WorkspaceViewModel workspace, bool changeProject)
     {

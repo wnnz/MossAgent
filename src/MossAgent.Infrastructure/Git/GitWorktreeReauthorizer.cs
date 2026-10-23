@@ -31,10 +31,10 @@ internal sealed class GitWorktreeReauthorizer(
             TimeSpan.FromSeconds(30), timeProvider);
         using var operation = CancellationTokenSource.CreateLinkedTokenSource(
             cancellationToken, deadline.Token);
-        await using var projectLease = authorizations is null ? null
-            : await authorizations.AcquireAsync(project, operation.Token).ConfigureAwait(false);
+        await using var projectScope = await GitWorktreeAuthorizationScope.AcquireAsync(
+            authorizations, authorization, project, operation.Token).ConfigureAwait(false);
         using var scope = CancellationTokenSource.CreateLinkedTokenSource(
-            operation.Token, projectLease?.Revocation ?? default);
+            operation.Token, projectScope.Revocation);
         try
         {
             if (task.WorktreePath is null) throw new WorktreeAuthorizationException();
@@ -47,7 +47,7 @@ internal sealed class GitWorktreeReauthorizer(
             var source = await inspector.ReadProjectAsync(
                 project, false, scope.Token).ConfigureAwait(false);
             await inspector.ValidateTargetAsync(source, target, scope.Token).ConfigureAwait(false);
-            return await authorization.ReauthorizeAsync(
+            return await projectScope.Authorization!.ReauthorizeAsync(
                 project, task, target,
                 (_, token) => inspector.ValidateTargetAsync(source, target, token),
                 scope.Token).ConfigureAwait(false);

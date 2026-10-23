@@ -13,7 +13,8 @@ internal sealed class TrackedArtifactReadValidator : IFileReadHandleValidator
 
     public void Validate(FileStream stream, IReadOnlyList<string> roots)
     {
-        if (roots.Count == 1 && roots[0].Equals(ArtifactRoot, StringComparison.OrdinalIgnoreCase))
+        if (roots.Count == 1 && roots[0].Equals(ArtifactRoot, StringComparison.OrdinalIgnoreCase)
+            && Path.GetFileName(stream.Name).StartsWith("preview-", StringComparison.Ordinal))
         {
             Xunit.Assert.Equal(0, stream.Position);
             ArtifactReads++;

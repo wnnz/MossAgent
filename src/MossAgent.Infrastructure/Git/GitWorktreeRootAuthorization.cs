@@ -11,6 +11,9 @@ internal sealed class GitWorktreeRootAuthorization(
     SqliteConnectionFactory connections,
     IProjectAuthorizationChanges? changes = null)
 {
+    internal GitWorktreeRootAuthorization WithScope(ProjectRootOperationScope scope) =>
+        new(scope.TrackRoots(roots), connections, changes);
+
     private readonly SqliteWorktreeRootAuthorizations _store = new(connections);
     public Task<WorktreeRootAuthorization?> ReadAsync(Guid taskId, CancellationToken token) => _store.ReadAsync(taskId, token);
 

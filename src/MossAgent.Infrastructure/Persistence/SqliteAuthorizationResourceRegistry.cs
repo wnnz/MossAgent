@@ -1,4 +1,5 @@
 using MossAgent.Application.Authorization;
+using MossAgent.Domain;
 
 namespace MossAgent.Infrastructure.Persistence;
 
@@ -18,14 +19,16 @@ public sealed class SqliteAuthorizationResourceRegistry(
         command.CommandText = """
             INSERT INTO authorization_resource_leases(
                 lease_id,project_id,authorization_revision,instance_id,registered_at,heartbeat_at,released_at)
-            VALUES($lease,$project,$revision,$instance,$now,$now,NULL);
+            SELECT $lease,id,authorization_revision,$instance,$now,$now,NULL
+            FROM projects WHERE id=$project AND authorization_revision=$revision;
             """;
         command.Parameters.AddWithValue("$lease", leaseId.ToString());
         command.Parameters.AddWithValue("$project", projectId.ToString());
         command.Parameters.AddWithValue("$revision", revision);
         command.Parameters.AddWithValue("$instance", _instanceId);
         command.Parameters.AddWithValue("$now", now);
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
+            throw new WorkspaceAuthorizationException();
     }
 
     public async Task HeartbeatAsync(Guid leaseId, CancellationToken cancellationToken)
@@ -36,9 +39,10 @@ public sealed class SqliteAuthorizationResourceRegistry(
         command.CommandText = """
             UPDATE authorization_resource_leases
             SET heartbeat_at=$now
-            WHERE lease_id=$lease AND released_at IS NULL;
+            WHERE lease_id=$lease AND instance_id=$instance AND released_at IS NULL;
             """;
         command.Parameters.AddWithValue("$lease", leaseId.ToString());
+        command.Parameters.AddWithValue("$instance", _instanceId);
         command.Parameters.AddWithValue("$now", timeProvider.GetUtcNow().ToString("O"));
         if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
             throw new InvalidOperationException("Authorization resource lease is no longer registered.");
@@ -53,12 +57,13 @@ public sealed class SqliteAuthorizationResourceRegistry(
             UPDATE authorization_resource_leases
             SET heartbeat_at=$now,released_at=COALESCE(released_at,$now),
                 resolution=COALESCE(resolution,'released'),resolved_by_instance_id=COALESCE(resolved_by_instance_id,$instance)
-            WHERE lease_id=$lease;
+            WHERE lease_id=$lease AND instance_id=$instance;
             """;
         command.Parameters.AddWithValue("$lease", leaseId.ToString());
         command.Parameters.AddWithValue("$now", timeProvider.GetUtcNow().ToString("O"));
         command.Parameters.AddWithValue("$instance", _instanceId);
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
+            throw new InvalidOperationException("Authorization resource lease is not owned by this instance.");
     }
 
     public async Task<int> CountOutstandingAsync(Guid projectId, long maximumRevision,
@@ -131,6 +136,11 @@ public sealed class SqliteAuthorizationResourceRegistry(
         for (var index = 0; index < ids.Length; index++)
             command.Parameters.AddWithValue(parameters[index], ids[index].ToString());
         var updated = await command.ExecuteNonQueryAsync(cancellationToken);
+        if (updated != ids.Length)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return 0;
+        }
         await transaction.CommitAsync(cancellationToken);
         return updated;
     }

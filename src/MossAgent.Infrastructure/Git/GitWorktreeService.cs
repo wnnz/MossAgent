@@ -40,17 +40,18 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
         IRootIdentitySession? session = null;
         try
         {
-            await using var projectLease = authorizations is null ? null : await authorizations.AcquireAsync(project, operation.Token).ConfigureAwait(false);
-            using var scope = CancellationTokenSource.CreateLinkedTokenSource(operation.Token, projectLease?.Revocation ?? default);
+            await using var projectScope = await GitWorktreeAuthorizationScope.AcquireAsync(
+                authorizations, _authorization, project, operation.Token).ConfigureAwait(false);
+            using var scope = CancellationTokenSource.CreateLinkedTokenSource(operation.Token, projectScope.Revocation);
             var token = scope.Token;
             var target = ValidateTaskPath(taskId, worktreePath);
-            if (_authorization is not null)
-                session = await _authorization.OpenAsync(project, taskId, target, token).ConfigureAwait(false);
+            if (projectScope.Authorization is { } authorization)
+                session = await authorization.OpenAsync(project, taskId, target, token).ConfigureAwait(false);
             var source = await _inspector.ReadProjectAsync(project, false, token).ConfigureAwait(false);
             await _inspector.ValidateTargetAsync(source, target, token).ConfigureAwait(false);
             GitWorktreePaths.ManagedTarget(paths, target, true);
             token.ThrowIfCancellationRequested();
-            var lease = new WorktreeRootLease(project.Id, project.AuthorizationRevision, session);
+            var lease = new WorktreeRootLease(project.Id, project.AuthorizationRevision, session, projectScope.DetachLease());
             session = null;
             return lease;
         }
@@ -81,11 +82,12 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
             || task.Status is AgentTaskStatus.Running or AgentTaskStatus.WaitingForApproval) throw new WorktreeAuthorizationException();
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30), timeProvider ?? TimeProvider.System);
         using var operation = CancellationTokenSource.CreateLinkedTokenSource(token, deadline.Token);
-        await using var projectLease = authorizations is null ? null : await authorizations.AcquireAsync(project, operation.Token).ConfigureAwait(false);
-        using var scope = CancellationTokenSource.CreateLinkedTokenSource(operation.Token, projectLease?.Revocation ?? default);
+        await using var projectScope = await GitWorktreeAuthorizationScope.AcquireAsync(
+                authorizations, _authorization, project, operation.Token).ConfigureAwait(false);
+        using var scope = CancellationTokenSource.CreateLinkedTokenSource(operation.Token, projectScope.Revocation);
         var target = ValidateTaskPath(task.Id, task.WorktreePath);
         var source = await _inspector.ReadProjectAsync(project, false, scope.Token).ConfigureAwait(false);
-        await _authorization.EnrollAsync(project, task.Id, target, task,
+        await projectScope.Authorization!.EnrollAsync(project, task.Id, target, task,
             ct => _inspector.ValidateTargetAsync(source, target, ct), scope.Token).ConfigureAwait(false);
     }, token);
 
@@ -110,8 +112,9 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
         var intentStarted = false;
         try
         {
-            await using var projectLease = authorizations is null ? null : await authorizations.AcquireAsync(project, operation.Token).ConfigureAwait(false);
-            using var scope = CancellationTokenSource.CreateLinkedTokenSource(operation.Token, projectLease?.Revocation ?? default);
+            await using var projectScope = await GitWorktreeAuthorizationScope.AcquireAsync(
+                authorizations, _authorization, project, operation.Token).ConfigureAwait(false);
+            using var scope = CancellationTokenSource.CreateLinkedTokenSource(operation.Token, projectScope.Revocation);
             var token = scope.Token;
             var source = await _inspector.ReadProjectAsync(project, true, token).ConfigureAwait(false);
             var commit = await new GitWorktreeReferenceResolver(git).ResolveAsync(source, baseReference, token).ConfigureAwait(false);
@@ -139,11 +142,11 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
             if (_intents is not null)
                 await _intents.MarkGitCreatedAsync(taskId, target, token).ConfigureAwait(false);
             await _inspector.ValidateTargetAsync(source, target, token).ConfigureAwait(false);
-            if (_authorization is not null)
+            if (projectScope.Authorization is { } authorization)
             {
                 var expectedIdentity = claim?.Identity;
                 claim?.Dispose();
-                await _authorization.EnrollAsync(project, taskId, target, null,
+                await authorization.EnrollAsync(project, taskId, target, null,
                     ct => _inspector.ValidateTargetAsync(source, target, ct), token,
                     expectedIdentity).ConfigureAwait(false);
             }
@@ -204,11 +207,12 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
         using var operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, deadline.Token);
         try
         {
-            await using var projectLease = authorizations is null ? null : await authorizations.AcquireAsync(project, operation.Token).ConfigureAwait(false);
-            using var scope = CancellationTokenSource.CreateLinkedTokenSource(operation.Token, projectLease?.Revocation ?? default);
+            await using var projectScope = await GitWorktreeAuthorizationScope.AcquireAsync(
+                authorizations, _authorization, project, operation.Token).ConfigureAwait(false);
+            using var scope = CancellationTokenSource.CreateLinkedTokenSource(operation.Token, projectScope.Revocation);
             var token = scope.Token;
             var target = GitWorktreePaths.ManagedTarget(paths, worktreePath, true);
-            using var observedIdentity = _authorization is null ? null : await _authorization.OpenAsync(project,
+            using var observedIdentity = projectScope.Authorization is not { } observedAuthorization ? null : await observedAuthorization.OpenAsync(project,
                 Guid.ParseExact(Path.GetFileName(target), "N"), target, token).ConfigureAwait(false);
             var source = await _inspector.ReadProjectAsync(project, false, token).ConfigureAwait(false);
             if (GitWorktreePaths.Within(source.Root, target))
@@ -219,8 +223,8 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
             await _inspector.EnsureRemovableAsync(target, token).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
             observedIdentity?.Dispose();
-            using var identity = _authorization is null ? null
-                : await _authorization.OpenTransferableAsync(project,
+            using var identity = projectScope.Authorization is not { } transferableAuthorization ? null
+                : await transferableAuthorization.OpenTransferableAsync(project,
                     Guid.ParseExact(Path.GetFileName(target), "N"), target, token)
                     .ConfigureAwait(false);
             var quarantineFactory =
