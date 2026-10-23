@@ -12,7 +12,7 @@ public sealed class WorktreeObjectCancellationTests
         await using var fixture = await WorktreeObjectAuthorizationFixture.CreateAsync();
         var id = Guid.NewGuid();
         var path = await fixture.Git.Service.CreateAsync(fixture.Project, id, fixture.Token);
-        var task = await fixture.SaveTaskAsync(id, path);
+        var task = await fixture.SaveTaskAsync(id, path, seedIntent: true);
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var pending = new TaskCompletionSource<IRootIdentitySession>(TaskCreationOptions.RunContinuationsAsynchronously);
         fixture.Roots.Override = (_, _) => { entered.TrySetResult(); return pending.Task; };

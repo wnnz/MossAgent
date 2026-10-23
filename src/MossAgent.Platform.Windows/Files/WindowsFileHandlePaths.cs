@@ -6,8 +6,10 @@ namespace MossAgent.Platform.Windows.Files;
 
 internal static class WindowsFileHandlePaths
 {
-    public static SafeFileHandle OpenDirectory(string path) => CreateFileW(
-        path, 0x80, FileShare.ReadWrite, IntPtr.Zero, FileMode.Open, 0x02000000, IntPtr.Zero);
+    public static SafeFileHandle OpenDirectory(string path) => OpenDirectory(path, 0x80);
+
+    public static SafeFileHandle OpenDirectory(string path, uint access) => CreateFileW(
+        path, access, FileShare.ReadWrite, IntPtr.Zero, FileMode.Open, 0x02000000, IntPtr.Zero);
 
     public static string FinalPath(SafeFileHandle handle, uint volumeFormat)
     {
