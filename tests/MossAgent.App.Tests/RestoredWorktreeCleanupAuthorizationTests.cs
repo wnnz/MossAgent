@@ -21,6 +21,8 @@ public sealed class RestoredWorktreeCleanupAuthorizationTests
         var now = DateTimeOffset.UtcNow;
         var task = new AgentTask(wrongProject ? ownerId : Guid.NewGuid(), owner.Project.Id, "cleanup fixture",
             ApprovalPolicy.ReadOnly, AgentTaskStatus.Completed, now, now, path);
+        var intents = new SqliteWorktreeCreationIntents(new SqliteConnectionFactory(new AppDataPaths(fixture.DataRoot)));
+        await intents.RecordAsync(task.Id, owner.Project, owner.Project.PrimaryDirectory, null, "seed", path, fixture.Token);
         await fixture.Tasks.SaveTaskAsync(task, fixture.Token);
         var project = wrongProject ? owner.Project with { Id = Guid.NewGuid() } : owner.Project;
         var before = (await owner.GitAsync(["worktree", "list", "--porcelain"])).StandardOutput;

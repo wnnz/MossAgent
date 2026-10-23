@@ -138,6 +138,7 @@ internal static class AppComposition
         services.AddSingleton<AuthorizedPathResolver>();
         services.AddSingleton<IFileReadHandleValidator, WindowsFileReadHandleValidator>();
         services.AddSingleton<IRootIdentitySessionFactory, WindowsRootIdentitySessionFactory>();
+        services.AddSingleton<IWorktreeTargetClaimFactory, WindowsWorktreeTargetClaimFactory>();
         services.AddSingleton<IAtomicFileWriteSessionFactory, WindowsAtomicFileWriteSessionFactory>();
         services.AddSingleton<IPathDeleteSessionFactory, WindowsPathDeleteSessionFactory>();
         services.AddSingleton<IPathMoveSessionFactory, WindowsPathMoveSessionFactory>();

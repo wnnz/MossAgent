@@ -1,5 +1,6 @@
 using MossAgent.Application.Git;
 using MossAgent.Domain;
+using MossAgent.Infrastructure.Persistence;
 using Xunit;
 
 namespace MossAgent.Infrastructure.Tests;
@@ -32,7 +33,7 @@ public sealed class WorktreeObjectAuthorizationTests
         await using var fixture = await WorktreeObjectAuthorizationFixture.CreateAsync();
         var id = Guid.NewGuid();
         var path = await fixture.Git.Service.CreateAsync(fixture.Project, id, fixture.Token);
-        var task = await fixture.SaveTaskAsync(id, path);
+        var task = await fixture.SaveTaskAsync(id, path, seedIntent: true);
         Assert.Null(await fixture.Service.ReadAuthorizationAsync(id, fixture.Token));
         await Assert.ThrowsAsync<WorktreeAuthorizationException>(() => fixture.Service.ValidateAsync(fixture.Project, id, path, fixture.Token));
         await fixture.Service.ConfirmLegacyAsync(fixture.Project, task, fixture.Token);
@@ -52,7 +53,7 @@ public sealed class WorktreeObjectAuthorizationTests
         await using var fixture = await WorktreeObjectAuthorizationFixture.CreateAsync();
         var id = Guid.NewGuid();
         var path = await fixture.Git.Service.CreateAsync(fixture.Project, id, fixture.Token);
-        var task = await fixture.SaveTaskAsync(id, path);
+        var task = await fixture.SaveTaskAsync(id, path, seedIntent: true);
         if (changed == "project")
             await fixture.Storage.Repository.SaveProjectAsync(fixture.Project with { AuthorizedDirectories = [] }, fixture.Token);
         else
