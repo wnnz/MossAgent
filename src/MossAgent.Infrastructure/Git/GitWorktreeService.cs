@@ -9,7 +9,7 @@ namespace MossAgent.Infrastructure.Git;
 
 public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git, TimeProvider? timeProvider = null,
     IRootIdentitySessionFactory? roots = null, SqliteConnectionFactory? connections = null,
-    ProjectAuthorizationMonitor? authorizations = null)
+    ProjectAuthorizationMonitor? authorizations = null, IWorktreeTargetClaimFactory? targets = null)
     : IGitWorktreeService, IGitWorktreeAuthorizationService
 {
     private readonly GitWorktreeInspector _inspector = new(git);
@@ -114,11 +114,13 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
             token.ThrowIfCancellationRequested();
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             GitWorktreePaths.ManagedTarget(paths, target, false);
+            using var claim = targets is null ? null : await targets.CreateAsync(target, token).ConfigureAwait(false);
             var result = await git.RunAsync(
                 source.Root, source.Command("worktree", "add", "-b", $"mossagent/{taskId:N}", target, commit), token).ConfigureAwait(false);
             if (result.ExitCode != 0) throw new InvalidOperationException("Git worktree creation failed.");
             GitWorktreePaths.ManagedTarget(paths, target, true);
             await _inspector.ValidateTargetAsync(source, target, token).ConfigureAwait(false);
+            claim?.Verify();
             if (_authorization is not null)
                 await _authorization.EnrollAsync(project, taskId, target, null,
                     ct => _inspector.ValidateTargetAsync(source, target, ct), token).ConfigureAwait(false);

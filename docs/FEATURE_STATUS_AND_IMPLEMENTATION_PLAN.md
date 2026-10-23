@@ -232,14 +232,19 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 
 ### R04：工作树创建、清理和完整生命周期
 
-**现状：** 工作树对象 grant 与旧任务确认已完成。Git 创建返回到打开登记之间仍可能
-对象交接；清理需要释放禁止删除共享的句柄再调用 Git，因此最终删除窗口仍有竞态。
+**现状：** 工作树对象 grant 与旧任务确认已完成。创建已改为 Windows 受控目录会话
+独占创建空目标（NtCreateFile FILE_CREATE，不接受已存在对象）并持有其卷/文件身份到
+Git 与登记结束，登记前重开名称核对身份；预创建空目录对 `git worktree add` 的兼容性与
+失败语义已用真实 Git 验证。登记前身份核对拒绝被替换的对象并保留目录；intent 持久化、
+条件认领的阶段记录与崩溃恢复展示尚缺。清理需要释放禁止删除共享的句柄再调用 Git，
+因此最终删除窗口仍有竞态。
 
 1. Infrastructure 增加受管 runner 的本地分支/标签发现、搜索/分页和固定 commit 预览。
    自动发现与已有手工输入分别保留；远端 ref 获取是单独显式网络动作。
-2. Platform.Windows 设计独占创建空目标并持有身份的会话，先用真实 Git 验证预创建空目录
-   与受限共享句柄的兼容性；不能采用接受已有目标的普通 `CreateDirectory` 冒充独占认领。
-   Infrastructure 在创建前持久化 task/repository/base commit/target/identity intent，成功后条件认领任务及消息。
+2. 部分完成：Platform.Windows 已落地独占创建空目标并持有身份的会话，预创建空目录
+   与真实 Git `worktree add` 的兼容性已验证；未采用接受已有目标的 `CreateDirectory`。
+   仍缺：Infrastructure 在创建前持久化 task/repository/base commit/target/identity
+   intent，成功后条件认领任务及消息。
 3. 清理先关闭新运行并完成 R02 的 drain；按保存 grant 打开受控删除会话，比较身份后删除原对象。
    研究仅处理该 worktree 注册槽的 Git 元数据清理，避免对象删除后 Git 再按同名路径删除替换目录，
    不采用全局 prune。若不能证明交接安全，保留明确失败状态。
