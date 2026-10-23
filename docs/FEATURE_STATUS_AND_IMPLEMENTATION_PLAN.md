@@ -246,8 +246,10 @@ Orphaned/Acknowledged）、错误码与更新时间：claim 身份、Git 完成�
 失败尽力标记 Failed+错误码，任务落库认领置 Consumed；`IWorktreeCreationIntents` 端口
 支持读取未完成/确认，启动时尽力对账——有任务行置 Consumed、无任务行置 Orphaned，
 不自动重建或删除；孤儿判定要求 intent 超过 5 分钟无更新，避免并发实例对账终止
-在途创建；对账失败走独立启动警告而非 MCP 设置通道。恢复展示面板、清理侧阶段与
-`.git` 指针/common-dir 复核尚缺。
+在途创建；对账失败走独立启动警告而非 MCP 设置通道。孤儿 intent 经 `error_code`
+分类标注：missing（目标已消失）/untracked（无 `.git` 指针）/pointer（gitdir 指向
+其他 worktree id）/retained（指针核验一致）/unverified（复核异常），供恢复列表区分
+处置。恢复展示面板、清理侧阶段与 common-dir/注册槽复核尚缺。
 清理需要释放禁止删除共享的句柄再调用 Git，因此最终删除窗口仍有竞态。
 
 1. 已落地：受管 runner 的本地分支/标签发现、搜索/分页和固定 commit 预览已并入基准
