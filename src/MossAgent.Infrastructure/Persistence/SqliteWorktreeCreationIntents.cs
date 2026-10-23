@@ -100,21 +100,42 @@ public sealed class SqliteWorktreeCreationIntents(SqliteConnectionFactory connec
         var items = new List<WorktreeCreationIntent>();
         await using var reader = await command.ExecuteReaderAsync(token);
         while (await reader.ReadAsync(token))
-        {
-            items.Add(new(
-                Guid.Parse(reader.GetString(0)),
-                Guid.Parse(reader.GetString(1)),
-                reader.GetString(2),
-                reader.IsDBNull(3) ? null : reader.GetString(3),
-                reader.IsDBNull(4) ? null : reader.GetString(4),
-                reader.GetString(5),
-                (WorktreeCreationIntentStage)reader.GetInt32(6),
-                reader.IsDBNull(7) ? null : reader.GetString(7),
-                DateTimeOffset.Parse(reader.GetString(8)),
-                reader.IsDBNull(9) ? null : DateTimeOffset.Parse(reader.GetString(9))));
-        }
+            items.Add(ReadIntent(reader));
         return items;
     }
+
+    private static WorktreeCreationIntent ReadIntent(SqliteDataReader reader) => new(
+        Guid.Parse(reader.GetString(0)),
+        Guid.Parse(reader.GetString(1)),
+        reader.GetString(2),
+        reader.IsDBNull(3) ? null : reader.GetString(3),
+        reader.IsDBNull(4) ? null : reader.GetString(4),
+        reader.GetString(5),
+        (WorktreeCreationIntentStage)reader.GetInt32(6),
+        reader.IsDBNull(7) ? null : reader.GetString(7),
+        DateTimeOffset.Parse(reader.GetString(8)),
+        reader.IsDBNull(9) ? null : DateTimeOffset.Parse(reader.GetString(9)));
+
+    public async Task<IReadOnlyList<WorktreeCreationIntent>> ReadUnannotatedOrphansAsync(CancellationToken token)
+    {
+        await using var connection = connections.Create();
+        await connection.OpenAsync(token);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT task_id,project_id,repository,base_reference,base_commit,target,stage,error_code,created_at,updated_at
+            FROM worktree_creation_intents WHERE stage=5 AND error_code IS NULL;
+            """;
+        var items = new List<WorktreeCreationIntent>();
+        await using var reader = await command.ExecuteReaderAsync(token);
+        while (await reader.ReadAsync(token))
+            items.Add(ReadIntent(reader));
+        return items;
+    }
+
+    public Task AnnotateOrphanAsync(Guid taskId, string errorCode, CancellationToken token) => UpdateAsync("""
+        UPDATE worktree_creation_intents SET error_code=$error,updated_at=$now
+        WHERE task_id=$task AND stage=5 AND error_code IS NULL;
+        """, token, ("$task", taskId.ToString()), ("$error", errorCode));
 
     public async Task AcknowledgeAsync(Guid taskId, CancellationToken token)
     {

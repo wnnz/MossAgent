@@ -20,8 +20,34 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
 
     public bool SupportsCreationIntents => _intents is not null;
 
-    public Task ReconcileAsync(CancellationToken cancellationToken) =>
-        _intents?.ReconcileAsync(cancellationToken) ?? Task.CompletedTask;
+    public async Task ReconcileAsync(CancellationToken cancellationToken)
+    {
+        if (_intents is null) return;
+        await _intents.ReconcileAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var orphan in await _intents.ReadUnannotatedOrphansAsync(cancellationToken).ConfigureAwait(false))
+        {
+            try { await _intents.AnnotateOrphanAsync(orphan.TaskId, ClassifyOrphan(orphan), cancellationToken).ConfigureAwait(false); }
+            catch { }
+        }
+    }
+
+    // Annotates orphaned intents for manual recovery: "missing" target gone, "untracked" no
+    // .git pointer, "pointer" gitdir line names a different worktree id, "retained" verified.
+    private static string ClassifyOrphan(WorktreeCreationIntent intent)
+    {
+        try
+        {
+            if (!Directory.Exists(intent.Target) && !File.Exists(intent.Target)) return "missing";
+            var pointer = Path.Combine(intent.Target, ".git");
+            if (!File.Exists(pointer)) return "untracked";
+            var line = File.ReadLines(pointer).FirstOrDefault();
+            var expected = $"worktrees{Path.DirectorySeparatorChar}{intent.TaskId:N}";
+            var normalized = line?.Replace('/', Path.DirectorySeparatorChar);
+            return normalized is not null && normalized.StartsWith("gitdir:", StringComparison.Ordinal)
+                && normalized.Contains(expected, StringComparison.Ordinal) ? "retained" : "pointer";
+        }
+        catch (Exception) { return "unverified"; }
+    }
 
     public Task<IReadOnlyList<WorktreeCreationIntent>> ReadIncompleteAsync(ProjectProfile project, CancellationToken token) =>
         _intents?.ReadIncompleteAsync(project.Id, token) ?? Task.FromResult<IReadOnlyList<WorktreeCreationIntent>>([]);

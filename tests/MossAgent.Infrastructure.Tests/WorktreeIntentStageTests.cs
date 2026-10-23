@@ -91,7 +91,7 @@ public sealed class WorktreeIntentStageTests : IAsyncLifetime
         await service.ReconcileAsync(Fixture.Token);
 
         await AssertIntentStageAsync(consumedTask, WorktreeCreationIntentStage.Consumed);
-        await AssertIntentStageAsync(orphanedTask, WorktreeCreationIntentStage.Orphaned);
+        await AssertIntentStageAsync(orphanedTask, WorktreeCreationIntentStage.Orphaned, "missing");
         var incomplete = Assert.Single(await service.ReadIncompleteAsync(Fixture.Project, Fixture.Token));
         Assert.Equal(orphanedTask, incomplete.TaskId);
         Assert.Equal(WorktreeCreationIntentStage.Orphaned, incomplete.Stage);
@@ -112,7 +112,7 @@ public sealed class WorktreeIntentStageTests : IAsyncLifetime
         await service.ReconcileAsync(Fixture.Token);
 
         await service.AcknowledgeAsync(taskId, Fixture.Token);
-        await AssertIntentStageAsync(taskId, WorktreeCreationIntentStage.Acknowledged);
+        await AssertIntentStageAsync(taskId, WorktreeCreationIntentStage.Acknowledged, "missing");
         Assert.Empty(await service.ReadIncompleteAsync(Fixture.Project, Fixture.Token));
         await Assert.ThrowsAsync<WorktreeAuthorizationException>(() => service.AcknowledgeAsync(taskId, Fixture.Token));
     }
@@ -143,6 +143,35 @@ public sealed class WorktreeIntentStageTests : IAsyncLifetime
 
         await AssertIntentStageAsync(taskId, WorktreeCreationIntentStage.Recorded);
         Assert.Empty(await service.ReadIncompleteAsync(Fixture.Project, Fixture.Token));
+    }
+
+    [Fact]
+    public async Task ReconcileAnnotatesOrphanTargetState()
+    {
+        var service = Service();
+        var missingTask = Guid.NewGuid();
+        var retainedTask = Guid.NewGuid();
+        var intents = new SqliteWorktreeCreationIntents(Storage.Connections);
+        var missingTarget = Path.Combine(Fixture.Paths.WorktreesPath, missingTask.ToString("N"));
+        var retainedTarget = Path.Combine(Fixture.Paths.WorktreesPath, retainedTask.ToString("N"));
+        await intents.RecordAsync(missingTask, Fixture.Project, Fixture.Project.PrimaryDirectory,
+            null, "seed", missingTarget, Fixture.Token);
+        await intents.RecordAsync(retainedTask, Fixture.Project, Fixture.Project.PrimaryDirectory,
+            null, "seed", retainedTarget, Fixture.Token);
+        Directory.CreateDirectory(retainedTarget);
+        await File.WriteAllTextAsync(Path.Combine(retainedTarget, ".git"),
+            $"gitdir: {Fixture.Project.PrimaryDirectory}/.git/worktrees/{retainedTask:N}\n", Fixture.Token);
+        await Storage.ExecuteAsync("""
+            UPDATE worktree_creation_intents SET updated_at='2000-01-01T00:00:00.0000000+00:00'
+            WHERE stage<3;
+            """);
+
+        await service.ReconcileAsync(Fixture.Token);
+
+        var orphans = await service.ReadIncompleteAsync(Fixture.Project, Fixture.Token);
+        Assert.Equal(2, orphans.Count);
+        Assert.Equal("missing", Assert.Single(orphans, i => i.TaskId == missingTask).ErrorCode);
+        Assert.Equal("retained", Assert.Single(orphans, i => i.TaskId == retainedTask).ErrorCode);
     }
 
     private sealed class FailingClaimFactory : IWorktreeTargetClaimFactory
