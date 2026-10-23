@@ -66,7 +66,7 @@ internal sealed class SqliteWorkspaceWriter(SqliteConnectionFactory connections)
         await using var claim = connection.CreateCommand();
         claim.Transaction = transaction;
         claim.CommandText = """
-            UPDATE worktree_creation_intents SET state=1,claimed_at=$claimed
+            UPDATE worktree_creation_intents SET state=1,claimed_at=$claimed,stage=4,updated_at=$claimed
             WHERE task_id=$task AND project_id=$project AND target=$worktree AND state=0
               AND NOT EXISTS(SELECT 1 FROM agent_tasks WHERE id=$task);
             """;

@@ -241,8 +241,12 @@ Git 与登记结束，登记前重开名称核对身份；预创建空目录对 
 `worktree_creation_intents`：创建在任何目录变更前持久化 task/project/repository/基准与
 目标及 claim 身份，授权修订不匹配或任务已落库则拒绝；首个任务保存与消息写入同事务
 按 intent 原子认领，无对应 intent 的陌生工作树任务被拒，既有任务通过迁移回填保持可写。
-创建/清理各阶段记录与崩溃恢复展示尚缺。清理需要释放禁止删除共享的句柄再调用 Git，
-因此最终删除窗口仍有竞态。
+schema 30 为 intent 增加生命周期阶段（Recorded/TargetClaimed/GitCreated/Failed/Consumed/
+Orphaned/Acknowledged）、错误码与更新时间：claim 身份、Git 完成核验各推进一阶，创建
+失败尽力标记 Failed+错误码，任务落库认领置 Consumed；`IWorktreeCreationIntents` 端口
+支持读取未完成/确认，启动时尽力对账——有任务行置 Consumed、无任务行置 Orphaned，
+不自动重建或删除。恢复展示面板、清理侧阶段与 `.git` 指针/common-dir 复核尚缺。
+清理需要释放禁止删除共享的句柄再调用 Git，因此最终删除窗口仍有竞态。
 
 1. 已落地：受管 runner 的本地分支/标签发现、搜索/分页和固定 commit 预览已并入基准
    选择器，自动发现与手工输入分别保留。远端 ref 获取仍缺，须做成单独显式网络动作。
@@ -254,8 +258,10 @@ Git 与登记结束，登记前重开名称核对身份；预创建空目录对 
 3. 清理先关闭新运行并完成 R02 的 drain；按保存 grant 打开受控删除会话，比较身份后删除原对象。
    研究仅处理该 worktree 注册槽的 Git 元数据清理，避免对象删除后 Git 再按同名路径删除替换目录，
    不采用全局 prune。若不能证明交接安全，保留明确失败状态。
-4. 保存创建/清理各阶段与未知状态；启动只核对和展示人工恢复/清理，不自动重建或删除。
-   同时固定/复核 `.git` 指针、common-dir、注册槽和仓库归属，不能仅固定根目录。
+4. 创建侧阶段已落地（schema 30：阶段列+错误码，claim/Git/失败/认领逐阶持久化，启动
+   对账标记 Orphaned/Consumed，`IWorktreeCreationIntents` 读口与确认）；启动恢复展示
+   面板、清理侧阶段与未知状态尚缺。同时固定/复核 `.git` 指针、common-dir、注册槽和
+   仓库归属，不能仅固定根目录。
 5. 对已登记但被替换的对象，另设计显式重新授权代际和 CAS：完整展示任务/项目/路径，
    提交新 grant 时撤销旧租约，旧 context 不得复用新版本；确认后仍需手动续跑。
 

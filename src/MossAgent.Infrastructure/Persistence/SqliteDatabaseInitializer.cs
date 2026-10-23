@@ -48,6 +48,7 @@ public sealed class SqliteDatabaseInitializer(
         await ApplyVersionAsync(connection, 27, RootObjectAuthorizationDatabaseSchema.VersionTwentySeven, cancellationToken);
         await ApplyVersionAsync(connection, 28, WorktreeRootAuthorizationDatabaseSchema.VersionTwentyEight, cancellationToken);
         await ApplyVersionAsync(connection, 29, WorktreeCreationIntentDatabaseSchema.VersionTwentyNine, cancellationToken);
+        await ApplyVersionAsync(connection, 30, WorktreeIntentStageDatabaseSchema.VersionThirty, cancellationToken);
         await SqliteInterruptedWorkRecovery.RecoverAsync(connection, cancellationToken);
     }
 
