@@ -1,5 +1,6 @@
 using Avalonia.Threading;
 using MossAgent.App.ViewModels;
+using MossAgent.Application.Git;
 using MossAgent.Mcp;
 
 namespace MossAgent.App.Services;
@@ -9,16 +10,19 @@ public sealed class AppStartupService : IAsyncDisposable
     private readonly IMcpManager _mcp;
     private readonly AppStartupViewModel _state;
     private readonly Action<Action> _publish;
+    private readonly IWorktreeCreationIntents? _creationIntents;
     private readonly CancellationTokenSource _shutdown = new();
     private readonly object _gate = new();
     private Task? _loading;
     private bool _disposed;
 
-    public AppStartupService(IMcpManager mcp, AppStartupViewModel state, Action<Action>? publish = null)
+    public AppStartupService(IMcpManager mcp, AppStartupViewModel state, Action<Action>? publish = null,
+        IWorktreeCreationIntents? creationIntents = null)
     {
         _mcp = mcp;
         _state = state;
         _publish = publish ?? (callback => Dispatcher.UIThread.Post(callback));
+        _creationIntents = creationIntents;
     }
 
     public Task StartAsync()
@@ -43,6 +47,12 @@ public sealed class AppStartupService : IAsyncDisposable
         }
         catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { return; }
         catch (Exception) { hasWarning = true; }
+        if (_creationIntents?.SupportsCreationIntents == true)
+        {
+            try { await _creationIntents.ReconcileAsync(_shutdown.Token).ConfigureAwait(false); }
+            catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { return; }
+            catch (Exception) { hasWarning = true; }
+        }
         lock (_gate)
         {
             if (_disposed) return;

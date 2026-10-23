@@ -117,6 +117,8 @@ internal static class AppComposition
         services.AddSingleton<IBrowserProfilePaths, BrowserProfilePaths>();
         services.AddSingleton<GitProcessRunner>();
         services.AddSingleton<IGitWorktreeService, GitWorktreeService>();
+        services.AddSingleton<IWorktreeCreationIntents>(
+            static provider => (GitWorktreeService)provider.GetRequiredService<IGitWorktreeService>());
         services.AddSingleton<IGitRepositoryInfoService, GitRepositoryInfoService>();
         services.AddSingleton<MossAgent.Tools.Abstractions.Git.IGitRepositoryAuthorization, GitRepositoryAuthorization>();
         services.AddSingleton<IProviderHttpClientFactory, ProviderHttpClientFactory>();
