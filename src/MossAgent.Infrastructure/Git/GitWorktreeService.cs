@@ -31,8 +31,10 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
         }
     }
 
-    // Annotates orphaned intents for manual recovery: "missing" target gone, "untracked" no
-    // .git pointer, "pointer" gitdir line names a different worktree id, "retained" verified.
+    // Annotates orphaned intents for manual recovery: "missing" target gone, "untracked" no .git
+    // pointer, "pointer" gitdir line malformed or names a different worktree id, "unregistered"
+    // slot directory missing, "foreign" slot registered under another repository, "unlinked"
+    // slot's gitdir does not point back to the target, "retained" fully verified.
     private static string ClassifyOrphan(WorktreeCreationIntent intent)
     {
         try
@@ -42,11 +44,27 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
             if (!File.Exists(pointer)) return "untracked";
             var line = File.ReadLines(pointer).FirstOrDefault();
             var expected = $"worktrees{Path.DirectorySeparatorChar}{intent.TaskId:N}";
-            var normalized = line?.Replace('/', Path.DirectorySeparatorChar);
-            return normalized is not null && normalized.StartsWith("gitdir:", StringComparison.Ordinal)
-                && normalized.Contains(expected, StringComparison.Ordinal) ? "retained" : "pointer";
+            if (line is null || !line.StartsWith("gitdir:", StringComparison.Ordinal)) return "pointer";
+            var admin = line["gitdir:".Length..].Trim().Replace('/', Path.DirectorySeparatorChar);
+            if (!admin.Contains(expected, StringComparison.Ordinal)) return "pointer";
+            var slot = Path.GetFullPath(Path.IsPathFullyQualified(admin) ? admin : Path.Combine(intent.Target, admin));
+            if (!Directory.Exists(slot)) return "unregistered";
+            if (!GitWorktreePaths.Same(ResolveSlotFile(slot, "commondir"),
+                    Path.Combine(GitWorktreePaths.Normalize(intent.Repository), ".git"))) return "foreign";
+            if (!GitWorktreePaths.Same(ResolveSlotFile(slot, "gitdir"),
+                    Path.Combine(GitWorktreePaths.Normalize(intent.Target), ".git"))) return "unlinked";
+            return "retained";
         }
         catch (Exception) { return "unverified"; }
+    }
+
+    private static string ResolveSlotFile(string slot, string name)
+    {
+        var path = Path.Combine(slot, name);
+        if (!File.Exists(path)) return string.Empty;
+        var content = File.ReadLines(path).FirstOrDefault()?.Trim().Replace('/', Path.DirectorySeparatorChar) ?? string.Empty;
+        return content.Length == 0 ? string.Empty
+            : Path.TrimEndingDirectorySeparator(Path.GetFullPath(Path.IsPathFullyQualified(content) ? content : Path.Combine(slot, content)));
     }
 
     public Task<IReadOnlyList<WorktreeCreationIntent>> ReadIncompleteAsync(ProjectProfile project, CancellationToken token) =>

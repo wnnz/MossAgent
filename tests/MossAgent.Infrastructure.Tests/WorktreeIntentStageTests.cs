@@ -149,18 +149,38 @@ public sealed class WorktreeIntentStageTests : IAsyncLifetime
     public async Task ReconcileAnnotatesOrphanTargetState()
     {
         var service = Service();
-        var missingTask = Guid.NewGuid();
-        var retainedTask = Guid.NewGuid();
         var intents = new SqliteWorktreeCreationIntents(Storage.Connections);
-        var missingTarget = Path.Combine(Fixture.Paths.WorktreesPath, missingTask.ToString("N"));
-        var retainedTarget = Path.Combine(Fixture.Paths.WorktreesPath, retainedTask.ToString("N"));
-        await intents.RecordAsync(missingTask, Fixture.Project, Fixture.Project.PrimaryDirectory,
-            null, "seed", missingTarget, Fixture.Token);
-        await intents.RecordAsync(retainedTask, Fixture.Project, Fixture.Project.PrimaryDirectory,
-            null, "seed", retainedTarget, Fixture.Token);
-        Directory.CreateDirectory(retainedTarget);
-        await File.WriteAllTextAsync(Path.Combine(retainedTarget, ".git"),
-            $"gitdir: {Fixture.Project.PrimaryDirectory}/.git/worktrees/{retainedTask:N}\n", Fixture.Token);
+        var missingTask = await RecordOrphanAsync(intents);
+        var untrackedTask = await RecordOrphanAsync(intents);
+        var pointerTask = await RecordOrphanAsync(intents);
+        var unregisteredTask = await RecordOrphanAsync(intents);
+        var foreignTask = await RecordOrphanAsync(intents);
+        var unlinkedTask = await RecordOrphanAsync(intents);
+        var retainedTask = await RecordOrphanAsync(intents);
+
+        Directory.CreateDirectory(Target(untrackedTask));
+        await WritePointerAsync(pointerTask,
+            Path.Combine(Fixture.Project.PrimaryDirectory, ".git", "worktrees", Guid.NewGuid().ToString("N")));
+        await WritePointerAsync(unregisteredTask, Slot(unregisteredTask));
+
+        var foreignSlot = Path.Combine(Fixture.Root, "other", ".git", "worktrees", foreignTask.ToString("N"));
+        Directory.CreateDirectory(foreignSlot);
+        await File.WriteAllTextAsync(Path.Combine(foreignSlot, "commondir"), "../..\n", Fixture.Token);
+        await File.WriteAllTextAsync(Path.Combine(foreignSlot, "gitdir"),
+            Path.Combine(Target(foreignTask), ".git") + "\n", Fixture.Token);
+        await WritePointerAsync(foreignTask, foreignSlot);
+
+        var unlinkedSlot = Slot(unlinkedTask);
+        Directory.CreateDirectory(unlinkedSlot);
+        await File.WriteAllTextAsync(Path.Combine(unlinkedSlot, "commondir"), "../..\n", Fixture.Token);
+        await File.WriteAllTextAsync(Path.Combine(unlinkedSlot, "gitdir"),
+            Path.Combine(Fixture.Root, "elsewhere", ".git") + "\n", Fixture.Token);
+        await WritePointerAsync(unlinkedTask, unlinkedSlot);
+
+        Directory.CreateDirectory(Fixture.Paths.WorktreesPath);
+        await Fixture.GitAsync(Fixture.Repository, "worktree", "add", "-b",
+            $"orphan-{retainedTask:N}", Target(retainedTask), "HEAD");
+
         await Storage.ExecuteAsync("""
             UPDATE worktree_creation_intents SET updated_at='2000-01-01T00:00:00.0000000+00:00'
             WHERE stage<3;
@@ -169,9 +189,34 @@ public sealed class WorktreeIntentStageTests : IAsyncLifetime
         await service.ReconcileAsync(Fixture.Token);
 
         var orphans = await service.ReadIncompleteAsync(Fixture.Project, Fixture.Token);
-        Assert.Equal(2, orphans.Count);
+        Assert.Equal(7, orphans.Count);
         Assert.Equal("missing", Assert.Single(orphans, i => i.TaskId == missingTask).ErrorCode);
+        Assert.Equal("untracked", Assert.Single(orphans, i => i.TaskId == untrackedTask).ErrorCode);
+        Assert.Equal("pointer", Assert.Single(orphans, i => i.TaskId == pointerTask).ErrorCode);
+        Assert.Equal("unregistered", Assert.Single(orphans, i => i.TaskId == unregisteredTask).ErrorCode);
+        Assert.Equal("foreign", Assert.Single(orphans, i => i.TaskId == foreignTask).ErrorCode);
+        Assert.Equal("unlinked", Assert.Single(orphans, i => i.TaskId == unlinkedTask).ErrorCode);
         Assert.Equal("retained", Assert.Single(orphans, i => i.TaskId == retainedTask).ErrorCode);
+    }
+
+    private string Target(Guid taskId) => Path.Combine(Fixture.Paths.WorktreesPath, taskId.ToString("N"));
+
+    private string Slot(Guid taskId) =>
+        Path.Combine(Fixture.Project.PrimaryDirectory, ".git", "worktrees", taskId.ToString("N"));
+
+    private async Task<Guid> RecordOrphanAsync(SqliteWorktreeCreationIntents intents)
+    {
+        var taskId = Guid.NewGuid();
+        await intents.RecordAsync(taskId, Fixture.Project, Fixture.Project.PrimaryDirectory,
+            null, "seed", Target(taskId), Fixture.Token);
+        return taskId;
+    }
+
+    private async Task WritePointerAsync(Guid taskId, string adminDir)
+    {
+        Directory.CreateDirectory(Target(taskId));
+        await File.WriteAllTextAsync(Path.Combine(Target(taskId), ".git"),
+            $"gitdir: {adminDir}\n", Fixture.Token);
     }
 
     private sealed class FailingClaimFactory : IWorktreeTargetClaimFactory
