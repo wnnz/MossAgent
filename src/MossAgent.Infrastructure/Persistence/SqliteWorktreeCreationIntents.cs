@@ -4,8 +4,10 @@ using MossAgent.Domain;
 
 namespace MossAgent.Infrastructure.Persistence;
 
-public sealed class SqliteWorktreeCreationIntents(SqliteConnectionFactory connections)
+public sealed class SqliteWorktreeCreationIntents(SqliteConnectionFactory connections, TimeSpan? staleGrace = null)
 {
+    private readonly TimeSpan _staleGrace = staleGrace ?? TimeSpan.FromMinutes(5);
+
     public async Task RecordAsync(Guid taskId, ProjectProfile project, string repository,
         string? baseReference, string baseCommit, string target, CancellationToken token)
     {
@@ -75,9 +77,12 @@ public sealed class SqliteWorktreeCreationIntents(SqliteConnectionFactory connec
             UPDATE worktree_creation_intents SET stage=4,updated_at=$now
             WHERE stage<3 AND EXISTS(SELECT 1 FROM agent_tasks WHERE agent_tasks.id=worktree_creation_intents.task_id);
             UPDATE worktree_creation_intents SET stage=5,updated_at=$now
-            WHERE stage<3 AND NOT EXISTS(SELECT 1 FROM agent_tasks WHERE agent_tasks.id=worktree_creation_intents.task_id);
+            WHERE stage<3 AND updated_at<$stale
+              AND NOT EXISTS(SELECT 1 FROM agent_tasks WHERE agent_tasks.id=worktree_creation_intents.task_id);
             """;
         command.Parameters.AddWithValue("$now", DateTimeOffset.UtcNow.ToString("O"));
+        // 宽限期：并发实例的在途创建更新 updated_at；陈旧行才可能来自崩溃。 lexicographic over "O" timestamps.
+        command.Parameters.AddWithValue("$stale", (DateTimeOffset.UtcNow - _staleGrace).ToString("O"));
         await command.ExecuteNonQueryAsync(token);
         await transaction.CommitAsync(token);
     }

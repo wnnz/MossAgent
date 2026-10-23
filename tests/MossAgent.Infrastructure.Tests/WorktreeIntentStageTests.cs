@@ -83,6 +83,10 @@ public sealed class WorktreeIntentStageTests : IAsyncLifetime
         var orphanedTarget = Path.Combine(Fixture.Paths.WorktreesPath, orphanedTask.ToString("N"));
         await new SqliteWorktreeCreationIntents(Storage.Connections).RecordAsync(
             orphanedTask, Fixture.Project, Fixture.Project.PrimaryDirectory, null, "seed", orphanedTarget, Fixture.Token);
+        await Storage.ExecuteAsync("""
+            UPDATE worktree_creation_intents SET updated_at='2000-01-01T00:00:00.0000000+00:00'
+            WHERE stage<3;
+            """);
 
         await service.ReconcileAsync(Fixture.Token);
 
@@ -101,6 +105,10 @@ public sealed class WorktreeIntentStageTests : IAsyncLifetime
         var target = Path.Combine(Fixture.Paths.WorktreesPath, taskId.ToString("N"));
         await new SqliteWorktreeCreationIntents(Storage.Connections).RecordAsync(
             taskId, Fixture.Project, Fixture.Project.PrimaryDirectory, null, "seed", target, Fixture.Token);
+        await Storage.ExecuteAsync("""
+            UPDATE worktree_creation_intents SET updated_at='2000-01-01T00:00:00.0000000+00:00'
+            WHERE stage<3;
+            """);
         await service.ReconcileAsync(Fixture.Token);
 
         await service.AcknowledgeAsync(taskId, Fixture.Token);
@@ -120,6 +128,21 @@ public sealed class WorktreeIntentStageTests : IAsyncLifetime
         Assert.True(await reader.ReadAsync(Fixture.Token));
         Assert.Equal((int)stage, reader.GetInt32(0));
         Assert.Equal(errorCode, reader.IsDBNull(1) ? null : reader.GetString(1));
+    }
+
+    [Fact]
+    public async Task ReconcileSkipsFreshInFlightIntent()
+    {
+        var service = Service();
+        var taskId = Guid.NewGuid();
+        var target = Path.Combine(Fixture.Paths.WorktreesPath, taskId.ToString("N"));
+        await new SqliteWorktreeCreationIntents(Storage.Connections).RecordAsync(
+            taskId, Fixture.Project, Fixture.Project.PrimaryDirectory, null, "seed", target, Fixture.Token);
+
+        await service.ReconcileAsync(Fixture.Token);
+
+        await AssertIntentStageAsync(taskId, WorktreeCreationIntentStage.Recorded);
+        Assert.Empty(await service.ReadIncompleteAsync(Fixture.Project, Fixture.Token));
     }
 
     private sealed class FailingClaimFactory : IWorktreeTargetClaimFactory

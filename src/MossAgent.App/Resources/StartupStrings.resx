@@ -5,5 +5,6 @@
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
   <data name="ConnectingMcp" xml:space="preserve"><value>正在连接 MCP 服务…</value></data>
   <data name="McpStartupWarning" xml:space="preserve"><value>部分 MCP 服务未连接，请检查设置。</value></data>
+  <data name="WorktreeRecoveryWarning" xml:space="preserve"><value>工作树崩溃恢复对账未完成，遗留状态将保留待处理。</value></data>
   <data name="OpenMcpSettings" xml:space="preserve"><value>查看 MCP 设置</value></data>
 </root>
