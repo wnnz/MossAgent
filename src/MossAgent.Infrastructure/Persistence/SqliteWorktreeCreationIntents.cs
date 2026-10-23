@@ -39,53 +39,30 @@ public sealed class SqliteWorktreeCreationIntents(SqliteConnectionFactory connec
 
     public async Task RecordIdentityAsync(Guid taskId, string target, DirectoryObjectIdentity identity, CancellationToken token)
     {
-        await using var connection = connections.Create();
-        await connection.OpenAsync(token);
-        await using var command = connection.CreateCommand();
-        command.CommandText = """
+        if (await UpdateAsync("""
             UPDATE worktree_creation_intents SET volume_id=$volume,file_id=$file,
                 stage=1,updated_at=$now
             WHERE task_id=$task AND state=0 AND stage=0 AND target=$target;
-            """;
-        command.Parameters.AddWithValue("$task", taskId.ToString());
-        command.Parameters.AddWithValue("$target", target);
-        command.Parameters.AddWithValue("$volume", identity.VolumeId);
-        command.Parameters.AddWithValue("$file", identity.FileId);
-        command.Parameters.AddWithValue("$now", DateTimeOffset.UtcNow.ToString("O"));
-        if (await command.ExecuteNonQueryAsync(token) != 1) throw new WorktreeAuthorizationException();
+            """, token,
+            ("$task", taskId.ToString()), ("$target", target),
+            ("$volume", identity.VolumeId), ("$file", identity.FileId)) != 1)
+            throw new WorktreeAuthorizationException();
     }
 
     public async Task MarkStageAsync(Guid taskId, WorktreeCreationIntentStage from,
         WorktreeCreationIntentStage stage, CancellationToken token)
     {
-        await using var connection = connections.Create();
-        await connection.OpenAsync(token);
-        await using var command = connection.CreateCommand();
-        command.CommandText = """
+        if (await UpdateAsync("""
             UPDATE worktree_creation_intents SET stage=$stage,updated_at=$now
             WHERE task_id=$task AND stage=$from;
-            """;
-        command.Parameters.AddWithValue("$task", taskId.ToString());
-        command.Parameters.AddWithValue("$from", (int)from);
-        command.Parameters.AddWithValue("$stage", (int)stage);
-        command.Parameters.AddWithValue("$now", DateTimeOffset.UtcNow.ToString("O"));
-        if (await command.ExecuteNonQueryAsync(token) != 1) throw new WorktreeAuthorizationException();
+            """, token, ("$task", taskId.ToString()), ("$from", (int)from), ("$stage", (int)stage)) != 1)
+            throw new WorktreeAuthorizationException();
     }
 
-    public async Task MarkFailedAsync(Guid taskId, string errorCode, CancellationToken token)
-    {
-        await using var connection = connections.Create();
-        await connection.OpenAsync(token);
-        await using var command = connection.CreateCommand();
-        command.CommandText = """
-            UPDATE worktree_creation_intents SET stage=3,error_code=$error,updated_at=$now
-            WHERE task_id=$task AND stage<3;
-            """;
-        command.Parameters.AddWithValue("$task", taskId.ToString());
-        command.Parameters.AddWithValue("$error", errorCode);
-        command.Parameters.AddWithValue("$now", DateTimeOffset.UtcNow.ToString("O"));
-        await command.ExecuteNonQueryAsync(token);
-    }
+    public Task MarkFailedAsync(Guid taskId, string errorCode, CancellationToken token) => UpdateAsync("""
+        UPDATE worktree_creation_intents SET stage=3,error_code=$error,updated_at=$now
+        WHERE task_id=$task AND stage<3;
+        """, token, ("$task", taskId.ToString()), ("$error", errorCode));
 
     public async Task ReconcileAsync(CancellationToken token)
     {
@@ -136,15 +113,23 @@ public sealed class SqliteWorktreeCreationIntents(SqliteConnectionFactory connec
 
     public async Task AcknowledgeAsync(Guid taskId, CancellationToken token)
     {
+        if (await UpdateAsync("""
+            UPDATE worktree_creation_intents SET stage=6,updated_at=$now
+            WHERE task_id=$task AND stage IN (3,5);
+            """, token, ("$task", taskId.ToString())) != 1)
+            throw new WorktreeAuthorizationException();
+    }
+
+    private async Task<int> UpdateAsync(string commandText, CancellationToken token,
+        params (string Name, object? Value)[] parameters)
+    {
         await using var connection = connections.Create();
         await connection.OpenAsync(token);
         await using var command = connection.CreateCommand();
-        command.CommandText = """
-            UPDATE worktree_creation_intents SET stage=6,updated_at=$now
-            WHERE task_id=$task AND stage IN (3,5);
-            """;
-        command.Parameters.AddWithValue("$task", taskId.ToString());
+        command.CommandText = commandText;
         command.Parameters.AddWithValue("$now", DateTimeOffset.UtcNow.ToString("O"));
-        if (await command.ExecuteNonQueryAsync(token) != 1) throw new WorktreeAuthorizationException();
+        foreach (var (name, value) in parameters)
+            command.Parameters.AddWithValue(name, value ?? DBNull.Value);
+        return await command.ExecuteNonQueryAsync(token);
     }
 }
