@@ -14,5 +14,14 @@ public interface IGitWorktreeService
         ProjectProfile project,
         string worktreePath,
         CancellationToken cancellationToken);
+
+    // Removes only the Git registration slot (.git/worktrees/<slot>) whose gitdir
+    // pointer still references a managed worktree directory that no longer exists.
+    // Refuses when the target directory is present, when no slot points back at it,
+    // or when more than one slot does; never runs a global worktree prune.
+    Task RemoveStaleRegistrationAsync(
+        ProjectProfile project,
+        string worktreePath,
+        CancellationToken cancellationToken);
 }
 

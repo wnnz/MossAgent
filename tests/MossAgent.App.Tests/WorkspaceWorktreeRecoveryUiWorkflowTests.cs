@@ -93,4 +93,42 @@ public sealed class WorkspaceWorktreeRecoveryUiWorkflowTests : IAsyncLifetime
             }
             finally { window.Close(); }
         }, TestContext.Current.CancellationToken);
+
+    [Fact]
+    public Task RemovedCleanupRowShowsCleanupRegistrationButtonOnlyForThatRow() =>
+        _session.DispatchAsync(async () =>
+        {
+            await using var fixture = await WorkspaceModelSelectionFixture.CreateAsync();
+            var workspace = fixture.Workspace;
+            var project = workspace.Catalog.SelectedProject!;
+            await WorkspaceWorktreeRecoverySeeding.SeedMissingOrphanAsync(fixture, project);
+            var removedTaskId = await WorkspaceWorktreeRecoverySeeding.SeedRemovedCleanupOrphanAsync(fixture, project);
+            await WorkspaceWorktreeRecoverySeeding.SeedRetainedCleanupOrphanAsync(fixture, project);
+            await workspace.WorktreeRecovery.RefreshAsync();
+            Assert.True(workspace.WorktreeRecovery.IsVisible);
+            Assert.Equal(3, workspace.WorktreeRecovery.Items.Count);
+            var window = new MainWindow
+            {
+                DataContext = fixture.Main, Width = 526, Height = 601,
+            };
+            window.Show();
+            try
+            {
+                ProviderUiWorkflowInput.Flush(window);
+                var card = Assert.Single(window.GetVisualDescendants().OfType<WorkspaceWorktreeRecoveryView>());
+                Assert.True(card.IsEffectivelyVisible);
+                var buttons = card.GetVisualDescendants().OfType<AppButton>()
+                    .Where(candidate => candidate.Name == "CleanupWorktreeRegistrationButton").ToList();
+                var shown = Assert.Single(buttons, candidate => candidate.IsEffectivelyVisible);
+                var context = Assert.IsAssignableFrom<WorkspaceWorktreeRecoveryItemViewModel>(shown.DataContext);
+                Assert.True(context.IsCleanupItem);
+                Assert.Equal(removedTaskId, context.TaskId);
+                Assert.Equal("清理注册项", context.CleanupRegistrationLabel);
+                Assert.All(buttons.Where(candidate => !candidate.IsEffectivelyVisible),
+                    candidate => Assert.NotEqual(removedTaskId,
+                        Assert.IsAssignableFrom<WorkspaceWorktreeRecoveryItemViewModel>(candidate.DataContext).TaskId));
+                Assert.Empty(fixture.Server.Requests);
+            }
+            finally { window.Close(); }
+        }, TestContext.Current.CancellationToken);
 }

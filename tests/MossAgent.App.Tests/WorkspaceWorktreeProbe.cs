@@ -33,4 +33,11 @@ internal sealed class WorkspaceWorktreeProbe : IGitWorktreeService
         RemovalWasCancelled = cancellationToken.IsCancellationRequested;
         if (RemoveHandler is not null) await RemoveHandler(cancellationToken);
     }
+
+    public Task RemoveStaleRegistrationAsync(ProjectProfile project, string worktreePath,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.CompletedTask;
+    }
 }

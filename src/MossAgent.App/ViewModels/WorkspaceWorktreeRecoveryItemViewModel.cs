@@ -7,6 +7,7 @@ namespace MossAgent.App.ViewModels;
 public sealed class WorkspaceWorktreeRecoveryItemViewModel : ObservableObject
 {
     private readonly Func<WorkspaceWorktreeRecoveryItemViewModel, Task>? _retryRemove;
+    private readonly Func<WorkspaceWorktreeRecoveryItemViewModel, Task>? _cleanupRegistration;
 
     internal WorkspaceWorktreeRecoveryItemViewModel(WorktreeCreationIntent intent,
         Func<WorkspaceWorktreeRecoveryItemViewModel, Task> acknowledge, Func<bool> canMutate)
@@ -14,17 +15,22 @@ public sealed class WorkspaceWorktreeRecoveryItemViewModel : ObservableObject
         Intent = intent;
         AcknowledgeCommand = new AsyncRelayCommand(() => acknowledge(this), canMutate);
         RetryRemoveCommand = new AsyncRelayCommand(() => Task.CompletedTask, canMutate);
+        CleanupRegistrationCommand = new AsyncRelayCommand(() => Task.CompletedTask, canMutate);
     }
 
     internal WorkspaceWorktreeRecoveryItemViewModel(WorktreeCleanupIntent intent,
         Func<WorkspaceWorktreeRecoveryItemViewModel, Task> acknowledge, Func<bool> canMutate,
-        Func<WorkspaceWorktreeRecoveryItemViewModel, Task>? retryRemove)
+        Func<WorkspaceWorktreeRecoveryItemViewModel, Task>? retryRemove,
+        Func<WorkspaceWorktreeRecoveryItemViewModel, Task>? cleanupRegistration)
     {
         CleanupIntent = intent;
         _retryRemove = retryRemove;
+        _cleanupRegistration = cleanupRegistration;
         AcknowledgeCommand = new AsyncRelayCommand(() => acknowledge(this), canMutate);
         RetryRemoveCommand = new AsyncRelayCommand(
             () => retryRemove?.Invoke(this) ?? Task.CompletedTask, canMutate);
+        CleanupRegistrationCommand = new AsyncRelayCommand(
+            () => cleanupRegistration?.Invoke(this) ?? Task.CompletedTask, canMutate);
     }
 
     internal WorktreeCreationIntent? Intent { get; }
@@ -44,11 +50,15 @@ public sealed class WorkspaceWorktreeRecoveryItemViewModel : ObservableObject
         IsCleanupItem ? CleanupIntent!.Repository : Basis, CreatedAt.ToLocalTime().ToString("g"));
     public string AcknowledgeLabel => WorkspaceText.Get("WorktreeRecoveryAcknowledge");
     public string RetryRemoveLabel => WorkspaceText.Get("WorktreeRecoveryRetryRemove");
+    public string CleanupRegistrationLabel => WorkspaceText.Get("WorktreeRecoveryCleanupRegistration");
     public bool CanRetryRemove => _retryRemove is not null && IsCleanupItem
         && CleanupIntent!.Stage is WorktreeCleanupIntentStage.Failed or WorktreeCleanupIntentStage.Orphaned
         && ErrorCode != "removed";
+    public bool CanCleanupRegistration => _cleanupRegistration is not null && IsCleanupItem
+        && CleanupIntent!.Stage == WorktreeCleanupIntentStage.Orphaned && ErrorCode == "removed";
     public IAsyncRelayCommand AcknowledgeCommand { get; }
     public IAsyncRelayCommand RetryRemoveCommand { get; }
+    public IAsyncRelayCommand CleanupRegistrationCommand { get; }
 
     private string? ErrorCode => Intent?.ErrorCode ?? CleanupIntent?.ErrorCode;
     private bool IsFailed => Intent?.Stage == WorktreeCreationIntentStage.Failed
@@ -62,6 +72,7 @@ public sealed class WorkspaceWorktreeRecoveryItemViewModel : ObservableObject
     {
         AcknowledgeCommand.NotifyCanExecuteChanged();
         RetryRemoveCommand.NotifyCanExecuteChanged();
+        CleanupRegistrationCommand.NotifyCanExecuteChanged();
     }
 
     private static string FailureReason(string? code) => code switch

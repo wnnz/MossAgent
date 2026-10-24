@@ -107,7 +107,8 @@ public sealed class WorkspaceWorktreeRecoveryViewModel : ObservableObject, IDisp
                     Items.Add(new WorkspaceWorktreeRecoveryItemViewModel(intent, AcknowledgeItemAsync, CanMutate));
                 foreach (var intent in cleanup)
                     Items.Add(new WorkspaceWorktreeRecoveryItemViewModel(intent, AcknowledgeItemAsync, CanMutate,
-                        _worktrees is null ? null : RetryRemoveItemAsync));
+                        _worktrees is null ? null : RetryRemoveItemAsync,
+                        _worktrees is null ? null : CleanupRegistrationItemAsync));
                 NotifyStateChanged();
             }, CancellationToken.None);
         }
@@ -218,6 +219,49 @@ public sealed class WorkspaceWorktreeRecoveryViewModel : ObservableObject, IDisp
         catch (Exception)
         {
             await PublishNoticeAsync("WorktreeRecoveryRetryFailed");
+        }
+        finally
+        {
+            await AvaloniaUiThread.RunAsync(EndOperation, CancellationToken.None);
+            operation.Dispose();
+        }
+    }
+
+    private Task CleanupRegistrationItemAsync(WorkspaceWorktreeRecoveryItemViewModel item)
+    {
+        Task task;
+        lock (_gate)
+        {
+            if (_disposed || _busy > 0 || !item.CanCleanupRegistration
+                || _project is not { } project || _worktrees is not { } worktrees)
+                return Task.CompletedTask;
+            var operation = _lifetime.CreateOperation(CancellationToken.None);
+            task = TrackLocked(CleanupRegistrationAsync(item, project, worktrees, operation));
+        }
+        NotifyStateChanged();
+        return task;
+    }
+
+    private async Task CleanupRegistrationAsync(WorkspaceWorktreeRecoveryItemViewModel item,
+        ProjectProfile project, IGitWorktreeService worktrees, CancellationTokenSource operation)
+    {
+        try
+        {
+            await worktrees.RemoveStaleRegistrationAsync(project, item.Target, operation.Token).ConfigureAwait(false);
+            await RefreshAsync();
+        }
+        catch (WorktreeAuthorizationException)
+        {
+            await PublishNoticeAsync("WorktreeRecoveryStale");
+            await RefreshAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            await PublishNoticeAsync("WorktreeRecoveryCancelled");
+        }
+        catch (Exception)
+        {
+            await PublishNoticeAsync("WorktreeRecoveryRegistrationFailed");
         }
         finally
         {

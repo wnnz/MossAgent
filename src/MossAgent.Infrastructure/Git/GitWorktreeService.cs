@@ -79,22 +79,13 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
             if (!admin.Contains(expected, StringComparison.Ordinal)) return "pointer";
             var slot = Path.GetFullPath(Path.IsPathFullyQualified(admin) ? admin : Path.Combine(intent.Target, admin));
             if (!Directory.Exists(slot)) return "unregistered";
-            if (!GitWorktreePaths.Same(ResolveSlotFile(slot, "commondir"),
+            if (!GitWorktreePaths.Same(GitWorktreeRegistrationSlot.ResolveFile(slot, "commondir"),
                     Path.Combine(GitWorktreePaths.Normalize(intent.Repository), ".git"))) return "foreign";
-            if (!GitWorktreePaths.Same(ResolveSlotFile(slot, "gitdir"),
+            if (!GitWorktreePaths.Same(GitWorktreeRegistrationSlot.ResolveFile(slot, "gitdir"),
                     Path.Combine(GitWorktreePaths.Normalize(intent.Target), ".git"))) return "unlinked";
             return "retained";
         }
         catch (Exception) { return "unverified"; }
-    }
-
-    private static string ResolveSlotFile(string slot, string name)
-    {
-        var path = Path.Combine(slot, name);
-        if (!File.Exists(path)) return string.Empty;
-        var content = File.ReadLines(path).FirstOrDefault()?.Trim().Replace('/', Path.DirectorySeparatorChar) ?? string.Empty;
-        return content.Length == 0 ? string.Empty
-            : Path.TrimEndingDirectorySeparator(Path.GetFullPath(Path.IsPathFullyQualified(content) ? content : Path.Combine(slot, content)));
     }
 
     public Task<IReadOnlyList<WorktreeCreationIntent>> ReadIncompleteAsync(ProjectProfile project, CancellationToken token) =>
@@ -300,6 +291,47 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
                 : failure;
             if (_cleanupIntents is not null && taskId != default && !cancellationToken.IsCancellationRequested)
                 await MarkCleanupFailedAsync(taskId, mapped);
+            if (!ReferenceEquals(mapped, failure)) throw mapped;
+            throw;
+        }
+        finally { if (scope is not null) await scope.DisposeAsync().ConfigureAwait(false); }
+    }
+
+    public Task RemoveStaleRegistrationAsync(
+        ProjectProfile project,
+        string worktreePath,
+        CancellationToken cancellationToken)
+    {
+        var snapshot = Snapshot(project);
+        return Task.Run(() => RemoveStaleRegistrationCoreAsync(snapshot, worktreePath, cancellationToken), cancellationToken);
+    }
+
+    // Deletes only the proven registration slot of a managed worktree whose
+    // directory disappeared out-of-band. Write-free to cleanup intents: the
+    // caller's row keeps its stage, and failures propagate to be retried.
+    private async Task RemoveStaleRegistrationCoreAsync(ProjectProfile project, string worktreePath, CancellationToken cancellationToken)
+    {
+        GitWorktreeOperationScope? scope = null;
+        try
+        {
+            scope = await OpenScopeAsync(project, cancellationToken).ConfigureAwait(false);
+            var token = scope.Token;
+            var target = GitWorktreePaths.ManagedTarget(paths, worktreePath, false);
+            if (Directory.Exists(target) || File.Exists(target))
+                throw new InvalidOperationException("The worktree directory still exists; use the removal path instead of registration cleanup.");
+            var source = await _inspector.ReadProjectAsync(project, false, token).ConfigureAwait(false);
+            if (GitWorktreePaths.Within(source.Root, target))
+                throw new UnauthorizedAccessException("The project's primary repository is not a task worktree registration.");
+            GitWorktreePaths.ValidateRepository(source);
+            token.ThrowIfCancellationRequested();
+            var slot = GitWorktreeRegistrationSlot.Locate(source, target);
+            GitWorktreeRegistrationSlot.Delete(source, slot);
+        }
+        catch (Exception failure)
+        {
+            var mapped = failure is OperationCanceledException cancelled
+                ? scope?.MapCancellation(cancelled, cancellationToken, "registration cleanup") ?? cancelled
+                : failure;
             if (!ReferenceEquals(mapped, failure)) throw mapped;
             throw;
         }

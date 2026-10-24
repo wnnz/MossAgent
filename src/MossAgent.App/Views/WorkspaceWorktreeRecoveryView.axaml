@@ -21,6 +21,9 @@
                 <ui:AppButton x:Name="RetryRemoveWorktreeIntentButton" Classes="ghost menu-option"
                               Content="{Binding RetryRemoveLabel}" Command="{Binding RetryRemoveCommand}"
                               IsVisible="{Binding CanRetryRemove}" />
+                <ui:AppButton x:Name="CleanupWorktreeRegistrationButton" Classes="ghost menu-option"
+                              Content="{Binding CleanupRegistrationLabel}" Command="{Binding CleanupRegistrationCommand}"
+                              IsVisible="{Binding CanCleanupRegistration}" />
               </WrapPanel>
             </StackPanel>
           </DataTemplate>

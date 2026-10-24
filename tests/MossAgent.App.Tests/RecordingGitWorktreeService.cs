@@ -6,7 +6,9 @@ namespace MossAgent.App.Tests;
 internal sealed class RecordingGitWorktreeService : IGitWorktreeService
 {
     public Exception? RemoveFailure { get; set; }
+    public Exception? RegistrationFailure { get; set; }
     public List<(Guid ProjectId, string Target)> RemovedTargets { get; } = [];
+    public List<(Guid ProjectId, string Target)> CleanedRegistrations { get; } = [];
 
     public Task ValidateAsync(ProjectProfile project, Guid taskId, string worktreePath,
         CancellationToken cancellationToken) => Task.CompletedTask;
@@ -19,6 +21,14 @@ internal sealed class RecordingGitWorktreeService : IGitWorktreeService
     {
         if (RemoveFailure is not null) throw RemoveFailure;
         RemovedTargets.Add((project.Id, worktreePath));
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveStaleRegistrationAsync(ProjectProfile project, string worktreePath,
+        CancellationToken cancellationToken)
+    {
+        if (RegistrationFailure is not null) throw RegistrationFailure;
+        CleanedRegistrations.Add((project.Id, worktreePath));
         return Task.CompletedTask;
     }
 }
