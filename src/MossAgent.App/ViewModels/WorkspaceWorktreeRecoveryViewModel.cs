@@ -110,21 +110,12 @@ public sealed class WorkspaceWorktreeRecoveryViewModel : ObservableObject, IDisp
         }
         catch (OperationCanceledException)
         {
-            await AvaloniaUiThread.RunAsync(() =>
-            {
-                if (_disposed || generation != _generation || !ReferenceEquals(_read, operation)) return;
-                _notice = "WorktreeRecoveryCancelled";
-                NotifyStateChanged();
-            }, CancellationToken.None);
+            await PublishNoticeAsync("WorktreeRecoveryCancelled",
+                () => generation == _generation && ReferenceEquals(_read, operation));
         }
         catch (Exception)
         {
-            await AvaloniaUiThread.RunAsync(() =>
-            {
-                if (_disposed || generation != _generation) return;
-                _notice = "WorktreeRecoveryLoadFailed";
-                NotifyStateChanged();
-            }, CancellationToken.None);
+            await PublishNoticeAsync("WorktreeRecoveryLoadFailed", () => generation == _generation);
         }
         finally
         {
@@ -171,31 +162,16 @@ public sealed class WorkspaceWorktreeRecoveryViewModel : ObservableObject, IDisp
         }
         catch (WorktreeAuthorizationException)
         {
-            await AvaloniaUiThread.RunAsync(() =>
-            {
-                if (_disposed) return;
-                _notice = "WorktreeRecoveryStale";
-                NotifyStateChanged();
-            }, CancellationToken.None);
+            await PublishNoticeAsync("WorktreeRecoveryStale");
             await RefreshAsync();
         }
         catch (OperationCanceledException)
         {
-            await AvaloniaUiThread.RunAsync(() =>
-            {
-                if (_disposed) return;
-                _notice = "WorktreeRecoveryCancelled";
-                NotifyStateChanged();
-            }, CancellationToken.None);
+            await PublishNoticeAsync("WorktreeRecoveryCancelled");
         }
         catch (Exception)
         {
-            await AvaloniaUiThread.RunAsync(() =>
-            {
-                if (_disposed) return;
-                _notice = "WorktreeRecoveryAcknowledgeFailed";
-                NotifyStateChanged();
-            }, CancellationToken.None);
+            await PublishNoticeAsync("WorktreeRecoveryAcknowledgeFailed");
         }
         finally
         {
@@ -203,6 +179,14 @@ public sealed class WorkspaceWorktreeRecoveryViewModel : ObservableObject, IDisp
             operation.Dispose();
         }
     }
+
+    private Task PublishNoticeAsync(string key, Func<bool>? guard = null) =>
+        AvaloniaUiThread.RunAsync(() =>
+        {
+            if (_disposed || guard?.Invoke() == false) return;
+            _notice = key;
+            NotifyStateChanged();
+        }, CancellationToken.None);
 
     private void EndOperation()
     {

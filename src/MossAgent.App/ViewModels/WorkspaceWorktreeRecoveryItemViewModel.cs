@@ -26,28 +26,27 @@ public sealed class WorkspaceWorktreeRecoveryItemViewModel : ObservableObject
     public Guid TaskId => Intent?.TaskId ?? CleanupIntent!.TaskId;
     public string Target => Intent?.Target ?? CleanupIntent!.Target;
     public string StageLabel => WorkspaceText.Get(IsCleanupItem
-        ? (CleanupIntent!.Stage == WorktreeCleanupIntentStage.Failed
-            ? "WorktreeCleanupStageFailed" : "WorktreeCleanupStageOrphaned")
-        : (Intent!.Stage == WorktreeCreationIntentStage.Failed
-            ? "WorktreeRecoveryStageFailed" : "WorktreeRecoveryStageOrphaned"));
-    public string Reason => IsCleanupItem ? CleanupReason() : CreationReason();
+        ? IsFailed ? "WorktreeCleanupStageFailed" : "WorktreeCleanupStageOrphaned"
+        : IsFailed ? "WorktreeRecoveryStageFailed" : "WorktreeRecoveryStageOrphaned");
+    public string Reason => IsFailed
+        ? (IsCleanupItem ? CleanupFailureReason(ErrorCode) : FailureReason(ErrorCode))
+        : (IsCleanupItem ? CleanupOrphanReason(ErrorCode) : OrphanReason(ErrorCode));
     public string Summary => $"{StageLabel} · {Reason}";
-    public string Detail => IsCleanupItem
-        ? string.Format(WorkspaceText.Get("WorktreeCleanupDetail"), CleanupIntent!.Repository,
-            CleanupIntent.CreatedAt.ToLocalTime().ToString("g"))
-        : string.Format(WorkspaceText.Get("WorktreeRecoveryDetail"), Basis,
-            Intent!.CreatedAt.ToLocalTime().ToString("g"));
+    public string Detail => string.Format(
+        WorkspaceText.Get(IsCleanupItem ? "WorktreeCleanupDetail" : "WorktreeRecoveryDetail"),
+        IsCleanupItem ? CleanupIntent!.Repository : Basis, CreatedAt.ToLocalTime().ToString("g"));
     public string AcknowledgeLabel => WorkspaceText.Get("WorktreeRecoveryAcknowledge");
     public IAsyncRelayCommand AcknowledgeCommand { get; }
 
+    private string? ErrorCode => Intent?.ErrorCode ?? CleanupIntent?.ErrorCode;
+    private bool IsFailed => Intent?.Stage == WorktreeCreationIntentStage.Failed
+        || CleanupIntent?.Stage == WorktreeCleanupIntentStage.Failed;
+    private DateTimeOffset CreatedAt => Intent?.CreatedAt ?? CleanupIntent!.CreatedAt;
     private string Basis => Intent!.BaseReference
         ?? (Intent.BaseCommit is { Length: > 12 } commit ? commit[..12] : Intent.BaseCommit)
         ?? WorkspaceText.Get("WorktreeRecoveryBasisDefault");
 
     internal void NotifyCommands() => AcknowledgeCommand.NotifyCanExecuteChanged();
-
-    private string CreationReason() => Intent!.Stage == WorktreeCreationIntentStage.Failed
-        ? FailureReason(Intent.ErrorCode) : OrphanReason(Intent.ErrorCode);
 
     private static string FailureReason(string? code) => code switch
     {
@@ -73,14 +72,8 @@ public sealed class WorkspaceWorktreeRecoveryItemViewModel : ObservableObject
         _ => WorkspaceText.Get("WorktreeRecoveryOrphanUnknown"),
     };
 
-    private string CleanupReason() => CleanupIntent!.Stage == WorktreeCleanupIntentStage.Failed
-        ? CleanupFailureReason(CleanupIntent.ErrorCode) : CleanupOrphanReason(CleanupIntent.ErrorCode);
-
-    private static string CleanupFailureReason(string? code) => code switch
-    {
-        "git" => WorkspaceText.Get("WorktreeCleanupFailureGit"),
-        _ => FailureReason(code),
-    };
+    private static string CleanupFailureReason(string? code) =>
+        code == "git" ? WorkspaceText.Get("WorktreeCleanupFailureGit") : FailureReason(code);
 
     private static string CleanupOrphanReason(string? code) => code switch
     {

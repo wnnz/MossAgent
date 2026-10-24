@@ -89,7 +89,6 @@ public sealed class WorkspaceWorktreeReferencePickerViewModel : ObservableObject
         try
         {
             await _discovery.FetchAsync(project, CancellationToken.None).ConfigureAwait(true);
-            _skip = 0;
         }
         catch (Exception)
         {
@@ -98,7 +97,7 @@ public sealed class WorkspaceWorktreeReferencePickerViewModel : ObservableObject
             NotifyStatus();
             return;
         }
-        IsBusy = false;
+        _skip = 0;
         await RefreshAsync();
     }
 

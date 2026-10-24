@@ -3,7 +3,7 @@ namespace MossAgent.Infrastructure.Persistence;
 internal static class WorktreeCleanupIntentDatabaseSchema
 {
     public const string VersionThirtyOne = """
-        CREATE TABLE worktree_cleanup_intents (
+        CREATE TABLE IF NOT EXISTS worktree_cleanup_intents (
             task_id TEXT PRIMARY KEY,
             project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
             repository TEXT NOT NULL,

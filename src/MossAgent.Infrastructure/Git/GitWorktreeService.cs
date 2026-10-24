@@ -24,23 +24,27 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
 
     public async Task ReconcileAsync(CancellationToken cancellationToken)
     {
-        if (_intents is not null)
+        if (_intents is not null) await ReconcileCreationsAsync(cancellationToken).ConfigureAwait(false);
+        if (_cleanupIntents is not null) await ReconcileCleanupsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task ReconcileCreationsAsync(CancellationToken cancellationToken)
+    {
+        await _intents!.ReconcileAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var orphan in await _intents.ReadUnannotatedOrphansAsync(cancellationToken).ConfigureAwait(false))
         {
-            await _intents.ReconcileAsync(cancellationToken).ConfigureAwait(false);
-            foreach (var orphan in await _intents.ReadUnannotatedOrphansAsync(cancellationToken).ConfigureAwait(false))
-            {
-                try { await _intents.AnnotateOrphanAsync(orphan.TaskId, ClassifyOrphan(orphan), cancellationToken).ConfigureAwait(false); }
-                catch { }
-            }
+            try { await _intents.AnnotateOrphanAsync(orphan.TaskId, ClassifyOrphan(orphan), cancellationToken).ConfigureAwait(false); }
+            catch { }
         }
-        if (_cleanupIntents is not null)
+    }
+
+    private async Task ReconcileCleanupsAsync(CancellationToken cancellationToken)
+    {
+        await _cleanupIntents!.ReconcileAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var orphan in await _cleanupIntents.ReadUnannotatedOrphansAsync(cancellationToken).ConfigureAwait(false))
         {
-            await _cleanupIntents.ReconcileAsync(cancellationToken).ConfigureAwait(false);
-            foreach (var orphan in await _cleanupIntents.ReadUnannotatedOrphansAsync(cancellationToken).ConfigureAwait(false))
-            {
-                try { await _cleanupIntents.AnnotateOrphanAsync(orphan.TaskId, ClassifyCleanupOrphan(orphan), cancellationToken).ConfigureAwait(false); }
-                catch { }
-            }
+            try { await _cleanupIntents.AnnotateOrphanAsync(orphan.TaskId, ClassifyCleanupOrphan(orphan), cancellationToken).ConfigureAwait(false); }
+            catch { }
         }
     }
 
@@ -287,10 +291,7 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
                 ? scope?.MapCancellation(cancelled, cancellationToken, "removal") ?? cancelled
                 : failure;
             if (_cleanupIntents is not null && taskId != default && !cancellationToken.IsCancellationRequested)
-            {
-                try { await _cleanupIntents.MarkFailedAsync(taskId, RemovalErrorCode(mapped), CancellationToken.None).ConfigureAwait(false); }
-                catch { }
-            }
+                await MarkCleanupFailedAsync(taskId, mapped);
             if (!ReferenceEquals(mapped, failure)) throw mapped;
             throw;
         }
@@ -306,6 +307,12 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
         InvalidOperationException => "git",
         _ => "unknown",
     };
+
+    private async Task MarkCleanupFailedAsync(Guid taskId, Exception failure)
+    {
+        try { await _cleanupIntents!.MarkFailedAsync(taskId, RemovalErrorCode(failure), CancellationToken.None).ConfigureAwait(false); }
+        catch { }
+    }
 
     private static string RemovalErrorCode(Exception failure) => failure switch
     {

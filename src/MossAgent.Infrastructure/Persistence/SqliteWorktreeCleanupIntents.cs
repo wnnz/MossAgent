@@ -84,22 +84,11 @@ public sealed class SqliteWorktreeCleanupIntents(SqliteConnectionFactory connect
         await transaction.CommitAsync(token);
     }
 
-    public async Task<IReadOnlyList<WorktreeCleanupIntent>> ReadIncompleteAsync(Guid projectId, CancellationToken token)
-    {
-        await using var connection = connections.Create();
-        await connection.OpenAsync(token);
-        await using var command = connection.CreateCommand();
-        command.CommandText = """
+    public Task<IReadOnlyList<WorktreeCleanupIntent>> ReadIncompleteAsync(Guid projectId, CancellationToken token) =>
+        WorktreeIntentSqlite.QueryAsync(connections, """
             SELECT task_id,project_id,repository,target,stage,error_code,created_at,updated_at
             FROM worktree_cleanup_intents WHERE project_id=$project AND stage IN (3,4) ORDER BY created_at;
-            """;
-        command.Parameters.AddWithValue("$project", projectId.ToString());
-        var items = new List<WorktreeCleanupIntent>();
-        await using var reader = await command.ExecuteReaderAsync(token);
-        while (await reader.ReadAsync(token))
-            items.Add(ReadIntent(reader));
-        return items;
-    }
+            """, ReadIntent, token, ("$project", projectId.ToString()));
 
     private static WorktreeCleanupIntent ReadIntent(SqliteDataReader reader) => new(
         Guid.Parse(reader.GetString(0)),
@@ -111,21 +100,11 @@ public sealed class SqliteWorktreeCleanupIntents(SqliteConnectionFactory connect
         DateTimeOffset.Parse(reader.GetString(6)),
         reader.IsDBNull(7) ? null : DateTimeOffset.Parse(reader.GetString(7)));
 
-    public async Task<IReadOnlyList<WorktreeCleanupIntent>> ReadUnannotatedOrphansAsync(CancellationToken token)
-    {
-        await using var connection = connections.Create();
-        await connection.OpenAsync(token);
-        await using var command = connection.CreateCommand();
-        command.CommandText = """
+    public Task<IReadOnlyList<WorktreeCleanupIntent>> ReadUnannotatedOrphansAsync(CancellationToken token) =>
+        WorktreeIntentSqlite.QueryAsync(connections, """
             SELECT task_id,project_id,repository,target,stage,error_code,created_at,updated_at
             FROM worktree_cleanup_intents WHERE stage=4 AND error_code IS NULL;
-            """;
-        var items = new List<WorktreeCleanupIntent>();
-        await using var reader = await command.ExecuteReaderAsync(token);
-        while (await reader.ReadAsync(token))
-            items.Add(ReadIntent(reader));
-        return items;
-    }
+            """, ReadIntent, token);
 
     public Task AnnotateOrphanAsync(Guid taskId, string errorCode, CancellationToken token) => UpdateAsync("""
         UPDATE worktree_cleanup_intents SET error_code=$error,updated_at=$now
@@ -141,16 +120,7 @@ public sealed class SqliteWorktreeCleanupIntents(SqliteConnectionFactory connect
             throw new WorktreeAuthorizationException();
     }
 
-    private async Task<int> UpdateAsync(string commandText, CancellationToken token,
-        params (string Name, object? Value)[] parameters)
-    {
-        await using var connection = connections.Create();
-        await connection.OpenAsync(token);
-        await using var command = connection.CreateCommand();
-        command.CommandText = commandText;
-        command.Parameters.AddWithValue("$now", DateTimeOffset.UtcNow.ToString("O"));
-        foreach (var (name, value) in parameters)
-            command.Parameters.AddWithValue(name, value ?? DBNull.Value);
-        return await command.ExecuteNonQueryAsync(token);
-    }
+    private Task<int> UpdateAsync(string commandText, CancellationToken token,
+        params (string Name, object? Value)[] parameters) =>
+        WorktreeIntentSqlite.UpdateAsync(connections, commandText, token, parameters);
 }

@@ -16,11 +16,7 @@ internal static class WorkspaceWorktreeRecoverySeeding
         var target = Path.Combine(fixture.DataRoot, "worktrees", taskId.ToString("N"));
         await intents.RecordAsync(taskId, project, project.PrimaryDirectory,
             null, "seed", target, fixture.Token);
-        await ExecuteAsync(connections, """
-            UPDATE worktree_creation_intents SET updated_at='2000-01-01T00:00:00.0000000+00:00'
-            WHERE stage<3;
-            """, fixture.Token);
-        await ((IWorktreeCreationIntents)fixture.Worktrees).ReconcileAsync(fixture.Token);
+        await StaleAndReconcileAsync(connections, "worktree_creation_intents", fixture);
         return taskId;
     }
 
@@ -32,12 +28,17 @@ internal static class WorkspaceWorktreeRecoverySeeding
         var taskId = Guid.NewGuid();
         var target = Path.Combine(fixture.DataRoot, "worktrees", taskId.ToString("N"));
         await intents.RecordAsync(taskId, project, project.PrimaryDirectory, target, fixture.Token);
-        await ExecuteAsync(connections, """
-            UPDATE worktree_cleanup_intents SET updated_at='2000-01-01T00:00:00.0000000+00:00'
-            WHERE stage<3;
-            """, fixture.Token);
-        await ((IWorktreeCleanupIntents)fixture.Worktrees).ReconcileAsync(fixture.Token);
+        await StaleAndReconcileAsync(connections, "worktree_cleanup_intents", fixture);
         return taskId;
+    }
+
+    private static async Task StaleAndReconcileAsync(SqliteConnectionFactory connections, string table,
+        WorkspaceModelSelectionFixture fixture)
+    {
+        await ExecuteAsync(connections, $"""
+            UPDATE {table} SET updated_at='2000-01-01T00:00:00.0000000+00:00' WHERE stage<3;
+            """, fixture.Token);
+        await ((IWorktreeCreationIntents)fixture.Worktrees).ReconcileAsync(fixture.Token);
     }
 
     private static async Task ExecuteAsync(SqliteConnectionFactory connections, string commandText,
