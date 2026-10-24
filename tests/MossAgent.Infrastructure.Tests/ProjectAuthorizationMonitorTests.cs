@@ -19,11 +19,13 @@ public sealed class ProjectAuthorizationMonitorTests
         await using var monitor = new ProjectAuthorizationMonitor(reader, changes);
         await using var old = await monitor.AcquireAsync(project, Token);
         reader.Current = project with { AuthorizationRevision = 2 };
-        await using var next = await monitor.AcquireAsync(reader.Current, Token);
+        await Assert.ThrowsAsync<WorkspaceAuthorizationException>(() => monitor.AcquireAsync(reader.Current, Token));
         changes.Publish(project.Id, 2);
         Assert.True(old.IsRevoked);
         Assert.True(old.Revocation.IsCancellationRequested);
-        Assert.False(next.IsRevoked);
+        await Assert.ThrowsAsync<WorkspaceAuthorizationException>(() => monitor.AcquireAsync(reader.Current, Token));
+        await old.DisposeAsync();
+        await using var next = await monitor.AcquireAsync(reader.Current, Token);
         changes.Publish(project.Id, 1);
         changes.Publish(Guid.NewGuid(), 3);
         Assert.True(old.IsRevoked);
@@ -49,7 +51,7 @@ public sealed class ProjectAuthorizationMonitorTests
         };
         await using var monitor = new ProjectAuthorizationMonitor(reader, changes);
         await Assert.ThrowsAsync<WorkspaceAuthorizationException>(() => monitor.AcquireAsync(project, Token));
-        Assert.Equal(2, reader.Reads);
+        Assert.Equal(1, reader.Reads);
     }
 
     [Theory]

@@ -134,24 +134,21 @@ internal sealed class PtyTerminalOwner
     {
         try
         {
-            try
+            if (starting is not null) await ((Task)starting).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+            PtyTerminalSession? session;
+            lock (_sync) session = _session;
+            if (session is not null) await Task.Run(() =>
             {
-                if (starting is not null) await ((Task)starting).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
-                PtyTerminalSession? session;
-                lock (_sync) session = _session;
-                if (session is not null) await Task.Run(() =>
-                {
-                    lock (_resizeSync) return session.DisposeAsync().AsTask();
-                }, CancellationToken.None).ConfigureAwait(false);
-            }
-            finally
-            {
-                _authorizationRegistration.Dispose();
-                try { if (Authorization is not null) await Authorization.DisposeAsync().ConfigureAwait(false); }
-                finally { _shutdown.Dispose(); }
-            }
+                lock (_resizeSync) return session.DisposeAsync().AsTask();
+            }, CancellationToken.None).ConfigureAwait(false);
+            if (Authorization is not null) await Authorization.DisposeAsync().ConfigureAwait(false);
             completion.SetResult();
         }
         catch (Exception exception) { completion.SetException(exception); }
+        finally
+        {
+            _authorizationRegistration.Dispose();
+            _shutdown.Dispose();
+        }
     }
 }

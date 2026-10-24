@@ -49,7 +49,7 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 
 | 编号 | 已完成的能力及实际链路 | 证据与剩余范围 |
 | --- | --- | --- |
-| C07 | 项目和多授权根管理；schema 26 条件保存及授权版本撤销旧 Agent、工具、审批和长驻 PTY，跨实例有界轮询，Queue 暂停，保留前台草稿 | [授权撤销](archive/SECURITY.md#project-authorization-revocation-acceptance)；合作取消尚非严格排空屏障，见 R02 |
+| C07 | 项目和多授权根管理；schema 26 条件保存及授权版本撤销旧 Agent、工具、审批和长驻 PTY，跨实例有界轮询，Queue 暂停，保留前台草稿 | [授权撤销](archive/SECURITY.md#project-authorization-revocation-acceptance)；本机租约准入排空已补；跨进程及完整资源排空仍缺，见 R02 |
 | C08 | schema 27 绑定项目根的 grant、卷和目录文件 ID；旧项目待明确确认，同路径替换不继承授权；重新授权推进版本并撤销旧租约 | [项目根对象身份](archive/SECURITY.md#root-object-authorization-acceptance)；ABA、别名/支持范围、严格撤权见 R02 |
 | C09 | 文件搜索、读取、预览和编辑校验通过标准工具管线；读取/预览等已接入入口在生产 Windows 打开后校验文件句柄，防止已覆盖场景的链接/重解析点越界 | [读取句柄保护](archive/SECURITY.md#read-handle-path-safety-acceptance)、[编辑链路](archive/CONVERSATIONS.md#file-editing-acceptance)；其余枚举入口和完整竞态审计见 R02 |
 | C10 | 本地常规 NTFS 原子文本写入：固定父目录链、独占暂存、相对句柄提交、外部修改检查及失败清理；不支持的元数据保守拒绝 | [原子写入](archive/SECURITY.md#write-handle-path-safety-acceptance)；最终名称条件替换尚缺，见 R02 |
@@ -188,6 +188,12 @@ Windows 验收环境尚未就绪；本机已有诊断只获得较弱 DACL 层，
 
 **现状：** 读取/写入/删除/复制/同卷移动及产物会话、授权版本和对象 grant 已实现，
 但它们不是所有文件入口、整棵子树不变、最终名称条件提交或同步撤销屏障的证明。
+
+当前开发分支增量：本机授权监视器按项目记录单调递增的已知授权版本；旧版本租约或同版本
+已撤销租约未成功释放前，拒绝新操作准入。读库发现新版本与本机变更通知共用撤销入口，
+迟到的旧读取/注册不能重新激活旧授权。根身份句柄、工作树环境租约及 ConPTY 清理成功后
+才释放项目租约；清理失败保留本机准入阻断。该机制不是跨进程排空协议，也不证明所有
+浏览器/MCP/产物资源已纳入登记；崩溃后的持久化未知状态及 OS 文件系统隔离仍未完成。
 
 1. Application 建立 task/run/授权代际的资源登记与状态：可接收新操作、撤销中、资源已排空、
    清理未知。撤权先关闭新入口，再取消 Agent/工具/PTY/Git/Browser/MCP，限时等待实际资源退出；

@@ -86,22 +86,19 @@ internal sealed class ProjectAuthorizationLease : ITaskWorkspaceLease
     {
         try
         {
-            try
-            {
-                await _stopping.CancelAsync().ConfigureAwait(false);
-                await _polling.ConfigureAwait(false);
-                try { await _cancelling.ConfigureAwait(false); }
-                catch (AggregateException) { /* Observer failures cannot prevent lease cleanup. */ }
-            }
-            finally
-            {
-                _monitor.Release(this);
-                _stopping.Dispose();
-                _revocation.Dispose();
-                _roots?.Dispose();
-            }
+            await _stopping.CancelAsync().ConfigureAwait(false);
+            await _polling.ConfigureAwait(false);
+            try { await _cancelling.ConfigureAwait(false); }
+            catch (AggregateException) { /* Observer failures cannot prevent lease cleanup. */ }
+            _roots?.Dispose();
+            _monitor.Release(this);
             completion.SetResult();
         }
         catch (Exception exception) { completion.SetException(exception); }
+        finally
+        {
+            _stopping.Dispose();
+            _revocation.Dispose();
+        }
     }
 }

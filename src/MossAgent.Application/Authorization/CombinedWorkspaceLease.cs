@@ -29,11 +29,11 @@ internal sealed class CombinedWorkspaceLease : ITaskWorkspaceLease
 
     private async Task DisposeOwnedAsync()
     {
-        try { await _environment.DisposeAsync().ConfigureAwait(false); }
-        finally
+        try
         {
-            try { await _project.DisposeAsync().ConfigureAwait(false); }
-            finally { _revocation.Dispose(); }
+            await _environment.DisposeAsync().ConfigureAwait(false);
+            await _project.DisposeAsync().ConfigureAwait(false);
         }
+        finally { _revocation.Dispose(); }
     }
 }

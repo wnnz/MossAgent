@@ -8,6 +8,7 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
 {
     private readonly Lock _sync = new();
     private readonly HashSet<ProjectAuthorizationLease> _leases = [];
+    private readonly Dictionary<Guid, long> _highest = [];
     private readonly IProjectAuthorizationReader _reader;
     private readonly IProjectAuthorizationChanges _changes;
     private readonly TimeProvider _time;
@@ -28,8 +29,9 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
     public async Task ValidateAsync(ProjectProfile expected, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        lock (_sync) ObjectDisposedException.ThrowIf(_disposed, this);
+        lock (_sync) ThrowIfAdmissionBlockedLocked(expected);
         var current = await _reader.ReadAuthorizationAsync(expected.Id, cancellationToken).WaitAsync(cancellationToken).ConfigureAwait(false);
+        if (current is not null) RevokeOlder(current.Id, current.AuthorizationRevision);
         var comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
         if (expected.AuthorizationRevision <= 0 || current is null || current.AuthorizationRevision != expected.AuthorizationRevision
             || !comparer.Equals(current.PrimaryDirectory, expected.PrimaryDirectory)
@@ -48,6 +50,21 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
             catch { RevokeMatching(expected.Id, expected.AuthorizationRevision); throw new WorkspaceAuthorizationException(); }
         }
         cancellationToken.ThrowIfCancellationRequested();
+        lock (_sync) ThrowIfAdmissionBlockedLocked(expected);
+    }
+
+    private void ThrowIfAdmissionBlockedLocked(ProjectProfile expected)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_highest.TryGetValue(expected.Id, out var highest) && expected.AuthorizationRevision < highest)
+            throw new WorkspaceAuthorizationException();
+        foreach (var lease in _leases)
+        {
+            if (lease.ProjectId != expected.Id) continue;
+            if (lease.Revision < expected.AuthorizationRevision
+                || (lease.Revision == expected.AuthorizationRevision && lease.IsRevoked))
+                throw new WorkspaceAuthorizationException();
+        }
     }
 
     public async Task<ITaskWorkspaceLease> AcquireAsync(ProjectProfile expected, CancellationToken cancellationToken)
@@ -60,7 +77,7 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
         {
             lock (_sync)
             {
-                ObjectDisposedException.ThrowIf(_disposed, this);
+                ThrowIfAdmissionBlockedLocked(snapshot);
                 _leases.Add(lease);
             }
             await ValidateAsync(snapshot, cancellationToken).ConfigureAwait(false);
@@ -74,7 +91,12 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
     private void RevokeOlder(Guid projectId, long revision)
     {
         ProjectAuthorizationLease[] leases;
-        lock (_sync) leases = _leases.Where(lease => lease.ProjectId == projectId && lease.Revision < revision).ToArray();
+        lock (_sync)
+        {
+            if (!_highest.TryGetValue(projectId, out var highest) || revision > highest)
+                _highest[projectId] = revision;
+            leases = _leases.Where(lease => lease.ProjectId == projectId && lease.Revision < revision).ToArray();
+        }
         foreach (var lease in leases) lease.Revoke();
     }
 
