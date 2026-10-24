@@ -154,8 +154,13 @@ public sealed class ProviderTlsStreamTests
             ProviderProtocol.GeminiGenerateContent => """{"candidates":[{"index":0,"content":{"parts":[{"text":"world"}]},"finishReason":"STOP"}]}""",
             _ => throw new ArgumentOutOfRangeException(nameof(protocol))
         };
-        var terminal = protocol == ProviderProtocol.AnthropicMessages
-            ? "data: {\"type\":\"message_stop\"}\n\n" : "data: [DONE]\n\n";
+        var terminal = protocol switch
+        {
+            ProviderProtocol.OpenAiResponses =>
+                "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"tls-fixture\"}}\n\n",
+            ProviderProtocol.AnthropicMessages => "data: {\"type\":\"message_stop\"}\n\n",
+            _ => "data: [DONE]\n\n"
+        };
         return new ProviderTlsStreamServer($"data: {prefix}\n\n", $"data: {tail}\n\n{terminal}", token);
     }
 }

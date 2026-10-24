@@ -29,4 +29,8 @@
 <data name="ResponseIncomplete" xml:space="preserve"><value>模型响应未完整结束，请检查输出限制或提供商状态后手动继续。</value></data>
 <data name="ResponseFailed" xml:space="preserve"><value>模型请求失败，请检查提供商状态后重试。</value></data>
 <data name="StreamIncompleteResponse" xml:space="preserve"><value>模型响应在结束信号到达前中断。已保留收到的内容，请检查网络或提供商状态后手动继续。</value></data>
+<data name="StreamInvalidResponse" xml:space="preserve"><value>提供商返回了无效的流式响应，请检查接口协议配置后重试。</value></data>
+<data name="StreamInvalidToolCall" xml:space="preserve"><value>提供商返回了不完整或无效的工具调用，本轮工具均未执行。请检查模型和接口协议后手动重试。</value></data>
+<data name="StreamOutputLimit" xml:space="preserve"><value>模型响应达到了输出上限，本轮工具均未执行。请调整模型输出上限或拆分请求后手动重试。</value></data>
+<data name="StreamProviderBlocked" xml:space="preserve"><value>提供商拦截了本次生成，本轮工具均未执行。请调整请求内容并确认其符合使用规则后手动重试。</value></data>
 </root>

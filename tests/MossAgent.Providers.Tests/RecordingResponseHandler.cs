@@ -20,12 +20,14 @@ public sealed class RecordingResponseHandler(
     public string? AnthropicApiKeyHeader { get; private set; }
     public string? AnthropicVersionHeader { get; private set; }
     public string? RequestBody { get; private set; }
+    public int RequestCount { get; private set; }
 
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        RequestCount++;
         if (sendError is not null)
         {
             throw sendError;

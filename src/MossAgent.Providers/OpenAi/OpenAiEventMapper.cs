@@ -8,9 +8,12 @@ internal static class OpenAiEventMapper
 {
     public static ModelEvent? Map(JsonElement root, ProviderToolNameMap toolNames)
     {
-        var type = root.TryGetProperty("type", out var typeProperty)
-            ? typeProperty.GetString()
-            : null;
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            return new ModelFailed("invalid_response", ProviderText.Get("StreamInvalidResponse"));
+        }
+
+        var type = ReadString(root, "type");
         return type switch
         {
             "response.output_text.delta" => ReadText(root),
@@ -28,26 +31,38 @@ internal static class OpenAiEventMapper
     private static ModelEvent? ReadText(JsonElement root)
     {
         return root.TryGetProperty("delta", out var delta)
+            && delta.ValueKind == JsonValueKind.String
             ? new TextDelta(delta.GetString() ?? string.Empty)
             : null;
     }
 
-    private static ModelEvent? ReadToolCall(
+    private static ModelEvent ReadToolCall(
         JsonElement root,
         ProviderToolNameMap toolNames)
     {
-        if (!root.TryGetProperty("name", out var name)
-            || !root.TryGetProperty("call_id", out var callId)
-            || !root.TryGetProperty("arguments", out var arguments))
+        var name = ReadString(root, "name");
+        var callId = ReadString(root, "call_id");
+        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(callId))
         {
-            return null;
+            return InvalidToolCall();
         }
 
-        using var document = JsonDocument.Parse(arguments.GetString() ?? "{}");
-        return new ToolCallCompleted(
-            callId.GetString() ?? Guid.NewGuid().ToString("N"),
-            toolNames.Decode(name.GetString() ?? string.Empty),
-            document.RootElement.Clone());
+        var arguments = "{}";
+        if (root.TryGetProperty("arguments", out var value) && value.ValueKind != JsonValueKind.Null)
+        {
+            if (value.ValueKind != JsonValueKind.String) return InvalidToolCall();
+            if (value.GetString() is { Length: > 0 } text) arguments = text;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(arguments);
+            return new ToolCallCompleted(callId, toolNames.Decode(name), document.RootElement.Clone());
+        }
+        catch (JsonException)
+        {
+            return InvalidToolCall();
+        }
     }
 
     private static ModelEvent? ReadCompletedItem(
@@ -55,8 +70,8 @@ internal static class OpenAiEventMapper
         ProviderToolNameMap toolNames)
     {
         if (!root.TryGetProperty("item", out var item)
-            || !item.TryGetProperty("type", out var itemType)
-            || itemType.GetString() != "function_call")
+            || item.ValueKind != JsonValueKind.Object
+            || ReadString(item, "type") != "function_call")
         {
             return null;
         }
@@ -64,13 +79,20 @@ internal static class OpenAiEventMapper
         return ReadToolCall(item, toolNames);
     }
 
+    private static ModelFailed InvalidToolCall() =>
+        new("invalid_tool_arguments", ProviderText.Get("StreamInvalidToolCall"));
+
     private static string? ReadResponseId(JsonElement root)
     {
         return root.TryGetProperty("response", out var response)
-            && response.TryGetProperty("id", out var id)
-                ? id.GetString()
-                : null;
+            && response.ValueKind == JsonValueKind.Object
+            ? ReadString(response, "id")
+            : null;
     }
+
+    private static string? ReadString(JsonElement root, string propertyName) =>
+        root.ValueKind == JsonValueKind.Object && root.TryGetProperty(propertyName, out var value)
+        && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
     private static ModelEvent ReadError(JsonElement root)
     {

@@ -127,6 +127,18 @@ public sealed class OpenAiCompatibleStreamBoundaryTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await iterator.MoveNextAsync());
     }
 
+    [Theory]
+    [InlineData("stop")]
+    [InlineData("tool_calls")]
+    public async Task IncompleteToolArguments_AtFinish_RejectTheWholeBatch(string finish)
+    {
+        var body = ToolDelta(0, "partial-call", "{\"unfinished\":")
+            + Frame(new { choices = new[] { new { index = 0, delta = new { }, finish_reason = finish } } })
+            + "data: [DONE]\n\n";
+        var events = await CollectAsync(body);
+        Assert.Equal("invalid_tool_arguments", Assert.IsType<ModelFailed>(Assert.Single(events)).Code);
+    }
+
     private static async Task<List<ModelEvent>> CollectAsync(string body)
     {
         var (provider, request) = CreateProvider(body);

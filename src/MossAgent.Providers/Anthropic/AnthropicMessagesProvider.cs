@@ -35,7 +35,23 @@ public sealed class AnthropicMessagesProvider(IProviderHttpClientFactory clients
                 yield break;
             }
             var data = frame.Data!;
-            using var document = JsonDocument.Parse(data);
+            JsonDocument? document;
+            try
+            {
+                document = JsonDocument.Parse(data);
+            }
+            catch (JsonException)
+            {
+                document = null;
+            }
+
+            if (document is null)
+            {
+                yield return new ModelFailed("invalid_response", ProviderText.Get("StreamInvalidResponse"));
+                yield break;
+            }
+
+            using (document)
             if (parser.Parse(document.RootElement) is { } modelEvent)
             {
                 yield return ProviderErrorSanitizer.Sanitize(modelEvent, request.Provider);

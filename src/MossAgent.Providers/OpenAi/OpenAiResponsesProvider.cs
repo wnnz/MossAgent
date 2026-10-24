@@ -37,10 +37,26 @@ public sealed class OpenAiResponsesProvider(IProviderHttpClientFactory clients) 
             var data = frame.Data!;
             if (data == "[DONE]")
             {
+                break;
+            }
+
+            JsonDocument? document;
+            try
+            {
+                document = JsonDocument.Parse(data);
+            }
+            catch (JsonException)
+            {
+                document = null;
+            }
+
+            if (document is null)
+            {
+                yield return new ModelFailed("invalid_response", ProviderText.Get("StreamInvalidResponse"));
                 yield break;
             }
 
-            using var document = JsonDocument.Parse(data);
+            using (document)
             if (OpenAiEventMapper.Map(document.RootElement, toolNames) is { } modelEvent)
             {
                 yield return ProviderErrorSanitizer.Sanitize(modelEvent, request.Provider);

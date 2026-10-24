@@ -11,13 +11,19 @@ internal sealed class AnthropicStreamParser(ProviderToolNameMap toolNames)
 
     public ModelEvent? Parse(JsonElement root)
     {
-        var type = root.TryGetProperty("type", out var value) ? value.GetString() : null;
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            return new ModelFailed("invalid_response", ProviderText.Get("StreamInvalidResponse"));
+        }
+
+        var type = ReadString(root, "type");
         return type switch
         {
             "content_block_start" => StartBlock(root),
             "content_block_delta" => ReadDelta(root),
             "content_block_stop" => StopBlock(root),
-            "message_stop" => new ModelCompleted(),
+            "message_delta" => ReadMessageDelta(root),
+            "message_stop" => StopMessage(),
             "error" => ReadError(root),
             _ => null
         };
@@ -26,38 +32,53 @@ internal sealed class AnthropicStreamParser(ProviderToolNameMap toolNames)
     private ModelEvent? StartBlock(JsonElement root)
     {
         if (!TryGetIndex(root, out var index)
-            || !root.TryGetProperty("content_block", out var block))
+            || !root.TryGetProperty("content_block", out var block)
+            || block.ValueKind != JsonValueKind.Object)
         {
             return null;
         }
 
-        var type = block.TryGetProperty("type", out var typeValue) ? typeValue.GetString() : null;
+        var type = ReadString(block, "type");
         if (type == "tool_use")
         {
-            _calls[index] = (block.GetProperty("id").GetString() ?? Guid.NewGuid().ToString("N"),
-                block.GetProperty("name").GetString() ?? string.Empty, new StringBuilder());
+            var id = ReadString(block, "id");
+            var name = ReadString(block, "name");
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(name))
+            {
+                return new ModelFailed("invalid_tool_arguments", ProviderText.Get("StreamInvalidToolCall"));
+            }
+
+            _calls[index] = (id, name, new StringBuilder());
         }
 
         return type == "text" && block.TryGetProperty("text", out var text)
+            && text.ValueKind == JsonValueKind.String
             ? new TextDelta(text.GetString() ?? string.Empty)
             : null;
     }
 
     private ModelEvent? ReadDelta(JsonElement root)
     {
-        if (!TryGetIndex(root, out var index) || !root.TryGetProperty("delta", out var delta))
+        if (!TryGetIndex(root, out var index) || !root.TryGetProperty("delta", out var delta)
+            || delta.ValueKind != JsonValueKind.Object)
         {
             return null;
         }
 
-        var type = delta.TryGetProperty("type", out var typeValue) ? typeValue.GetString() : null;
+        var type = ReadString(delta, "type");
         if (type == "input_json_delta" && _calls.TryGetValue(index, out var call))
         {
-            call.Arguments.Append(delta.GetProperty("partial_json").GetString());
+            if (delta.TryGetProperty("partial_json", out var partial)
+                && partial.ValueKind == JsonValueKind.String)
+            {
+                call.Arguments.Append(partial.GetString());
+            }
+
             return null;
         }
 
         return type == "text_delta" && delta.TryGetProperty("text", out var text)
+            && text.ValueKind == JsonValueKind.String
             ? new TextDelta(text.GetString() ?? string.Empty)
             : null;
     }
@@ -69,22 +90,48 @@ internal sealed class AnthropicStreamParser(ProviderToolNameMap toolNames)
             return null;
         }
 
-        using var document = JsonDocument.Parse(call.Arguments.Length == 0 ? "{}" : call.Arguments.ToString());
-        return new ToolCallCompleted(
-            call.CallId, toolNames.Decode(call.WireName), document.RootElement.Clone());
+        try
+        {
+            using var document = JsonDocument.Parse(call.Arguments.Length == 0 ? "{}" : call.Arguments.ToString());
+            return new ToolCallCompleted(
+                call.CallId, toolNames.Decode(call.WireName), document.RootElement.Clone());
+        }
+        catch (JsonException)
+        {
+            return new ModelFailed("invalid_tool_arguments", ProviderText.Get("StreamInvalidToolCall"));
+        }
+    }
+
+    private ModelEvent? StopMessage() => _calls.Count == 0
+        ? new ModelCompleted()
+        : new ModelFailed("invalid_response", ProviderText.Get("StreamInvalidResponse"));
+
+    private static ModelEvent? ReadMessageDelta(JsonElement root)
+    {
+        if (!root.TryGetProperty("delta", out var delta) || delta.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        return ReadString(delta, "stop_reason") switch
+        {
+            "max_tokens" => new ModelFailed("output_limit", ProviderText.Get("StreamOutputLimit")),
+            "refusal" => new ModelFailed("provider_blocked", ProviderText.Get("StreamProviderBlocked")),
+            _ => null
+        };
     }
 
     private static ModelEvent ReadError(JsonElement root)
     {
         var error = root.TryGetProperty("error", out var value) ? value : root;
-        var type = error.TryGetProperty("type", out var typeValue)
-            ? typeValue.GetString() ?? "anthropic_error"
-            : "anthropic_error";
-        var message = error.TryGetProperty("message", out var messageValue)
-            ? messageValue.GetString() ?? "Anthropic 请求失败。"
-            : "Anthropic 请求失败。";
+        var type = ReadString(error, "type") ?? "anthropic_error";
+        var message = ReadString(error, "message") ?? "Anthropic 请求失败。";
         return new ModelFailed(type, message);
     }
+
+    private static string? ReadString(JsonElement root, string propertyName) =>
+        root.ValueKind == JsonValueKind.Object && root.TryGetProperty(propertyName, out var value)
+        && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
     private static bool TryGetIndex(JsonElement root, out int index)
     {
