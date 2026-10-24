@@ -39,6 +39,8 @@ public static class InspectorText
     public static string TerminalRenderingFailed => Get("TerminalRenderingFailed");
     public static string TerminalResizeRetry => Get("TerminalResizeRetry");
     public static string TerminalResizeCancel => Get("TerminalResizeCancel");
+    public static string TerminalResizeManualHint => Get("TerminalResizeManualHint");
+    public static string TerminalResizeApply => Get("TerminalResizeApply");
     public static string TerminalKeysCancel => Get("TerminalKeysCancel");
     public static string TerminalKeysResume => Get("TerminalKeysResume");
     public static string TerminalClipboardOptions => Get("TerminalClipboardOptions");

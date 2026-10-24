@@ -27,13 +27,17 @@ public sealed class TerminalResizeController : ObservableObject, IDisposable
         _executor = executor;
         _states = states;
         ResizeCommand = new RelayCommand<TerminalGridSize>(Request, size => size is not null && CanResize);
-        RetryCommand = new RelayCommand(() => { _blocked = false; StartLatest(); }, () => CanResize && _blocked && !IsBusy);
+        ApplyCommand = new RelayCommand(() => { _blocked = false; StartLatest(true); }, () => CanApplySize);
+        RetryCommand = new RelayCommand(() => { _blocked = false; StartLatest(true); }, () => CanResize && _blocked && !IsBusy);
         CancelCommand = new RelayCommand(Cancel, () => Current is { } owner && !owner.Token.IsCancellationRequested);
     }
 
     public IRelayCommand<TerminalGridSize> ResizeCommand { get; }
+    public IRelayCommand ApplyCommand { get; }
     public IRelayCommand RetryCommand { get; }
     public IRelayCommand CancelCommand { get; }
+    public bool RequiresExplicitResize => _context?.ApprovalPolicy == ApprovalPolicy.AskEveryTime;
+    public bool CanApplySize => CanResize && !IsBusy && _wanted is not null && _wanted != _snapshot?.Grid;
     private TerminalResizeOperation? Current => _context is { } context ? _owners.GetValueOrDefault(context.TaskId) : null;
     public bool IsBusy => !_disposed && Current is not null;
     public bool CanResize => !_disposed && !_scope.IsCancellationRequested && _executor is not null && _states is not null && _context?.ApprovalPolicy != ApprovalPolicy.ReadOnly
@@ -71,12 +75,14 @@ public sealed class TerminalResizeController : ObservableObject, IDisposable
     {
         if (!CanResize || size is null || size == _wanted) return;
         _wanted = size;
+        Notify();
         StartLatest();
     }
 
-    private void StartLatest()
+    private void StartLatest(bool explicitlyRequested = false)
     {
         if (!CanResize || _blocked || _wanted is null || _snapshot!.Grid == _wanted || Current is not null || _owners.Count == 8) return;
+        if (RequiresExplicitResize && !explicitlyRequested) return;
         var owner = new TerminalResizeOperation(_context!, _snapshot.SessionId, _generation, _scope);
         owner.SetDeadline();
         _owners.Add(owner.Context.TaskId, owner);
@@ -133,7 +139,10 @@ public sealed class TerminalResizeController : ObservableObject, IDisposable
     {
         OnPropertyChanged(nameof(IsBusy));
         OnPropertyChanged(nameof(CanResize));
+        OnPropertyChanged(nameof(RequiresExplicitResize));
+        OnPropertyChanged(nameof(CanApplySize));
         ResizeCommand.NotifyCanExecuteChanged();
+        ApplyCommand.NotifyCanExecuteChanged();
         RetryCommand.NotifyCanExecuteChanged();
         CancelCommand.NotifyCanExecuteChanged();
     }

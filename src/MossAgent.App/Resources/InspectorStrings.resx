@@ -83,6 +83,8 @@
   <data name="TerminalResizeCancelling" xml:space="preserve"><value>正在取消尺寸同步，等待已开始的操作返回…</value></data>
   <data name="TerminalResizeRetry" xml:space="preserve"><value>重试</value></data>
   <data name="TerminalResizeCancel" xml:space="preserve"><value>取消尺寸同步</value></data>
+  <data name="TerminalResizeManualHint" xml:space="preserve"><value>尺寸变化不会自动请求终端许可；核对后可手动同步。</value></data>
+  <data name="TerminalResizeApply" xml:space="preserve"><value>同步尺寸</value></data>
   <data name="TerminalKeysCancel" xml:space="preserve"><value>取消待发送输入</value></data>
   <data name="TerminalKeysResume" xml:space="preserve"><value>继续输入</value></data>
   <data name="TerminalKeysDenied" xml:space="preserve"><value>输入未获许可，未发送的输入已丢弃。确认后可重新输入。</value></data>

@@ -39,6 +39,11 @@
     <ui:AppText Grid.Row="1" Text="{Binding SessionStatus}" Classes="terminal-status type-11 subtle line-18" TextWrapping="Wrap" IsVisible="{Binding HasSessionState}" />
     <ui:AppText Grid.Row="2" Text="{Binding Status}" Classes="terminal-status type-11 subtle line-18" TextWrapping="Wrap" IsVisible="{Binding HasOperationNotice}" />
     <StackPanel Grid.Row="3">
+      <Grid ColumnDefinitions="*,Auto" Classes="terminal-resize-notice" IsVisible="{Binding Resize.RequiresExplicitResize}">
+        <ui:AppText Text="{x:Static text:InspectorText.TerminalResizeManualHint}" Classes="terminal-status type-11 subtle line-18" TextWrapping="Wrap" />
+        <ui:AppButton x:Name="TerminalResizeApplyButton" Grid.Column="1" Content="{x:Static text:InspectorText.TerminalResizeApply}" Classes="ghost button-xs"
+                      Command="{Binding Resize.ApplyCommand}" />
+      </Grid>
       <Grid ColumnDefinitions="*,Auto,Auto" Classes="terminal-resize-notice" IsVisible="{Binding ClipboardActions.HasNotice, ElementName=TerminalViewport}">
         <ui:AppText Text="{Binding ClipboardActions.Notice, ElementName=TerminalViewport}" Classes="terminal-status type-11 subtle line-18" TextWrapping="Wrap" />
         <ui:AppButton Grid.Column="1" Content="{x:Static text:InspectorText.TerminalPasteConfirm}" Classes="ghost button-xs"
