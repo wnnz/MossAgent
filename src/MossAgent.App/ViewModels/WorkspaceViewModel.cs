@@ -47,7 +47,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         IConversationPreferenceRepository? conversationPreferences = null, IConversationDraftRepository? conversationDrafts = null,
         WorkspaceFollowupServices? followups = null, IConversationSteeringRepository? steering = null,
         IWorktreeCreationIntents? creationIntents = null, IWorktreeCleanupIntents? cleanupIntents = null,
-        IComposerPreferenceStore? composerPreferences = null)
+        IComposerPreferenceStore? composerPreferences = null, IGitWorktreeService? worktrees = null)
     {
         _runs = runs;
         _panels = panels;
@@ -98,7 +98,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
                 && Catalog.SelectedTask is { } task && !Catalog.TaskManagement.BlocksTaskStart(task.Id)
                 && !Catalog.WorktreeAuthorization.BlocksTaskStart(task.Id))
             ?? new(null, catalog, () => WorkspaceSendRequest.Capture(this), () => false, () => false, () => HasActiveRun, PrimaryActionCommand);
-        WorktreeRecovery = new(creationIntents, cleanupIntents);
+        WorktreeRecovery = new(creationIntents, cleanupIntents, worktrees);
         Queue.StateChanged += NotifyRunStateChanged;
         Steering = new(steering, runs, runController, catalog, Drafts, PrimaryActionCommand, Queue.SubmitCommand,
             () => !_disposed && !IsShuttingDown && Startup.IsReady && !FileChanges.Undo.IsBusy);

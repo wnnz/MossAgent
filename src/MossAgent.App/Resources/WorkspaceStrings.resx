@@ -278,6 +278,8 @@
 <data name="WorktreeRecoveryCancelled" xml:space="preserve"><value>读取或标记已取消或超时，状态未改变，请刷新重试。</value></data>
 <data name="WorktreeRecoveryStale" xml:space="preserve"><value>记录状态已变化（可能已在其他窗口处理），已重新读取。</value></data>
 <data name="WorktreeRecoveryAcknowledgeFailed" xml:space="preserve"><value>未能标记该记录，状态未改变。请刷新后重试。</value></data>
+<data name="WorktreeRecoveryRetryRemove" xml:space="preserve"><value>重试安全移除</value></data>
+<data name="WorktreeRecoveryRetryFailed" xml:space="preserve"><value>重试移除失败：请检查目标目录后重试，或标记为已核实。</value></data>
 <data name="WorktreeCleanupStageFailed" xml:space="preserve"><value>清理失败</value></data>
 <data name="WorktreeCleanupStageOrphaned" xml:space="preserve"><value>清理中断</value></data>
 <data name="WorktreeCleanupDetail" xml:space="preserve"><value>仓库：{0} · 记录于 {1}</value></data>

@@ -4,6 +4,7 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.VisualTree;
 using MossAgent.App.Controls;
+using MossAgent.App.ViewModels;
 using MossAgent.App.Views;
 using Xunit;
 
@@ -52,6 +53,42 @@ public sealed class WorkspaceWorktreeRecoveryUiWorkflowTests : IAsyncLifetime
                 Assert.False(workspace.WorktreeRecovery.IsVisible);
                 Assert.DoesNotContain(card.GetVisualDescendants().OfType<AppButton>(),
                     candidate => candidate.Name == "AcknowledgeWorktreeIntentButton" && candidate.IsEffectivelyVisible);
+                Assert.Empty(fixture.Server.Requests);
+            }
+            finally { window.Close(); }
+        }, TestContext.Current.CancellationToken);
+
+    [Fact]
+    public Task RetainedCleanupRowShowsRetryRemoveButtonWhileCreationRowHidesIt() =>
+        _session.DispatchAsync(async () =>
+        {
+            await using var fixture = await WorkspaceModelSelectionFixture.CreateAsync();
+            var workspace = fixture.Workspace;
+            var project = workspace.Catalog.SelectedProject!;
+            await WorkspaceWorktreeRecoverySeeding.SeedMissingOrphanAsync(fixture, project);
+            var cleanupTaskId = await WorkspaceWorktreeRecoverySeeding.SeedRetainedCleanupOrphanAsync(fixture, project);
+            await workspace.WorktreeRecovery.RefreshAsync();
+            Assert.True(workspace.WorktreeRecovery.IsVisible);
+            Assert.Equal(2, workspace.WorktreeRecovery.Items.Count);
+            var window = new MainWindow
+            {
+                DataContext = fixture.Main, Width = 526, Height = 601,
+            };
+            window.Show();
+            try
+            {
+                ProviderUiWorkflowInput.Flush(window);
+                var card = Assert.Single(window.GetVisualDescendants().OfType<WorkspaceWorktreeRecoveryView>());
+                Assert.True(card.IsEffectivelyVisible);
+                var retries = card.GetVisualDescendants().OfType<AppButton>()
+                    .Where(candidate => candidate.Name == "RetryRemoveWorktreeIntentButton").ToList();
+                var shown = Assert.Single(retries, candidate => candidate.IsEffectivelyVisible);
+                var context = Assert.IsAssignableFrom<WorkspaceWorktreeRecoveryItemViewModel>(shown.DataContext);
+                Assert.True(context.IsCleanupItem);
+                Assert.Equal(cleanupTaskId, context.TaskId);
+                Assert.All(retries.Where(candidate => !candidate.IsEffectivelyVisible),
+                    candidate => Assert.False(
+                        Assert.IsAssignableFrom<WorkspaceWorktreeRecoveryItemViewModel>(candidate.DataContext).IsCleanupItem));
                 Assert.Empty(fixture.Server.Requests);
             }
             finally { window.Close(); }

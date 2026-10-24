@@ -18,6 +18,9 @@
               <WrapPanel Orientation="Horizontal">
                 <ui:AppButton x:Name="AcknowledgeWorktreeIntentButton" Classes="ghost menu-option"
                               Content="{Binding AcknowledgeLabel}" Command="{Binding AcknowledgeCommand}" />
+                <ui:AppButton x:Name="RetryRemoveWorktreeIntentButton" Classes="ghost menu-option"
+                              Content="{Binding RetryRemoveLabel}" Command="{Binding RetryRemoveCommand}"
+                              IsVisible="{Binding CanRetryRemove}" />
               </WrapPanel>
             </StackPanel>
           </DataTemplate>

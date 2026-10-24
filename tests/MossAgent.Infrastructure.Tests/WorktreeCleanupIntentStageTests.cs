@@ -81,6 +81,39 @@ public sealed class WorktreeCleanupIntentStageTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task FailedRemoveRetriesThroughServiceAndReachesGitRemoved()
+    {
+        var service = Service();
+        var taskId = Guid.NewGuid();
+        var target = await service.CreateAsync(Fixture.Project, taskId, Fixture.Token);
+        var now = DateTimeOffset.UtcNow;
+        var task = new AgentTask(taskId, Fixture.Project.Id, "retry cleanup task", ApprovalPolicy.ReadOnly,
+            AgentTaskStatus.Running, now, now, target);
+        await Storage.Repository.SaveTaskAsync(task, Fixture.Token);
+        var dirty = Path.Combine(target, "dirty.txt");
+        await File.WriteAllTextAsync(dirty, "uncommitted", Fixture.Token);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.RemoveAsync(Fixture.Project, target, Fixture.Token));
+        await AssertCleanupStageAsync(taskId, WorktreeCleanupIntentStage.Failed, "git");
+
+        File.Delete(dirty);
+        await service.RemoveAsync(Fixture.Project, target, Fixture.Token);
+
+        await AssertCleanupStageAsync(taskId, WorktreeCleanupIntentStage.GitRemoved);
+        Assert.False(Directory.Exists(target));
+
+        await Storage.Repository.SaveTaskAsync(task with
+        {
+            WorktreePath = null,
+            UpdatedAt = DateTimeOffset.UtcNow
+        }, Fixture.Token);
+
+        await AssertCleanupStageAsync(taskId, WorktreeCleanupIntentStage.Detached);
+        Assert.Empty(await ((IWorktreeCleanupIntents)service).ReadIncompleteAsync(Fixture.Project, Fixture.Token));
+    }
+
+    [Fact]
     public async Task ReconcileOrphansStaleIntentAndAnnotatesTargetState()
     {
         var service = Service();

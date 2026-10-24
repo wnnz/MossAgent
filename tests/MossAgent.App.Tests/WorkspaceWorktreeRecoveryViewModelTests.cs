@@ -203,6 +203,129 @@ public sealed class WorkspaceWorktreeRecoveryViewModelTests
     }
 
     [Fact]
+    public async Task RetryRemoveVisibilityMatchesCleanupStageAndErrorCode()
+    {
+        var project = Project("a");
+        var intents = new RecordingWorktreeCreationIntents();
+        intents.SetResults(project.Id, Intent(project.Id, WorktreeCreationIntentStage.Orphaned, "missing"));
+        var cleanupIntents = new RecordingWorktreeCleanupIntents();
+        cleanupIntents.SetResults(project.Id,
+            Cleanup(project.Id, WorktreeCleanupIntentStage.Failed, "git"),
+            Cleanup(project.Id, WorktreeCleanupIntentStage.Orphaned, "retained"),
+            Cleanup(project.Id, WorktreeCleanupIntentStage.Orphaned, "unverified"),
+            Cleanup(project.Id, WorktreeCleanupIntentStage.Orphaned, "removed"));
+        var worktrees = new RecordingGitWorktreeService();
+        using var viewModel = new WorkspaceWorktreeRecoveryViewModel(intents, cleanupIntents, worktrees);
+        viewModel.SetProject(project);
+        await viewModel.RefreshAsync();
+
+        Assert.Equal(5, viewModel.Items.Count);
+        Assert.False(viewModel.Items[0].CanRetryRemove);
+        Assert.True(viewModel.Items[1].CanRetryRemove);
+        Assert.True(viewModel.Items[1].RetryRemoveCommand.CanExecute(null));
+        Assert.Equal("重试安全移除", viewModel.Items[1].RetryRemoveLabel);
+        Assert.True(viewModel.Items[2].CanRetryRemove);
+        Assert.True(viewModel.Items[3].CanRetryRemove);
+        Assert.False(viewModel.Items[4].CanRetryRemove);
+    }
+
+    [Fact]
+    public async Task RetryRemoveCallsServiceOnceWithItemTargetAndRereads()
+    {
+        var project = Project("a");
+        var cleanup = Cleanup(project.Id, WorktreeCleanupIntentStage.Failed, "git");
+        var cleanupIntents = new RecordingWorktreeCleanupIntents();
+        cleanupIntents.SetResults(project.Id, cleanup);
+        var worktrees = new RecordingGitWorktreeService();
+        using var viewModel = new WorkspaceWorktreeRecoveryViewModel(null, cleanupIntents, worktrees);
+        viewModel.SetProject(project);
+        await viewModel.RefreshAsync();
+        var row = Assert.Single(viewModel.Items);
+        var reads = cleanupIntents.ReadCalls.Count;
+
+        await row.RetryRemoveCommand.ExecuteAsync(null);
+
+        var removed = Assert.Single(worktrees.RemovedTargets);
+        Assert.Equal(project.Id, removed.ProjectId);
+        Assert.Equal(cleanup.Target, removed.Target);
+        Assert.Equal(reads + 1, cleanupIntents.ReadCalls.Count);
+        Assert.False(viewModel.HasNotice);
+    }
+
+    [Fact]
+    public async Task RetryRemoveStaleShowsNoticeAndRereads()
+    {
+        var project = Project("a");
+        var cleanup = Cleanup(project.Id, WorktreeCleanupIntentStage.Orphaned, "retained");
+        var cleanupIntents = new RecordingWorktreeCleanupIntents();
+        cleanupIntents.SetResults(project.Id, cleanup);
+        var worktrees = new RecordingGitWorktreeService
+        {
+            RemoveFailure = new WorktreeAuthorizationException(),
+        };
+        using var viewModel = new WorkspaceWorktreeRecoveryViewModel(null, cleanupIntents, worktrees);
+        viewModel.SetProject(project);
+        await viewModel.RefreshAsync();
+        Assert.Single(viewModel.Items);
+        var reads = cleanupIntents.ReadCalls.Count;
+
+        await viewModel.Items[0].RetryRemoveCommand.ExecuteAsync(null);
+
+        Assert.Empty(worktrees.RemovedTargets);
+        Assert.Equal("记录状态已变化（可能已在其他窗口处理），已重新读取。", viewModel.Notice);
+        Assert.Equal(reads + 1, cleanupIntents.ReadCalls.Count);
+        var row = Assert.Single(viewModel.Items);
+        Assert.Equal(cleanup.TaskId, row.TaskId);
+    }
+
+    [Fact]
+    public async Task RetryRemoveFailureShowsLocalizedNoticeWithoutExceptionDetail()
+    {
+        var project = Project("a");
+        var cleanup = Cleanup(project.Id, WorktreeCleanupIntentStage.Failed, "git");
+        var cleanupIntents = new RecordingWorktreeCleanupIntents();
+        cleanupIntents.SetResults(project.Id, cleanup);
+        var worktrees = new RecordingGitWorktreeService
+        {
+            RemoveFailure = new InvalidOperationException("synthetic-retry-secret"),
+        };
+        using var viewModel = new WorkspaceWorktreeRecoveryViewModel(null, cleanupIntents, worktrees);
+        viewModel.SetProject(project);
+        await viewModel.RefreshAsync();
+        var reads = cleanupIntents.ReadCalls.Count;
+
+        await viewModel.Items[0].RetryRemoveCommand.ExecuteAsync(null);
+
+        Assert.Empty(worktrees.RemovedTargets);
+        Assert.True(viewModel.HasNotice);
+        Assert.Equal("重试移除失败：请检查目标目录后重试，或标记为已核实。", viewModel.Notice);
+        Assert.DoesNotContain("synthetic-retry-secret", viewModel.Notice);
+        Assert.Equal(reads, cleanupIntents.ReadCalls.Count);
+    }
+
+    [Fact]
+    public async Task RetryRemoveStaysHiddenWithoutWorktreeServiceAndAcknowledgeStillWorks()
+    {
+        var project = Project("a");
+        var cleanup = Cleanup(project.Id, WorktreeCleanupIntentStage.Orphaned, "retained");
+        var cleanupIntents = new RecordingWorktreeCleanupIntents();
+        cleanupIntents.SetResults(project.Id, cleanup);
+        using var viewModel = new WorkspaceWorktreeRecoveryViewModel(null, cleanupIntents);
+        viewModel.SetProject(project);
+        await viewModel.RefreshAsync();
+
+        var row = Assert.Single(viewModel.Items);
+        Assert.False(row.CanRetryRemove);
+        await row.RetryRemoveCommand.ExecuteAsync(null);
+        Assert.Empty(cleanupIntents.Acknowledged);
+        Assert.Single(viewModel.Items);
+
+        await row.AcknowledgeCommand.ExecuteAsync(null);
+        Assert.Equal([cleanup.TaskId], cleanupIntents.Acknowledged);
+        Assert.Empty(viewModel.Items);
+    }
+
+    [Fact]
     public async Task StopAsyncCancelsGatedReadWithoutException()
     {
         var intents = new RecordingWorktreeCreationIntents

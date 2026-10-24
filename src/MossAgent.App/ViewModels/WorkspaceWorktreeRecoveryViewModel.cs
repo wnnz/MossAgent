@@ -11,6 +11,7 @@ public sealed class WorkspaceWorktreeRecoveryViewModel : ObservableObject, IDisp
 {
     private readonly IWorktreeCreationIntents? _intents;
     private readonly IWorktreeCleanupIntents? _cleanupIntents;
+    private readonly IGitWorktreeService? _worktrees;
     private readonly SettingsOperationLifetime _lifetime = new();
     private readonly object _gate = new();
     private readonly List<Task> _operations = [];
@@ -22,10 +23,11 @@ public sealed class WorkspaceWorktreeRecoveryViewModel : ObservableObject, IDisp
     private bool _disposed;
 
     public WorkspaceWorktreeRecoveryViewModel(IWorktreeCreationIntents? intents,
-        IWorktreeCleanupIntents? cleanupIntents = null)
+        IWorktreeCleanupIntents? cleanupIntents = null, IGitWorktreeService? worktrees = null)
     {
         _intents = intents;
         _cleanupIntents = cleanupIntents;
+        _worktrees = worktrees;
         RefreshCommand = new AsyncRelayCommand(RefreshAsync,
             () => !_disposed && IsAvailable && _project is not null && !IsBusy);
     }
@@ -104,7 +106,8 @@ public sealed class WorkspaceWorktreeRecoveryViewModel : ObservableObject, IDisp
                 foreach (var intent in creation)
                     Items.Add(new WorkspaceWorktreeRecoveryItemViewModel(intent, AcknowledgeItemAsync, CanMutate));
                 foreach (var intent in cleanup)
-                    Items.Add(new WorkspaceWorktreeRecoveryItemViewModel(intent, AcknowledgeItemAsync, CanMutate));
+                    Items.Add(new WorkspaceWorktreeRecoveryItemViewModel(intent, AcknowledgeItemAsync, CanMutate,
+                        _worktrees is null ? null : RetryRemoveItemAsync));
                 NotifyStateChanged();
             }, CancellationToken.None);
         }
@@ -172,6 +175,49 @@ public sealed class WorkspaceWorktreeRecoveryViewModel : ObservableObject, IDisp
         catch (Exception)
         {
             await PublishNoticeAsync("WorktreeRecoveryAcknowledgeFailed");
+        }
+        finally
+        {
+            await AvaloniaUiThread.RunAsync(EndOperation, CancellationToken.None);
+            operation.Dispose();
+        }
+    }
+
+    private Task RetryRemoveItemAsync(WorkspaceWorktreeRecoveryItemViewModel item)
+    {
+        Task task;
+        lock (_gate)
+        {
+            if (_disposed || _busy > 0 || !item.CanRetryRemove
+                || _project is not { } project || _worktrees is not { } worktrees)
+                return Task.CompletedTask;
+            var operation = _lifetime.CreateOperation(CancellationToken.None);
+            task = TrackLocked(RetryRemoveAsync(item, project, worktrees, operation));
+        }
+        NotifyStateChanged();
+        return task;
+    }
+
+    private async Task RetryRemoveAsync(WorkspaceWorktreeRecoveryItemViewModel item,
+        ProjectProfile project, IGitWorktreeService worktrees, CancellationTokenSource operation)
+    {
+        try
+        {
+            await worktrees.RemoveAsync(project, item.Target, operation.Token).ConfigureAwait(false);
+            await RefreshAsync();
+        }
+        catch (WorktreeAuthorizationException)
+        {
+            await PublishNoticeAsync("WorktreeRecoveryStale");
+            await RefreshAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            await PublishNoticeAsync("WorktreeRecoveryCancelled");
+        }
+        catch (Exception)
+        {
+            await PublishNoticeAsync("WorktreeRecoveryRetryFailed");
         }
         finally
         {
