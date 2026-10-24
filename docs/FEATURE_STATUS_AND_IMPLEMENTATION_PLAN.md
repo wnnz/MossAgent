@@ -250,7 +250,7 @@ Orphaned/Acknowledged）、错误码与更新时间：claim 身份、Git 完成�
 分类标注：missing（目标已消失）/untracked（无 `.git` 指针）/pointer（gitdir 指向
 其他 worktree id）/unregistered（注册槽目录缺失）/foreign（common-dir 指向其他
 仓库）/unlinked（槽内 gitdir 不回指目标）/retained（指针+common-dir+注册槽核验
-一致）/unverified（复核异常），供恢复列表区分处置。恢复展示面板与清理侧阶段尚缺。
+一致）/unverified（复核异常），供恢复列表区分处置。启动恢复展示面板已落地：输入区按当前项目列出 Failed/Orphaned intent，按 error_code 本地化说明原因并展示目标路径与基准，用户核对后可显式“标记已核实”（置 Acknowledged，条件更新，状态已变则提示并重读）；面板不删除目录、不清理 Git 注册、不重建也不续跑任务。清理侧阶段尚缺。
 清理需要释放禁止删除共享的句柄再调用 Git，因此最终删除窗口仍有竞态。
 
 1. 已落地：受管 runner 的本地分支/标签发现、搜索/分页和固定 commit 预览已并入基准
@@ -266,7 +266,7 @@ Orphaned/Acknowledged）、错误码与更新时间：claim 身份、Git 完成�
 4. 创建侧阶段已落地（schema 30：阶段列+错误码，claim/Git/失败/认领逐阶持久化，启动
    对账标记 Orphaned/Consumed，`IWorktreeCreationIntents` 读口与确认）；对账复核已
    解析 `.git` 指针并核对注册槽 commondir 归属本仓库与 gitdir 回指目标。启动恢复展示
-   面板、清理侧阶段与未知状态尚缺。
+   面板已落地（`WorkspaceWorktreeRecoveryViewModel`）；清理侧阶段与未知状态尚缺。
 5. 对已登记但被替换的对象，另设计显式重新授权代际和 CAS：完整展示任务/项目/路径，
    提交新 grant 时撤销旧租约，旧 context 不得复用新版本；确认后仍需手动续跑。
 

@@ -4,6 +4,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.Application.Agent;
+using MossAgent.Application.Git;
 using MossAgent.Application.Persistence;
 using MossAgent.Application.Settings;
 using MossAgent.Domain;
@@ -44,7 +45,8 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         ISidebarPreferenceStore? sidebarPreferences = null,
         WorkspaceFileChangeUndoService? undoService = null, WorkspaceFileChangeStatisticsService? statisticsService = null,
         IConversationPreferenceRepository? conversationPreferences = null, IConversationDraftRepository? conversationDrafts = null,
-        WorkspaceFollowupServices? followups = null, IConversationSteeringRepository? steering = null)
+        WorkspaceFollowupServices? followups = null, IConversationSteeringRepository? steering = null,
+        IWorktreeCreationIntents? creationIntents = null)
     {
         _runs = runs;
         _panels = panels;
@@ -90,6 +92,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
                 && Catalog.SelectedTask is { } task && !Catalog.TaskManagement.BlocksTaskStart(task.Id)
                 && !Catalog.WorktreeAuthorization.BlocksTaskStart(task.Id))
             ?? new(null, catalog, () => WorkspaceSendRequest.Capture(this), () => false, () => false, () => HasActiveRun, PrimaryActionCommand);
+        WorktreeRecovery = new(creationIntents);
         Queue.StateChanged += NotifyRunStateChanged;
         Steering = new(steering, runs, runController, catalog, Drafts, PrimaryActionCommand, Queue.SubmitCommand,
             () => !_disposed && !IsShuttingDown && Startup.IsReady && !FileChanges.Undo.IsBusy);
@@ -109,6 +112,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     public WorkspaceConversationPreferences? ConversationPreferences { get; }
     public WorkspaceComposerDraftsViewModel Drafts { get; }
     public WorkspaceFollowupQueueViewModel Queue { get; }
+    public WorkspaceWorktreeRecoveryViewModel WorktreeRecovery { get; }
     public WorkspaceSteeringViewModel Steering { get; }
     public IRelayCommand ComposerSubmitCommand => Queue.SubmitCommand;
     public AppShutdownViewModel Shutdown { get; }
@@ -269,7 +273,11 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
 
     private void HandleStartupChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName == nameof(AppStartupViewModel.IsReady)) PrimaryActionCommand.NotifyCanExecuteChanged();
+        if (args.PropertyName == nameof(AppStartupViewModel.IsReady))
+        {
+            PrimaryActionCommand.NotifyCanExecuteChanged();
+            if (Startup.IsReady) _ = WorktreeRecovery.RefreshAsync();
+        }
     }
 
     private void HandleModelPickerChanged(object? sender, PropertyChangedEventArgs args)
@@ -301,6 +309,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         Catalog.TaskManagement.PropertyChanged -= HandleTaskMutationChanged;
         Catalog.WorktreeAuthorization.PropertyChanged -= HandleTaskMutationChanged;
         Catalog.WorktreeAuthorization.Dispose();
+        WorktreeRecovery.Dispose();
         Startup.PropertyChanged -= HandleStartupChanged;
         ModelPicker.PropertyChanged -= HandleModelPickerChanged;
         ModelPicker.ModelSelected -= HandleModelSelected;
@@ -326,7 +335,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     public async ValueTask DisposeAsync()
     {
         _isShuttingDown = true; await Queue.StopAsync(); await Steering.StopAsync(); await _preparation.StopAsync();
-        await Catalog.WorktreeAuthorization.StopAsync();
+        await Catalog.WorktreeAuthorization.StopAsync(); await WorktreeRecovery.StopAsync();
         await Task.WhenAll(RepositoryStatus.StopAsync(), FileChanges.Statistics.StopAsync(), SidebarProjects.StopAsync());
         if (ConversationPreferences is not null) await ConversationPreferences.StopAsync();
         await Drafts.StopAsync();
@@ -340,7 +349,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         OnPropertyChanged(nameof(IsShuttingDown));
         NotifyRunStateChanged();
         _runs.CancelAll();
-        await Catalog.WorktreeAuthorization.StopAsync();
+        await Catalog.WorktreeAuthorization.StopAsync(); await WorktreeRecovery.StopAsync();
         try { await Queue.StopAsync(); await Steering.StopAsync(); await _preparation.StopAsync(); }
         finally
         {
@@ -399,6 +408,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
 
     private void HandleSelectionChanged()
     {
+        WorktreeRecovery.SetProject(Catalog.SelectedProject);
         if (_attachmentDrafts.SelectContext(Catalog.SelectedProject, Catalog.SelectedTask?.Id, preserveItems: _preparation.IsActive) && !_preparation.IsActive)
             HasSendPreparationError = false;
         RefreshProjectPicker();
