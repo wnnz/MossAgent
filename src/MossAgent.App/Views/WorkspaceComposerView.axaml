@@ -43,8 +43,8 @@
       <ui:AppComposerInput Grid.Row="2" Classes="composer-input" Text="{Binding ComposerText}"
                 PlaceholderText="{resources:L '随心输入'}"
                  SubmitCommand="{Binding ComposerSubmitCommand}"
-                 AlternateSubmitCommand="{Binding Steering.AlternateSubmitCommand}"
-                 ToolTip.Tip="{x:Static resources:ComposerInputText.Hint}"
+                 AlternateSubmitCommand="{Binding ComposerAlternateSubmitCommand}"
+                 ToolTip.Tip="{Binding ComposerPreferences.Hint}"
                  AcceptsReturn="True">
         <ui:AppComposerInput.IsSubmissionEnabled>
           <MultiBinding Converter="{x:Static BoolConverters.Or}">
@@ -109,11 +109,14 @@
           <Binding Path="AgentPicker.HasCatalogNotice" />
           <Binding Path="ModelPicker.HasReasoningError" />
           <Binding Path="Drafts.HasNotice" />
+          <Binding Path="ComposerPreferences.HasError" />
         </MultiBinding>
       </StackPanel.IsVisible>
     <ui:AppText Classes="type-11 status-warning"
                 Text="{Binding SendPreparationError}" IsVisible="{Binding HasSendPreparationError}"
                 TextWrapping="Wrap" />
+      <ui:AppText Classes="type-11 status-warning" Text="{Binding ComposerPreferences.Error}"
+                  IsVisible="{Binding ComposerPreferences.HasError}" TextWrapping="Wrap" />
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" IsVisible="{Binding AgentPicker.HasCatalogNotice}">
         <ui:AppText Classes="type-11 status-warning" Text="{Binding AgentPicker.CatalogNotice}" TextWrapping="Wrap" />
         <ui:AppButton Grid.Column="1" Classes="ghost menu-option" VerticalAlignment="Top"

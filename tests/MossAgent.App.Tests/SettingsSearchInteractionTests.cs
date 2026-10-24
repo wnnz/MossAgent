@@ -63,7 +63,7 @@ public sealed class SettingsSearchInteractionTests : IAsyncLifetime
             Assert.True(Assert.Single(settings.GetVisualDescendants().OfType<BrowserSettingsPane>()).IsEffectivelyVisible);
             search.Text = string.Empty;
             window.UpdateLayout();
-            Assert.Equal(8, VisibleNavigation(settings).Length);
+            Assert.Equal(9, VisibleNavigation(settings).Length);
             Assert.Equal(3, VisibleHeadings(settings).Length);
             fixture.Main.SelectSettingsTabCommand.Execute("0");
             window.UpdateLayout();

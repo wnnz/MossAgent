@@ -15,6 +15,7 @@
       <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="{resources:L '终端'}" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Ctrl+J" Classes="subtle type-11" /></Grid>
       <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="{resources:L '浏览器'}" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Ctrl+T" Classes="subtle type-11" /></Grid>
       <Grid ColumnDefinitions="*,Auto"><ui:AppText Text="{resources:L '审计与产物'}" Classes="muted type-11" /><ui:AppText Grid.Column="1" Text="Ctrl+P" Classes="subtle type-11" /></Grid>
+      <ui:AppText Text="{Binding Workspace.ComposerPreferences.Hint}" Classes="muted type-11" TextWrapping="Wrap" />
     </StackPanel>
   </ui:AppCard>
 </ui:AppUserControl>

@@ -220,7 +220,18 @@
 <data name="SteeringSubmit" xml:space="preserve"><value>引导当前运行</value></data>
 <data name="SteeringReceiving" xml:space="preserve"><value>正在接收…</value></data>
 <data name="SteeringBusy" xml:space="preserve"><value>本对话已有引导正在接收，请等待确认。草稿已保留。</value></data>
-<data name="SteeringHint" xml:space="preserve"><value>Ctrl+Enter 引导当前运行：在下一次模型请求前加入；Enter 加入下一轮队列。保留当前运行的模型和权限。</value></data>
+<data name="SteeringHint" xml:space="preserve"><value>引导会在下一次模型请求前加入当前运行，保留当前运行的模型和权限。也可将输入加入下一轮队列。</value></data>
+<data name="ComposerSettingsTitle" xml:space="preserve"><value>对话与发送</value></data>
+<data name="ComposerSettingsDescription" xml:space="preserve"><value>选择运行中 Enter 的默认行为。Ctrl+Enter 使用另一种行为，Shift+Enter 始终换行。空闲时两种组合键都发送新消息。</value></data>
+<data name="ComposerDefaultAction" xml:space="preserve"><value>运行中 Enter</value></data>
+<data name="ComposerQueueFirst" xml:space="preserve"><value>加入下一轮队列</value></data>
+<data name="ComposerSteerFirst" xml:space="preserve"><value>引导当前运行</value></data>
+<data name="ComposerSettingsSave" xml:space="preserve"><value>保存发送方式</value></data>
+<data name="ComposerSettingsReload" xml:space="preserve"><value>重新读取</value></data>
+<data name="ComposerSettingsLoadFailed" xml:space="preserve"><value>发送偏好读取失败，当前保持显示的发送方式。请检查应用数据目录后重试。</value></data>
+<data name="ComposerSettingsSaveFailed" xml:space="preserve"><value>发送偏好保存失败，原发送方式保持不变。请检查应用数据目录后重试。</value></data>
+<data name="ComposerQueueFirstHint" xml:space="preserve"><value>Enter 加入下一轮队列，Ctrl+Enter 引导当前运行；Shift+Enter 换行。空闲时发送新消息。</value></data>
+<data name="ComposerSteerFirstHint" xml:space="preserve"><value>Enter 引导当前运行，Ctrl+Enter 加入下一轮队列；Shift+Enter 换行。空闲时发送新消息。</value></data>
 <data name="SteeringTextOnly" xml:space="preserve"><value>当前引导仅接收文字。请移除附件，或将完整消息加入下一轮队列；附件不会被丢弃。</value></data>
 <data name="SteeringTooLong" xml:space="preserve"><value>引导文字不能超过 32,768 个 UTF-16 单元，请缩短后重试。</value></data>
 <data name="SteeringInvalid" xml:space="preserve"><value>引导文字为空、过长或包含无效字符，草稿已保留。请编辑后重试。</value></data>

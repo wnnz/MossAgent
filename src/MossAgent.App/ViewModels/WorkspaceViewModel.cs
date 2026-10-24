@@ -46,7 +46,8 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         WorkspaceFileChangeUndoService? undoService = null, WorkspaceFileChangeStatisticsService? statisticsService = null,
         IConversationPreferenceRepository? conversationPreferences = null, IConversationDraftRepository? conversationDrafts = null,
         WorkspaceFollowupServices? followups = null, IConversationSteeringRepository? steering = null,
-        IWorktreeCreationIntents? creationIntents = null, IWorktreeCleanupIntents? cleanupIntents = null)
+        IWorktreeCreationIntents? creationIntents = null, IWorktreeCleanupIntents? cleanupIntents = null,
+        IComposerPreferenceStore? composerPreferences = null)
     {
         _runs = runs;
         _panels = panels;
@@ -101,6 +102,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         Queue.StateChanged += NotifyRunStateChanged;
         Steering = new(steering, runs, runController, catalog, Drafts, PrimaryActionCommand, Queue.SubmitCommand,
             () => !_disposed && !IsShuttingDown && Startup.IsReady && !FileChanges.Undo.IsBusy);
+        ComposerPreferences = new(composerPreferences, Queue.SubmitCommand, Steering.AlternateSubmitCommand);
         _backgroundRuns = new(taskFactory, runs, runController, panels, catalog,
             () => !_disposed && !IsShuttingDown && Startup.IsReady, PresentEventAsync, SetActivity,
             ApplyTaskUpdate, NotifyRunStateChanged, (taskId, preference) => ConversationPreferences?.Remember(taskId, preference));
@@ -119,7 +121,9 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     public WorkspaceFollowupQueueViewModel Queue { get; }
     public WorkspaceWorktreeRecoveryViewModel WorktreeRecovery { get; }
     public WorkspaceSteeringViewModel Steering { get; }
-    public IRelayCommand ComposerSubmitCommand => Queue.SubmitCommand;
+    public WorkspaceComposerPreferencesViewModel ComposerPreferences { get; }
+    public IRelayCommand ComposerSubmitCommand => ComposerPreferences.SubmitCommand;
+    public IAsyncRelayCommand ComposerAlternateSubmitCommand => ComposerPreferences.AlternateSubmitCommand;
     public AppShutdownViewModel Shutdown { get; }
     public bool IsShuttingDown => _isShuttingDown;
     public ObservableCollection<WorkspaceProjectNavigationViewModel> ProjectPickerProjects => _projectPicker.Projects;
@@ -229,6 +233,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         if (_disposed) return;
         await ReloadAgentsAsync();
         if (_disposed) return;
+        await ComposerPreferences.LoadAsync();
         await RepositoryStatus.RefreshAsync(Catalog.SelectedProject, Catalog.SelectedTask);
     }
 
@@ -304,6 +309,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         if (_disposed) return;
         _disposed = true;
         Steering.Dispose();
+        ComposerPreferences.Dispose();
         Queue.StateChanged -= NotifyRunStateChanged;
         Queue.Dispose();
         _preparation.Dispose();
@@ -339,7 +345,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
 
     public async ValueTask DisposeAsync()
     {
-        _isShuttingDown = true; await Queue.StopAsync(); await Steering.StopAsync(); await _preparation.StopAsync();
+        _isShuttingDown = true; await Queue.StopAsync(); await Steering.StopAsync(); await _preparation.StopAsync(); await ComposerPreferences.StopAsync();
         await Catalog.WorktreeAuthorization.StopAsync(); await WorktreeRecovery.StopAsync();
         await Task.WhenAll(RepositoryStatus.StopAsync(), FileChanges.Statistics.StopAsync(), SidebarProjects.StopAsync());
         if (ConversationPreferences is not null) await ConversationPreferences.StopAsync();
@@ -355,7 +361,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         NotifyRunStateChanged();
         _runs.CancelAll();
         await Catalog.WorktreeAuthorization.StopAsync(); await WorktreeRecovery.StopAsync();
-        try { await Queue.StopAsync(); await Steering.StopAsync(); await _preparation.StopAsync(); }
+        try { await Queue.StopAsync(); await Steering.StopAsync(); await _preparation.StopAsync(); await ComposerPreferences.StopAsync(); }
         finally
         {
             var navigationStop = Task.WhenAll(RepositoryStatus.StopAsync(), SidebarProjects.StopAsync());

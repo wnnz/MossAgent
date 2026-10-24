@@ -245,6 +245,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(IsAgentSettingsSelected));
             OnPropertyChanged(nameof(IsAppearanceSettingsSelected));
             OnPropertyChanged(nameof(IsSourceAccountSettingsSelected));
+            OnPropertyChanged(nameof(IsComposerSettingsSelected));
         }
     }
 
@@ -261,6 +262,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
 
     public bool IsAppearanceSettingsSelected => SettingsTabIndex == 5;
     public bool IsSourceAccountSettingsSelected => SettingsTabIndex == 7 && SourceAccounts is not null;
+    public bool IsComposerSettingsSelected => SettingsTabIndex == 8;
 
     public bool IsSystemThemeSelected => _themeService.Preference == ThemePreference.System;
     public bool IsLightThemeSelected => _themeService.Preference == ThemePreference.Light;
@@ -288,6 +290,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(IsAgentSettingsMatch));
             OnPropertyChanged(nameof(IsAppearanceSettingsMatch));
             OnPropertyChanged(nameof(IsSourceAccountSettingsMatch));
+            OnPropertyChanged(nameof(IsComposerSettingsMatch));
             OnPropertyChanged(nameof(IsPersonalSettingsMatch));
             OnPropertyChanged(nameof(IsIntegrationSettingsMatch));
             OnPropertyChanged(nameof(IsAgentSectionSettingsMatch));
@@ -304,12 +307,14 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     public bool IsAppearanceSettingsMatch => MatchesSettingsQuery(UiText.T("外观 主题 浅色 深色 系统"));
     public bool IsSourceAccountSettingsMatch => SourceAccounts is not null
         && MatchesSettingsQuery(SourceAccountText.Title + " GitHub PR Pull Request source account");
-    public bool IsPersonalSettingsMatch => IsAppearanceSettingsMatch || IsProviderSettingsMatch || IsProxySettingsMatch;
+    public bool IsComposerSettingsMatch => MatchesSettingsQuery(ComposerPreferenceText.Title + " Enter 发送 队列 引导");
+    public bool IsPersonalSettingsMatch => IsComposerSettingsMatch || IsAppearanceSettingsMatch || IsProviderSettingsMatch || IsProxySettingsMatch;
     public bool IsIntegrationSettingsMatch => IsMcpSettingsMatch || IsBrowserSettingsMatch || IsSourceAccountSettingsMatch;
     public bool IsAgentSectionSettingsMatch => IsAgentSettingsMatch || IsSubagentSettingsMatch;
     public bool HasSettingsSearchResults => IsProviderSettingsMatch || IsProxySettingsMatch
         || IsBrowserSettingsMatch || IsMcpSettingsMatch || IsSubagentSettingsMatch
-        || IsAppearanceSettingsMatch || IsAgentSettingsMatch || IsSourceAccountSettingsMatch;
+        || IsAppearanceSettingsMatch || IsAgentSettingsMatch || IsSourceAccountSettingsMatch
+        || IsComposerSettingsMatch;
 
     /// <summary>
     /// 是否展开左侧项目和会话导航栏。
@@ -432,7 +437,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
 
     private void SelectSettingsTab(string? tab)
     {
-        if (!int.TryParse(tab, out var index) || index is < 0 or > 7 || (index == 7 && SourceAccounts is null)) return;
+        if (!int.TryParse(tab, out var index) || index is < 0 or > 8 || (index == 7 && SourceAccounts is null)) return;
         Workspace.ModelPicker.IsPickerOpen = false;
         SettingsTabIndex = index;
         IsSettingsOpen = true;

@@ -59,6 +59,12 @@
                           IsChecked="{Binding IsProxySettingsSelected, Mode=OneWay}"
                           Command="{Binding SelectSettingsTabCommand}" CommandParameter="1"
                           Label="{res:L '网络代理'}" IconData="{StaticResource UiIconProxy}" />
+            <ui:AppSettingsNavButton
+                          HorizontalAlignment="Stretch"
+                          IsVisible="{Binding IsComposerSettingsMatch}"
+                          IsChecked="{Binding IsComposerSettingsSelected, Mode=OneWay}"
+                          Command="{Binding SelectSettingsTabCommand}" CommandParameter="8"
+                          Label="{x:Static labels:ComposerPreferenceText.Title}" IconData="{StaticResource UiIconSend}" />
 
             <ui:AppText Text="{res:L '集成'}" Classes="subtle settings-navigation-heading"
                         IsVisible="{Binding IsIntegrationSettingsMatch}" />
@@ -108,6 +114,9 @@
           <Grid Classes="settings-content-column">
             <ui:AppBorder IsVisible="{Binding IsAppearanceSettingsSelected}">
               <views:AppearanceSettingsPane DataContext="{Binding}" />
+            </ui:AppBorder>
+            <ui:AppBorder IsVisible="{Binding IsComposerSettingsSelected}">
+              <views:ComposerSettingsPane DataContext="{Binding Workspace.ComposerPreferences}" />
             </ui:AppBorder>
             <ui:AppBorder IsVisible="{Binding IsBrowserSettingsSelected}">
               <views:BrowserSettingsPane DataContext="{Binding Browser}" />

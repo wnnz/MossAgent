@@ -1,0 +1,37 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:resources="clr-namespace:MossAgent.App.Resources"
+                   xmlns:vm="clr-namespace:MossAgent.App.ViewModels"
+                   x:Class="MossAgent.App.Views.ComposerSettingsPane"
+                   x:DataType="vm:WorkspaceComposerPreferencesViewModel">
+  <ui:AppScrollViewer Classes="settings-page-scroll">
+    <StackPanel Spacing="12" Margin="0,0,0,32">
+      <ui:AppText Text="{Binding Title}" Classes="settings-title" />
+      <ui:AppText Text="{Binding Description}" Classes="type-12 muted" TextWrapping="Wrap" />
+      <ui:AppCard Classes="card card-inset-rows">
+        <StackPanel Spacing="12">
+          <ui:AppText Text="{Binding DefaultActionLabel}" Classes="settings-section-title" />
+          <ui:AppComboBox x:Name="ComposerDefaultActionCombo" ItemsSource="{Binding Options}"
+                        SelectedItem="{Binding SelectedOption}" IsEnabled="{Binding !IsBusy}"
+                        AutomationProperties.Name="{Binding DefaultActionLabel}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <ui:AppText Text="{Binding Label}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ui:AppComboBox>
+          <ui:AppText Text="{Binding Hint}" Classes="type-11 subtle" TextWrapping="Wrap" />
+          <ui:AppText Text="{Binding Error}" Classes="type-11 status-warning" TextWrapping="Wrap"
+                      IsVisible="{Binding HasError}" />
+          <WrapPanel Orientation="Horizontal">
+            <ui:AppButton x:Name="ComposerSettingsSaveButton" Classes="primary button-sm"
+                          Content="{Binding SaveLabel}" Command="{Binding SaveCommand}" />
+            <ui:AppButton Classes="ghost button-sm" Content="{Binding ReloadLabel}"
+                          Command="{Binding ReloadCommand}" />
+          </WrapPanel>
+        </StackPanel>
+      </ui:AppCard>
+    </StackPanel>
+  </ui:AppScrollViewer>
+</ui:AppUserControl>
