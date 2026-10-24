@@ -32,6 +32,7 @@ public sealed class WorkspaceWorktreeReferencePickerViewModel : ObservableObject
         _select = select;
         NextPageCommand = new AsyncRelayCommand(() => MoveAsync(PageSize), () => HasMore && !IsBusy);
         PreviousPageCommand = new AsyncRelayCommand(() => MoveAsync(-PageSize), () => _skip > 0 && !IsBusy);
+        FetchCommand = new AsyncRelayCommand(FetchAsync, () => _discovery is not null && !IsBusy && _canChoose());
     }
 
     internal TimeSpan SearchDelay { get; set; } = TimeSpan.FromMilliseconds(180);
@@ -46,6 +47,7 @@ public sealed class WorkspaceWorktreeReferencePickerViewModel : ObservableObject
     public string TruncatedText => WorkspaceText.Get("TaskEnvironmentReferenceTruncated");
     public string PreviousLabel => WorkspaceText.Get("TaskEnvironmentReferencePrevious");
     public string NextLabel => WorkspaceText.Get("TaskEnvironmentReferenceNext");
+    public string FetchLabel => WorkspaceText.Get("TaskEnvironmentReferenceFetch");
 
     public string SearchText
     {
@@ -76,6 +78,29 @@ public sealed class WorkspaceWorktreeReferencePickerViewModel : ObservableObject
 
     public IAsyncRelayCommand NextPageCommand { get; }
     public IAsyncRelayCommand PreviousPageCommand { get; }
+    public IAsyncRelayCommand FetchCommand { get; }
+
+    private async Task FetchAsync()
+    {
+        var project = _project();
+        if (_discovery is null || project is null || !_canChoose()) return;
+        IsBusy = true;
+        NotifyStatus();
+        try
+        {
+            await _discovery.FetchAsync(project, CancellationToken.None).ConfigureAwait(true);
+            _skip = 0;
+        }
+        catch (Exception)
+        {
+            _error = WorkspaceText.Get("TaskEnvironmentReferenceFetchFailure");
+            IsBusy = false;
+            NotifyStatus();
+            return;
+        }
+        IsBusy = false;
+        await RefreshAsync();
+    }
 
     internal void ResetContext()
     {
@@ -169,5 +194,6 @@ public sealed class WorkspaceWorktreeReferencePickerViewModel : ObservableObject
         OnPropertyChanged(nameof(CanPrevious));
         NextPageCommand.NotifyCanExecuteChanged();
         PreviousPageCommand.NotifyCanExecuteChanged();
+        FetchCommand.NotifyCanExecuteChanged();
     }
 }

@@ -6,4 +6,6 @@ public interface IGitWorktreeReferenceDiscovery
 {
     Task<GitWorktreeReferencePage> SearchAsync(
         ProjectProfile project, string? search, int skip, int take, CancellationToken cancellationToken);
+
+    Task FetchAsync(ProjectProfile project, CancellationToken cancellationToken);
 }

@@ -234,7 +234,7 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 
 **现状：** 工作树对象 grant 与旧任务确认已完成。基准选择器已并入本地分支/标签发现：
 受管 runner 列本地 refs、按名称搜索/分页并预览固定 commit，须授权完整仓库，窗口有界且
-截断明示，不做远端网络获取；手工输入仍独立保留。创建已改为 Windows 受控目录会话
+截断明示；远端获取为用户显式按钮动作，非自动网络行为；手工输入仍独立保留。创建已改为 Windows 受控目录会话
 独占创建空目标（NtCreateFile FILE_CREATE，不接受已存在对象）并持有其卷/文件身份到
 Git 与登记结束，登记前重开名称核对身份；预创建空目录对 `git worktree add` 的兼容性与
 失败语义已用真实 Git 验证。登记前身份核对拒绝被替换的对象并保留目录。schema 29 新增
@@ -262,7 +262,11 @@ Acknowledged）：`git worktree remove` 前按授权修订 CAS 记录 intent，�
 清理需要释放禁止删除共享的句柄再调用 Git，因此最终删除窗口仍有竞态。
 
 1. 已落地：受管 runner 的本地分支/标签发现、搜索/分页和固定 commit 预览已并入基准
-   选择器，自动发现与手工输入分别保留。远端 ref 获取仍缺，须做成单独显式网络动作。
+   选择器，自动发现与手工输入分别保留。远端获取已做成单独显式动作：基准选择器内的
+“获取远端更新”按钮经 `IGitWorktreeReferenceDiscovery.FetchAsync` 执行有界
+`git fetch --all --tags`（受管 runner 30 秒超时，剥离 GIT_* 环境），不改工作区、
+不做凭据管理；refs/remotes 发现项标注“远端”并过滤符号 HEAD，选定后由既有
+rev-parse 链路固定 commit。网络失败给本地化提示，不静默退化、不自动重试。
 2. Platform.Windows 已落地独占创建空目标并持有身份的会话，预创建空目录与真实 Git
    `worktree add` 的兼容性已验证；未采用接受已有目标的 `CreateDirectory`。Infrastructure
    在目录变更前持久化 task/repository/base commit/target/identity intent（schema 29，

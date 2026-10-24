@@ -21,6 +21,9 @@
             <ui:AppInput x:Name="ReferenceSearchInput" Text="{Binding References.SearchText, Mode=TwoWay}"
                              PlaceholderText="{Binding References.SearchPlaceholder}" MaxLength="512"
                              AutomationProperties.Name="{Binding References.Label}" IsVisible="{Binding References.IsAvailable}" />
+            <ui:AppActionButton x:Name="ReferenceFetchButton" Classes="ghost menu-option align-leading"
+                                Label="{Binding References.FetchLabel}" Command="{Binding References.FetchCommand}"
+                                IsVisible="{Binding References.IsAvailable}" />
             <ui:AppListBox x:Name="ReferenceList" Classes="thin-scrollbar" MaxHeight="200"
                            ItemsSource="{Binding References.Items}"
                            SelectedItem="{Binding References.SelectedItem, Mode=TwoWay}"

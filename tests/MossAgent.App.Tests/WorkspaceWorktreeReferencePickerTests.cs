@@ -184,6 +184,37 @@ public sealed class WorkspaceWorktreeReferencePickerTests
         Assert.Equal(WorkspaceText.Get("TaskEnvironmentReferenceTruncated"), environment.References.StatusText);
     }
 
+    [Fact]
+    public async Task FetchCommand_InvokesRemoteFetchThenRefreshesList()
+    {
+        var discovery = new StubDiscovery();
+        var environment = new WorkspaceTaskEnvironmentViewModel(discovery);
+        environment.SetContext(CreateProject(), null);
+
+        await environment.References.FetchCommand.ExecuteAsync(null);
+
+        Assert.Equal(1, discovery.FetchCalls);
+        Assert.NotEmpty(discovery.Requests);
+        Assert.Equal(0, discovery.Requests[^1].Skip);
+        Assert.Equal(2, environment.References.Items.Count);
+    }
+
+    [Fact]
+    public async Task FetchFailure_ShowsLocalizedStatusAndKeepsManualInput()
+    {
+        var discovery = new StubDiscovery { FetchFailure = new InvalidOperationException("synthetic-remote-secret") };
+        var environment = new WorkspaceTaskEnvironmentViewModel(discovery);
+        environment.SetContext(CreateProject(), null);
+        await environment.References.RefreshAsync();
+
+        await environment.References.FetchCommand.ExecuteAsync(null);
+
+        Assert.Equal(WorkspaceText.Get("TaskEnvironmentReferenceFetchFailure"), environment.References.StatusText);
+        Assert.DoesNotContain("synthetic-remote-secret", environment.References.StatusText);
+        environment.BaseReference = "manual";
+        Assert.Equal("manual", environment.BaseReference);
+    }
+
     private static ProjectProfile CreateProject() => new(Guid.NewGuid(), "project", "project-root",
         ["project-root"], DateTimeOffset.UtcNow);
 
@@ -201,12 +232,20 @@ public sealed class WorkspaceWorktreeReferencePickerTests
         public StubDiscovery(Func<string?, int, Task<GitWorktreeReferencePage>>? handler = null) => _handler = handler;
 
         public List<(string? Search, int Skip, int Take)> Requests { get; } = [];
+        public int FetchCalls { get; private set; }
+        public Exception? FetchFailure { get; set; }
 
         public Task<GitWorktreeReferencePage> SearchAsync(ProjectProfile project, string? search, int skip, int take,
             CancellationToken cancellationToken)
         {
             Requests.Add((search, skip, take));
             return _handler?.Invoke(search, skip) ?? Task.FromResult(Page());
+        }
+
+        public Task FetchAsync(ProjectProfile project, CancellationToken cancellationToken)
+        {
+            FetchCalls++;
+            return FetchFailure is null ? Task.CompletedTask : Task.FromException(FetchFailure);
         }
 
         public static GitWorktreeReference Reference(int index) => new($"ref-{index}", $"refs/heads/ref-{index}",

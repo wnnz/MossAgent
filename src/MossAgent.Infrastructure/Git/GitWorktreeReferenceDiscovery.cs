@@ -24,7 +24,7 @@ public sealed class GitWorktreeReferenceDiscovery(GitProcessRunner git) : IGitWo
         var repository = await new GitWorktreeInspector(git).ReadProjectAsync(project, false, cancellationToken).ConfigureAwait(false);
         var result = await git.RunAsync(repository.Root, repository.Command("for-each-ref",
             "--format=%(refname)%09%(objectname)%09%(objecttype)%09%(*objectname)%09%(*objecttype)%09%(*subject)%09%(subject)",
-            "--sort=-creatordate", "--sort=refname", "refs/heads/", "refs/tags/"), cancellationToken).ConfigureAwait(false);
+            "--sort=-creatordate", "--sort=refname", "refs/heads/", "refs/tags/", "refs/remotes/"), cancellationToken).ConfigureAwait(false);
         if (result.ExitCode != 0) throw new InvalidOperationException("Git reference discovery failed.");
         var references = Parse(result.StandardOutput, result.OutputTruncated);
         var term = search?.Trim();
@@ -34,6 +34,21 @@ public sealed class GitWorktreeReferenceDiscovery(GitProcessRunner git) : IGitWo
         var nextSkip = skip + items.Length;
         var hasMore = references.Count > nextSkip || result.OutputTruncated && items.Length == take;
         return new GitWorktreeReferencePage(items, nextSkip, hasMore, result.OutputTruncated);
+    }
+
+    public Task FetchAsync(ProjectProfile project, CancellationToken cancellationToken)
+    {
+        var snapshot = project with { AuthorizedDirectories = project.AuthorizedDirectories.ToArray() };
+        return Task.Run(() => FetchCoreAsync(snapshot, cancellationToken), cancellationToken);
+    }
+
+    private async Task FetchCoreAsync(ProjectProfile project, CancellationToken cancellationToken)
+    {
+        var repository = await new GitWorktreeInspector(git).ReadProjectAsync(project, false, cancellationToken).ConfigureAwait(false);
+        GitWorktreePaths.ValidateRepository(repository);
+        var result = await git.RunAsync(repository.Root,
+            repository.Command("fetch", "--all", "--tags"), cancellationToken).ConfigureAwait(false);
+        if (result.ExitCode != 0) throw new InvalidOperationException("Git remote fetch failed.");
     }
 
     private static List<GitWorktreeReference> Parse(string output, bool truncated)
@@ -54,8 +69,10 @@ public sealed class GitWorktreeReferenceDiscovery(GitProcessRunner git) : IGitWo
             string name;
             if (fields[0].StartsWith("refs/heads/", StringComparison.Ordinal)) { kind = GitWorktreeReferenceKind.Branch; name = fields[0][11..]; }
             else if (fields[0].StartsWith("refs/tags/", StringComparison.Ordinal)) { kind = GitWorktreeReferenceKind.Tag; name = fields[0][10..]; }
+            else if (fields[0].StartsWith("refs/remotes/", StringComparison.Ordinal)) { kind = GitWorktreeReferenceKind.Remote; name = fields[0][13..]; }
             else continue;
-            if (name.Length == 0) continue;
+            // Symbolic remote heads (for example refs/remotes/origin/HEAD) add noise without a distinct commit.
+            if (name.Length == 0 || kind == GitWorktreeReferenceKind.Remote && name.EndsWith("/HEAD", StringComparison.Ordinal)) continue;
             var commit = fields[3].Length > 0 ? fields[3] : fields[1];
             var objectType = fields[3].Length > 0 ? fields[4] : fields[2];
             if (objectType != "commit" || commit.Length is not (40 or 64) || !commit.All(char.IsAsciiHexDigit)) continue;

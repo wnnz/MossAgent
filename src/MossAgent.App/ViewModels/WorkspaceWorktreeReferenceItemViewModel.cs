@@ -8,8 +8,12 @@ public sealed class WorkspaceWorktreeReferenceItemViewModel(GitWorktreeReference
 
     public string Name => Reference.Name;
 
-    public string KindLabel => WorkspaceText.Get(Reference.Kind == GitWorktreeReferenceKind.Branch
-        ? "TaskEnvironmentReferenceBranch" : "TaskEnvironmentReferenceTag");
+    public string KindLabel => WorkspaceText.Get(Reference.Kind switch
+    {
+        GitWorktreeReferenceKind.Branch => "TaskEnvironmentReferenceBranch",
+        GitWorktreeReferenceKind.Remote => "TaskEnvironmentReferenceRemote",
+        _ => "TaskEnvironmentReferenceTag",
+    });
 
     public string Display => $"{Reference.Name} · {KindLabel}";
 

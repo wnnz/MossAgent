@@ -159,6 +159,47 @@ public sealed class GitWorktreeReferenceDiscoveryTests
         Assert.Empty(launcher.Requests);
     }
 
+    [Fact]
+    public async Task FetchPullsPathRemoteAndListsRemoteRefsWithoutSymbolicHead()
+    {
+        using var fixture = await GitWorktreeSecurityFixture.CreateAsync();
+        var remote = Path.Combine(fixture.Root, "remote");
+        await fixture.InitializeAsync(remote);
+        await fixture.GitAsync(remote, "branch", "remote-only");
+        await fixture.GitAsync(fixture.Repository, "remote", "add", "origin", remote);
+        var discovery = Discovery();
+
+        await discovery.FetchAsync(fixture.Project, fixture.Token);
+
+        var page = await discovery.SearchAsync(fixture.Project, null, 0, 50, fixture.Token);
+        var main = Assert.Single(page.Items, item => item.Name == "origin/main");
+        Assert.Equal(GitWorktreeReferenceKind.Remote, main.Kind);
+        Assert.Equal("refs/remotes/origin/main", main.RefName);
+        Assert.Contains(page.Items, item => item.Name == "origin/remote-only");
+        Assert.DoesNotContain(page.Items, item => item.Name == "origin/HEAD");
+    }
+
+    [Fact]
+    public async Task FetchWithoutConfiguredRemoteSucceedsAsNoOp()
+    {
+        using var fixture = await GitWorktreeSecurityFixture.CreateAsync();
+
+        await Discovery().FetchAsync(fixture.Project, fixture.Token);
+    }
+
+    [Fact]
+    public async Task UnauthorizedRepositoryFetchIsRejectedBeforeAnyGitInvocation()
+    {
+        using var fixture = await GitWorktreeSecurityFixture.CreateAsync();
+        var launcher = new RecordingTaskProcessLauncher(() => new StubTaskProcess());
+        var discovery = new GitWorktreeReferenceDiscovery(new GitProcessRunner(launcher));
+        var project = fixture.Project with { AuthorizedDirectories = [fixture.Outside] };
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => discovery.FetchAsync(project, fixture.Token));
+        Assert.Empty(launcher.Requests);
+    }
+
     private static GitWorktreeReferenceDiscovery Discovery() =>
         new(new GitProcessRunner(new FixtureTaskProcessLauncher()));
 

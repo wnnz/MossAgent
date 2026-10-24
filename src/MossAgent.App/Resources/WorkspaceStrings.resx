@@ -162,6 +162,9 @@
   <data name="TaskEnvironmentBaseReferenceLabel" xml:space="preserve"><value>工作树基准（可选）</value></data>
   <data name="TaskEnvironmentBaseReferencePlaceholder" xml:space="preserve"><value>HEAD、分支、标签或提交</value></data>
   <data name="TaskEnvironmentBaseReferenceFailure" xml:space="preserve"><value>工作树基准无效或无法解析为本地提交，消息尚未发送。请检查分支、标签或提交；留空使用 HEAD。不会自动拉取或改用其他基准。</value></data>
+<data name="TaskEnvironmentReferenceFetch" xml:space="preserve"><value>获取远端更新</value></data>
+<data name="TaskEnvironmentReferenceFetchFailure" xml:space="preserve"><value>远端获取失败或超时。请检查网络、代理与远端配置后重试；本地分支和标签不受影响。</value></data>
+<data name="TaskEnvironmentReferenceRemote" xml:space="preserve"><value>远端</value></data>
   <data name="TaskEnvironmentReferenceLabel" xml:space="preserve"><value>本地分支与标签</value></data>
   <data name="TaskEnvironmentReferenceSearchPlaceholder" xml:space="preserve"><value>搜索分支或标签</value></data>
   <data name="TaskEnvironmentReferenceLoading" xml:space="preserve"><value>正在读取本地分支与标签…</value></data>
