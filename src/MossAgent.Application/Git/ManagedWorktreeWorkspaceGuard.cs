@@ -7,7 +7,7 @@ public sealed class ManagedWorktreeWorkspaceGuard(
     IGitWorktreeService worktrees, ProjectProfile project, Guid ownerTaskId, string worktreePath,
     IReadOnlyList<string> authorizedRoots) : ITaskWorkspaceLeaseProvider
 {
-    private readonly ProjectProfile _project = project with { AuthorizedDirectories = project.AuthorizedDirectories.ToArray() };
+    private readonly ProjectProfile _project = project.Snapshot();
     private readonly string[] _roots = authorizedRoots.ToArray();
     private static StringComparer Comparer => OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
 

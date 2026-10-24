@@ -18,7 +18,7 @@ internal sealed class SqliteProjectAuthorization(SqliteConnectionFactory connect
 
     public Task<ProjectProfile> SaveAsync(ProjectProfile project, CancellationToken cancellationToken, bool confirm = false)
     {
-        var snapshot = project with { AuthorizedDirectories = project.AuthorizedDirectories.ToArray() };
+        var snapshot = project.Snapshot();
         if (snapshot.AuthorizationRevision <= 0) throw new ProjectAuthorizationConflictException();
         return Task.Run(() => SaveCoreAsync(snapshot, cancellationToken, confirm), cancellationToken);
     }

@@ -37,7 +37,7 @@ public sealed class WorktreeCreationIntentTests : IAsyncLifetime
     {
         var repository = Storage.Repository;
         var project = await SeedProjectAsync();
-        var claims = new StubClaimFactory();
+        var claims = new StubWorktreeClaimFactory();
         var service = new GitWorktreeService(Fixture.Paths, new GitProcessRunner(new FixtureTaskProcessLauncher()),
             roots: new RootIdentityProbe(), connections: Storage.Connections, targets: claims);
         var taskId = Guid.NewGuid();
@@ -151,7 +151,7 @@ public sealed class WorktreeCreationIntentTests : IAsyncLifetime
         return Assert.Single(stored, item => item.Id == Fixture.Project.Id);
     }
 
-    private async Task<IntentRow> ReadIntentAsync(Guid taskId)
+    private async Task<WorktreeCreationIntentRow> ReadIntentAsync(Guid taskId)
     {
         await using var connection = Storage.Connections.Create();
         await connection.OpenAsync(Fixture.Token);
@@ -167,26 +167,5 @@ public sealed class WorktreeCreationIntentTests : IAsyncLifetime
             reader.GetString(3), reader.IsDBNull(4) ? null : reader.GetString(4),
             reader.IsDBNull(5) ? null : reader.GetString(5), reader.GetInt32(6),
             reader.IsDBNull(7) ? null : reader.GetString(7));
-    }
-
-    private sealed record IntentRow(Guid ProjectId, string Repository, string BaseCommit,
-        string Target, string? VolumeId, string? FileId, int State, string? ClaimedAt);
-
-    private sealed class StubClaimFactory : IWorktreeTargetClaimFactory
-    {
-        public Task<IWorktreeTargetClaim> CreateAsync(string path, CancellationToken cancellationToken)
-        {
-            Directory.CreateDirectory(path);
-            return Task.FromResult<IWorktreeTargetClaim>(new StubClaim(path));
-        }
-    }
-
-    private sealed class StubClaim(string path) : IWorktreeTargetClaim
-    {
-        public string Path { get; } = path;
-        public DirectoryObjectIdentity Identity { get; } =
-            new(path, "VOLUME{STUB}", new string('1', 32));
-        public void Verify() { }
-        public void Dispose() { }
     }
 }

@@ -12,7 +12,7 @@ public sealed class WorkspaceAttachmentReader(IAttachmentImageDecoder? images = 
         ProjectProfile project,
         IReadOnlyList<string> paths,
         CancellationToken cancellationToken)
-        => ReadBoundedAsync(project with { AuthorizedDirectories = project.AuthorizedDirectories.ToArray() }, paths, cancellationToken);
+        => ReadBoundedAsync(project.Snapshot(), paths, cancellationToken);
 
     public Task<IReadOnlyList<WorkspaceAttachmentContent>> ReadSelectedAsync(
         IReadOnlyList<string> selectedAbsolutePaths, CancellationToken cancellationToken) =>

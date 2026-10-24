@@ -427,7 +427,8 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         {
             ApprovalPolicy = task.ApprovalPolicy;
             _panels.Attach(task, Catalog.SelectedProject);
-            Activity = _runs.TryGet(task.Id, out var state) ? state!.Activity : $"已打开任务：{task.Title}";
+            Activity = _runs.TryGet(task.Id, out var state) ? state!.Activity
+                : string.Format(WorkspaceText.Get("TaskOpenedActivity"), task.Title);
         }
         NotifyRunStateChanged();
     }

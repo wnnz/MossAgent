@@ -7,8 +7,7 @@ public sealed class ProjectWorkspaceGuard(ProjectAuthorizationMonitor monitor, P
     Guid taskId, string workingDirectory, IReadOnlyList<string> roots, ITaskWorkspaceGuard? environment = null)
     : ITaskWorkspaceLeaseProvider
 {
-    private readonly ProjectProfile _project = project with
-    { AuthorizedDirectories = project.AuthorizedDirectories.ToArray(), RootAuthorizations = project.RootAuthorizations.ToArray() };
+    private readonly ProjectProfile _project = project.Snapshot();
     private readonly string[] _roots = roots.ToArray();
 
     public async Task ValidateAsync(ToolExecutionContext context, CancellationToken cancellationToken)

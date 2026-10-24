@@ -274,4 +274,9 @@
 <data name="WorktreeCleanupFailureGit" xml:space="preserve"><value>Git 删除失败</value></data>
 <data name="WorktreeCleanupOrphanRemoved" xml:space="preserve"><value>目标目录已删除，任务关联未更新</value></data>
 <data name="WorktreeCleanupOrphanRetained" xml:space="preserve"><value>目标目录仍存在，清理未完成</value></data>
+<data name="WorktreeCleanupAction" xml:space="preserve"><value>清理 Worktree</value></data>
+<data name="WorktreeCleanupConfirm" xml:space="preserve"><value>确认清理 Worktree</value></data>
+<data name="WorktreeCleanupConfirmHint" xml:space="preserve"><value>再次点击确认清理；有未提交变更时 Git 会拒绝删除。</value></data>
+<data name="WorktreeCleanupSuccess" xml:space="preserve"><value>任务 worktree 已安全移除，任务历史仍保留。</value></data>
+<data name="TaskOpenedActivity" xml:space="preserve"><value>已打开任务：{0}</value></data>
 </root>

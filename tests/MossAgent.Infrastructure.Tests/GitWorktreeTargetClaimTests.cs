@@ -13,7 +13,7 @@ public sealed class GitWorktreeTargetClaimTests
     public async Task CreateClaimsExclusivelyVerifiesAndCompletes()
     {
         using var fixture = await GitWorktreeSecurityFixture.CreateAsync();
-        var factory = new StubClaimFactory();
+        var factory = new TrackingWorktreeClaimFactory();
         var service = new GitWorktreeService(fixture.Paths, new GitProcessRunner(new FixtureTaskProcessLauncher()), targets: factory);
         var taskId = Guid.NewGuid();
 
@@ -32,7 +32,7 @@ public sealed class GitWorktreeTargetClaimTests
     {
         using var fixture = await GitWorktreeSecurityFixture.CreateAsync();
         var before = await fixture.GitAsync(fixture.Repository, "worktree", "list", "--porcelain");
-        var factory = new StubClaimFactory(failCreate: true);
+        var factory = new TrackingWorktreeClaimFactory(failCreate: true);
         var service = new GitWorktreeService(fixture.Paths, new GitProcessRunner(new FixtureTaskProcessLauncher()), targets: factory);
         var taskId = Guid.NewGuid();
         var target = Path.Combine(fixture.Paths.WorktreesPath, taskId.ToString("N"));
@@ -50,7 +50,7 @@ public sealed class GitWorktreeTargetClaimTests
     public async Task IdentityMismatchAfterGitRetainsDirectoryAndReportsFailure()
     {
         using var fixture = await GitWorktreeSecurityFixture.CreateAsync();
-        var factory = new StubClaimFactory(failVerify: true);
+        var factory = new TrackingWorktreeClaimFactory(failVerify: true);
         var service = new GitWorktreeService(fixture.Paths, new GitProcessRunner(new FixtureTaskProcessLauncher()), targets: factory);
         var taskId = Guid.NewGuid();
         var target = Path.Combine(fixture.Paths.WorktreesPath, taskId.ToString("N"));
@@ -61,35 +61,5 @@ public sealed class GitWorktreeTargetClaimTests
         var claim = Assert.Single(factory.Claims);
         Assert.Equal(1, claim.Verifications);
         Assert.True(Directory.Exists(target));
-    }
-
-    private sealed class StubClaimFactory(bool failCreate = false, bool failVerify = false) : IWorktreeTargetClaimFactory
-    {
-        public List<StubClaim> Claims { get; } = [];
-
-        public Task<IWorktreeTargetClaim> CreateAsync(string path, CancellationToken cancellationToken)
-        {
-            if (failCreate) throw new IOException("synthetic already exists");
-            var claim = new StubClaim(path, failVerify);
-            Claims.Add(claim);
-            return Task.FromResult<IWorktreeTargetClaim>(claim);
-        }
-    }
-
-    private sealed class StubClaim(string path, bool failVerify) : IWorktreeTargetClaim
-    {
-        public string Path { get; } = path;
-        public DirectoryObjectIdentity Identity { get; } =
-            new(path, "VOLUME{TEST}", new string('0', 32));
-        public int Verifications { get; private set; }
-        public bool Disposed { get; private set; }
-
-        public void Verify()
-        {
-            Verifications++;
-            if (failVerify) throw new ProjectRootAuthorizationException();
-        }
-
-        public void Dispose() => Disposed = true;
     }
 }

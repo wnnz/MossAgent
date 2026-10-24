@@ -37,7 +37,7 @@ public sealed class ConversationSteeringSession : IAgentSteeringInput
     {
         runCancellation.ThrowIfCancellationRequested();
         if (authorization?.Project is { } project)
-            authorization = authorization with { Project = project with { AuthorizedDirectories = project.AuthorizedDirectories.ToArray() } };
+            authorization = authorization with { Project = project.Snapshot() };
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, runCancellation);
         deadline.CancelAfter(TimeSpan.FromSeconds(30));
         if (validateAccess is not null) await validateAccess(deadline.Token);

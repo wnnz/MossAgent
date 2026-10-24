@@ -57,7 +57,7 @@ public sealed class WorktreeIntentStageTests : IAsyncLifetime
     {
         var service = Service();
         var taskId = Guid.NewGuid();
-        var claims = new FailingClaimFactory();
+        var claims = new FailingWorktreeClaimFactory();
         var failing = new GitWorktreeService(Fixture.Paths, new GitProcessRunner(new FixtureTaskProcessLauncher()),
             roots: new RootIdentityProbe(), connections: Storage.Connections, targets: claims);
 
@@ -217,11 +217,5 @@ public sealed class WorktreeIntentStageTests : IAsyncLifetime
         Directory.CreateDirectory(Target(taskId));
         await File.WriteAllTextAsync(Path.Combine(Target(taskId), ".git"),
             $"gitdir: {adminDir}\n", Fixture.Token);
-    }
-
-    private sealed class FailingClaimFactory : IWorktreeTargetClaimFactory
-    {
-        public Task<IWorktreeTargetClaim> CreateAsync(string target, CancellationToken token) =>
-            throw new WorktreeAuthorizationException();
     }
 }

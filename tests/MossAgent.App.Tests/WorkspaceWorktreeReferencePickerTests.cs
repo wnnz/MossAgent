@@ -22,7 +22,7 @@ public sealed class WorkspaceWorktreeReferencePickerTests
     [Fact]
     public async Task OpeningPicker_LoadsLocalReferences()
     {
-        var discovery = new StubDiscovery();
+        var discovery = new RecordingWorktreeReferenceDiscovery();
         var environment = new WorkspaceTaskEnvironmentViewModel(discovery);
         environment.SetContext(CreateProject(), null);
 
@@ -39,7 +39,7 @@ public sealed class WorkspaceWorktreeReferencePickerTests
     [Fact]
     public async Task SelectingReference_FillsManualInputWithFullRefName()
     {
-        var discovery = new StubDiscovery();
+        var discovery = new RecordingWorktreeReferenceDiscovery();
         var environment = new WorkspaceTaskEnvironmentViewModel(discovery);
         environment.SetContext(CreateProject(), null);
         await environment.References.RefreshAsync();
@@ -52,7 +52,7 @@ public sealed class WorkspaceWorktreeReferencePickerTests
     [Fact]
     public async Task SearchText_ResetsPagingAndRefreshes()
     {
-        var discovery = new StubDiscovery();
+        var discovery = new RecordingWorktreeReferenceDiscovery();
         var environment = new WorkspaceTaskEnvironmentViewModel(discovery);
         environment.References.SearchDelay = TimeSpan.Zero;
         environment.SetContext(CreateProject(), null);
@@ -67,8 +67,8 @@ public sealed class WorkspaceWorktreeReferencePickerTests
     [Fact]
     public async Task PagingCommands_AdvanceWithinResults()
     {
-        var discovery = new StubDiscovery((_, skip) => Task.FromResult(
-            skip == 0 ? StubDiscovery.Page(20, 0, hasMore: true) : StubDiscovery.Page(5, skip)));
+        var discovery = new RecordingWorktreeReferenceDiscovery((_, skip) => Task.FromResult(
+            skip == 0 ? RecordingWorktreeReferenceDiscovery.Page(20, 0, hasMore: true) : RecordingWorktreeReferenceDiscovery.Page(5, skip)));
         var environment = new WorkspaceTaskEnvironmentViewModel(discovery);
         environment.SetContext(CreateProject(), null);
         await environment.References.RefreshAsync();
@@ -85,7 +85,7 @@ public sealed class WorkspaceWorktreeReferencePickerTests
     [Fact]
     public async Task LockedEnvironment_DoesNotLoadOrSelect()
     {
-        var discovery = new StubDiscovery();
+        var discovery = new RecordingWorktreeReferenceDiscovery();
         var environment = new WorkspaceTaskEnvironmentViewModel(discovery);
         environment.SetContext(CreateProject(), null);
         environment.SetLocked(true);
@@ -95,14 +95,14 @@ public sealed class WorkspaceWorktreeReferencePickerTests
 
         Assert.False(environment.IsPickerOpen);
         Assert.Empty(discovery.Requests);
-        environment.References.SelectedItem = new WorkspaceWorktreeReferenceItemViewModel(StubDiscovery.Reference(0));
+        environment.References.SelectedItem = new WorkspaceWorktreeReferenceItemViewModel(RecordingWorktreeReferenceDiscovery.Reference(0));
         Assert.Equal(string.Empty, environment.BaseReference);
     }
 
     [Fact]
     public async Task ExistingTaskContext_DoesNotLoad()
     {
-        var discovery = new StubDiscovery();
+        var discovery = new RecordingWorktreeReferenceDiscovery();
         var environment = new WorkspaceTaskEnvironmentViewModel(discovery);
         var project = CreateProject();
         var now = DateTimeOffset.UtcNow;
@@ -120,7 +120,7 @@ public sealed class WorkspaceWorktreeReferencePickerTests
     [Fact]
     public async Task ContextChange_ClearsSearchAndItems()
     {
-        var discovery = new StubDiscovery();
+        var discovery = new RecordingWorktreeReferenceDiscovery();
         var environment = new WorkspaceTaskEnvironmentViewModel(discovery);
         environment.SetContext(CreateProject(), null);
         await environment.References.RefreshAsync();
@@ -136,7 +136,7 @@ public sealed class WorkspaceWorktreeReferencePickerTests
     [Fact]
     public async Task DiscoveryFailure_ShowsStatusAndKeepsManualInput()
     {
-        var discovery = new StubDiscovery((_, _) =>
+        var discovery = new RecordingWorktreeReferenceDiscovery((_, _) =>
             Task.FromException<GitWorktreeReferencePage>(new InvalidOperationException("synthetic")));
         var environment = new WorkspaceTaskEnvironmentViewModel(discovery);
         environment.SetContext(CreateProject(), null);
@@ -151,7 +151,7 @@ public sealed class WorkspaceWorktreeReferencePickerTests
     [Fact]
     public async Task UnauthorizedFailure_ShowsAuthorizationStatus()
     {
-        var discovery = new StubDiscovery((_, _) =>
+        var discovery = new RecordingWorktreeReferenceDiscovery((_, _) =>
             Task.FromException<GitWorktreeReferencePage>(new UnauthorizedAccessException("synthetic")));
         var environment = new WorkspaceTaskEnvironmentViewModel(discovery);
         environment.SetContext(CreateProject(), null);
@@ -163,7 +163,7 @@ public sealed class WorkspaceWorktreeReferencePickerTests
     [Fact]
     public async Task EmptyResult_ShowsEmptyStatus()
     {
-        var discovery = new StubDiscovery((_, _) =>
+        var discovery = new RecordingWorktreeReferenceDiscovery((_, _) =>
             Task.FromResult(new GitWorktreeReferencePage([], 0, false, false)));
         var environment = new WorkspaceTaskEnvironmentViewModel(discovery);
         environment.SetContext(CreateProject(), null);
@@ -175,8 +175,8 @@ public sealed class WorkspaceWorktreeReferencePickerTests
     [Fact]
     public async Task TruncatedPage_ShowsTruncatedStatus()
     {
-        var discovery = new StubDiscovery((_, _) =>
-            Task.FromResult(StubDiscovery.Page(20, 0, truncated: true)));
+        var discovery = new RecordingWorktreeReferenceDiscovery((_, _) =>
+            Task.FromResult(RecordingWorktreeReferenceDiscovery.Page(20, 0, truncated: true)));
         var environment = new WorkspaceTaskEnvironmentViewModel(discovery);
         environment.SetContext(CreateProject(), null);
         await environment.References.RefreshAsync();
@@ -187,7 +187,7 @@ public sealed class WorkspaceWorktreeReferencePickerTests
     [Fact]
     public async Task FetchCommand_InvokesRemoteFetchThenRefreshesList()
     {
-        var discovery = new StubDiscovery();
+        var discovery = new RecordingWorktreeReferenceDiscovery();
         var environment = new WorkspaceTaskEnvironmentViewModel(discovery);
         environment.SetContext(CreateProject(), null);
 
@@ -202,7 +202,7 @@ public sealed class WorkspaceWorktreeReferencePickerTests
     [Fact]
     public async Task FetchFailure_ShowsLocalizedStatusAndKeepsManualInput()
     {
-        var discovery = new StubDiscovery { FetchFailure = new InvalidOperationException("synthetic-remote-secret") };
+        var discovery = new RecordingWorktreeReferenceDiscovery { FetchFailure = new InvalidOperationException("synthetic-remote-secret") };
         var environment = new WorkspaceTaskEnvironmentViewModel(discovery);
         environment.SetContext(CreateProject(), null);
         await environment.References.RefreshAsync();
@@ -223,39 +223,5 @@ public sealed class WorkspaceWorktreeReferencePickerTests
         for (var attempt = 0; attempt < 200 && !predicate(); attempt++)
             await Task.Delay(10, TestContext.Current.CancellationToken);
         Assert.True(predicate());
-    }
-
-    private sealed class StubDiscovery : IGitWorktreeReferenceDiscovery
-    {
-        private readonly Func<string?, int, Task<GitWorktreeReferencePage>>? _handler;
-
-        public StubDiscovery(Func<string?, int, Task<GitWorktreeReferencePage>>? handler = null) => _handler = handler;
-
-        public List<(string? Search, int Skip, int Take)> Requests { get; } = [];
-        public int FetchCalls { get; private set; }
-        public Exception? FetchFailure { get; set; }
-
-        public Task<GitWorktreeReferencePage> SearchAsync(ProjectProfile project, string? search, int skip, int take,
-            CancellationToken cancellationToken)
-        {
-            Requests.Add((search, skip, take));
-            return _handler?.Invoke(search, skip) ?? Task.FromResult(Page());
-        }
-
-        public Task FetchAsync(ProjectProfile project, CancellationToken cancellationToken)
-        {
-            FetchCalls++;
-            return FetchFailure is null ? Task.CompletedTask : Task.FromException(FetchFailure);
-        }
-
-        public static GitWorktreeReference Reference(int index) => new($"ref-{index}", $"refs/heads/ref-{index}",
-            GitWorktreeReferenceKind.Branch, new string('a', 40), "subject");
-
-        public static GitWorktreeReferencePage Page(int count = 2, int skip = 0, bool hasMore = false,
-            bool truncated = false)
-        {
-            var items = Enumerable.Range(0, count).Select(index => Reference(skip + index)).ToArray();
-            return new GitWorktreeReferencePage(items, skip + count, hasMore, truncated);
-        }
     }
 }

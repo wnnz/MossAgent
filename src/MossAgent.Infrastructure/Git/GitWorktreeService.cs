@@ -127,7 +127,7 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
     private async Task<ITaskWorkspaceLease> AcquireCoreAsync(ProjectProfile project, Guid taskId, string worktreePath, CancellationToken cancellationToken)
     {
         IRootIdentitySession? session = null;
-        OperationScope? scope = null;
+        GitWorktreeOperationScope? scope = null;
         try
         {
             scope = await OpenScopeAsync(project, cancellationToken).ConfigureAwait(false);
@@ -190,7 +190,7 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
     {
         var target = GitWorktreePaths.ManagedTarget(paths, Path.Combine(paths.WorktreesPath, taskId.ToString("N")), false);
         if (Directory.Exists(target) || File.Exists(target)) throw new IOException("The managed worktree target already exists.");
-        OperationScope? scope = null;
+        GitWorktreeOperationScope? scope = null;
         try
         {
             scope = await OpenScopeAsync(project, cancellationToken).ConfigureAwait(false);
@@ -254,7 +254,7 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
 
     private async Task RemoveCoreAsync(ProjectProfile project, string worktreePath, CancellationToken cancellationToken)
     {
-        OperationScope? scope = null;
+        GitWorktreeOperationScope? scope = null;
         Guid taskId = default;
         try
         {
@@ -323,10 +323,9 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
         _ => "unknown",
     };
 
-    private static ProjectProfile Snapshot(ProjectProfile project) =>
-        project with { AuthorizedDirectories = project.AuthorizedDirectories.ToArray() };
+    private static ProjectProfile Snapshot(ProjectProfile project) => project.Snapshot();
 
-    private async Task<OperationScope> OpenScopeAsync(ProjectProfile project, CancellationToken cancellationToken)
+    private async Task<GitWorktreeOperationScope> OpenScopeAsync(ProjectProfile project, CancellationToken cancellationToken)
     {
         var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30), timeProvider ?? TimeProvider.System);
         var operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, deadline.Token);
@@ -347,25 +346,4 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
         }
     }
 
-    private sealed class OperationScope(
-        CancellationTokenSource deadline, CancellationTokenSource operation,
-        ITaskWorkspaceLease? projectLease, CancellationTokenSource scope) : IAsyncDisposable
-    {
-        public CancellationToken Token { get; } = scope.Token;
-
-        public Exception MapCancellation(OperationCanceledException failure, CancellationToken userToken, string verb) =>
-            userToken.IsCancellationRequested
-                ? new OperationCanceledException($"Git worktree {verb} was cancelled.", failure, userToken)
-                : deadline.IsCancellationRequested
-                    ? new TimeoutException($"Git worktree {verb} timed out.", failure)
-                    : failure;
-
-        public async ValueTask DisposeAsync()
-        {
-            scope.Dispose();
-            if (projectLease is not null) await projectLease.DisposeAsync().ConfigureAwait(false);
-            operation.Dispose();
-            deadline.Dispose();
-        }
-    }
 }

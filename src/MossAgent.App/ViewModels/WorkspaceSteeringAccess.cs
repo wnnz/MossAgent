@@ -10,8 +10,7 @@ internal sealed class WorkspaceSteeringAccess(
     IWorkspaceRepository workspaces, AgentTask task, ProjectProfile? project,
     ToolExecutionContext context, SourceReviewChatAccess? reviewChats, SourceReviewChatBinding? review)
 {
-    private readonly ProjectProfile? _project = project is null ? null
-        : project with { AuthorizedDirectories = project.AuthorizedDirectories.ToArray() };
+    private readonly ProjectProfile? _project = project?.Snapshot();
 
     public Task ValidateAsync(CancellationToken cancellationToken) => ValidateCoreAsync(cancellationToken);
     public Task ValidateEmptyBoundaryAsync(CancellationToken cancellationToken) => ValidateCoreAsync(cancellationToken);

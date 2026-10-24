@@ -52,7 +52,7 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
 
     public async Task<ITaskWorkspaceLease> AcquireAsync(ProjectProfile expected, CancellationToken cancellationToken)
     {
-        var snapshot = expected with { AuthorizedDirectories = expected.AuthorizedDirectories.ToArray(), RootAuthorizations = expected.RootAuthorizations.ToArray() };
+        var snapshot = expected.Snapshot();
         await ValidateAsync(snapshot, cancellationToken).ConfigureAwait(false);
         var roots = _roots is null ? null : await ProjectRootObjectValidation.OpenAsync(_roots, snapshot, cancellationToken).ConfigureAwait(false);
         var lease = new ProjectAuthorizationLease(this, snapshot, _time, roots);

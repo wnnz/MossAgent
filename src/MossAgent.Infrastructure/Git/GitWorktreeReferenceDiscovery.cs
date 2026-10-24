@@ -10,7 +10,7 @@ public sealed class GitWorktreeReferenceDiscovery(GitProcessRunner git) : IGitWo
     public Task<GitWorktreeReferencePage> SearchAsync(
         ProjectProfile project, string? search, int skip, int take, CancellationToken cancellationToken)
     {
-        var snapshot = project with { AuthorizedDirectories = project.AuthorizedDirectories.ToArray() };
+        var snapshot = project.Snapshot();
         return Task.Run(() => SearchCoreAsync(snapshot, search, skip, take, cancellationToken), cancellationToken);
     }
 
@@ -38,7 +38,7 @@ public sealed class GitWorktreeReferenceDiscovery(GitProcessRunner git) : IGitWo
 
     public Task FetchAsync(ProjectProfile project, CancellationToken cancellationToken)
     {
-        var snapshot = project with { AuthorizedDirectories = project.AuthorizedDirectories.ToArray() };
+        var snapshot = project.Snapshot();
         return Task.Run(() => FetchCoreAsync(snapshot, cancellationToken), cancellationToken);
     }
 

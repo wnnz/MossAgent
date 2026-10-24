@@ -88,7 +88,7 @@ public sealed class WorkspaceWorktreeReferenceControlTests : IAsyncLifetime
     [Fact]
     public Task DiscoveredReferencesRenderAndSelectBaseReference() => _session.Dispatch(async () =>
     {
-        var environment = new WorkspaceTaskEnvironmentViewModel(new StubDiscovery());
+        var environment = new WorkspaceTaskEnvironmentViewModel(new StaticWorktreeReferenceDiscovery());
         environment.SetContext(new ProjectProfile(Guid.NewGuid(), "project", "root", ["root"], DateTimeOffset.UtcNow), null);
         var view = new WorkspaceTaskEnvironmentView { DataContext = environment,
             HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom };
@@ -122,16 +122,5 @@ public sealed class WorkspaceWorktreeReferenceControlTests : IAsyncLifetime
         window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
         window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
         Dispatcher.UIThread.RunJobs();
-    }
-
-    private sealed class StubDiscovery : IGitWorktreeReferenceDiscovery
-    {
-        public Task<GitWorktreeReferencePage> SearchAsync(ProjectProfile project, string? search, int skip, int take,
-            CancellationToken cancellationToken) => Task.FromResult(new GitWorktreeReferencePage(
-            [new GitWorktreeReference("ref-0", "refs/heads/ref-0", GitWorktreeReferenceKind.Branch, new string('a', 40), "subject"),
-             new GitWorktreeReference("ref-1", "refs/heads/ref-1", GitWorktreeReferenceKind.Branch, new string('b', 40), "subject")],
-            2, false, false));
-
-        public Task FetchAsync(ProjectProfile project, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

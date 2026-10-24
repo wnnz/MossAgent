@@ -70,6 +70,6 @@ public sealed class ConversationFollowupPreparer(
         var context = new ToolExecutionContext(task.Id, task.WorktreePath ?? project.PrimaryDirectory, roots, item.ApprovalPolicy);
         paths.Resolve(context.WorkingDirectory, context);
         foreach (var root in roots) paths.Resolve(root, context);
-        return project with { AuthorizedDirectories = project.AuthorizedDirectories.ToArray() };
+        return project.Snapshot();
     }
 }

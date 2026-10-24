@@ -11,12 +11,11 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
 {
     private readonly IWorkspaceRepository _workspaces;
     private readonly ConversationAttachmentThumbnailFactory? _thumbnails;
-    private readonly WorkspaceWorktreeCleanupService _worktreeCleanup;
+    private readonly WorkspaceWorktreeCleanupController _worktreeCleanup;
     private ProjectProfile? _selectedProject;
     private AgentTask? _selectedTask;
     private string _status = string.Empty;
     private bool _isLocked;
-    private Guid? _cleanupConfirmationTaskId;
     private readonly WorkspaceNavigationController _navigation;
     private readonly Dictionary<Guid, AgentTask> _projectlessTasks = [];
     private Guid? _pendingTaskId;
@@ -32,7 +31,9 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         _workspaces = workspaces;
         Environment = new WorkspaceTaskEnvironmentViewModel(worktreeReferences);
         _thumbnails = thumbnails;
-        _worktreeCleanup = worktreeCleanup;
+        _worktreeCleanup = new WorkspaceWorktreeCleanupController(worktreeCleanup,
+            () => SelectedProject, () => SelectedTask, CanCleanupWorktree,
+            task => UpsertTask(task), value => Status = value);
         WorktreeAuthorization = new(worktreeCleanup.Authorizations);
         ProjectEditor = new WorkspaceProjectEditorViewModel(projectService);
         ProjectEditor.ProjectCreated += AddProject;
@@ -59,7 +60,6 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
             () => !IsLocked, NavigateToHistoryTarget);
         NavigateBackCommand = _navigation.BackCommand;
         NavigateForwardCommand = _navigation.ForwardCommand;
-        CleanupWorktreeCommand = new AsyncRelayCommand(CleanupWorktreeAsync, CanCleanupWorktree);
     }
     public event Action? SelectionChanged;
     public event Action? TaskRunStateChanged;
@@ -85,7 +85,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public IRelayCommand<AgentTask> SelectTaskCommand { get; }
     public IRelayCommand NavigateBackCommand { get; }
     public IRelayCommand NavigateForwardCommand { get; }
-    public IAsyncRelayCommand CleanupWorktreeCommand { get; }
+    public IAsyncRelayCommand CleanupWorktreeCommand => _worktreeCleanup.Command;
     public ProjectProfile? SelectedProject
     {
         get => _selectedProject;
@@ -119,8 +119,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         set { if (!_isLocked) SetSelectedTask(value, loadMessages: true); }
     }
     public string Status { get => _status; private set => SetProperty(ref _status, value); }
-    public string CleanupWorktreeText =>
-        _cleanupConfirmationTaskId == SelectedTask?.Id ? "确认清理 Worktree" : "清理 Worktree";
+    public string CleanupWorktreeText => _worktreeCleanup.Text;
     public bool IsLocked
     {
         get => _isLocked;
@@ -134,7 +133,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
                 EditProjectCommand.NotifyCanExecuteChanged();
                 ProjectEditor.NotifyAvailabilityChanged();
                 _navigation.NotifyAvailabilityChanged();
-                CleanupWorktreeCommand.NotifyCanExecuteChanged();
+                _worktreeCleanup.NotifyAvailability();
                 TaskManagement.NotifyTaskRunStateChanged();
                 RefreshWorktreeAuthorization();
             }
@@ -389,7 +388,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         {
             return;
         }
-        CancelCleanupConfirmation();
+        _worktreeCleanup.CancelConfirmation();
         if (task is not null) _projectlessSelected = task.ProjectId is null;
         foreach (var group in ProjectNavigation)
         {
@@ -397,7 +396,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         }
         RecentTasks.SetSelectedTask(task?.Id);
         TaskManagement.SelectedTask = task;
-        CleanupWorktreeCommand.NotifyCanExecuteChanged();
+        _worktreeCleanup.NotifyAvailability();
         NotifySelectionChanged();
         if (loadMessages && task is not null)
         {
@@ -410,15 +409,15 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         RefreshWorktreeAuthorization();
         SelectionChanged?.Invoke();
     }
-    private bool CanCleanupWorktree() =>
+    private bool CanCleanupWorktree(AgentTask? task) =>
         !_isLocked
-        && !string.IsNullOrWhiteSpace(SelectedTask?.WorktreePath)
-        && (SelectedTask is null || !WorktreeAuthorization.BlocksTaskStart(SelectedTask.Id))
-        && (SelectedTask is null || IsTaskRunning?.Invoke(SelectedTask.Id) != true);
+        && !string.IsNullOrWhiteSpace(task?.WorktreePath)
+        && !WorktreeAuthorization.BlocksTaskStart(task!.Id)
+        && IsTaskRunning?.Invoke(task.Id) != true;
     public void NotifyTaskRunStateChanged()
     {
         RefreshWorktreeAuthorization();
-        CleanupWorktreeCommand.NotifyCanExecuteChanged();
+        _worktreeCleanup.NotifyAvailability();
         TaskManagement.NotifyTaskRunStateChanged();
         TaskRunStateChanged?.Invoke();
     }
@@ -443,44 +442,6 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
             unchanged = ReferenceEquals(Messages[index], active[index]);
         if (!unchanged) Messages.SynchronizeWith(active);
         return true;
-    }
-    private async Task CleanupWorktreeAsync()
-    {
-        if (SelectedProject is not { } project || SelectedTask is not { WorktreePath: not null } task)
-        {
-            return;
-        }
-        if (_cleanupConfirmationTaskId != task.Id)
-        {
-            _cleanupConfirmationTaskId = task.Id;
-            OnPropertyChanged(nameof(CleanupWorktreeText));
-            Status = "再次点击确认清理；有未提交变更时 Git 会拒绝删除。";
-            return;
-        }
-        try
-        {
-            var updated = await _worktreeCleanup.CleanupAsync(project, task, CancellationToken.None);
-            UpsertTask(updated);
-            Status = "任务 worktree 已安全移除，任务历史仍保留。";
-        }
-        catch (Exception)
-        {
-            Status = WorkspaceText.Get("TaskEnvironmentCleanupFailure");
-        }
-        finally
-        {
-            CancelCleanupConfirmation();
-            CleanupWorktreeCommand.NotifyCanExecuteChanged();
-        }
-    }
-    private void CancelCleanupConfirmation()
-    {
-        if (_cleanupConfirmationTaskId is null)
-        {
-            return;
-        }
-        _cleanupConfirmationTaskId = null;
-        OnPropertyChanged(nameof(CleanupWorktreeText));
     }
     private void ArchiveTask(AgentTask task)
     {

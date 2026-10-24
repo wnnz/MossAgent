@@ -33,7 +33,7 @@ internal sealed class WorkspaceAttachmentDraftCoordinator : IDisposable
             _synchronizing = true;
             try
             {
-                _project = project is null ? null : project with { AuthorizedDirectories = project.AuthorizedDirectories.ToArray() };
+                _project = project?.Snapshot();
                 _scope = new(project?.Id, taskId);
                 _attachments.SetContext(project, taskId, preserveItems);
                 var changed = _drafts.SelectContext(project?.Id, taskId);
