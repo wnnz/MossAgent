@@ -52,7 +52,7 @@ public sealed class WorkspaceWorktreeFlowTests
     }
 
     [Fact]
-    public async Task CancellingConversation_PreservesWorktreeAndDirtyCleanupRequiresExplicitConfirmation()
+    public async Task CancellingConversation_PreservesWorktree()
     {
         await using var owner = await WorkspaceWorktreeGitFixture.CreateAsync(pauseResponse: true);
         var fixture = owner.Fixture;
@@ -68,21 +68,8 @@ public sealed class WorkspaceWorktreeFlowTests
         Assert.True(Directory.Exists(path));
         var dirty = Path.Combine(path, "unsaved.txt");
         await File.WriteAllTextAsync(dirty, "keep this change", fixture.Token);
-        await workspace.Catalog.CleanupWorktreeCommand.ExecuteAsync(null);
-        Assert.True(File.Exists(dirty));
-        await workspace.Catalog.CleanupWorktreeCommand.ExecuteAsync(null);
-        Assert.True(File.Exists(dirty));
         Assert.Equal(path, workspace.Catalog.SelectedTask?.WorktreePath);
-        Assert.Equal(WorkspaceText.Get("TaskEnvironmentCleanupFailure"), workspace.Catalog.Status);
-        Assert.DoesNotContain(path, workspace.Catalog.Status);
         Assert.Equal(path, Assert.Single(await fixture.Tasks.GetTasksAsync(owner.Project.Id, fixture.Token)).WorktreePath);
-        File.Delete(dirty);
-        await workspace.Catalog.CleanupWorktreeCommand.ExecuteAsync(null);
-        Assert.True(Directory.Exists(path));
-        await workspace.Catalog.CleanupWorktreeCommand.ExecuteAsync(null);
-        Assert.False(Directory.Exists(path));
-        Assert.Null(workspace.Catalog.SelectedTask?.WorktreePath);
-        Assert.Null(Assert.Single(await fixture.Tasks.GetTasksAsync(owner.Project.Id, fixture.Token)).WorktreePath);
         Assert.NotEmpty(await fixture.Tasks.GetMessagesAsync(task.Id, fixture.Token));
     }
 

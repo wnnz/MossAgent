@@ -1,4 +1,4 @@
-<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:MossAgent.App.Controls"
              xmlns:views="clr-namespace:MossAgent.App.Views"
@@ -18,21 +18,21 @@
                      Classes="muted type-13" TextTrimming="CharacterEllipsis"
                      VerticalAlignment="Center" />
           <ui:AppIconButton Grid.Column="1" Classes="icon-compact"
-                            Label="项目操作" IconData="{StaticResource UiIconMore}">
+                            Label="{res:L '项目操作'}" IconData="{StaticResource UiIconMore}">
             <Button.Flyout>
               <ui:AppFlyout Placement="BottomEdgeAlignedRight" DismissOnButtonClick="True">
                 <ui:AppCard Classes="flyout-surface card-inset-tight">
                   <StackPanel Width="190">
-<ui:AppButton Content="文件变更审查" Classes="ghost align-leading"
+<ui:AppButton Content="{res:L '文件变更审查'}" Classes="ghost align-leading"
                             HorizontalAlignment="Stretch"
                             Command="{Binding SelectInspectorTabCommand}" CommandParameter="diff" />
-<ui:AppButton Content="终端" Classes="ghost align-leading"
+<ui:AppButton Content="{res:L '终端'}" Classes="ghost align-leading"
                             HorizontalAlignment="Stretch"
                             Command="{Binding SelectInspectorTabCommand}" CommandParameter="terminal" />
-<ui:AppButton Content="浏览器" Classes="ghost align-leading"
+<ui:AppButton Content="{res:L '浏览器'}" Classes="ghost align-leading"
                             HorizontalAlignment="Stretch"
                             Command="{Binding SelectInspectorTabCommand}" CommandParameter="browser" />
-<ui:AppButton Content="设置" Classes="ghost align-leading"
+<ui:AppButton Content="{res:L '设置'}" Classes="ghost align-leading"
                             HorizontalAlignment="Stretch"
                             Command="{Binding OpenSettingsCommand}" />
                   </StackPanel>
@@ -52,12 +52,12 @@
         </StackPanel>
 
         <Grid Classes="inspector-overview-sources" ColumnDefinitions="*,Auto">
-          <ui:AppText Text="来源" Classes="muted type-12"
+          <ui:AppText Text="{res:L '来源'}" Classes="muted type-12"
                      VerticalAlignment="Center" />
           <ui:AppIconButton Grid.Column="1" Classes="icon-compact"
                   Command="{Binding Workspace.Attachments.AddFilesCommand}"
                   CommandParameter="{Binding Workspace.Catalog.SelectedProject}"
-                  Label="附加授权目录中的文本文件" IconData="{StaticResource UiIconPlus}" />
+                  Label="{res:L '附加授权目录中的文本文件'}" IconData="{StaticResource UiIconPlus}" />
         </Grid>
         <StackPanel Classes="inspector-overview-source-list">
         <ui:AppBorder Padding="0,3" IsVisible="{Binding !Workspace.Attachments.HasItems}">
@@ -79,7 +79,7 @@
                   <ui:AppIcon Classes="ui-icon" Data="{StaticResource UiIconDocument}" />
                   <ui:AppText Grid.Column="1" Text="{Binding DisplayPath}" Classes="muted type-12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                   <ui:AppIconButton Grid.Column="2" Classes="icon-micro"
-                                    Command="{Binding RemoveCommand}" Label="移除来源"
+                                    Command="{Binding RemoveCommand}" Label="{res:L '移除来源'}"
                                     IconData="{StaticResource UiIconClose}" />
                 </Grid>
               </ui:AppBorder>
@@ -89,7 +89,7 @@
 <ui:AppActionButton Classes="ghost inspector-link align-leading"
                 HorizontalAlignment="Left"
                 Command="{Binding SelectInspectorTabCommand}" CommandParameter="sources"
-                Label="查看全部" IconData="{StaticResource UiIconSources}" />
+                Label="{res:L '查看全部'}" IconData="{StaticResource UiIconSources}" />
         </StackPanel>
         </StackPanel>
       </ui:AppCard>
@@ -182,7 +182,7 @@
         <Grid ColumnDefinitions="*,Auto" Margin="2,0,2,8">
           <ui:AppText Text="{Binding Audit.Status}" Classes="muted type-12" VerticalAlignment="Center" />
           <ui:AppIconButton Grid.Column="1" Command="{Binding Audit.RefreshCommand}"
-                            Label="刷新审计记录" IconData="{StaticResource UiIconRefresh}" />
+                            Label="{res:L '刷新审计记录'}" IconData="{StaticResource UiIconRefresh}" />
         </Grid>
 
         <ui:AppEmptyState Grid.Row="1" Title="{x:Static text:InspectorText.NoAudit}" Description="{Binding Audit.Status}"
@@ -199,7 +199,7 @@
         </ui:AppBorder>
 
         <StackPanel Grid.Row="2" Spacing="4" Margin="2,8,2,4">
-          <ui:AppText Text="生成产物" Classes="muted type-12 weight-semibold" />
+          <ui:AppText Text="{res:L '生成产物'}" Classes="muted type-12 weight-semibold" />
           <ui:AppText Text="{Binding Audit.ArtifactsStatus}" IsVisible="{Binding Audit.HasArtifacts}" Classes="type-11 subtle line-18" TextWrapping="Wrap" />
         </StackPanel>
         <ui:AppEmptyState Grid.Row="3" Classes="compact" Title="{x:Static text:InspectorText.NoArtifacts}" Description="{Binding Audit.ArtifactsStatus}"
@@ -223,13 +223,13 @@
       <StackPanel Spacing="12" Margin="16,12"
                   IsVisible="{Binding IsInspectorSources}">
         <Grid ColumnDefinitions="*,Auto">
-          <ui:AppText Classes="type-14 weight-semibold" Text="来源" VerticalAlignment="Center" />
+          <ui:AppText Classes="type-14 weight-semibold" Text="{res:L '来源'}" VerticalAlignment="Center" />
           <ui:AppIconButton Grid.Column="1"
                   Command="{Binding Workspace.Attachments.AddFilesCommand}"
                   CommandParameter="{Binding Workspace.Catalog.SelectedProject}"
-                  Label="添加来源" IconData="{StaticResource UiIconPlus}" />
+                  Label="{res:L '添加来源'}" IconData="{StaticResource UiIconPlus}" />
         </Grid>
-        <ui:AppText Text="项目目录" Classes="subtle type-11" />
+        <ui:AppText Text="{res:L '项目目录'}" Classes="subtle type-11" />
         <ui:AppText Classes="type-12" Text="{Binding Workspace.Catalog.SelectedProject.PrimaryDirectory}" TextWrapping="Wrap" />
         <ui:AppItemsControl ItemsSource="{Binding Workspace.Attachments.Items}">
           <ItemsControl.ItemTemplate>
@@ -239,7 +239,7 @@
                 <ui:AppButton Classes="ghost align-leading" Grid.Column="1" Content="{Binding DisplayPath}"
                               Command="{Binding $parent[views:InspectorPane].DataContext.Workspace.FilePreview.OpenCommand}" CommandParameter="{Binding FullPath}" />
                 <ui:AppIconButton Grid.Column="2" Command="{Binding RemoveCommand}"
-                                  Label="移除来源" IconData="{StaticResource UiIconClose}" />
+                                  Label="{res:L '移除来源'}" IconData="{StaticResource UiIconClose}" />
               </Grid>
             </DataTemplate>
           </ItemsControl.ItemTemplate>

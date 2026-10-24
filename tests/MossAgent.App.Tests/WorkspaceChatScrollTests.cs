@@ -31,7 +31,7 @@ public sealed class WorkspaceChatScrollTests
     {
         var repository = new TestWorkspaceRepository();
         var catalog = new WorkspaceCatalogViewModel(repository,
-            new WorkspaceWorktreeCleanupService(repository, null!),
+            null,
             new WorkspaceProjectService(repository, new TestFolderPickerService()));
         var task = new AgentTask(Guid.NewGuid(), Guid.NewGuid(), "streaming",
             ApprovalPolicy.AskEveryTime, AgentTaskStatus.Running,

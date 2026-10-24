@@ -178,7 +178,6 @@
   <data name="TaskEnvironmentReferenceNext" xml:space="preserve"><value>下一页</value></data>
   <data name="TaskEnvironmentExistingHint" xml:space="preserve"><value>对话开始后执行目录固定；如需切换项目目录或独立工作树，请创建新对话。</value></data>
   <data name="TaskEnvironmentRecoveryNotice" xml:space="preserve"><value>工作树未被强制删除，位置：{0}。请先刷新任务，检查任务是否已保存及目录中的改动，再手动恢复；不要反复发送来重试创建。</value></data>
-  <data name="TaskEnvironmentCleanupFailure" xml:space="preserve"><value>无法完成工作树清理。请刷新任务并检查目录中的未提交改动或文件占用，然后再确认重试；不会强制删除工作树。</value></data>
   <data name="CancelPreparationLabel" xml:space="preserve"><value>取消发送准备</value></data>
   <data name="CancellingPreparationLabel" xml:space="preserve"><value>正在取消发送准备</value></data>
   <data name="PreparationCancelled" xml:space="preserve"><value>已取消发送准备，输入内容和附件已保留。</value></data>
@@ -274,9 +273,5 @@
 <data name="WorktreeCleanupFailureGit" xml:space="preserve"><value>Git 删除失败</value></data>
 <data name="WorktreeCleanupOrphanRemoved" xml:space="preserve"><value>目标目录已删除，任务关联未更新</value></data>
 <data name="WorktreeCleanupOrphanRetained" xml:space="preserve"><value>目标目录仍存在，清理未完成</value></data>
-<data name="WorktreeCleanupAction" xml:space="preserve"><value>清理 Worktree</value></data>
-<data name="WorktreeCleanupConfirm" xml:space="preserve"><value>确认清理 Worktree</value></data>
-<data name="WorktreeCleanupConfirmHint" xml:space="preserve"><value>再次点击确认清理；有未提交变更时 Git 会拒绝删除。</value></data>
-<data name="WorktreeCleanupSuccess" xml:space="preserve"><value>任务 worktree 已安全移除，任务历史仍保留。</value></data>
 <data name="TaskOpenedActivity" xml:space="preserve"><value>已打开任务：{0}</value></data>
 </root>

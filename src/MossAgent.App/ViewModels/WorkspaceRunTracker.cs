@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.ViewModels;
 
 public sealed class WorkspaceRunTracker : IDisposable
@@ -24,7 +25,7 @@ public sealed class WorkspaceRunTracker : IDisposable
         {
             ObjectDisposedException.ThrowIf(_stopping, this);
             if (!_runs.TryAdd(state.Task.Id, state))
-                throw new InvalidOperationException("该任务已经在运行。");
+                throw new InvalidOperationException(UiText.T("该任务已经在运行。"));
         }
     }
 
@@ -109,3 +110,4 @@ public sealed class WorkspaceRunTracker : IDisposable
         }
     }
 }
+

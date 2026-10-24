@@ -6,7 +6,7 @@
              x:CompileBindings="False">
   <ui:AppScrollViewer Classes="settings-page-scroll">
     <StackPanel Spacing="0" Margin="0,0,0,32">
-      <ui:AppText Text="外观" Classes="settings-title" />
+      <ui:AppText Text="{resources:L '外观'}" Classes="settings-title" />
       <ui:AppText Text="{x:Static resources:AppearanceText.VisualStyle}" Classes="settings-section-title settings-theme-heading" />
       <ui:AppThemeModePicker />
       <ui:AppThemePaletteCard DataContext="{Binding ActivePalette}" Margin="0,16,0,0" />

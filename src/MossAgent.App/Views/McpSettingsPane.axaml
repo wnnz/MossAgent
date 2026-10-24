@@ -1,4 +1,4 @@
-<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:MossAgent.App.Controls"
              xmlns:labels="clr-namespace:MossAgent.App.Resources"
@@ -9,7 +9,7 @@
   </ui:AppUserControl.Resources>
   <Grid>
     <Grid Classes="settings-content-column" RowDefinitions="Auto,*">
-        <ui:AppSettingsPageHeader Classes="separated" Title="插件" Description="通过 MCP 连接外部工具和服务。"
+        <ui:AppSettingsPageHeader Classes="separated" Title="{res:L '插件'}" Description="{res:L '通过 MCP 连接外部工具和服务。'}"
                                   Status="{Binding Status}" IsStatusError="{Binding HasStatusError}">
           <ui:AppSettingsPageHeader.Actions>
             <StackPanel Classes="settings-header-actions">
@@ -17,15 +17,15 @@
                             Command="{Binding ReloadCommand}" IsVisible="{Binding !ReloadCommand.IsRunning}" />
               <ui:AppButton Content="{x:Static labels:McpSettingsLabels.CancelReconnect}" Classes="ghost"
                             Command="{Binding CancelReloadCommand}" IsVisible="{Binding ReloadCommand.IsRunning}" />
-              <ui:AppActionButton Label="添加 MCP 服务" IconData="{StaticResource UiIconPlus}" Classes="primary" Command="{Binding OpenCreateFormCommand}" />
+              <ui:AppActionButton Label="{res:L '添加 MCP 服务'}" IconData="{StaticResource UiIconPlus}" Classes="primary" Command="{Binding OpenCreateFormCommand}" />
             </StackPanel>
           </ui:AppSettingsPageHeader.Actions>
         </ui:AppSettingsPageHeader>
     <ui:AppCard Grid.Row="1" Classes="card card-inset-list settings-catalog-card">
       <Grid RowDefinitions="Auto,*">
         <ui:AppEmptyState Classes="settings-empty" IsVisible="{Binding HasNoItems}"
-                          IconData="{StaticResource UiIconPlug}" Title="还没有 MCP 服务"
-                          Description="添加服务后，它提供的工具会在允许的任务中可用。" />
+                          IconData="{StaticResource UiIconPlug}" Title="{res:L '还没有 MCP 服务'}"
+                          Description="{res:L '添加服务后，它提供的工具会在允许的任务中可用。'}" />
         <ui:AppListBox Grid.Row="1" Classes="settings-catalog-list" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}"
                        IsEnabled="{Binding CanEdit}">
           <ListBox.ItemTemplate>
@@ -49,7 +49,7 @@
                           Title="{Binding EditorTitle}" CloseCommand="{Binding CloseFormCommand}">
             <StackPanel Spacing="9">
             <ui:AppText Text="{x:Static labels:McpSettingsLabels.ServerName}" Classes="muted type-12" />
-            <ui:AppInput Text="{Binding Name}" PlaceholderText="例如 filesystem"
+            <ui:AppInput Text="{Binding Name}" PlaceholderText="{res:L '例如 filesystem'}"
                          AutomationProperties.Name="{x:Static labels:McpSettingsLabels.ServerName}" />
             <ui:AppText Text="{x:Static labels:McpSettingsLabels.Transport}" Classes="muted type-12" />
             <ui:AppComboBox ItemsSource="{Binding TransportOptions}" SelectedItem="{Binding SelectedTransportOption}"
@@ -57,7 +57,7 @@
                             DisplayMemberBinding="{Binding DisplayName}" HorizontalAlignment="Stretch" />
             <StackPanel Spacing="9" IsVisible="{Binding IsStdioTransport}">
               <ui:AppText Text="{x:Static labels:McpSettingsLabels.Command}" Classes="muted type-12" />
-              <ui:AppInput Text="{Binding Command}" PlaceholderText="例如 npx"
+              <ui:AppInput Text="{Binding Command}" PlaceholderText="{res:L '例如 npx'}"
                            AutomationProperties.Name="{x:Static labels:McpSettingsLabels.Command}" />
               <ui:AppText Text="{x:Static labels:McpSettingsLabels.Arguments}" Classes="muted type-12" />
               <ui:AppInput Text="{Binding ArgumentsJson}" AcceptsReturn="True" Classes="code-font json-editor"
@@ -81,15 +81,15 @@
                               AutomationProperties.Name="{x:Static labels:McpSettingsLabels.Proxy}"
                               DisplayMemberBinding="{Binding Name}" HorizontalAlignment="Stretch" />
             </StackPanel>
-            <ui:AppCheckBox Content="启用此 MCP Server" IsChecked="{Binding IsEnabled}" Margin="0,4" />
+            <ui:AppCheckBox Content="{res:L '启用此 MCP Server'}" IsChecked="{Binding IsEnabled}" Margin="0,4" />
             </StackPanel>
           <ui:AppSettingsDialog.Footer>
           <StackPanel Spacing="4">
             <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-              <ui:AppButton Classes="primary" Content="保存并连接" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
+              <ui:AppButton Classes="primary" Content="{res:L '保存并连接'}" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
               <ui:AppButton Grid.Column="1" Classes="danger" Content="{Binding DeleteButtonText}"
                             Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}" />
-              <ui:AppButton Grid.Column="2" Content="取消" Command="{Binding CloseFormCommand}" />
+              <ui:AppButton Grid.Column="2" Content="{res:L '取消'}" Command="{Binding CloseFormCommand}" />
             </Grid>
             <ui:AppText Text="{Binding Status}" Classes="subtle type-11" Classes.status-error="{Binding HasStatusError}"
                         TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />

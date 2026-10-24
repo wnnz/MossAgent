@@ -1,4 +1,4 @@
-<ui:AppWindow xmlns="https://github.com/avaloniaui"
+<ui:AppWindow xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:MossAgent.App.Controls"
         xmlns:views="clr-namespace:MossAgent.App.Views"
@@ -52,12 +52,12 @@
         <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
           <ui:AppIconButton Classes="navigation-history"
                   Command="{Binding Workspace.Catalog.NavigateBackCommand}"
-                  Label="返回上一个会话" IconData="{StaticResource UiIconArrowLeft}" />
+                  Label="{res:L '返回上一个会话'}" IconData="{StaticResource UiIconArrowLeft}" />
           <ui:AppIconButton Classes="navigation-history"
                   Command="{Binding Workspace.Catalog.NavigateForwardCommand}"
-                  Label="前进到下一个会话" IconData="{StaticResource UiIconArrowRight}" />
+                  Label="{res:L '前进到下一个会话'}" IconData="{StaticResource UiIconArrowRight}" />
           <ui:AppIconButton Classes="navigation-history titlebar-panel"
-                  Click="HandleNavigationToggle" Label="切换侧边栏"
+                  Click="HandleNavigationToggle" Label="{res:L '切换侧边栏'}"
                   IconData="{StaticResource UiIconPanel}">
             <ui:AppIconButton.IsVisible>
               <MultiBinding Converter="{x:Static BoolConverters.And}">
@@ -77,15 +77,15 @@
                       Classes.settings-mode="{Binding IsSettingsOpen}"
                       Classes.settings-navigation-wide="{Binding !Navigation.IsCompact, ElementName=SettingsView}"
                       Classes.settings-navigation-visible="{Binding #SettingsView.Navigation.IsNavigationVisible}">
-          <ui:AppButton Content="文件" Classes="ghost menu-trigger">
+          <ui:AppButton Content="{res:L '文件'}" Classes="ghost menu-trigger">
             <Button.Flyout>
               <ui:AppFlyout Placement="BottomEdgeAlignedLeft" DismissOnButtonClick="True">
                 <ui:AppCard Classes="flyout-surface">
                   <StackPanel Width="180">
-<ui:AppButton Content="新建任务" Classes="ghost align-leading"
+<ui:AppButton Content="{res:L '新建任务'}" Classes="ghost align-leading"
                             HorizontalAlignment="Stretch"
                             Command="{Binding Workspace.Catalog.NewTaskCommand}" />
-<ui:AppButton Content="设置" Classes="ghost align-leading"
+<ui:AppButton Content="{res:L '设置'}" Classes="ghost align-leading"
                             HorizontalAlignment="Stretch"
                             Command="{Binding OpenSettingsCommand}" />
                   </StackPanel>
@@ -94,24 +94,24 @@
             </Button.Flyout>
           </ui:AppButton>
           <ui:AppEditMenu />
-          <ui:AppButton Content="视图" Classes="ghost menu-trigger">
+          <ui:AppButton Content="{res:L '视图'}" Classes="ghost menu-trigger">
             <Button.Flyout>
               <ui:AppFlyout Placement="BottomEdgeAlignedLeft" DismissOnButtonClick="True">
                 <ui:AppCard Classes="flyout-surface">
                   <StackPanel Width="190">
-<ui:AppButton Content="切换明暗主题" Classes="ghost align-leading"
+<ui:AppButton Content="{res:L '切换明暗主题'}" Classes="ghost align-leading"
                             HorizontalAlignment="Stretch"
                             Command="{Binding ToggleThemeCommand}" />
-<ui:AppButton Content="切换检查器" Classes="ghost align-leading"
+<ui:AppButton Content="{res:L '切换检查器'}" Classes="ghost align-leading"
                             HorizontalAlignment="Stretch"
                             Command="{Binding ToggleRightPanelCommand}" />
-<ui:AppButton Content="切换底部终端面板" Classes="ghost align-leading"
+<ui:AppButton Content="{res:L '切换底部终端面板'}" Classes="ghost align-leading"
                             HorizontalAlignment="Stretch"
                             Command="{Binding ToggleBottomPanelCommand}" />
-<ui:AppButton Content="文件变更审查" Classes="ghost align-leading"
+<ui:AppButton Content="{res:L '文件变更审查'}" Classes="ghost align-leading"
                             HorizontalAlignment="Stretch"
                             Command="{Binding SelectInspectorTabCommand}" CommandParameter="diff" />
-<ui:AppButton Content="终端" Classes="ghost align-leading"
+<ui:AppButton Content="{res:L '终端'}" Classes="ghost align-leading"
                             HorizontalAlignment="Stretch"
                             Command="{Binding SelectInspectorTabCommand}" CommandParameter="terminal" />
                   </StackPanel>
@@ -119,7 +119,7 @@
               </ui:AppFlyout>
             </Button.Flyout>
           </ui:AppButton>
-          <ui:AppButton Content="帮助" Classes="ghost menu-trigger">
+          <ui:AppButton Content="{res:L '帮助'}" Classes="ghost menu-trigger">
             <Button.Flyout>
               <ui:AppFlyout Placement="BottomEdgeAlignedLeft">
                 <views:KeyboardShortcutsFlyoutView />
@@ -131,16 +131,16 @@
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="0" VerticalAlignment="Center">
           <ui:AppIconButton Classes="window-control window-minimize"
                   Command="{Binding MinimizeWindowCommand}"
-                  CommandParameter="{Binding #RootWindow}" Label="最小化"
+                  CommandParameter="{Binding #RootWindow}" Label="{res:L '最小化'}"
                   IconData="{StaticResource UiIconMinimize}" />
           <ui:AppIconButton x:Name="MaximizeButton" Classes="window-control window-maximize"
                   Command="{Binding ToggleMaximizeWindowCommand}"
-                  CommandParameter="{Binding #RootWindow}" Label="最大化或还原"
+                  CommandParameter="{Binding #RootWindow}" Label="{res:L '最大化或还原'}"
                   IconData="{StaticResource UiIconMaximize}"
                   AlternateIconData="{StaticResource UiIconRestore}" />
           <ui:AppIconButton Classes="closeButton window-control"
                   Command="{Binding CloseWindowCommand}"
-                  CommandParameter="{Binding #RootWindow}" Label="关闭"
+                  CommandParameter="{Binding #RootWindow}" Label="{res:L '关闭'}"
                   IconData="{StaticResource UiIconClose}" />
         </StackPanel>
       </Grid>

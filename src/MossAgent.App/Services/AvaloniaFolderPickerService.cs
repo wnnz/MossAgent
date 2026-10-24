@@ -1,6 +1,7 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.Services;
 
 public sealed class AvaloniaFolderPickerService : IFolderPickerService
@@ -16,10 +17,11 @@ public sealed class AvaloniaFolderPickerService : IFolderPickerService
         var folders = await window.StorageProvider.OpenFolderPickerAsync(
             new FolderPickerOpenOptions
             {
-                Title = "选择项目目录",
+                Title = UiText.T("选择项目目录"),
                 AllowMultiple = false
             });
         cancellationToken.ThrowIfCancellationRequested();
         return folders.FirstOrDefault()?.Path.LocalPath;
     }
 }
+

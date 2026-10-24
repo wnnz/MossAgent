@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.Tools.Abstractions;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.ViewModels;
 
 public sealed class ChatMessageViewModel : ObservableObject
@@ -103,7 +104,7 @@ public sealed class ChatMessageViewModel : ObservableObject
     /// <summary>
     /// 用户发言显示为靠右的独立消息气泡；工具与其他角色不适用此布局。
     /// </summary>
-    public bool IsUserMessage => !IsTool && Role == "你";
+    public bool IsUserMessage => !IsTool && Role == UiText.T("你");
 
     /// <summary>
     /// 非用户的普通消息继续使用分块渲染，以保留代码和 Markdown 展示能力。
@@ -170,6 +171,7 @@ public sealed class ChatMessageViewModel : ObservableObject
         string? callId = null,
         bool isRunning = false,
         DateTimeOffset? createdAt = null) =>
-        new("工具", tool.Summary, tool, toolCallId: callId,
+        new(UiText.T("工具"), tool.Summary, tool, toolCallId: callId,
             isToolRunning: isRunning, createdAt: createdAt);
 }
+

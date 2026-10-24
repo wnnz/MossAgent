@@ -25,7 +25,7 @@ public sealed class SettingsVisualFidelityTests
         AssertSetter(layout, "Grid.settings-content-column", "Margin", "28,74,38,34");
         AssertSetter(layout, "StackPanel.titlebar-menu-group", "Margin", "10,0,0,0");
         var appearanceNavigation = Assert.Single(navigation.Descendants(), element =>
-            element.Name.LocalName == "AppSettingsNavButton" && element.Attribute("Label")?.Value == "外观");
+            element.Name.LocalName == "AppSettingsNavButton" && LocalizableText.Unwrap(element.Attribute("Label")?.Value) == "外观");
         Assert.Equal("{StaticResource UiIconAppearance}", appearanceNavigation.Attribute("IconData")?.Value);
 
         var section = Assert.Single(appearance.Descendants(), element =>

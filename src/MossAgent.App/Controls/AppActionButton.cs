@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Layout;
 using Avalonia.Media;
+using MossAgent.App.Resources;
 
 namespace MossAgent.App.Controls;
 
@@ -124,7 +125,7 @@ public sealed class AppActionButton : AppButton
         {
             SetValue(AutomationProperties.NameProperty, string.IsNullOrWhiteSpace(BadgeText)
                 ? Label ?? string.Empty
-                : $"{Label}，{BadgeText}", BindingPriority.Style);
+                : UiText.T("{0}，{1}", Label, BadgeText), BindingPriority.Style);
         }
     }
 

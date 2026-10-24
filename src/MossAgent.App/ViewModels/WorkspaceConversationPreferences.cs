@@ -2,6 +2,7 @@ using System.ComponentModel;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.ViewModels;
 
 public sealed class WorkspaceConversationPreferences : IDisposable
@@ -49,7 +50,7 @@ public sealed class WorkspaceConversationPreferences : IDisposable
         if (!_models.CanUseSelectedModel || _models.SelectedItem is not { } item) return null;
         var followAgent = _agents.PreferredProfileId is not null && _agents.FollowsAgentReasoning;
         return new(item.Provider.Id, item.Model.Id,
-            followAgent || _models.SelectedReasoning == "默认" ? null : _models.EffectiveReasoningEffort,
+            followAgent || _models.SelectedReasoning == UiText.T("默认") ? null : _models.EffectiveReasoningEffort,
             _agents.PreferredProfileId, followAgent);
     }
 
@@ -218,3 +219,4 @@ public sealed class WorkspaceConversationPreferences : IDisposable
         _models.RefreshConversationRequested -= RefreshAsync;
     }
 }
+

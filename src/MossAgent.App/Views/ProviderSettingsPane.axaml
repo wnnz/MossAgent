@@ -1,4 +1,4 @@
-<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:MossAgent.App.Controls"
              x:Class="MossAgent.App.Views.ProviderSettingsPane"
@@ -10,14 +10,14 @@
         <StackPanel Spacing="10">
           <Grid ColumnDefinitions="*,Auto">
             <ui:AppText Classes="type-17 weight-semibold" Text="{Binding EditorTitle}" />
-            <ui:AppButton Grid.Column="1" Content="新建" Command="{Binding NewCommand}" />
+            <ui:AppButton Grid.Column="1" Content="{res:L '新建'}" Command="{Binding NewCommand}" />
           </Grid>
-          <ui:AppText Text="API Key 将按当前设置保存在本机 SQLite。" Classes="subtle" TextWrapping="Wrap" />
+          <ui:AppText Text="{res:L 'API Key 将按当前设置保存在本机 SQLite。'}" Classes="subtle" TextWrapping="Wrap" />
 
-          <ui:AppText Text="供应商名称" Classes="muted" />
-          <ui:AppInput Text="{Binding Name}" PlaceholderText="例如 OpenAI / DeepSeek" />
+          <ui:AppText Text="{res:L '供应商名称'}" Classes="muted" />
+          <ui:AppInput Text="{Binding Name}" PlaceholderText="{res:L '例如 OpenAI / DeepSeek'}" />
 
-          <ui:AppText Text="协议类型" Classes="muted" />
+          <ui:AppText Text="{res:L '协议类型'}" Classes="muted" />
           <ui:AppComboBox ItemsSource="{Binding Protocols}" SelectedItem="{Binding Protocol}" HorizontalAlignment="Stretch" />
 
           <ui:AppText Text="Base URL" Classes="muted" />
@@ -26,20 +26,20 @@
           <ui:AppText Text="API Key" Classes="muted" />
           <ui:AppInput Text="{Binding ApiKey}" PasswordChar="●" />
 
-          <ui:AppText Text="网络代理" Classes="muted" />
+          <ui:AppText Text="{res:L '网络代理'}" Classes="muted" />
           <ui:AppComboBox ItemsSource="{Binding Proxies}" SelectedItem="{Binding SelectedProxy}"
                     DisplayMemberBinding="{Binding Name}" HorizontalAlignment="Stretch" />
 
-          <ui:AppText Text="额外请求头 JSON" Classes="muted" />
+          <ui:AppText Text="{res:L '额外请求头 JSON'}" Classes="muted" />
           <ui:AppInput Text="{Binding HeadersJson}" AcceptsReturn="True" Classes="code-font field-multiline" />
 
           <WrapPanel Margin="0,4">
-            <ui:AppCheckBox Content="设为默认供应商" IsChecked="{Binding IsDefault}" Margin="0,0,16,0" />
-            <ui:AppCheckBox Content="启用此供应商" IsChecked="{Binding IsEnabled}" />
+            <ui:AppCheckBox Content="{res:L '设为默认供应商'}" IsChecked="{Binding IsDefault}" Margin="0,0,16,0" />
+            <ui:AppCheckBox Content="{res:L '启用此供应商'}" IsChecked="{Binding IsEnabled}" />
           </WrapPanel>
 
           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="0,6,0,0">
-            <ui:AppButton Classes="primary" Content="保存供应商" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
+            <ui:AppButton Classes="primary" Content="{res:L '保存供应商'}" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
             <ui:AppButton Grid.Column="1" Classes="danger" Content="{Binding DeleteButtonText}" Command="{Binding DeleteCommand}" />
           </Grid>
 
@@ -52,8 +52,8 @@
     <ui:AppCard Grid.Column="1" Classes="card">
       <Grid RowDefinitions="Auto,*">
         <Grid ColumnDefinitions="*,Auto">
-          <ui:AppText Classes="type-17 weight-semibold" Text="已配置供应商" />
-          <ui:AppButton Grid.Column="1" Content="刷新" Command="{Binding RefreshCommand}" />
+          <ui:AppText Classes="type-17 weight-semibold" Text="{res:L '已配置供应商'}" />
+          <ui:AppButton Grid.Column="1" Content="{res:L '刷新'}" Command="{Binding RefreshCommand}" />
         </Grid>
         <ui:AppListBox Grid.Row="1" Margin="0,12,0,0" ItemsSource="{Binding Items}"
                  SelectedItem="{Binding SelectedItem}">

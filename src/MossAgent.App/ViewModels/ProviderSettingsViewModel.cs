@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.ViewModels;
 
 public sealed class ProviderSettingsViewModel : SettingsEditorViewModel, IDisposable
@@ -153,7 +154,7 @@ public sealed class ProviderSettingsViewModel : SettingsEditorViewModel, IDispos
         get => _hasValidationError;
         private set => SetProperty(ref _hasValidationError, value);
     }
-    public string EditorTitle => SelectedItem is null ? "添加 AI 提供商" : "编辑 AI 提供商";
+    public string EditorTitle => SelectedItem is null ? UiText.T("添加 AI 提供商") : UiText.T("编辑 AI 提供商");
     public string ApiKeyPlaceholder => Labels.GetString(
         SelectedItem is null ? "NewApiKeyPlaceholder" : "EditApiKeyPlaceholder")
         ?? throw new InvalidOperationException("Missing provider API Key placeholder resource.");
@@ -162,8 +163,8 @@ public sealed class ProviderSettingsViewModel : SettingsEditorViewModel, IDispos
     public string EditorNotice => IsEditorTargetUnavailable ? ProxyLabel("ProviderTargetUnavailable") : Catalog.Notice;
     public bool HasEditorNotice => IsEditorTargetUnavailable || Catalog.HasNotice;
     public string DeleteButtonText => SelectedItem is not null && _deleteConfirmationId == SelectedItem.Id
-        ? "确认删除"
-        : "删除";
+        ? UiText.T("确认删除")
+        : UiText.T("删除");
 
     private async Task<bool> LoadAsync()
     {
@@ -220,14 +221,14 @@ public sealed class ProviderSettingsViewModel : SettingsEditorViewModel, IDispos
         var selectedId = SelectedItem?.Id;
         if (string.IsNullOrWhiteSpace(Name))
         {
-            SetValidationError("请输入提供商名称。");
+            SetValidationError(UiText.T("请输入提供商名称。"));
             return;
         }
 
         if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out var uri)
             || !IsSupportedBaseUri(uri))
         {
-            SetValidationError("请填写有效的 HTTP/HTTPS Base URL，且不要在 URL 中嵌入账号或密码。");
+            SetValidationError(UiText.T("请填写有效的 HTTP/HTTPS Base URL，且不要在 URL 中嵌入账号或密码。"));
             return;
         }
 
@@ -238,7 +239,7 @@ public sealed class ProviderSettingsViewModel : SettingsEditorViewModel, IDispos
         }
         catch (JsonException)
         {
-            SetValidationError("额外请求头必须是字符串键值 JSON 对象。");
+            SetValidationError(UiText.T("额外请求头必须是字符串键值 JSON 对象。"));
             return;
         }
 
@@ -275,7 +276,7 @@ public sealed class ProviderSettingsViewModel : SettingsEditorViewModel, IDispos
         }
         if (unchanged)
         {
-            Status = selectedId is null ? "提供商已添加。" : "提供商设置已更新。";
+            Status = selectedId is null ? UiText.T("提供商已添加。") : UiText.T("提供商设置已更新。");
             IsFormOpen = false;
             ResetEditor();
         }
@@ -294,7 +295,7 @@ public sealed class ProviderSettingsViewModel : SettingsEditorViewModel, IDispos
         {
             _deleteConfirmationId = provider.Id;
             OnPropertyChanged(nameof(DeleteButtonText));
-            Status = "再次点击确认删除；该提供商下的模型配置也会删除。";
+            Status = UiText.T("再次点击确认删除；该提供商下的模型配置也会删除。");
             return;
         }
 
@@ -303,7 +304,7 @@ public sealed class ProviderSettingsViewModel : SettingsEditorViewModel, IDispos
             Catalog.LifetimeToken, message => { if (!_disposed && revision == EditorRevision) SetValidationError(message); }, "ProviderDeleteFailed")) return;
         if (revision == EditorRevision)
         {
-            Status = $"已删除提供商：{provider.Name}";
+            Status = UiText.T("已删除提供商：{0}", provider.Name);
             IsFormOpen = false;
             ResetEditor();
         }
@@ -326,7 +327,7 @@ public sealed class ProviderSettingsViewModel : SettingsEditorViewModel, IDispos
         }
         else
         {
-            Status = "API Key 留空将保留当前值。";
+            Status = UiText.T("API Key 留空将保留当前值。");
         }
     }
 
@@ -487,3 +488,4 @@ public sealed class ProviderSettingsViewModel : SettingsEditorViewModel, IDispos
         HandleCatalogStateChanged(this, new PropertyChangedEventArgs(null));
     }
 }
+

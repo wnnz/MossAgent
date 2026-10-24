@@ -140,11 +140,11 @@ public sealed class McpSettingsViewModel : SettingsEditorViewModel, IDisposable
         }
     }
 
-    public string EditorTitle => SelectedItem is null ? "添加 MCP Server" : "编辑 MCP Server";
+    public string EditorTitle => SelectedItem is null ? UiText.T("添加 MCP Server") : UiText.T("编辑 MCP Server");
     public bool CanDelete => SelectedItem is not null;
     public bool HasStatus => !string.IsNullOrWhiteSpace(Status);
     public bool HasStatusError { get => _hasStatusError; private set => SetProperty(ref _hasStatusError, value); }
-    public string DeleteButtonText => _deleteConfirmationPending ? "确认删除" : "删除";
+    public string DeleteButtonText => _deleteConfirmationPending ? UiText.T("确认删除") : UiText.T("删除");
     public string Status
     {
         get => _status;
@@ -199,8 +199,8 @@ public sealed class McpSettingsViewModel : SettingsEditorViewModel, IDisposable
         }
         var connectionFailed = _manager.Errors.TryGetValue(profile.Name, out var connectionError);
         SetStatus(connectionFailed
-            ? $"已保存 MCP server：{profile.Name}，但连接失败：{connectionError}"
-            : $"已保存 MCP server：{profile.Name}", connectionFailed);
+            ? UiText.T("已保存 MCP server：{0}，但连接失败：{1}", profile.Name, connectionError)
+            : UiText.T("已保存 MCP server：{0}", profile.Name), connectionFailed);
         IsFormOpen = connectionFailed;
     }, cancellationToken, "McpSaveFailed");
 
@@ -224,10 +224,10 @@ public sealed class McpSettingsViewModel : SettingsEditorViewModel, IDisposable
             || !OwnsEditor(revision)) return;
         var connectionFailed = updated.IsEnabled && _manager.Errors.ContainsKey(updated.Name);
         SetStatus(!updated.IsEnabled
-            ? "MCP server 已禁用。"
+            ? UiText.T("MCP server 已禁用。")
             : _manager.Errors.TryGetValue(updated.Name, out var error)
-                ? $"MCP server 已启用，但连接失败：{error}"
-                : "MCP server 已启用并连接。", connectionFailed);
+                ? UiText.T("MCP server 已启用，但连接失败：{0}", error)
+                : UiText.T("MCP server 已启用并连接。"), connectionFailed);
     }, cancellationToken, "McpToggleFailed");
 
     private Task DeleteAsync(CancellationToken cancellationToken) => RunMutationAsync(async (revision, token) =>
@@ -241,7 +241,7 @@ public sealed class McpSettingsViewModel : SettingsEditorViewModel, IDisposable
         {
             _deleteConfirmationPending = true;
             OnPropertyChanged(nameof(DeleteButtonText));
-            SetStatus($"再次点击“确认删除”以删除 {selected.Name}。");
+            SetStatus(UiText.T("再次点击“确认删除”以删除 {0}。", selected.Name));
             return;
         }
 
@@ -263,7 +263,7 @@ public sealed class McpSettingsViewModel : SettingsEditorViewModel, IDisposable
             revision = EditorRevision;
         }
         if (await TryRefreshAsync(null, revision, token, "McpDeletedRefreshFailed") && OwnsEditor(revision))
-            SetStatus($"已删除 MCP server：{selected.Name}");
+            SetStatus(UiText.T("已删除 MCP server：{0}", selected.Name));
     }, cancellationToken, "McpDeleteFailed");
 
     private async Task<bool> TryRefreshAsync(Guid? selectedId, long revision, CancellationToken token, string failureKey)
@@ -319,7 +319,7 @@ public sealed class McpSettingsViewModel : SettingsEditorViewModel, IDisposable
         }
         catch (Exception)
         {
-            if (generation == _catalog.Generation) SetStatus("无法加载 MCP 服务列表，请检查数据目录并重试。", true);
+            if (generation == _catalog.Generation) SetStatus(UiText.T("无法加载 MCP 服务列表，请检查数据目录并重试。"), true);
         }
     }
 
@@ -351,7 +351,7 @@ public sealed class McpSettingsViewModel : SettingsEditorViewModel, IDisposable
     {
         var count = _tools.Descriptors.Count(tool => tool.Name.StartsWith("mcp.", StringComparison.Ordinal));
         SetStatus(_manager.Errors.Count == 0
-            ? $"MCP 已重新加载，共发现 {count} 个工具。"
+            ? UiText.T("MCP 已重新加载，共发现 {0} 个工具。", count)
             : string.Join("；", _manager.Errors.Select(static pair => $"{pair.Key}: {pair.Value}")), _manager.Errors.Count > 0);
     }
 
@@ -465,3 +465,4 @@ public sealed class McpSettingsViewModel : SettingsEditorViewModel, IDisposable
         OnPropertyChanged(nameof(DeleteButtonText));
     }
 }
+

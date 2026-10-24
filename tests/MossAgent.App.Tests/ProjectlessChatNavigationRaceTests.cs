@@ -18,7 +18,7 @@ public sealed class ProjectlessChatNavigationRaceTests
         repository.ProjectItems = [project];
         repository.ProjectlessTasks = [old];
         var catalog = new WorkspaceCatalogViewModel(repository,
-            new WorkspaceWorktreeCleanupService(repository, null!),
+            null,
             new WorkspaceProjectService(repository, new TestFolderPickerService()));
         await catalog.ReloadAsync();
         var response = new TaskCompletionSource<IReadOnlyList<AgentTask>>();

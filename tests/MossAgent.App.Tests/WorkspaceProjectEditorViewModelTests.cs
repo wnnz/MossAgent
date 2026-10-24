@@ -4,8 +4,23 @@ using Xunit;
 
 namespace MossAgent.App.Tests;
 
-public sealed class WorkspaceProjectEditorViewModelTests
+public sealed class WorkspaceProjectEditorViewModelTests : IDisposable
 {
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "MossAgent.Tests", Guid.NewGuid().ToString("N"));
+
+    private string NewDirectory(string name)
+    {
+        var path = Path.Combine(_root, name);
+        Directory.CreateDirectory(path);
+        return path;
+    }
+
+    public void Dispose()
+    {
+        try { Directory.Delete(_root, recursive: true); }
+        catch (IOException) { }
+    }
+
     [Fact]
     public void OpenCommand_OpensEditor()
     {
@@ -23,7 +38,7 @@ public sealed class WorkspaceProjectEditorViewModelTests
     {
         var repository = new TestWorkspaceRepository();
         var service = new WorkspaceProjectService(
-            repository, new TestFolderPickerService("D:\\Dev\\MossAgent"));
+            repository, new TestFolderPickerService(NewDirectory("MossAgent")));
         var editor = new WorkspaceProjectEditorViewModel(service)
         {
             IsOpen = true,
@@ -80,8 +95,9 @@ public sealed class WorkspaceProjectEditorViewModelTests
     public async Task SetPrimaryCommand_MovesDirectoryToFirstAndPersistsItAsPrimary()
     {
         var repository = new TestWorkspaceRepository();
+        var secondary = NewDirectory("secondary");
         var service = new WorkspaceProjectService(
-            repository, new TestFolderPickerService("D:\\Dev\\MossAgent", "D:\\Dev"));
+            repository, new TestFolderPickerService(NewDirectory("primary"), secondary));
         var editor = new WorkspaceProjectEditorViewModel(service) { Name = "多目录项目" };
 
         await editor.AddDirectoryCommand.ExecuteAsync(null);
@@ -89,8 +105,8 @@ public sealed class WorkspaceProjectEditorViewModelTests
         editor.Directories[1].SetPrimaryCommand.Execute(null);
         await editor.AddCommand.ExecuteAsync(null);
 
-        Assert.Equal("D:\\Dev", repository.SavedProject?.PrimaryDirectory);
-        Assert.Equal("D:\\Dev", repository.SavedProject?.AuthorizedDirectories[0]);
+        Assert.Equal(secondary, repository.SavedProject?.PrimaryDirectory);
+        Assert.Equal(secondary, repository.SavedProject?.AuthorizedDirectories[0]);
     }
 
     [Fact]
@@ -98,8 +114,8 @@ public sealed class WorkspaceProjectEditorViewModelTests
     {
         var repository = new TestWorkspaceRepository();
         var catalog = new WorkspaceCatalogViewModel(repository,
-            new WorkspaceWorktreeCleanupService(repository, null!),
-            new WorkspaceProjectService(repository, new TestFolderPickerService("D:\\Dev\\MossAgent")));
+            null,
+            new WorkspaceProjectService(repository, new TestFolderPickerService(NewDirectory("MossAgent"))));
         catalog.ProjectEditor.Name = "Original";
         await catalog.ProjectEditor.AddDirectoryCommand.ExecuteAsync(null);
         await catalog.ProjectEditor.AddCommand.ExecuteAsync(null);
@@ -127,8 +143,8 @@ public sealed class WorkspaceProjectEditorViewModelTests
     {
         var repository = new TestWorkspaceRepository();
         var catalog = new WorkspaceCatalogViewModel(repository,
-            new WorkspaceWorktreeCleanupService(repository, null!),
-            new WorkspaceProjectService(repository, new TestFolderPickerService("D:\\Dev\\MossAgent")));
+            null,
+            new WorkspaceProjectService(repository, new TestFolderPickerService(NewDirectory("MossAgent"))));
         catalog.ProjectEditor.Name = "Original";
         await catalog.ProjectEditor.AddDirectoryCommand.ExecuteAsync(null);
         await catalog.ProjectEditor.AddCommand.ExecuteAsync(null);
@@ -153,7 +169,7 @@ public sealed class WorkspaceProjectEditorViewModelTests
     {
         var repository = new TestWorkspaceRepository();
         var service = new WorkspaceProjectService(
-            repository, new TestFolderPickerService("D:\\Dev\\MossAgent"));
+            repository, new TestFolderPickerService(NewDirectory("MossAgent")));
         var editor = new WorkspaceProjectEditorViewModel(service) { Name = "Original" };
         await editor.AddDirectoryCommand.ExecuteAsync(null);
         await editor.AddCommand.ExecuteAsync(null);

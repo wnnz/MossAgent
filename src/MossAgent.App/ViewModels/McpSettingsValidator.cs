@@ -1,6 +1,7 @@
 using System.Text.Json;
 using MossAgent.Domain;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.ViewModels;
 
 internal static class McpSettingsValidator
@@ -20,13 +21,13 @@ internal static class McpSettingsValidator
         error = string.Empty;
         if (string.IsNullOrWhiteSpace(name))
         {
-            error = "请填写 MCP server 名称。";
+            error = UiText.T("请填写 MCP server 名称。");
             return false;
         }
 
         if (transport == McpTransportKind.Stdio && string.IsNullOrWhiteSpace(command))
         {
-            error = "stdio MCP server 必须填写命令。";
+            error = UiText.T("stdio MCP server 必须填写命令。");
             return false;
         }
 
@@ -36,7 +37,7 @@ internal static class McpSettingsValidator
                 && endpoint.Scheme != Uri.UriSchemeHttps
                 || endpoint.UserInfo.Length > 0))
         {
-            error = "Streamable HTTP URL 必须是有效的 HTTP(S) 地址，且不能包含账号或密码。";
+            error = UiText.T("Streamable HTTP URL 必须是有效的 HTTP(S) 地址，且不能包含账号或密码。");
             return false;
         }
 
@@ -46,7 +47,7 @@ internal static class McpSettingsValidator
                 || !HasStringObject(environmentJson)
                 || !HasStringObject(headersJson))
             {
-                error = "参数必须是数组，环境变量和请求头必须是对象；所有值均须为字符串。";
+                error = UiText.T("参数必须是数组，环境变量和请求头必须是对象；所有值均须为字符串。");
                 return false;
             }
 
@@ -54,7 +55,7 @@ internal static class McpSettingsValidator
         }
         catch (JsonException)
         {
-            error = "JSON 配置无效，请检查参数、环境变量和请求头的格式。";
+            error = UiText.T("JSON 配置无效，请检查参数、环境变量和请求头的格式。");
             return false;
         }
     }
@@ -73,3 +74,4 @@ internal static class McpSettingsValidator
             && document.RootElement.EnumerateObject().All(static item => item.Value.ValueKind == JsonValueKind.String);
     }
 }
+

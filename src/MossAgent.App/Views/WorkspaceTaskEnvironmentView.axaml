@@ -23,6 +23,7 @@
                              AutomationProperties.Name="{Binding References.Label}" IsVisible="{Binding References.IsAvailable}" />
             <ui:AppActionButton x:Name="ReferenceFetchButton" Classes="ghost menu-option align-leading"
                                 Label="{Binding References.FetchLabel}" Command="{Binding References.FetchCommand}"
+                                IconData="{StaticResource UiIconRefresh}"
                                 IsVisible="{Binding References.IsAvailable}" />
             <ui:AppListBox x:Name="ReferenceList" Classes="thin-scrollbar" MaxHeight="200"
                            ItemsSource="{Binding References.Items}"
@@ -40,10 +41,12 @@
             <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding References.HasStatus}">
               <ui:AppActionButton Classes="ghost" Label="{Binding References.PreviousLabel}"
                                   Command="{Binding References.PreviousPageCommand}"
+                                  IconData="{StaticResource UiIconArrowLeft}"
                                   IsVisible="{Binding References.CanPrevious}" />
               <ui:AppText Classes="type-11 muted" Text="{Binding References.StatusText}" VerticalAlignment="Center" />
               <ui:AppActionButton Classes="ghost" Label="{Binding References.NextLabel}"
                                   Command="{Binding References.NextPageCommand}"
+                                  IconData="{StaticResource UiIconArrowRight}"
                                   IsVisible="{Binding References.HasMore}" />
             </StackPanel>
             <ui:AppActionButton Classes="ghost menu-option align-leading" Label="{Binding WorktreeLabel}"

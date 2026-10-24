@@ -41,7 +41,7 @@
                  TextWrapping="Wrap" />
 
       <ui:AppComposerInput Grid.Row="2" Classes="composer-input" Text="{Binding ComposerText}"
-                PlaceholderText="随心输入"
+                PlaceholderText="{resources:L '随心输入'}"
                  SubmitCommand="{Binding ComposerSubmitCommand}"
                  AlternateSubmitCommand="{Binding Steering.AlternateSubmitCommand}"
                  ToolTip.Tip="{x:Static resources:ComposerInputText.Hint}"

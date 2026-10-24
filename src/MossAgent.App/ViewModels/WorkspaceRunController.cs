@@ -61,7 +61,7 @@ public sealed class WorkspaceRunController(
             }
             catch (Exception)
             {
-                setActivity(state, "浏览器会话关闭失败，请重启应用释放资源。");
+                setActivity(state, UiText.T("浏览器会话关闭失败，请重启应用释放资源。"));
                 throw new InvalidOperationException("Browser release failed.");
             }
             finally
@@ -94,3 +94,4 @@ public sealed class WorkspaceRunController(
         applyTaskUpdate(state.Task);
     }
 }
+

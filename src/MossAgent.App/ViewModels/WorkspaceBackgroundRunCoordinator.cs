@@ -4,6 +4,7 @@ using MossAgent.Application.Agent;
 using MossAgent.Application.Models;
 using MossAgent.Domain;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.ViewModels;
 
 internal sealed class WorkspaceBackgroundRunCoordinator(
@@ -35,7 +36,7 @@ internal sealed class WorkspaceBackgroundRunCoordinator(
             {
                 if (!isReady()) throw new OperationCanceledException(cancellationToken);
                 var assistant = new ChatMessageViewModel("MossAgent", string.Empty);
-                var messages = new ObservableCollection<ChatMessageViewModel> { new("你", schedule.Prompt), assistant };
+                var messages = new ObservableCollection<ChatMessageViewModel> { new(UiText.T("你"), schedule.Prompt), assistant };
                 var state = new WorkspaceRunState(task, project, provider, model, messages, assistant, string.Empty);
                 runs.Add(state);
                 rememberPreference(task.Id, new(provider.Id, model.Id, ModelReasoningPolicy.Normalize(model.ReasoningEffort)));
@@ -61,3 +62,4 @@ internal sealed class WorkspaceBackgroundRunCoordinator(
         return await completion.Task;
     }
 }
+

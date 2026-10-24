@@ -35,7 +35,7 @@
         </ui:AppBorder>
         <ui:AppBorder Classes="divider-bottom theme-palette-row">
           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-            <ui:AppText Text="强调色" Classes="type-13" />
+            <ui:AppText Text="{resources:L '强调色'}" Classes="type-13" />
             <ui:AppPillComboBox Grid.Column="1" Classes="theme-accent-select"
                                 ItemsSource="{Binding AccentOptions}" SelectedItem="{Binding SelectedAccentOption}"
                                 DisplayMemberBinding="{Binding Label}"
@@ -54,14 +54,14 @@
         </ui:AppBorder>
         <ui:AppBorder Classes="divider-bottom theme-palette-row">
           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-            <ui:AppText Text="背景" Classes="type-13" />
+            <ui:AppText Text="{resources:L '背景'}" Classes="type-13" />
             <ui:AppThemeColorInput Grid.Column="1" Text="{Binding BackgroundHex, Mode=TwoWay}"
                                    Label="{x:Static resources:AppearanceText.BackgroundColorName}" />
           </Grid>
         </ui:AppBorder>
         <ui:AppBorder Classes="divider-bottom theme-palette-row">
           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-            <ui:AppText Text="前景" Classes="type-13" />
+            <ui:AppText Text="{resources:L '前景'}" Classes="type-13" />
             <ui:AppThemeColorInput Grid.Column="1" Text="{Binding ForegroundHex, Mode=TwoWay}"
                                    Label="{x:Static resources:AppearanceText.ForegroundColorName}" />
           </Grid>

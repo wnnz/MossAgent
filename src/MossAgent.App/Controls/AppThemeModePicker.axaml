@@ -10,7 +10,7 @@
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16">
         <ui:AppButton Classes="ghost theme-mode-button"
                       Classes.selected="{Binding IsSystemThemeSelected}"
-                      AutomationProperties.Name="系统主题" ToolTip.Tip="跟随系统"
+                      AutomationProperties.Name="{resources:L '系统主题'}" ToolTip.Tip="{resources:L '跟随系统'}"
                       Command="{Binding SelectThemeCommand}" CommandParameter="System">
           <ui:AppViewbox Classes="theme-mode-thumbnail">
             <ui:AppThemePreview Classes="preview-system" />
@@ -18,7 +18,7 @@
         </ui:AppButton>
         <ui:AppButton Classes="ghost theme-mode-button"
                       Classes.selected="{Binding IsLightThemeSelected}"
-                      AutomationProperties.Name="浅色主题" ToolTip.Tip="浅色"
+                      AutomationProperties.Name="{resources:L '浅色主题'}" ToolTip.Tip="{resources:L '浅色'}"
                       Command="{Binding SelectThemeCommand}" CommandParameter="Light">
           <ui:AppViewbox Classes="theme-mode-thumbnail">
             <ui:AppThemePreview Classes="preview-light" />
@@ -26,7 +26,7 @@
         </ui:AppButton>
         <ui:AppButton Classes="ghost theme-mode-button"
                       Classes.selected="{Binding IsDarkThemeSelected}"
-                      AutomationProperties.Name="深色主题" ToolTip.Tip="深色"
+                      AutomationProperties.Name="{resources:L '深色主题'}" ToolTip.Tip="{resources:L '深色'}"
                       Command="{Binding SelectThemeCommand}" CommandParameter="Dark">
           <ui:AppViewbox Classes="theme-mode-thumbnail">
             <ui:AppThemePreview Classes="preview-dark" />

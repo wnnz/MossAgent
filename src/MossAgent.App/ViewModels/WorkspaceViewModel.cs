@@ -24,12 +24,12 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     private AiProvider? _selectedProvider;
     private ModelProfile? _selectedModel;
     private ApprovalPolicy _approvalPolicy = ApprovalPolicy.AskEveryTime;
-    private string _projectPickerQuery = string.Empty;
     private string _activity = WorkspaceText.Get("ChatReady");
     private readonly WorkspaceSendPreparation _preparation = new();
     private bool _hasSendPreparationError;
     private bool _isShuttingDown;
     private bool _disposed;
+    private readonly WorkspaceProjectPickerController _projectPicker;
 
     public WorkspaceViewModel(
         IConfigurationRepository configurations,
@@ -77,7 +77,12 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         PrimaryActionCommand = new RelayCommand(ExecutePrimaryAction, CanExecutePrimaryAction);
         _preparation.StateChanged += NotifyRunStateChanged;
         FileChanges.Undo.StateChanged += HandleUndoStateChanged;
-        OpenProjectPickerCommand = new RelayCommand(OpenProjectPicker);
+        _projectPicker = new(catalog);
+        _projectPicker.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(WorkspaceProjectPickerController.HasMatches)) OnPropertyChanged(nameof(ProjectPickerHasMatches));
+        };
+        OpenProjectPickerCommand = new RelayCommand(_projectPicker.Open);
         SetApprovalPolicyCommand = new RelayCommand<ApprovalPolicy>(policy => ApprovalPolicy = policy);
         Catalog.TaskManagement.PropertyChanged += HandleTaskMutationChanged;
         Catalog.WorktreeAuthorization.PropertyChanged += HandleTaskMutationChanged;
@@ -117,14 +122,14 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     public IRelayCommand ComposerSubmitCommand => Queue.SubmitCommand;
     public AppShutdownViewModel Shutdown { get; }
     public bool IsShuttingDown => _isShuttingDown;
-    public ObservableCollection<WorkspaceProjectNavigationViewModel> ProjectPickerProjects { get; } = [];
+    public ObservableCollection<WorkspaceProjectNavigationViewModel> ProjectPickerProjects => _projectPicker.Projects;
     public IRelayCommand OpenProjectPickerCommand { get; }
     public string ProjectPickerQuery
     {
-        get => _projectPickerQuery;
-        set { if (SetProperty(ref _projectPickerQuery, value)) RefreshProjectPicker(); }
+        get => _projectPicker.Query;
+        set => _projectPicker.Query = value;
     }
-    public bool ProjectPickerHasMatches => ProjectPickerProjects.Count > 0;
+    public bool ProjectPickerHasMatches => _projectPicker.HasMatches;
     public string ProjectPickerSearchPlaceholder => WorkspaceLabel(nameof(ProjectPickerSearchPlaceholder));
     public string ProjectPickerCreateLabel => WorkspaceLabel(nameof(ProjectPickerCreateLabel));
     public string ProjectPickerNoMatches => WorkspaceLabel(nameof(ProjectPickerNoMatches));
@@ -218,7 +223,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         await Catalog.ReloadAsync();
         if (_disposed) return;
         await Drafts.LoadCurrentAsync();
-        RefreshProjectPicker();
+        _projectPicker.Refresh();
         OnPropertyChanged(nameof(IsProjectlessChat));
         await ModelPicker.ReloadAsync();
         if (_disposed) return;
@@ -411,7 +416,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         WorktreeRecovery.SetProject(Catalog.SelectedProject);
         if (_attachmentDrafts.SelectContext(Catalog.SelectedProject, Catalog.SelectedTask?.Id, preserveItems: _preparation.IsActive) && !_preparation.IsActive)
             HasSendPreparationError = false;
-        RefreshProjectPicker();
+        _projectPicker.Refresh();
         _ = RepositoryStatus.RefreshAsync(Catalog.SelectedProject, Catalog.SelectedTask);
         OnPropertyChanged(nameof(IsSelectedTaskFailed));
         OnPropertyChanged(nameof(TaskFailureHint));
@@ -433,24 +438,10 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         NotifyRunStateChanged();
     }
 
-    private void OpenProjectPicker()
-    {
-        ProjectPickerQuery = string.Empty;
-        RefreshProjectPicker();
-    }
-
     private void HandleDraftChanged(object? sender, PropertyChangedEventArgs args)
     {
         if (args.PropertyName == nameof(WorkspaceComposerDraftsViewModel.Text)) OnPropertyChanged(nameof(ComposerText));
         if (args.PropertyName == nameof(WorkspaceComposerDraftsViewModel.CanSend)) NotifyRunStateChanged();
-    }
-
-    private void RefreshProjectPicker()
-    {
-        var query = ProjectPickerQuery.Trim();
-        ProjectPickerProjects.ReplaceWith(Catalog.ProjectNavigation.Where(group =>
-            group.Project.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)));
-        OnPropertyChanged(nameof(ProjectPickerHasMatches));
     }
 
     private static string WorkspaceLabel(string key) => WorkspaceText.Get(key);

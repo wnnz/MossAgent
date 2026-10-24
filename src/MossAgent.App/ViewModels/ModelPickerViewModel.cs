@@ -7,6 +7,7 @@ using MossAgent.Application.Models;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.ViewModels;
 
 /// <summary>
@@ -23,7 +24,7 @@ public sealed class ModelPickerViewModel : ObservableObject, IDisposable
     private string _searchQuery = string.Empty;
     private ModelPickerItemViewModel? _selectedItem;
     private IReadOnlyList<string> _reasoningSteps = ReasoningStepsFor(null);
-    private string _selectedReasoning = "默认";
+    private string _selectedReasoning = UiText.T("默认");
     private bool _isModelListVisible;
     private bool _isPickerOpen;
     private Guid? _preferredProviderId;
@@ -49,7 +50,7 @@ public sealed class ModelPickerViewModel : ObservableObject, IDisposable
         RefreshCommand = new GuardedAsyncRelayCommand(RefreshCatalogAsync, () => !_disposed && !IsLoading);
         ShowModelListCommand = new RelayCommand(() => IsModelListVisible = true);
         ShowQuickMenuCommand = new RelayCommand(() => IsModelListVisible = !CanUseSelectedModel);
-        ResetReasoningCommand = new RelayCommand(() => SelectedReasoning = "默认", () => CanUseSelectedModel);
+        ResetReasoningCommand = new RelayCommand(() => SelectedReasoning = UiText.T("默认"), () => CanUseSelectedModel);
         OpenProviderSettingsCommand = new RelayCommand(() => ProviderSettingsRequested?.Invoke());
     }
 
@@ -129,7 +130,7 @@ public sealed class ModelPickerViewModel : ObservableObject, IDisposable
     public string EmptyModelDescription => GetLabel(nameof(EmptyModelDescription));
     public string OpenProviderSettingsLabel => GetLabel(nameof(OpenProviderSettingsLabel));
 
-    public string SelectedModelName => SelectedItem?.DisplayName ?? "选择模型";
+    public string SelectedModelName => SelectedItem?.DisplayName ?? UiText.T("选择模型");
 
     /// <summary>
     /// 搜索过滤文本。
@@ -189,7 +190,7 @@ public sealed class ModelPickerViewModel : ObservableObject, IDisposable
     /// </summary>
     public string ComposerDisplayName => HasLoadError ? GetLabel("CatalogUnavailableLabel")
         : IsSelectedUnavailable ? GetLabel("SelectedModelUnavailableLabel")
-        : SelectedItem?.DisplayName ?? "选择模型...";
+        : SelectedItem?.DisplayName ?? UiText.T("选择模型...");
 
     public string CurrentDisplayName => !HasLoadError && !IsSelectedUnavailable && SelectedItem is { } selected
         ? $"{selected.DisplayName} · {selected.Provider.Name}"
@@ -198,36 +199,40 @@ public sealed class ModelPickerViewModel : ObservableObject, IDisposable
     public bool HasModels => _allGroups.Count > 0;
     public bool HasNoModels => !HasModels && !IsLoading && !HasLoadError;
 
-    public string EffectiveReasoningEffort => SelectedReasoning switch
+    private static readonly Dictionary<string, string> EffortValues = new(StringComparer.Ordinal)
     {
-        "无" => "none",
-        "最低" => "minimal",
-        "低" => "low",
-        "中" => "medium",
-        "高" => "high",
-        "最高" => "xhigh",
-        "Max" => "max",
-        "Ultra" => "ultra",
-        _ => SelectedItem?.Model.ReasoningEffort ?? "medium"
+        [UiText.T("无")] = "none",
+        [UiText.T("最低")] = "minimal",
+        [UiText.T("低")] = "low",
+        [UiText.T("中")] = "medium",
+        [UiText.T("高")] = "high",
+        [UiText.T("最高")] = "xhigh",
+        ["Max"] = "max",
+        ["Ultra"] = "ultra"
     };
+
+    public string EffectiveReasoningEffort =>
+        EffortValues.TryGetValue(SelectedReasoning, out var effort)
+            ? effort
+            : SelectedItem?.Model.ReasoningEffort ?? "medium";
 
     public string ReasoningDisplayName => SelectedItem is null
         ? string.Empty
-        : SelectedReasoning != "默认"
+        : SelectedReasoning != UiText.T("默认")
         ? SelectedReasoning
         : EffortLabel(SelectedItem?.Model.ReasoningEffort);
 
     private static string EffortLabel(string? effort) => ModelReasoningPolicy.Normalize(effort) switch
     {
-        "none" => "无",
-        "minimal" => "最低",
-        "low" => "低",
-        "medium" => "中",
-        "high" => "高",
-        "xhigh" => "最高",
+        "none" => UiText.T("无"),
+        "minimal" => UiText.T("最低"),
+        "low" => UiText.T("低"),
+        "medium" => UiText.T("中"),
+        "high" => UiText.T("高"),
+        "xhigh" => UiText.T("最高"),
         "max" => "Max",
         "ultra" => "Ultra",
-        _ => "默认"
+        _ => UiText.T("默认")
     };
 
     private void NotifyReasoningState()
@@ -265,7 +270,7 @@ public sealed class ModelPickerViewModel : ObservableObject, IDisposable
     internal void RestoreReasoning(string? effort)
     {
         _restoringReasoning = true;
-        try { SelectedReasoning = effort is null ? "默认" : EffortLabel(effort); }
+        try { SelectedReasoning = effort is null ? UiText.T("默认") : EffortLabel(effort); }
         finally { _restoringReasoning = false; }
     }
 
@@ -451,3 +456,4 @@ public sealed class ModelPickerViewModel : ObservableObject, IDisposable
     private static string GetLabel(string key) =>
         Labels.GetString(key) ?? throw new InvalidOperationException($"Missing model picker resource: {key}");
 }
+

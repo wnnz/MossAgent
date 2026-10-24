@@ -25,9 +25,9 @@ public sealed class ConversationTabComponentTests
         Assert.Empty(tab.Elements());
         var menu = Assert.Single(chat.Descendants(), element => element.Name.LocalName == "AppConversationHeader");
         Assert.Equal("{Binding Catalog.SelectedTask}", menu.Attribute("ConversationTarget")?.Value);
-        Assert.Contains(menu.Descendants(), element => element.Attribute("Content")?.Value == "归档任务");
+        Assert.Contains(menu.Descendants(), element => LocalizableText.Unwrap(element.Attribute("Content")?.Value) == "归档任务");
         var newTask = Assert.Single(tabView.Descendants(), element => element.Name.LocalName == "AppIconButton"
-            && element.Attribute("Label")?.Value == "新对话");
+            && LocalizableText.Unwrap(element.Attribute("Label")?.Value) == "新对话");
         Assert.Equal("{Binding Catalog.NewTaskCommand}", newTask.Attribute("Command")?.Value);
         Assert.Equal("{StaticResource UiIconPlus}", newTask.Attribute("IconData")?.Value);
         Assert.Equal("{Binding Catalog.SelectedProject, Converter={x:Static ObjectConverters.IsNotNull}}",
@@ -52,10 +52,10 @@ public sealed class ConversationTabComponentTests
         Assert.Equal("{Binding Catalog.SelectedTask}", summary.Attribute("ConversationTarget")?.Value);
         Assert.Equal("{Binding $parent[Window].DataContext.ToggleContextCardCommand}",
             summary.Attribute("ToggleContextCommand")?.Value);
-        Assert.DoesNotContain(chat.Descendants(), element => element.Attribute("Label")?.Value == "切换底部终端面板");
+        Assert.DoesNotContain(chat.Descendants(), element => LocalizableText.Unwrap(element.Attribute("Label")?.Value) == "切换底部终端面板");
 
         var viewMenu = Assert.Single(main.Descendants(), element => element.Name.LocalName == "AppButton"
-            && element.Attribute("Content")?.Value == "视图");
+            && LocalizableText.Unwrap(element.Attribute("Content")?.Value) == "视图");
         Assert.Contains(viewMenu.Descendants(), element => element.Attribute("Command")?.Value
             == "{Binding ToggleBottomPanelCommand}");
     }
@@ -66,7 +66,7 @@ public sealed class ConversationTabComponentTests
         var sidebar = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App",
             "Views", "WorkspaceSidebar.axaml"));
         var audit = Assert.Single(sidebar.Descendants(), element => element.Name.LocalName == "AppIconButton"
-            && element.Attribute("Label")?.Value == "审计与执行记录");
+            && LocalizableText.Unwrap(element.Attribute("Label")?.Value) == "审计与执行记录");
         var search = Assert.Single(sidebar.Descendants(), element => element.Name.LocalName == "AppSidebarSearch");
 
         Assert.Equal("1", audit.Attribute("Grid.Column")?.Value);

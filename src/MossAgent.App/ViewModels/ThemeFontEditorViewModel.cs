@@ -16,14 +16,14 @@ public sealed class ThemeFontEditorViewModel : ObservableObject
 
     private static readonly IReadOnlyList<ContentFontOption> ContentOptions =
     [
-        new(ContentFontPreference.SameAsUi, "与界面字体相同"),
+        new(ContentFontPreference.SameAsUi, UiText.T("与界面字体相同")),
         new(ContentFontPreference.Inter, "Inter"),
         new(ContentFontPreference.SegoeUi, "Segoe UI")
     ];
 
     private static readonly IReadOnlyList<CodeFontOption> CodeOptions =
     [
-        new(CodeFontPreference.System, "系统默认"),
+        new(CodeFontPreference.System, UiText.T("系统默认")),
         new(CodeFontPreference.Consolas, "Consolas"),
         new(CodeFontPreference.CascadiaCode, "Cascadia Code")
     ];
@@ -60,7 +60,7 @@ public sealed class ThemeFontEditorViewModel : ObservableObject
             if (value is null || value.Value == _uiFonts.PreferenceFor(_theme)) return;
             _uiFonts.SetPreference(_theme, value.Value);
             OnPropertyChanged();
-            SetFeedback(_uiFonts.PersistenceError, "界面字体已应用。");
+            SetFeedback(_uiFonts.PersistenceError, UiText.T("界面字体已应用。"));
         }
     }
 
@@ -72,7 +72,7 @@ public sealed class ThemeFontEditorViewModel : ObservableObject
             if (value is null || value.Value == _contentFonts.PreferenceFor(_theme)) return;
             _contentFonts.SetPreference(_theme, value.Value);
             OnPropertyChanged();
-            SetFeedback(_contentFonts.PersistenceError, "内容字体已应用。");
+            SetFeedback(_contentFonts.PersistenceError, UiText.T("内容字体已应用。"));
         }
     }
 
@@ -84,7 +84,7 @@ public sealed class ThemeFontEditorViewModel : ObservableObject
             if (value is null || value.Value == _codeFonts.PreferenceFor(_theme)) return;
             _codeFonts.SetPreference(_theme, value.Value);
             OnPropertyChanged();
-            SetFeedback(_codeFonts.PersistenceError, "代码字体已应用。");
+            SetFeedback(_codeFonts.PersistenceError, UiText.T("代码字体已应用。"));
         }
     }
 
@@ -116,3 +116,4 @@ public sealed class ThemeFontEditorViewModel : ObservableObject
         Status = error is null ? success : null;
     }
 }
+

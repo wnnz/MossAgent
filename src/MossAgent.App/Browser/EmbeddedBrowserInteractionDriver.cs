@@ -3,6 +3,7 @@ using MossAgent.Tools.Abstractions.Browser;
 using NativeWebView.Core;
 using WebViewControl = NativeWebView.Controls.NativeWebView;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.Browser;
 
 internal sealed class EmbeddedBrowserInteractionDriver(
@@ -14,28 +15,28 @@ internal sealed class EmbeddedBrowserInteractionDriver(
         RunNavigationActionAsync(
             static _ => true,
             view => view.Navigate(uri),
-            "浏览器无法导航。",
+            UiText.T("浏览器无法导航。"),
             cancellationToken);
 
     public Task GoBackAsync(CancellationToken cancellationToken) =>
         RunNavigationActionAsync(
             static view => view.CanGoBack,
             static view => view.GoBack(),
-            "当前页面没有可后退的历史记录。",
+            UiText.T("当前页面没有可后退的历史记录。"),
             cancellationToken);
 
     public Task GoForwardAsync(CancellationToken cancellationToken) =>
         RunNavigationActionAsync(
             static view => view.CanGoForward,
             static view => view.GoForward(),
-            "当前页面没有可前进的历史记录。",
+            UiText.T("当前页面没有可前进的历史记录。"),
             cancellationToken);
 
     public Task ReloadAsync(CancellationToken cancellationToken) =>
         RunNavigationActionAsync(
             static _ => true,
             static view => view.Reload(),
-            "浏览器无法刷新当前页面。",
+            UiText.T("浏览器无法刷新当前页面。"),
             cancellationToken);
 
     public Task<string> GetPageTextAsync(CancellationToken cancellationToken) =>
@@ -78,7 +79,7 @@ internal sealed class EmbeddedBrowserInteractionDriver(
             await Task.Delay(100, cancellationToken);
         }
 
-        throw new TimeoutException($"等待元素状态超时：{selector} -> {state}");
+        throw new TimeoutException(UiText.T("等待元素状态超时：{0} -> {1}", selector, state));
     }
 
     public Task ScrollAsync(
@@ -94,13 +95,13 @@ internal sealed class EmbeddedBrowserInteractionDriver(
     {
         if (fullPage)
         {
-            throw new NotSupportedException("内置浏览器当前只支持可见区域截图。");
+            throw new NotSupportedException(UiText.T("内置浏览器当前只支持可见区域截图。"));
         }
 
         var snapshot = await AvaloniaUiThread.RunAsync(
             () => getView().CaptureSnapshotAsync(cancellationToken), cancellationToken);
         return snapshot?.PngData.ToArray()
-            ?? throw new InvalidOperationException("内置浏览器未能捕获截图。");
+            ?? throw new InvalidOperationException(UiText.T("内置浏览器未能捕获截图。"));
     }
 
     public async Task<BrowserDownloadInfo> DownloadAsync(
@@ -132,13 +133,13 @@ internal sealed class EmbeddedBrowserInteractionDriver(
                 if (status == "error")
                 {
                     var error = document.RootElement.GetProperty("error").GetString();
-                    throw new InvalidOperationException($"内置浏览器下载失败：{error}");
+                    throw new InvalidOperationException(UiText.T("内置浏览器下载失败：{0}", error));
                 }
 
                 await Task.Delay(100, cancellationToken);
             }
 
-            throw new TimeoutException("等待内置浏览器下载超时。");
+            throw new TimeoutException(UiText.T("等待内置浏览器下载超时。"));
         }
         finally
         {
@@ -177,7 +178,7 @@ internal sealed class EmbeddedBrowserInteractionDriver(
             if (!result.IsSuccess)
             {
                 throw new InvalidOperationException(
-                    $"浏览器导航失败：{result.Error ?? "未知错误"}");
+                    UiText.T("浏览器导航失败：{0}", result.Error ?? UiText.T("未知错误")));
             }
         }
         finally
@@ -219,3 +220,4 @@ internal sealed class EmbeddedBrowserInteractionDriver(
         return json is not null && JsonSerializer.Deserialize<bool>(json);
     }
 }
+

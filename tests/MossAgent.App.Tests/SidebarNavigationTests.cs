@@ -27,7 +27,7 @@ public sealed class SidebarNavigationTests
         var repository = new TestWorkspaceRepository();
         var catalog = new WorkspaceCatalogViewModel(
             repository,
-            new WorkspaceWorktreeCleanupService(repository, null!),
+            null,
             new WorkspaceProjectService(repository, new TestFolderPickerService()));
 
         catalog.Sections.ToggleProjectsCommand.Execute(null);

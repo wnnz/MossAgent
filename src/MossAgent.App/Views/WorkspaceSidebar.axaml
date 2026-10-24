@@ -1,4 +1,4 @@
-<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:MossAgent.App.Controls"
              xmlns:views="clr-namespace:MossAgent.App.Views"
@@ -16,7 +16,7 @@
               <ui:AppFlyout Placement="BottomEdgeAlignedLeft" DismissOnButtonClick="True">
                 <ui:AppCard Classes="flyout-surface card-inset-compact" Width="248">
                   <StackPanel Spacing="3">
-                    <ui:AppText Text="切换项目" Classes="muted type-11 weight-semibold" Margin="8,4" />
+                    <ui:AppText Text="{res:L '切换项目'}" Classes="muted type-11 weight-semibold" Margin="8,4" />
                     <ui:AppActionButton Classes="ghost menu-option align-leading" HorizontalAlignment="Stretch"
                             Command="{Binding NewChatCommand}" Label="{Binding ProjectlessChatLabel}"
                             IconData="{StaticResource UiIconAssistant}" />
@@ -40,12 +40,12 @@
               Query="{Binding $parent[Window].DataContext.Workspace.SidebarSearch.Query, Mode=TwoWay}"
               HasMatches="{Binding $parent[Window].DataContext.Workspace.SidebarSearch.HasMatches}"
               ClearCommand="{Binding $parent[Window].DataContext.Workspace.SidebarSearch.ClearCommand}" />
-          <ui:AppIconButton Grid.Column="1" Classes="sidebar-header-icon sidebar-audit-trigger" Label="审计与执行记录"
+          <ui:AppIconButton Grid.Column="1" Classes="sidebar-header-icon sidebar-audit-trigger" Label="{res:L '审计与执行记录'}"
                   Command="{Binding $parent[Window].DataContext.SelectInspectorTabCommand}"
                   CommandParameter="audit" />
         </Grid>
         <ui:AppActionButton Classes="ghost sidebar-action-button align-leading" HorizontalAlignment="Stretch"
-                Command="{Binding NewTaskCommand}" Label="新对话"
+                Command="{Binding NewTaskCommand}" Label="{res:L '新对话'}"
                 IconData="{StaticResource UiIconCompose}" />
       </StackPanel>
 
@@ -54,7 +54,7 @@
       <StackPanel Classes="sidebar-navigation-flow">
       <StackPanel Classes="sidebar-pinned-section"
                   IsVisible="{Binding TaskManagement.PinnedTasks.HasItems}">
-        <ui:AppText Text="置顶" Classes="sidebar-section-heading sidebar-pinned-heading" />
+        <ui:AppText Text="{res:L '置顶'}" Classes="sidebar-section-heading sidebar-pinned-heading" />
           <ui:AppItemsControl Classes="sidebar-task-list" ItemsSource="{Binding TaskManagement.PinnedTasks.Items}">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
@@ -72,15 +72,15 @@
 
       <ui:AppBorder Classes="projects-section-header transparent-hit-target">
       <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
-        <ui:AppText Text="项目" Classes="sidebar-section-heading" VerticalAlignment="Center" />
+        <ui:AppText Text="{res:L '项目'}" Classes="sidebar-section-heading" VerticalAlignment="Center" />
         <ui:AppIconButton Grid.Column="1" Classes="icon-micro project-header-action expand-icon"
                 Command="{Binding Sections.ToggleProjectsCommand}"
-                Label="展开或折叠项目"
+                Label="{res:L '展开或折叠项目'}"
                 IconData="{StaticResource UiIconChevronRight}"
                 AlternateIconData="{StaticResource UiIconChevronDown}"
                 IsAlternateIcon="{Binding Sections.IsProjectsExpanded}" />
         <ui:AppIconButton Grid.Column="3" Classes="icon-compact project-header-action"
-                          Label="项目选项" IconData="{StaticResource UiIconMore}">
+                          Label="{res:L '项目选项'}" IconData="{StaticResource UiIconMore}">
           <Button.Flyout>
             <ui:AppFlyout Placement="BottomEdgeAlignedRight" DismissOnButtonClick="True">
               <ui:AppCard Classes="flyout-surface card-inset-tight sidebar-sort-menu"
@@ -99,7 +99,7 @@
           </Button.Flyout>
         </ui:AppIconButton>
         <ui:AppIconButton Grid.Column="4" Classes="icon-compact project-header-action"
-                          Label="添加项目" IconData="{StaticResource UiIconPlus}"
+                          Label="{res:L '添加项目'}" IconData="{StaticResource UiIconPlus}"
                           Command="{Binding ProjectEditor.OpenCommand}">
           <Button.Flyout>
             <ui:AppFlyout Placement="BottomEdgeAlignedLeft"
@@ -124,10 +124,10 @@
                   Classes="sidebar-rename-surface" Padding="7">
             <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="4">
               <ui:AppInput Classes="compact-input" Text="{Binding TaskManagement.EditingTitle}"
-                       PlaceholderText="任务名称" />
-              <ui:AppButton Grid.Column="1" Content="保存" Classes="primary sidebar-rename-action"
+                       PlaceholderText="{res:L '任务名称'}" />
+              <ui:AppButton Grid.Column="1" Content="{res:L '保存'}" Classes="primary sidebar-rename-action"
                       Command="{Binding TaskManagement.SaveRenameCommand}" />
-              <ui:AppButton Grid.Column="2" Content="取消" Classes="ghost sidebar-rename-action"
+              <ui:AppButton Grid.Column="2" Content="{res:L '取消'}" Classes="ghost sidebar-rename-action"
                       Command="{Binding TaskManagement.CancelRenameCommand}" />
             </Grid>
           </ui:AppBorder>
@@ -157,7 +157,7 @@
                               <ui:AppIconLabel Classes="project-summary-path" IconData="{StaticResource UiIconFolder}"
                                                Label="{Binding Project.PrimaryDirectory}" />
                               <ui:AppBorder Classes="divider-top" Height="1" Margin="0,2,0,0" />
-                                            <ui:AppActionButton Label="编辑项目" IconData="{StaticResource UiIconSettings}"
+                                            <ui:AppActionButton Label="{res:L '编辑项目'}" IconData="{StaticResource UiIconSettings}"
                                                   Classes="ghost menu-option align-leading" HorizontalAlignment="Stretch"
                                                   Command="{Binding $parent[Window].DataContext.Workspace.Catalog.EditProjectCommand}"
                                                   CommandParameter="{Binding}" />
@@ -199,7 +199,7 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ui:AppItemsControl>
-          <ui:AppText Text="最近" Classes="sidebar-section-heading sidebar-recent-heading"
+          <ui:AppText Text="{res:L '最近'}" Classes="sidebar-section-heading sidebar-recent-heading"
                      IsVisible="{Binding RecentTasks.HasItems}" />
           <ui:AppItemsControl Classes="sidebar-task-list" ItemsSource="{Binding RecentTasks.Items}"
                         IsVisible="{Binding RecentTasks.HasItems}">
@@ -230,7 +230,7 @@
                   </DataTemplate>
                 </ListBox.ItemTemplate>
               </ui:AppListBox>
-              <ui:AppButton Content="恢复所选任务" Classes="ghost sidebar-restore-task"
+              <ui:AppButton Content="{res:L '恢复所选任务'}" Classes="ghost sidebar-restore-task"
                       HorizontalAlignment="Stretch"
                       Command="{Binding TaskManagement.RestoreCommand}" />
             </StackPanel>

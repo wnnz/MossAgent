@@ -136,7 +136,7 @@ public sealed class WorkspaceConversationTabSynchronizationTests(ITestOutputHelp
     }
 
     private static WorkspaceCatalogViewModel Catalog(TestWorkspaceRepository repository) => new(
-        repository, new WorkspaceWorktreeCleanupService(repository, null!),
+        repository, null,
         new WorkspaceProjectService(repository, new TestFolderPickerService()));
 
     private static ProjectProfile Project(string name) => new(

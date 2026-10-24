@@ -1,4 +1,4 @@
-<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:MossAgent.App.Controls"
              x:Class="MossAgent.App.Views.ProviderAndModelSettingsPane"
@@ -6,12 +6,12 @@
   <Grid x:Name="ProviderSettingsRoot">
     <Grid Classes="settings-content-column"
           RowDefinitions="Auto,*">
-    <ui:AppSettingsPageHeader Classes="separated" Title="AI 提供商" Description="管理连接、模型列表与模型参数。"
+    <ui:AppSettingsPageHeader Classes="separated" Title="{res:L 'AI 提供商'}" Description="{res:L '管理连接、模型列表与模型参数。'}"
                               Status="{Binding Models.Status}" IsStatusError="{Binding Models.HasStatusError}">
       <ui:AppSettingsPageHeader.Actions>
         <StackPanel Classes="settings-header-actions">
-          <ui:AppActionButton Label="刷新" IconData="{StaticResource UiIconRefresh}" Classes="ghost" Command="{Binding Providers.RefreshCommand}" />
-          <ui:AppActionButton Label="添加提供商" IconData="{StaticResource UiIconPlus}" Classes="primary" Command="{Binding Providers.OpenCreateFormCommand}" />
+          <ui:AppActionButton Label="{res:L '刷新'}" IconData="{StaticResource UiIconRefresh}" Classes="ghost" Command="{Binding Providers.RefreshCommand}" />
+          <ui:AppActionButton Label="{res:L '添加提供商'}" IconData="{StaticResource UiIconPlus}" Classes="primary" Command="{Binding Providers.OpenCreateFormCommand}" />
         </StackPanel>
       </ui:AppSettingsPageHeader.Actions>
     </ui:AppSettingsPageHeader>
@@ -24,7 +24,7 @@
       </ui:AppCard>
       <ui:AppCard x:Name="EmptyCatalog" Classes="card card-inset-list" IsVisible="{Binding Models.Catalog.IsEmpty}">
         <ui:AppEmptyState Classes="settings-empty" IconData="{StaticResource UiIconProvider}"
-                          Title="还没有 AI 提供商" Description="添加提供商后，可以获取模型列表或手动配置模型。" />
+                          Title="{res:L '还没有 AI 提供商'}" Description="{res:L '添加提供商后，可以获取模型列表或手动配置模型。'}" />
       </ui:AppCard>
       <ui:AppItemsControl x:Name="ProviderRows" ItemsSource="{Binding Models.ProviderGroups}"
                           IsEnabled="{Binding Models.Catalog.CanMutate}">
@@ -43,16 +43,16 @@
                   <StackPanel Spacing="4">
                     <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,4">
                       <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <ui:AppText Text="模型" Classes="muted type-12 weight-semibold" />
+                        <ui:AppText Text="{res:L '模型'}" Classes="muted type-12 weight-semibold" />
                       </StackPanel>
-                      <ui:AppButton Grid.Column="1" Content="获取模型" Classes="ghost provider-settings-action" Margin="0,0,8,0"
+                      <ui:AppButton Grid.Column="1" Content="{res:L '获取模型'}" Classes="ghost provider-settings-action" Margin="0,0,8,0"
                               Command="{Binding $parent[UserControl].DataContext.Models.FetchModelsForProviderCommand}"
                               CommandParameter="{Binding}" />
-                      <ui:AppActionButton Grid.Column="2" Label="添加模型" IconData="{StaticResource UiIconPlus}" Classes="ghost provider-settings-action"
+                      <ui:AppActionButton Grid.Column="2" Label="{res:L '添加模型'}" IconData="{StaticResource UiIconPlus}" Classes="ghost provider-settings-action"
                               Command="{Binding $parent[UserControl].DataContext.Models.AddModelForProviderCommand}"
                               CommandParameter="{Binding}" />
                     </Grid>
-                    <ui:AppText Text="尚未配置模型。可获取模型列表，或手动添加模型。" Classes="subtle type-11" Margin="10,6" IsVisible="{Binding HasNoModels}" />
+                    <ui:AppText Text="{res:L '尚未配置模型。可获取模型列表，或手动添加模型。'}" Classes="subtle type-11" Margin="10,6" IsVisible="{Binding HasNoModels}" />
                     <ui:AppItemsControl ItemsSource="{Binding Models}">
                       <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -74,29 +74,29 @@
     </Grid>
 
     <ui:AppSettingsDialog Classes="wide" IsOpen="{Binding Providers.IsFormOpen}"
-                          Title="{Binding Providers.EditorTitle}" CloseLabel="关闭提供商配置"
+                          Title="{Binding Providers.EditorTitle}" CloseLabel="{res:L '关闭提供商配置'}"
                           CloseCommand="{Binding Providers.CloseFormCommand}">
             <StackPanel Spacing="9">
-            <ui:AppText Text="提供商名称" Classes="muted type-12" />
-             <ui:AppInput Text="{Binding Providers.Name}" PlaceholderText="例如 OpenAI / DeepSeek"
-                          AutomationProperties.Name="提供商名称" />
-            <ui:AppText Text="协议类型" Classes="muted type-12" />
+            <ui:AppText Text="{res:L '提供商名称'}" Classes="muted type-12" />
+             <ui:AppInput Text="{Binding Providers.Name}" PlaceholderText="{res:L '例如 OpenAI / DeepSeek'}"
+                          AutomationProperties.Name="{res:L '提供商名称'}" />
+            <ui:AppText Text="{res:L '协议类型'}" Classes="muted type-12" />
              <ui:AppComboBox ItemsSource="{Binding Providers.ProtocolOptions}"
                        SelectedItem="{Binding Providers.SelectedProtocolOption}"
                        HorizontalAlignment="Stretch" DisplayMemberBinding="{Binding DisplayName}"
-                       AutomationProperties.Name="协议类型" />
+                       AutomationProperties.Name="{res:L '协议类型'}" />
             <ui:AppText Text="Base URL" Classes="muted type-12" />
              <ui:AppInput Text="{Binding Providers.BaseUrl}" AutomationProperties.Name="Base URL" />
             <ui:AppText Text="API Key" Classes="muted type-12" />
              <ui:AppInput Text="{Binding Providers.ApiKey}" PasswordChar="●" PlaceholderText="{Binding Providers.ApiKeyPlaceholder}"
                           AutomationProperties.Name="API Key" />
-            <ui:AppText Text="网络代理" Classes="muted type-12" />
+            <ui:AppText Text="{res:L '网络代理'}" Classes="muted type-12" />
              <ui:AppComboBox ItemsSource="{Binding Providers.Proxies}" SelectedItem="{Binding Providers.SelectedProxy}"
                        DisplayMemberBinding="{Binding Name}" HorizontalAlignment="Stretch"
-                       AutomationProperties.Name="网络代理" />
+                       AutomationProperties.Name="{res:L '网络代理'}" />
             <WrapPanel Margin="0,4">
-              <ui:AppCheckBox Content="设为默认" IsChecked="{Binding Providers.IsDefault}" Margin="0,0,16,0" />
-              <ui:AppCheckBox Content="启用" IsChecked="{Binding Providers.IsEnabled}" />
+              <ui:AppCheckBox Content="{res:L '设为默认'}" IsChecked="{Binding Providers.IsDefault}" Margin="0,0,16,0" />
+              <ui:AppCheckBox Content="{res:L '启用'}" IsChecked="{Binding Providers.IsEnabled}" />
             </WrapPanel>
             </StackPanel>
           <ui:AppSettingsDialog.Footer>
@@ -104,10 +104,10 @@
             <ui:AppText Text="{Binding Providers.EditorNotice}" IsVisible="{Binding Providers.HasEditorNotice}"
                         Classes="muted type-12" TextWrapping="Wrap" />
             <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-<ui:AppButton Classes="primary" Content="保存提供商" Command="{Binding Providers.SaveCommand}" HorizontalAlignment="Stretch" />
+<ui:AppButton Classes="primary" Content="{res:L '保存提供商'}" Command="{Binding Providers.SaveCommand}" HorizontalAlignment="Stretch" />
               <ui:AppButton Grid.Column="1" Classes="danger" Content="{Binding Providers.DeleteButtonText}"
                             Command="{Binding Providers.DeleteCommand}" IsVisible="{Binding Providers.HasSelectedProvider}" />
-              <ui:AppButton Grid.Column="2" Content="取消" Command="{Binding Providers.CloseFormCommand}" />
+              <ui:AppButton Grid.Column="2" Content="{res:L '取消'}" Command="{Binding Providers.CloseFormCommand}" />
             </Grid>
             <ui:AppText Text="{Binding Providers.Status}" Classes="subtle type-11"
                         Classes.status-error="{Binding Providers.HasValidationError}"
@@ -117,63 +117,63 @@
     </ui:AppSettingsDialog>
 
     <ui:AppSettingsDialog Classes="wide" IsOpen="{Binding Models.IsFormOpen}"
-                          Title="配置模型" CloseLabel="关闭模型配置"
+                          Title="{res:L '配置模型'}" CloseLabel="{res:L '关闭模型配置'}"
                           CloseCommand="{Binding Models.CloseFormCommand}">
             <StackPanel Spacing="9">
-            <ui:AppText Text="模型 ID" Classes="muted type-12" />
-             <ui:AppInput Text="{Binding Models.ModelId}" PlaceholderText="例如 gpt-5"
-                          AutomationProperties.Name="模型 ID" />
-            <ui:AppText Text="显示名称" Classes="muted type-12" />
-             <ui:AppInput Text="{Binding Models.DisplayName}" AutomationProperties.Name="显示名称" />
+            <ui:AppText Text="{res:L '模型 ID'}" Classes="muted type-12" />
+             <ui:AppInput Text="{Binding Models.ModelId}" PlaceholderText="{res:L '例如 gpt-5'}"
+                          AutomationProperties.Name="{res:L '模型 ID'}" />
+            <ui:AppText Text="{res:L '显示名称'}" Classes="muted type-12" />
+             <ui:AppInput Text="{Binding Models.DisplayName}" AutomationProperties.Name="{res:L '显示名称'}" />
             <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
               <StackPanel>
-                <ui:AppText Text="上下文长度" Classes="muted type-12" />
+                <ui:AppText Text="{res:L '上下文长度'}" Classes="muted type-12" />
                  <ui:AppNumericUpDown Value="{Binding Models.ContextLength}" Minimum="1024" Maximum="4000000"
-                                      AutomationProperties.Name="上下文长度" />
+                                      AutomationProperties.Name="{res:L '上下文长度'}" />
               </StackPanel>
               <StackPanel Grid.Column="1">
-                <ui:AppText Text="最大输出 Token" Classes="muted type-12" />
+                <ui:AppText Text="{res:L '最大输出 Token'}" Classes="muted type-12" />
                  <ui:AppNumericUpDown Value="{Binding Models.MaximumOutputTokens}" Minimum="256" Maximum="1000000"
-                                      AutomationProperties.Name="最大输出 Token" />
+                                      AutomationProperties.Name="{res:L '最大输出 Token'}" />
               </StackPanel>
             </Grid>
             <StackPanel>
-              <ui:AppText Text="思考强度" Classes="muted type-12" />
+              <ui:AppText Text="{res:L '思考强度'}" Classes="muted type-12" />
                <ui:AppEditableChoice Choices="{Binding Models.ReasoningEfforts}" SelectedChoice="{Binding Models.ReasoningEffort}"
-                               HorizontalAlignment="Stretch" AutomationProperties.Name="思考强度" />
+                               HorizontalAlignment="Stretch" AutomationProperties.Name="{res:L '思考强度'}" />
             </StackPanel>
             <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
               <StackPanel>
-                <ui:AppText Text="Temperature（可留空）" Classes="muted type-12" />
+                <ui:AppText Text="{res:L 'Temperature（可留空）'}" Classes="muted type-12" />
                  <ui:AppNumericUpDown Value="{Binding Models.Temperature}" Minimum="0" Maximum="2" Increment="0.1" FormatString="0.0"
                                       AutomationProperties.Name="Temperature" />
               </StackPanel>
               <StackPanel Grid.Column="1">
-                <ui:AppText Text="Top-P（可留空）" Classes="muted type-12" />
+                <ui:AppText Text="{res:L 'Top-P（可留空）'}" Classes="muted type-12" />
                  <ui:AppNumericUpDown Value="{Binding Models.TopP}" Minimum="0" Maximum="1" Increment="0.05" FormatString="0.00"
                                       AutomationProperties.Name="Top-P" />
               </StackPanel>
             </Grid>
             <WrapPanel Margin="0,4">
-              <ui:AppCheckBox Content="默认模型" IsChecked="{Binding Models.IsDefault}" Margin="0,0,16,0" />
-              <ui:AppCheckBox Content="启用" IsChecked="{Binding Models.IsEnabled}" />
+              <ui:AppCheckBox Content="{res:L '默认模型'}" IsChecked="{Binding Models.IsDefault}" Margin="0,0,16,0" />
+              <ui:AppCheckBox Content="{res:L '启用'}" IsChecked="{Binding Models.IsEnabled}" />
             </WrapPanel>
             <WrapPanel Margin="0,0,0,4">
-              <ui:AppCheckBox Content="支持图像" IsChecked="{Binding Models.SupportsImages}" Margin="0,0,16,0" />
-              <ui:AppCheckBox Content="支持文件" IsChecked="{Binding Models.SupportsFiles}" />
+              <ui:AppCheckBox Content="{res:L '支持图像'}" IsChecked="{Binding Models.SupportsImages}" Margin="0,0,16,0" />
+              <ui:AppCheckBox Content="{res:L '支持文件'}" IsChecked="{Binding Models.SupportsFiles}" />
             </WrapPanel>
-            <ui:AppText Text="高级参数 JSON（可选）" Classes="muted type-12" />
+            <ui:AppText Text="{res:L '高级参数 JSON（可选）'}" Classes="muted type-12" />
              <ui:AppInput Text="{Binding Models.AdvancedJson}" AcceptsReturn="True" TextWrapping="Wrap"
                       Classes="code-font field-multiline"
-                      AutomationProperties.Name="高级参数 JSON" />
+                      AutomationProperties.Name="{res:L '高级参数 JSON'}" />
             </StackPanel>
           <ui:AppSettingsDialog.Footer>
           <StackPanel Spacing="4">
             <ui:AppText Text="{Binding Models.EditorNotice}" IsVisible="{Binding Models.HasEditorNotice}"
                         Classes="muted type-12" Classes.status-warning="{Binding Models.HasReasoningError}" TextWrapping="Wrap" />
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-<ui:AppButton Classes="primary" Content="保存模型" Command="{Binding Models.SaveModelCommand}" HorizontalAlignment="Stretch" />
-              <ui:AppButton Grid.Column="1" Content="取消" Command="{Binding Models.CloseFormCommand}" />
+<ui:AppButton Classes="primary" Content="{res:L '保存模型'}" Command="{Binding Models.SaveModelCommand}" HorizontalAlignment="Stretch" />
+              <ui:AppButton Grid.Column="1" Content="{res:L '取消'}" Command="{Binding Models.CloseFormCommand}" />
             </Grid>
             <ui:AppText Text="{Binding Models.EditorStatus}" Classes="muted type-12 status-error"
                         IsVisible="{Binding Models.HasEditorStatus}" TextWrapping="Wrap" />

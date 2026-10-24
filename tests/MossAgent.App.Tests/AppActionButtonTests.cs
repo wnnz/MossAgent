@@ -107,7 +107,7 @@ public sealed class AppActionButtonTests
             .ToArray();
 
         var action = Assert.Single(actions);
-        Assert.Equal("新对话", action.Attribute("Label")?.Value);
+        Assert.Equal("新对话", LocalizableText.Unwrap(action.Attribute("Label")?.Value));
         Assert.Equal("{StaticResource UiIconCompose}", action.Attribute("IconData")?.Value);
         Assert.Equal("{Binding NewTaskCommand}", action.Attribute("Command")?.Value);
     }

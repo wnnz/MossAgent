@@ -10,11 +10,11 @@ public sealed class ThemePaletteEditorViewModel : ObservableObject
 {
     private static readonly IReadOnlyList<ThemeAccentOption> PresetAccents =
     [
-        new(null, "默认"),
-        new("#2563EB", "蓝色"),
-        new("#047857", "绿色"),
-        new("#7C3AED", "紫色"),
-        new("#C2410C", "橙色")
+        new(null, UiText.T("默认")),
+        new("#2563EB", UiText.T("蓝色")),
+        new("#047857", UiText.T("绿色")),
+        new("#7C3AED", UiText.T("紫色")),
+        new("#C2410C", UiText.T("橙色"))
     ];
 
     private readonly IThemeService _service;
@@ -113,7 +113,7 @@ public sealed class ThemePaletteEditorViewModel : ObservableObject
             if (!ThemePalette.TryCreate(current.Background, current.Foreground, value.Value,
                     out var palette))
             {
-                SetFeedback("强调色必须为 #RRGGBB，且与白色文字对比度至少为 4.5:1。", null);
+                SetFeedback(UiText.T("强调色必须为 #RRGGBB，且与白色文字对比度至少为 4.5:1。"), null);
                 return;
             }
 
@@ -122,7 +122,7 @@ public sealed class ThemePaletteEditorViewModel : ObservableObject
             RefreshThemeOptions();
             OnPropertyChanged(nameof(AccentHex));
             SetFeedback(_service.PersistenceError,
-                _service.PersistenceError is null ? "强调色已应用。" : null);
+                _service.PersistenceError is null ? UiText.T("强调色已应用。") : null);
         }
     }
 
@@ -158,14 +158,14 @@ public sealed class ThemePaletteEditorViewModel : ObservableObject
         if (!ThemePalette.TryCreate(BackgroundHex.Trim(), ForegroundHex.Trim(), accentHex,
                 out var palette))
         {
-            SetFeedback("请输入 #RRGGBB 颜色，且背景与前景对比度至少为 4.5:1。", null);
+            SetFeedback(UiText.T("请输入 #RRGGBB 颜色，且背景与前景对比度至少为 4.5:1。"), null);
             return;
         }
 
         _service.SetPalette(_theme, palette);
         RefreshFromPalette();
         SetFeedback(_service.PersistenceError,
-            _service.PersistenceError is null ? "主题颜色已保存。" : null);
+            _service.PersistenceError is null ? UiText.T("主题颜色已保存。") : null);
     }
 
     private void Reset()
@@ -173,7 +173,7 @@ public sealed class ThemePaletteEditorViewModel : ObservableObject
         _service.SetPalette(_theme, null);
         RefreshFromPalette();
         SetFeedback(_service.PersistenceError,
-            _service.PersistenceError is null ? "已恢复默认颜色。" : null);
+            _service.PersistenceError is null ? UiText.T("已恢复默认颜色。") : null);
     }
 
     private void RefreshFromPalette()
@@ -182,7 +182,7 @@ public sealed class ThemePaletteEditorViewModel : ObservableObject
         BackgroundHex = palette.Background;
         ForegroundHex = palette.Foreground;
         var selected = PresetAccents.FirstOrDefault(option => option.Value == palette.AccentHex)
-            ?? new ThemeAccentOption(palette.AccentHex, $"自定义 {palette.AccentHex}");
+            ?? new ThemeAccentOption(palette.AccentHex, UiText.T("自定义 {0}", palette.AccentHex));
         _isRefreshing = true;
         AccentOptions = PresetAccents.Contains(selected) ? PresetAccents : [.. PresetAccents, selected];
         SelectedAccentOption = selected;
@@ -215,3 +215,4 @@ public sealed class ThemePaletteEditorViewModel : ObservableObject
         Status = status;
     }
 }
+

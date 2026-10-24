@@ -1,4 +1,4 @@
-<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:MossAgent.App.Controls"
              x:Class="MossAgent.App.Controls.AppThemeExtendedFontsCard"
@@ -6,20 +6,20 @@
   <StackPanel>
     <ui:AppBorder Classes="divider-bottom" Padding="0,7">
       <ui:AppSettingsRow Classes="font-control">
-        <ui:AppText Text="内容字体" Classes="type-13" />
+        <ui:AppText Text="{res:L '内容字体'}" Classes="type-13" />
         <ui:AppComboBox ItemsSource="{Binding ContentFontOptions}"
                         SelectedItem="{Binding SelectedContentFontOption}"
                         DisplayMemberBinding="{Binding Label}"
-                        AutomationProperties.Name="主题内容字体" />
+                        AutomationProperties.Name="{res:L '主题内容字体'}" />
       </ui:AppSettingsRow>
     </ui:AppBorder>
     <ui:AppBorder Padding="0,7">
       <ui:AppSettingsRow Classes="font-control">
-        <ui:AppText Text="代码字体" Classes="type-13" />
+        <ui:AppText Text="{res:L '代码字体'}" Classes="type-13" />
         <ui:AppComboBox ItemsSource="{Binding CodeFontOptions}"
                         SelectedItem="{Binding SelectedCodeFontOption}"
                         DisplayMemberBinding="{Binding Label}"
-                        AutomationProperties.Name="主题代码字体" />
+                        AutomationProperties.Name="{res:L '主题代码字体'}" />
       </ui:AppSettingsRow>
     </ui:AppBorder>
   </StackPanel>

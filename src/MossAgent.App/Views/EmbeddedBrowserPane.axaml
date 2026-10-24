@@ -19,9 +19,9 @@
                       IsEnabled="{Binding Actions.CanExecute}"
                       Classes="compact-selector browser-tabs" DisplayMemberBinding="{Binding Title}" />
       <ui:AppIconButton Grid.Column="1" Classes="icon-compact" Command="{Binding NewTabCommand}" Margin="5,0,0,0"
-                        Label="新建标签页" IconData="{StaticResource UiIconPlus}" />
+                        Label="{resources:L '新建标签页'}" IconData="{StaticResource UiIconPlus}" />
       <ui:AppIconButton Grid.Column="2" Classes="icon-compact" Command="{Binding CloseTabCommand}" Margin="5,0,0,0"
-                        Label="关闭当前标签页" IconData="{StaticResource UiIconClose}" />
+                        Label="{resources:L '关闭当前标签页'}" IconData="{StaticResource UiIconClose}" />
     </Grid>
     <ui:AppBorder Grid.Row="3" Classes="embedded-browser-surface">
       <Grid>

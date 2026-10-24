@@ -68,7 +68,7 @@ public sealed class WorkspaceConversationTabsViewModelTests
     }
 
     private static WorkspaceCatalogViewModel Catalog(TestWorkspaceRepository repository) => new(
-        repository, new WorkspaceWorktreeCleanupService(repository, null!),
+        repository, null,
         new WorkspaceProjectService(repository, new TestFolderPickerService()));
 
     [Fact]

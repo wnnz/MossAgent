@@ -2,6 +2,7 @@ using MossAgent.Application.Models;
 using MossAgent.App.Services;
 using MossAgent.Domain;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.ViewModels;
 
 internal static class WorkspaceConversationMapper
@@ -29,10 +30,10 @@ internal static class WorkspaceConversationMapper
     private static string ToDisplayRole(MessageRole role) =>
         role switch
         {
-            MessageRole.User => "你",
+            MessageRole.User => UiText.T("你"),
             MessageRole.Assistant => "MossAgent",
-            MessageRole.Tool => "工具",
-            _ => "系统"
+            MessageRole.Tool => UiText.T("工具"),
+            _ => UiText.T("系统")
         };
 
     private static ModelRole ToModelRole(MessageRole role) =>
@@ -44,3 +45,4 @@ internal static class WorkspaceConversationMapper
             _ => throw new InvalidOperationException("Unknown conversation role.")
         };
 }
+

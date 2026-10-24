@@ -1,4 +1,4 @@
-<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:MossAgent.App.Controls"
              xmlns:views="clr-namespace:MossAgent.App.Views"
@@ -28,12 +28,12 @@
         </ui:AppConversationHeader.HeadingContent>
         <ui:AppConversationHeader.MenuContent>
           <StackPanel>
-            <ui:AppButton Content="新对话" Classes="ghost align-leading" HorizontalAlignment="Stretch"
+            <ui:AppButton Content="{res:L '新对话'}" Classes="ghost align-leading" HorizontalAlignment="Stretch"
                           Command="{Binding Catalog.NewTaskCommand}" />
-            <ui:AppButton Content="重命名任务" Classes="ghost align-leading" HorizontalAlignment="Stretch"
+            <ui:AppButton Content="{res:L '重命名任务'}" Classes="ghost align-leading" HorizontalAlignment="Stretch"
                           IsVisible="{Binding Catalog.SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}"
                           Command="{Binding Catalog.TaskManagement.BeginRenameCommand}" />
-            <ui:AppButton Content="归档任务" Classes="ghost align-leading" HorizontalAlignment="Stretch"
+            <ui:AppButton Content="{res:L '归档任务'}" Classes="ghost align-leading" HorizontalAlignment="Stretch"
                           IsVisible="{Binding Catalog.SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}"
                           Command="{Binding Catalog.TaskManagement.ArchiveCommand}" />
             <ui:AppButton Content="{Binding Catalog.TaskManagement.PinToggleLabel}" Classes="ghost align-leading"
@@ -73,7 +73,7 @@
           <ui:AppActionButton Classes="ghost empty-project-action" HorizontalAlignment="Center"
                   IsVisible="{Binding IsProjectlessChat}"
                   Command="{Binding Catalog.ProjectEditor.OpenCommand}"
-                  ToolTip.Tip="添加一个工作项目" Label="添加项目"
+                  ToolTip.Tip="{res:L '添加一个工作项目'}" Label="{res:L '添加项目'}"
                   IconData="{StaticResource UiIconPlus}" />
         </ui:AppEmptySessionLayout>
       </Grid>

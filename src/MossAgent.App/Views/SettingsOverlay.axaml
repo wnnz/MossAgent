@@ -1,4 +1,4 @@
-<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:MossAgent.App.Controls"
              xmlns:views="clr-namespace:MossAgent.App.Views"
@@ -29,9 +29,9 @@
 
         <Grid Grid.Row="1" Classes="settings-search-row">
           <ui:AppInput Classes="settings-search"
-                       AutomationProperties.Name="搜索设置"
+                       AutomationProperties.Name="{res:L '搜索设置'}"
                        Text="{Binding SettingsSearchQuery, Mode=TwoWay}"
-                       PlaceholderText="搜索" />
+                       PlaceholderText="{res:L '搜索'}" />
           <ui:AppIcon Classes="ui-icon icon-small" Data="{StaticResource UiIconSearch}"
                       Margin="14,0,0,0" HorizontalAlignment="Left"
                       IsHitTestVisible="False" />
@@ -39,28 +39,28 @@
 
         <ui:AppScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="1">
-            <ui:AppText Text="个人" Classes="subtle settings-navigation-heading first"
+            <ui:AppText Text="{res:L '个人'}" Classes="subtle settings-navigation-heading first"
                         IsVisible="{Binding IsPersonalSettingsMatch}" />
             <ui:AppSettingsNavButton
                           HorizontalAlignment="Stretch"
                           IsVisible="{Binding IsAppearanceSettingsMatch}"
                           IsChecked="{Binding IsAppearanceSettingsSelected, Mode=OneWay}"
                           Command="{Binding SelectSettingsTabCommand}" CommandParameter="5"
-                          Label="外观" IconData="{StaticResource UiIconAppearance}" />
+                          Label="{res:L '外观'}" IconData="{StaticResource UiIconAppearance}" />
             <ui:AppSettingsNavButton
                           HorizontalAlignment="Stretch"
                           IsVisible="{Binding IsProviderSettingsMatch}"
                           IsChecked="{Binding IsProviderSettingsSelected, Mode=OneWay}"
                           Command="{Binding SelectSettingsTabCommand}" CommandParameter="0"
-                          Label="AI 提供商" IconData="{StaticResource UiIconProvider}" />
+                          Label="{res:L 'AI 提供商'}" IconData="{StaticResource UiIconProvider}" />
             <ui:AppSettingsNavButton
                           HorizontalAlignment="Stretch"
                           IsVisible="{Binding IsProxySettingsMatch}"
                           IsChecked="{Binding IsProxySettingsSelected, Mode=OneWay}"
                           Command="{Binding SelectSettingsTabCommand}" CommandParameter="1"
-                          Label="网络代理" IconData="{StaticResource UiIconProxy}" />
+                          Label="{res:L '网络代理'}" IconData="{StaticResource UiIconProxy}" />
 
-            <ui:AppText Text="集成" Classes="subtle settings-navigation-heading"
+            <ui:AppText Text="{res:L '集成'}" Classes="subtle settings-navigation-heading"
                         IsVisible="{Binding IsIntegrationSettingsMatch}" />
             <ui:AppSettingsNavButton HorizontalAlignment="Stretch"
                           IsVisible="{Binding IsSourceAccountSettingsMatch}"
@@ -72,29 +72,29 @@
                           IsVisible="{Binding IsMcpSettingsMatch}"
                           IsChecked="{Binding IsMcpSettingsSelected, Mode=OneWay}"
                           Command="{Binding SelectSettingsTabCommand}" CommandParameter="3"
-                          Label="插件" IconData="{StaticResource UiIconPlug}" />
+                          Label="{res:L '插件'}" IconData="{StaticResource UiIconPlug}" />
             <ui:AppSettingsNavButton
                           HorizontalAlignment="Stretch"
                           IsVisible="{Binding IsBrowserSettingsMatch}"
                           IsChecked="{Binding IsBrowserSettingsSelected, Mode=OneWay}"
                           Command="{Binding SelectSettingsTabCommand}" CommandParameter="2"
-                          Label="浏览器" IconData="{StaticResource UiIconBrowser}" />
+                          Label="{res:L '浏览器'}" IconData="{StaticResource UiIconBrowser}" />
 
-            <ui:AppText Text="代理" Classes="subtle settings-navigation-heading"
+            <ui:AppText Text="{res:L '代理'}" Classes="subtle settings-navigation-heading"
                         IsVisible="{Binding IsAgentSectionSettingsMatch}" />
             <ui:AppSettingsNavButton
                           HorizontalAlignment="Stretch"
                           IsVisible="{Binding IsAgentSettingsMatch}"
                           IsChecked="{Binding IsAgentSettingsSelected, Mode=OneWay}"
                           Command="{Binding SelectSettingsTabCommand}" CommandParameter="6"
-                          Label="自定义代理" IconData="{StaticResource UiIconAssistant}" />
+                          Label="{res:L '自定义代理'}" IconData="{StaticResource UiIconAssistant}" />
             <ui:AppSettingsNavButton
                           HorizontalAlignment="Stretch"
                           IsVisible="{Binding IsSubagentSettingsMatch}"
                           IsChecked="{Binding IsSubagentSettingsSelected, Mode=OneWay}"
                           Command="{Binding SelectSettingsTabCommand}" CommandParameter="4"
-                          Label="子代理" IconData="{StaticResource UiIconAssistant}" />
-            <ui:AppText Text="没有匹配的设置" Classes="muted type-12"
+                          Label="{res:L '子代理'}" IconData="{StaticResource UiIconAssistant}" />
+            <ui:AppText Text="{res:L '没有匹配的设置'}" Classes="muted type-12"
                        Margin="8,12" IsVisible="{Binding !HasSettingsSearchResults}" />
           </StackPanel>
         </ui:AppScrollViewer>

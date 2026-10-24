@@ -47,9 +47,9 @@ public sealed class SharedInteractionAppearanceTests
         Assert.Equal(["系统主题", "浅色主题", "深色主题"], appearance.Descendants()
             .Where(element => element.Name.LocalName == "AppButton"
                 && element.Attribute("Classes")?.Value.Contains("theme-mode-button") == true)
-            .Select(element => element.Attribute("AutomationProperties.Name")?.Value));
+            .Select(element => LocalizableText.Unwrap(element.Attribute("AutomationProperties.Name")?.Value)));
         Assert.Contains(settings.Descendants(), element => element.Name.LocalName == "AppInput"
-            && element.Attribute("AutomationProperties.Name")?.Value == "搜索设置");
+            && LocalizableText.Unwrap(element.Attribute("AutomationProperties.Name")?.Value) == "搜索设置");
     }
 
     private static string RepositoryRoot()

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using MossAgent.Application.Attachments;
 using MossAgent.Domain;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.ViewModels;
 
 internal sealed class WorkspaceSendCoordinator(
@@ -50,7 +51,7 @@ internal sealed class WorkspaceSendCoordinator(
             item.DisplayPath, item.SizeLabel, item.Thumbnail)).ToArray();
         var assistant = new ChatMessageViewModel("MossAgent", string.Empty);
         var messages = new ObservableCollection<ChatMessageViewModel>(request.VisibleMessages)
-            { new("你", prompt, attachments: messageAttachments, createdAt: task.UpdatedAt), assistant };
+            { new(UiText.T("你"), prompt, attachments: messageAttachments, createdAt: task.UpdatedAt), assistant };
         var state = new WorkspaceRunState(task, request.Project, request.Provider, request.Model, messages, assistant,
             agentInstructions: request.AgentInstructions);
         attachments.Consume(request.Attachments);
@@ -62,3 +63,4 @@ internal sealed class WorkspaceSendCoordinator(
             presentation.SetActivity, presentation.ApplyTaskUpdate, presentation.RunStateChanged));
     }
 }
+

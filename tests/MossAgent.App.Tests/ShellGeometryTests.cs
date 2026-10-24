@@ -325,7 +325,7 @@ public sealed class ShellGeometryTests
         var options = more.Descendants().Where(element => element.Name.LocalName == "AppButton").ToArray();
 
         Assert.Equal("{Binding Catalog.SelectedTask}", more.Attribute("ConversationTarget")?.Value);
-        Assert.Contains(options, option => option.Attribute("Content")?.Value == "新对话"
+        Assert.Contains(options, option => LocalizableText.Unwrap(option.Attribute("Content")?.Value) == "新对话"
             && option.Attribute("Command")?.Value == "{Binding Catalog.NewTaskCommand}");
         Assert.Contains(options, option => option.Attribute("Command")?.Value
             == "{Binding Catalog.TaskManagement.TogglePinCommand}"
@@ -346,7 +346,7 @@ public sealed class ShellGeometryTests
                 && child.Attribute("SelectedItem")?.Value == "{Binding SelectedBrowserKind}"));
         var general = Assert.Single(content.Elements(), element => element.Name.LocalName == "StackPanel"
             && element.Elements().Any(child => child.Name.LocalName == "AppText"
-                && child.Attribute("Text")?.Value == "常规"));
+                && LocalizableText.Unwrap(child.Attribute("Text")?.Value) == "常规"));
 
         Assert.Equal("0,11,0,0", primaryCard.Attribute("Margin")?.Value);
         Assert.Contains("card-inset-browser-intro", primaryCard.Attribute("Classes")?.Value.Split(' ') ?? []);
@@ -434,7 +434,7 @@ public sealed class ShellGeometryTests
             var footer = Assert.Single(modal.Elements(), element =>
                 element.Name.LocalName == "AppSettingsDialog.Footer");
             Assert.Contains(footer.Descendants(), element => element.Name.LocalName == "AppButton"
-                && element.Attribute("Content")?.Value.StartsWith("保存", StringComparison.Ordinal) == true);
+                && LocalizableText.Unwrap(element.Attribute("Content")?.Value)?.StartsWith("保存", StringComparison.Ordinal) == true);
         });
     }
 

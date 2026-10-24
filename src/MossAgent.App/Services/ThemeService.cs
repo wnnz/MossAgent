@@ -4,6 +4,7 @@ using Avalonia.Threading;
 using Avalonia.Media;
 using MossAgent.Application.Settings;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.Services;
 
 /// <summary>
@@ -62,7 +63,7 @@ public sealed class ThemeService : IThemeService, IDisposable
         }
         catch
         {
-            PersistenceError = "主题已应用，但保存失败。请检查应用数据目录的写入权限。";
+            PersistenceError = UiText.T("主题已应用，但保存失败。请检查应用数据目录的写入权限。");
         }
 
         ApplyTheme();
@@ -90,7 +91,7 @@ public sealed class ThemeService : IThemeService, IDisposable
         }
         catch
         {
-            PersistenceError = "主题颜色已应用，但保存失败。请检查应用数据目录的写入权限。";
+            PersistenceError = UiText.T("主题颜色已应用，但保存失败。请检查应用数据目录的写入权限。");
         }
 
         ApplyTheme();
@@ -143,3 +144,4 @@ public sealed class ThemeService : IThemeService, IDisposable
         _ => ThemeVariant.Light
     };
 }
+

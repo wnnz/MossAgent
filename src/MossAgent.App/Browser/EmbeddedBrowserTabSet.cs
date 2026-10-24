@@ -3,6 +3,7 @@ using MossAgent.App.ViewModels;
 using MossAgent.Tools.Abstractions.Browser;
 using WebViewControl = NativeWebView.Controls.NativeWebView;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.Browser;
 
 internal sealed class EmbeddedBrowserTabSet(
@@ -69,7 +70,7 @@ internal sealed class EmbeddedBrowserTabSet(
         AvaloniaUiThread.RunAsync(() =>
         {
             if (!_views.TryGetValue(tabId, out var next))
-                throw new InvalidOperationException($"浏览器标签不存在：{tabId}");
+                throw new InvalidOperationException(UiText.T("浏览器标签不存在：{0}", tabId));
             if (tabId != _activeId) Activate(tabId, next);
         }, cancellationToken);
 
@@ -85,9 +86,9 @@ internal sealed class EmbeddedBrowserTabSet(
         AvaloniaUiThread.RunAsync(() =>
         {
             if (_views.Count <= 1)
-                throw new InvalidOperationException("不能关闭浏览器会话的最后一个标签页。");
+                throw new InvalidOperationException(UiText.T("不能关闭浏览器会话的最后一个标签页。"));
             if (!_views.TryGetValue(tabId, out var closing))
-                throw new InvalidOperationException($"浏览器标签不存在：{tabId}");
+                throw new InvalidOperationException(UiText.T("浏览器标签不存在：{0}", tabId));
             if (tabId == _activeId)
             {
                 var nextId = _views.Keys.First(id => id != tabId);
@@ -114,3 +115,4 @@ internal sealed class EmbeddedBrowserTabSet(
         }, CancellationToken.None);
     }
 }
+

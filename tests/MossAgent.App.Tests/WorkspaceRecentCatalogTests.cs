@@ -161,7 +161,7 @@ public sealed class WorkspaceRecentCatalogTests
         var repository = new TestWorkspaceRepository { ProjectItems = [first, second], PinnedTasks = [pinned] };
         repository.TasksByProject[first.Id] = [task, pinned];
         repository.TasksByProject[second.Id] = [other];
-        var catalog = new WorkspaceCatalogViewModel(repository, new WorkspaceWorktreeCleanupService(repository, null!),
+        var catalog = new WorkspaceCatalogViewModel(repository, null,
             new WorkspaceProjectService(repository, new TestFolderPickerService()));
         return (catalog, repository, first, second, task, other);
     }

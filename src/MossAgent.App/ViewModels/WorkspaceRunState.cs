@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using MossAgent.Domain;
 using MossAgent.Application.Conversations;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.ViewModels;
 
 public sealed class WorkspaceRunState(
@@ -59,7 +60,7 @@ public sealed class WorkspaceRunState(
         }
     }
 
-    public string Activity { get; set; } = "准备运行…";
+    public string Activity { get; set; } = UiText.T("准备运行…");
 
     public void Cancel()
     {
@@ -80,3 +81,4 @@ public sealed class WorkspaceRunState(
         }
     }
 }
+

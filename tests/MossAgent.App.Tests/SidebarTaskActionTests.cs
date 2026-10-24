@@ -125,7 +125,7 @@ public sealed class SidebarTaskActionTests
         repository.ProjectItems = [project];
         repository.TasksByProject[project.Id] = [selected, target];
         var catalog = new WorkspaceCatalogViewModel(repository,
-            new WorkspaceWorktreeCleanupService(repository, null!),
+            null,
             new WorkspaceProjectService(repository, new TestFolderPickerService()));
         await catalog.ReloadAsync();
         catalog.UpsertTask(selected);

@@ -9,15 +9,16 @@ public sealed record GitChangedFileViewModel(
 {
     public string StatusLabel => Status switch
     {
-        "??" => "未跟踪",
-        "A " => "已添加",
-        "D " => "已删除",
-        " M" => "已修改",
-        " D" => "工作区删除",
-        "M " => "已暂存修改",
-        "MM" => "暂存后又修改",
-        _ when Status.Contains('R') => "重命名",
-        _ when Status.Contains('U') => "冲突",
+        "??" => MossAgent.App.Resources.UiText.T("未跟踪"),
+        "A " => MossAgent.App.Resources.UiText.T("已添加"),
+        "D " => MossAgent.App.Resources.UiText.T("已删除"),
+        " M" => MossAgent.App.Resources.UiText.T("已修改"),
+        " D" => MossAgent.App.Resources.UiText.T("工作区删除"),
+        "M " => MossAgent.App.Resources.UiText.T("已暂存修改"),
+        "MM" => MossAgent.App.Resources.UiText.T("暂存后又修改"),
+        _ when Status.Contains('R') => MossAgent.App.Resources.UiText.T("重命名"),
+        _ when Status.Contains('U') => MossAgent.App.Resources.UiText.T("冲突"),
         _ => Status.Trim()
     };
 }
+

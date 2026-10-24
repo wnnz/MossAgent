@@ -113,7 +113,7 @@ public sealed class SidebarProjectOrderingTests
         var otherTask = TaskFor(second, "other project activity", 1);
         repository.TasksByProject[second.Project.Id] = [otherTask];
         var catalog = new WorkspaceCatalogViewModel(repository,
-            new WorkspaceWorktreeCleanupService(repository, null!),
+            null,
             new WorkspaceProjectService(repository, new TestFolderPickerService()));
         await catalog.ReloadAsync();
         catalog.SelectedTask = selectedTask;

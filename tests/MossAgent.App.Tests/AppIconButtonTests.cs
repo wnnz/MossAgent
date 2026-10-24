@@ -117,7 +117,8 @@ public sealed class AppIconButtonTests
     [Fact]
     public void ExpandableIconButtons_UseOneSharedIconSize()
     {
-        var document = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App", "App.axaml"));
+        var document = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App",
+            "Styles", "AppButtonVariants.axaml"));
         var style = Assert.Single(document.Descendants(), element =>
             element.Name.LocalName == "Style"
             && element.Attribute("Selector")?.Value == "controls|AppButton.expand-icon controls|AppIcon.ui-icon");
@@ -150,7 +151,7 @@ public sealed class AppIconButtonTests
             .Any(attribute => attribute.Name.LocalName == "Name" && attribute.Value == "MaximizeButton"));
         Assert.Equal("{StaticResource UiIconRestore}", maximize.Attribute("AlternateIconData")?.Value);
         Assert.Contains("window-maximize", maximize.Attribute("Classes")!.Value.Split(' '));
-        var minimize = Assert.Single(buttons, button => button.Attribute("Label")?.Value == "最小化");
+        var minimize = Assert.Single(buttons, button => LocalizableText.Unwrap(button.Attribute("Label")?.Value) == "最小化");
         Assert.Null(minimize.Attribute("IsFilledIcon"));
 
         var styles = XDocument.Load(Path.Combine(appPath, "Styles", "WindowCaptionVariants.axaml"));
@@ -164,9 +165,9 @@ public sealed class AppIconButtonTests
         var applicationStyles = application.Root!.Elements().Single(element => element.Name.LocalName == "Application.Styles").Elements().ToArray();
         var caption = Assert.Single(applicationStyles, element => element.Attribute("Source")?.Value
             == "avares://MossAgent.App/Styles/WindowCaptionVariants.axaml");
-        foreach (var selector in new[] { "controls|AppButton.ghost", "controls|AppButton.ghost:pointerover", "controls|AppButton.closeButton:pointerover" })
-            Assert.True(Array.IndexOf(applicationStyles, caption) > Array.IndexOf(applicationStyles,
-                Assert.Single(applicationStyles, element => element.Attribute("Selector")?.Value == selector)));
+        var buttonStyles = Assert.Single(applicationStyles, element => element.Attribute("Source")?.Value
+            == "avares://MossAgent.App/Styles/AppButtonVariants.axaml");
+        Assert.True(Array.IndexOf(applicationStyles, caption) > Array.IndexOf(applicationStyles, buttonStyles));
     }
 
     [Theory]

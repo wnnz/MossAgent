@@ -121,6 +121,8 @@ internal static class AppComposition
             static provider => (GitWorktreeService)provider.GetRequiredService<IGitWorktreeService>());
         services.AddSingleton<IWorktreeCleanupIntents>(
             static provider => (GitWorktreeService)provider.GetRequiredService<IGitWorktreeService>());
+        services.AddSingleton<IGitWorktreeAuthorizationService>(
+            static provider => (GitWorktreeService)provider.GetRequiredService<IGitWorktreeService>());
         services.AddSingleton<IGitWorktreeReferenceDiscovery, GitWorktreeReferenceDiscovery>();
         services.AddSingleton<IGitRepositoryInfoService, GitRepositoryInfoService>();
         services.AddSingleton<MossAgent.Tools.Abstractions.Git.IGitRepositoryAuthorization, GitRepositoryAuthorization>();
@@ -265,7 +267,6 @@ internal static class AppComposition
         services.AddSingleton<WorkspaceRunExecutor>();
         services.AddSingleton<WorkspaceRunController>();
         services.AddSingleton<WorkspaceTaskPanelCoordinator>();
-        services.AddSingleton<WorkspaceWorktreeCleanupService>();
         services.AddSingleton<WorkspaceRepositoryStatusViewModel>();
         services.AddSingleton<WorkspaceCatalogViewModel>();
         services.AddSingleton<WorkspaceFileChangeUndoService>();
@@ -291,3 +292,4 @@ internal static class AppComposition
         services.AddSingleton<MainWindowViewModel>();
     }
 }
+

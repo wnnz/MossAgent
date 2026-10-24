@@ -1,4 +1,4 @@
-<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:MossAgent.App.Controls"
              x:Class="MossAgent.App.Controls.AppModelPickerMenu"
@@ -19,10 +19,10 @@
                         Label="{Binding ReasoningDisplayName}"
                         TrailingIconData="{StaticResource UiIconChevronRight}"
                         Command="{Binding ShowModelListCommand}"
-                        AutomationProperties.Name="选择模型" />
+                        AutomationProperties.Name="{res:L '选择模型'}" />
           <ui:AppIconButton Grid.Column="1" Classes="icon-compact"
                             Command="{Binding ResetReasoningCommand}"
-                            Label="恢复模型默认思考强度"
+                            Label="{res:L '恢复模型默认思考强度'}"
                             IconData="{StaticResource UiIconRefresh}" />
         </Grid>
         <ui:AppText Grid.Row="1" Text="{Binding SelectedModelName}"
@@ -31,7 +31,7 @@
         <ui:AppDiscreteSlider Grid.Row="2" StepValues="{Binding ReasoningSteps}"
                               SelectedStep="{Binding ReasoningSliderLabel, Mode=TwoWay}"
                               IsEnabled="{Binding CanUseSelectedModel}"
-                              AutomationProperties.Name="思考强度" />
+                              AutomationProperties.Name="{res:L '思考强度'}" />
       </Grid>
 
       <Grid Grid.Row="1" Width="207" RowDefinitions="Auto,Auto,Auto"
@@ -39,17 +39,17 @@
         <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,6">
           <ui:AppIconButton Classes="icon-compact"
                             Command="{Binding ShowQuickMenuCommand}"
-                            Label="返回思考强度"
+                            Label="{res:L '返回思考强度'}"
                             IconData="{StaticResource UiIconArrowLeft}" />
           <ui:AppText Grid.Column="1" Classes="type-12 weight-semibold"
-                      Text="选择模型" Margin="6,0,0,0" />
+                      Text="{res:L '选择模型'}" Margin="6,0,0,0" />
           <ui:AppIconButton Grid.Column="2" Classes="icon-compact"
-                            Command="{Binding RefreshCommand}" Label="刷新模型列表"
+                            Command="{Binding RefreshCommand}" Label="{res:L '刷新模型列表'}"
                             IconData="{StaticResource UiIconRefresh}" />
         </Grid>
         <ui:AppInput x:Name="ModelSearchInput" Grid.Row="1" Text="{Binding SearchQuery}"
-                     PlaceholderText="搜索模型..." Margin="0,0,0,8"
-                     AutomationProperties.Name="搜索模型"
+                     PlaceholderText="{res:L '搜索模型...'}" Margin="0,0,0,8"
+                     AutomationProperties.Name="{res:L '搜索模型'}"
                      IsVisible="{Binding ShowSearch}" />
         <Grid Grid.Row="2">
           <StackPanel IsVisible="{Binding HasNoModels}" Spacing="4" Margin="6,10">
@@ -61,7 +61,7 @@
                           Command="{Binding OpenProviderSettingsCommand}" />
           </StackPanel>
           <ui:AppText IsVisible="{Binding HasNoMatches}" Classes="muted type-12"
-                      Text="没有匹配的模型" Margin="8,12" />
+                      Text="{res:L '没有匹配的模型'}" Margin="8,12" />
           <ui:AppScrollViewer MaxHeight="280" IsVisible="{Binding HasModels}"
                               IsEnabled="{Binding CanChooseModel}">
             <ui:AppItemsControl ItemsSource="{Binding FilteredGroups}">

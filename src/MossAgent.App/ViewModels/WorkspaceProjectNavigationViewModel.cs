@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MossAgent.App.Resources;
 using MossAgent.Domain;
 
 namespace MossAgent.App.ViewModels;
@@ -40,7 +41,7 @@ public sealed class WorkspaceProjectNavigationViewModel : ObservableObject
         private set => SetProperty(ref _project, value);
     }
 
-    public string ProjectTaskSummary => $"{_allTasks.Count} 个任务";
+    public string ProjectTaskSummary => UiText.T("{0} 个任务", _allTasks.Count);
     public DateTimeOffset LastActivityAt => _allTasks.Count == 0
         ? Project.CreatedAt : _allTasks.Max(task => task.UpdatedAt);
 

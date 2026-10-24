@@ -125,7 +125,7 @@ public sealed class SidebarSearchViewModelTests
     internal static WorkspaceCatalogViewModel Catalog()
     {
         var repository = new TestWorkspaceRepository();
-        return new WorkspaceCatalogViewModel(repository, new WorkspaceWorktreeCleanupService(repository, null!),
+        return new WorkspaceCatalogViewModel(repository, null,
             new WorkspaceProjectService(repository, new TestFolderPickerService()));
     }
 }

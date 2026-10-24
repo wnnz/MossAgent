@@ -1,23 +1,23 @@
-<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:MossAgent.App.Controls"
              x:Class="MossAgent.App.Views.BrowserSettingsPane"
              x:CompileBindings="False">
   <ui:AppScrollViewer Classes="settings-page-scroll">
     <StackPanel Spacing="24" Margin="0,0,0,24">
-      <ui:AppSettingsPageHeader Title="浏览器" Description="管理任务的浏览器会话、资料目录与网络连接。" />
+      <ui:AppSettingsPageHeader Title="{res:L '浏览器'}" Description="{res:L '管理任务的浏览器会话、资料目录与网络连接。'}" />
 
       <ui:AppCard Classes="card card-inset-browser-intro" Margin="0,11,0,0">
           <ui:AppSettingsRow Classes="short-control">
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
               <ui:AppIcon Classes="ui-icon icon-hero" Data="{StaticResource UiIconBrowser}" VerticalAlignment="Center" />
             <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-              <ui:AppText Classes="type-13 weight-semibold" Text="浏览器类型" />
-              <ui:AppText Text="每个任务单独使用一个浏览器会话" Classes="muted type-11-5 settings-row-description" />
+              <ui:AppText Classes="type-13 weight-semibold" Text="{res:L '浏览器类型'}" />
+              <ui:AppText Text="{res:L '每个任务单独使用一个浏览器会话'}" Classes="muted type-11-5 settings-row-description" />
             </StackPanel>
             </Grid>
             <ui:AppComboBox ItemsSource="{Binding BrowserKinds}"
-                      AutomationProperties.Name="浏览器类型"
+                      AutomationProperties.Name="{res:L '浏览器类型'}"
                       SelectedItem="{Binding SelectedBrowserKind}"
                       DisplayMemberBinding="{Binding Label}"
                       VerticalAlignment="Center" />
@@ -25,19 +25,19 @@
       </ui:AppCard>
 
       <StackPanel Spacing="10" Margin="0,35,0,0">
-        <ui:AppText Classes="type-13" Text="常规" />
+        <ui:AppText Classes="type-13" Text="{res:L '常规'}" />
         <ui:AppCard Classes="card card-inset-rows">
           <StackPanel>
             <ui:AppBorder Classes="divider-bottom"
                     Padding="0,13">
               <ui:AppSettingsRow Classes="short-control">
                 <StackPanel Spacing="2" VerticalAlignment="Center">
-                  <ui:AppText Classes="type-13" Text="资料模式" />
-                  <ui:AppText Text="选择隔离资料、日常资料或已有 CDP 会话"
+                  <ui:AppText Classes="type-13" Text="{res:L '资料模式'}" />
+                  <ui:AppText Text="{res:L '选择隔离资料、日常资料或已有 CDP 会话'}"
                              Classes="muted type-11-5 settings-row-description" />
                 </StackPanel>
                 <ui:AppComboBox ItemsSource="{Binding ProfilePreferences}"
-                          AutomationProperties.Name="资料模式"
+                          AutomationProperties.Name="{res:L '资料模式'}"
                           SelectedItem="{Binding SelectedProfilePreference}"
                           DisplayMemberBinding="{Binding Label}"
                           VerticalAlignment="Center" />
@@ -47,11 +47,11 @@
                     Padding="0,13">
               <ui:AppSettingsRow>
                 <StackPanel Spacing="2" VerticalAlignment="Center">
-                  <ui:AppText Classes="type-13" Text="浏览器代理" />
-                  <ui:AppText Text="用于任务浏览器的网络连接" Classes="muted type-11-5 settings-row-description" />
+                  <ui:AppText Classes="type-13" Text="{res:L '浏览器代理'}" />
+                  <ui:AppText Text="{res:L '用于任务浏览器的网络连接'}" Classes="muted type-11-5 settings-row-description" />
                 </StackPanel>
                 <ui:AppComboBox ItemsSource="{Binding Proxies}"
-                          AutomationProperties.Name="浏览器代理"
+                          AutomationProperties.Name="{res:L '浏览器代理'}"
                           SelectedItem="{Binding SelectedProxy}"
                           DisplayMemberBinding="{Binding Name}"
                           VerticalAlignment="Center" />
@@ -60,13 +60,13 @@
             <ui:AppBorder Padding="0,13" IsVisible="{Binding IsDailyProfile}">
               <ui:AppSettingsRow>
                 <StackPanel Spacing="2" VerticalAlignment="Center">
-                  <ui:AppText Classes="type-13" Text="资料目录" />
-                  <ui:AppText Text="日常资料模式需要填写 Chrome 或 Edge 的 User Data 目录"
+                  <ui:AppText Classes="type-13" Text="{res:L '资料目录'}" />
+                  <ui:AppText Text="{res:L '日常资料模式需要填写 Chrome 或 Edge 的 User Data 目录'}"
                              Classes="muted type-11-5 settings-row-description" />
                 </StackPanel>
                 <ui:AppInput Text="{Binding ProfileDirectory}"
-                         AutomationProperties.Name="日常资料目录"
-                         PlaceholderText="User Data 目录" VerticalAlignment="Center" />
+                         AutomationProperties.Name="{res:L '日常资料目录'}"
+                         PlaceholderText="{res:L 'User Data 目录'}" VerticalAlignment="Center" />
               </ui:AppSettingsRow>
             </ui:AppBorder>
           </StackPanel>
@@ -74,15 +74,15 @@
       </StackPanel>
 
       <StackPanel Spacing="10" IsVisible="{Binding IsExistingCdp}">
-        <ui:AppText Classes="type-13" Text="高级连接" />
+        <ui:AppText Classes="type-13" Text="{res:L '高级连接'}" />
         <ui:AppCard Classes="card card-inset-browser-footer">
           <ui:AppSettingsRow>
             <StackPanel Spacing="2" VerticalAlignment="Center">
-              <ui:AppText Classes="type-13" Text="已有 CDP 调试地址" />
-              <ui:AppText Text="仅连接受信任的本地调试端口" Classes="muted type-11-5 settings-row-description" />
+              <ui:AppText Classes="type-13" Text="{res:L '已有 CDP 调试地址'}" />
+              <ui:AppText Text="{res:L '仅连接受信任的本地调试端口'}" Classes="muted type-11-5 settings-row-description" />
             </StackPanel>
             <ui:AppInput Text="{Binding CdpEndpoint}"
-                     AutomationProperties.Name="已有 CDP 调试地址"
+                     AutomationProperties.Name="{res:L '已有 CDP 调试地址'}"
                      PlaceholderText="http://127.0.0.1:9222" VerticalAlignment="Center" />
           </ui:AppSettingsRow>
         </ui:AppCard>
@@ -92,7 +92,7 @@
         <ui:AppText Text="{Binding EditorNotice}" IsVisible="{Binding HasEditorNotice}"
                     Classes="muted type-12" TextWrapping="Wrap" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-          <ui:AppButton Content="刷新" Classes="ghost" Command="{Binding RefreshCommand}" />
+          <ui:AppButton Content="{res:L '刷新'}" Classes="ghost" Command="{Binding RefreshCommand}" />
           <ui:AppButton Content="{Binding SaveLabel}" Classes="primary" Command="{Binding SaveCommand}" />
         </StackPanel>
         <ui:AppText Text="{Binding Status}" Classes="muted type-12"

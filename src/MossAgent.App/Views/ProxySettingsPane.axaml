@@ -1,4 +1,4 @@
-<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:MossAgent.App.Controls"
              xmlns:labels="clr-namespace:MossAgent.App.Resources"
@@ -6,20 +6,20 @@
              x:CompileBindings="False">
   <Grid>
     <Grid Classes="settings-content-column" RowDefinitions="Auto,*">
-        <ui:AppSettingsPageHeader Classes="separated" Title="网络代理" Description="管理用于模型连接和网页工具的网络代理。"
+        <ui:AppSettingsPageHeader Classes="separated" Title="{res:L '网络代理'}" Description="{res:L '管理用于模型连接和网页工具的网络代理。'}"
                                   Status="{Binding Status}" IsStatusError="{Binding HasStatusError}">
           <ui:AppSettingsPageHeader.Actions>
             <StackPanel Classes="settings-header-actions">
-              <ui:AppActionButton Label="刷新" IconData="{StaticResource UiIconRefresh}" Classes="ghost" Command="{Binding RefreshCommand}" />
-              <ui:AppActionButton Label="添加代理" IconData="{StaticResource UiIconPlus}" Classes="primary" Command="{Binding OpenCreateFormCommand}" />
+              <ui:AppActionButton Label="{res:L '刷新'}" IconData="{StaticResource UiIconRefresh}" Classes="ghost" Command="{Binding RefreshCommand}" />
+              <ui:AppActionButton Label="{res:L '添加代理'}" IconData="{StaticResource UiIconPlus}" Classes="primary" Command="{Binding OpenCreateFormCommand}" />
             </StackPanel>
           </ui:AppSettingsPageHeader.Actions>
         </ui:AppSettingsPageHeader>
     <ui:AppCard Grid.Row="1" Classes="card card-inset-list settings-catalog-card">
       <Grid RowDefinitions="Auto,*">
         <ui:AppEmptyState Classes="settings-empty" IsVisible="{Binding HasNoItems}"
-                          IconData="{StaticResource UiIconProxy}" Title="还没有网络代理"
-                          Description="添加 HTTP 或 SOCKS5 代理后，可为模型和浏览器连接选择使用。" />
+                          IconData="{StaticResource UiIconProxy}" Title="{res:L '还没有网络代理'}"
+                          Description="{res:L '添加 HTTP 或 SOCKS5 代理后，可为模型和浏览器连接选择使用。'}" />
         <ui:AppListBox Grid.Row="1" Classes="settings-catalog-list" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}">
           <ListBox.ItemTemplate>
             <DataTemplate>
@@ -45,43 +45,43 @@
     </Grid>
 
     <ui:AppSettingsDialog IsOpen="{Binding IsFormOpen}"
-                          Title="配置代理节点" CloseLabel="关闭代理配置" CloseCommand="{Binding CloseFormCommand}">
+                          Title="{res:L '配置代理节点'}" CloseLabel="{res:L '关闭代理配置'}" CloseCommand="{Binding CloseFormCommand}">
         <StackPanel Spacing="9">
-          <ui:AppText Text="代理名称" Classes="muted type-12" />
-          <ui:AppInput Text="{Binding Name}" PlaceholderText="例如 本地代理" AutomationProperties.Name="代理名称" />
+          <ui:AppText Text="{res:L '代理名称'}" Classes="muted type-12" />
+          <ui:AppInput Text="{Binding Name}" PlaceholderText="{res:L '例如 本地代理'}" AutomationProperties.Name="{res:L '代理名称'}" />
           <Grid ColumnDefinitions="*,140" ColumnSpacing="8">
             <StackPanel>
-              <ui:AppText Text="主机地址" Classes="muted type-12" />
-              <ui:AppInput Text="{Binding Host}" PlaceholderText="127.0.0.1" AutomationProperties.Name="主机地址" />
+              <ui:AppText Text="{res:L '主机地址'}" Classes="muted type-12" />
+              <ui:AppInput Text="{Binding Host}" PlaceholderText="127.0.0.1" AutomationProperties.Name="{res:L '主机地址'}" />
             </StackPanel>
             <StackPanel Grid.Column="1">
-              <ui:AppText Text="端口" Classes="muted type-12" />
-              <ui:AppNumericUpDown Value="{Binding Port}" Minimum="1" Maximum="65535" AutomationProperties.Name="端口" />
+              <ui:AppText Text="{res:L '端口'}" Classes="muted type-12" />
+              <ui:AppNumericUpDown Value="{Binding Port}" Minimum="1" Maximum="65535" AutomationProperties.Name="{res:L '端口'}" />
             </StackPanel>
           </Grid>
-           <ui:AppText Text="协议类型" Classes="muted type-12" />
-           <ui:AppComboBox ItemsSource="{Binding Protocols}" SelectedItem="{Binding Protocol}" HorizontalAlignment="Stretch" AutomationProperties.Name="协议类型" />
+           <ui:AppText Text="{res:L '协议类型'}" Classes="muted type-12" />
+           <ui:AppComboBox ItemsSource="{Binding Protocols}" SelectedItem="{Binding Protocol}" HorizontalAlignment="Stretch" AutomationProperties.Name="{res:L '协议类型'}" />
            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
              <StackPanel>
-               <ui:AppText Text="用户名（可选）" Classes="muted type-12" />
-               <ui:AppInput Text="{Binding Username}" PlaceholderText="代理账号" AutomationProperties.Name="用户名" />
+               <ui:AppText Text="{res:L '用户名（可选）'}" Classes="muted type-12" />
+               <ui:AppInput Text="{Binding Username}" PlaceholderText="{res:L '代理账号'}" AutomationProperties.Name="{res:L '用户名'}" />
              </StackPanel>
              <StackPanel Grid.Column="1">
-               <ui:AppText Text="密码（可选）" Classes="muted type-12" />
-               <ui:AppInput Text="{Binding Password}" PasswordChar="●" PlaceholderText="代理密码" AutomationProperties.Name="密码" />
+               <ui:AppText Text="{res:L '密码（可选）'}" Classes="muted type-12" />
+               <ui:AppInput Text="{Binding Password}" PasswordChar="●" PlaceholderText="{res:L '代理密码'}" AutomationProperties.Name="{res:L '密码'}" />
              </StackPanel>
            </Grid>
            <WrapPanel Margin="0,4">
-            <ui:AppCheckBox Content="设为默认" IsChecked="{Binding IsDefault}" Margin="0,0,16,0" />
-            <ui:AppCheckBox Content="启用" IsChecked="{Binding IsEnabled}" />
+            <ui:AppCheckBox Content="{res:L '设为默认'}" IsChecked="{Binding IsDefault}" Margin="0,0,16,0" />
+            <ui:AppCheckBox Content="{res:L '启用'}" IsChecked="{Binding IsEnabled}" />
           </WrapPanel>
         </StackPanel>
         <ui:AppSettingsDialog.Footer>
           <StackPanel Spacing="4">
           <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
             <ui:AppButton Classes="primary" Content="{Binding SaveLabel}" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
-            <ui:AppButton Grid.Column="1" Classes="danger" Content="删除" Command="{Binding DeleteCommand}" />
-            <ui:AppButton Grid.Column="2" Content="取消" Command="{Binding CloseFormCommand}" />
+            <ui:AppButton Grid.Column="1" Classes="danger" Content="{res:L '删除'}" Command="{Binding DeleteCommand}" />
+            <ui:AppButton Grid.Column="2" Content="{res:L '取消'}" Command="{Binding CloseFormCommand}" />
           </Grid>
           <ui:AppText Text="{Binding EditorNotice}" Classes="status-warning type-11"
                       IsVisible="{Binding HasEditorNotice}" TextWrapping="Wrap" />

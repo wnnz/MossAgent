@@ -4,6 +4,7 @@ using MossAgent.Tools.Abstractions.Browser;
 using NativeWebView.Core;
 using WebViewControl = NativeWebView.Controls.NativeWebView;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.Browser;
 
 public sealed class EmbeddedBrowserSessionFactory(
@@ -15,16 +16,16 @@ public sealed class EmbeddedBrowserSessionFactory(
     {
         if (options.Engine != BrowserEngine.Embedded)
         {
-            throw new ArgumentException("内置浏览器工厂只接受 Embedded 引擎。", nameof(options));
+            throw new ArgumentException(UiText.T("内置浏览器工厂只接受 Embedded 引擎。"), nameof(options));
         }
 
         if (options.ProfileMode == BrowserProfileMode.ExistingCdp)
         {
-            throw new InvalidOperationException("内置浏览器不支持连接已有 CDP 会话。");
+            throw new InvalidOperationException(UiText.T("内置浏览器不支持连接已有 CDP 会话。"));
         }
 
         if (options.TaskId is null || options.TaskId == Guid.Empty)
-            throw new ArgumentException("内置浏览器需要明确的所属任务。", nameof(options));
+            throw new ArgumentException(UiText.T("内置浏览器需要明确的所属任务。"), nameof(options));
 
         return AvaloniaUiThread.RunAsync<IBrowserSession>(
             () => CreateOnUiThreadAsync(options, cancellationToken), cancellationToken);
@@ -61,7 +62,7 @@ public sealed class EmbeddedBrowserSessionFactory(
         if (!NativeWebViewRuntime.Factory.TryCreateNativeWebViewBackend(
                 NativeWebViewRuntime.CurrentPlatform, out var backend))
         {
-            throw new PlatformNotSupportedException("当前平台没有可用的内置浏览器后端。");
+            throw new PlatformNotSupportedException(UiText.T("当前平台没有可用的内置浏览器后端。"));
         }
 
         var view = new AppEmbeddedBrowserView(backend);
@@ -98,3 +99,4 @@ public sealed class EmbeddedBrowserSessionFactory(
         view.IsDevToolsEnabled = true;
     }
 }
+

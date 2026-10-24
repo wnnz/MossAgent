@@ -1,4 +1,4 @@
-<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                    xmlns:ui="clr-namespace:MossAgent.App.Controls"
                    x:Class="MossAgent.App.Views.WorkspaceConversationTabsView"
@@ -26,7 +26,7 @@
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ui:AppItemsControl>
-      <ui:AppIconButton Classes="conversation-tab-add" Label="新对话"
+      <ui:AppIconButton Classes="conversation-tab-add" Label="{res:L '新对话'}"
                         Command="{Binding Catalog.NewTaskCommand}"
                         IsEnabled="{Binding Catalog.SelectedProject, Converter={x:Static ObjectConverters.IsNotNull}}"
                         IconData="{StaticResource UiIconPlus}" />

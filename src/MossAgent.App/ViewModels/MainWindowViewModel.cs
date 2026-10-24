@@ -295,13 +295,13 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         }
     }
 
-    public bool IsProviderSettingsMatch => MatchesSettingsQuery("AI 提供商 提供商与模型 供应商 模型");
-    public bool IsProxySettingsMatch => MatchesSettingsQuery("网络代理 Proxy SOCKS");
-    public bool IsBrowserSettingsMatch => MatchesSettingsQuery("浏览器 Browser CDP");
-    public bool IsMcpSettingsMatch => MatchesSettingsQuery("插件 MCP 扩展");
-    public bool IsSubagentSettingsMatch => MatchesSettingsQuery("子代理 模型 思考");
-    public bool IsAgentSettingsMatch => MatchesSettingsQuery("自定义代理 提示词 模型 思考");
-    public bool IsAppearanceSettingsMatch => MatchesSettingsQuery("外观 主题 浅色 深色 系统");
+    public bool IsProviderSettingsMatch => MatchesSettingsQuery(UiText.T("AI 提供商 提供商与模型 供应商 模型"));
+    public bool IsProxySettingsMatch => MatchesSettingsQuery(UiText.T("网络代理 Proxy SOCKS"));
+    public bool IsBrowserSettingsMatch => MatchesSettingsQuery(UiText.T("浏览器 Browser CDP"));
+    public bool IsMcpSettingsMatch => MatchesSettingsQuery(UiText.T("插件 MCP 扩展"));
+    public bool IsSubagentSettingsMatch => MatchesSettingsQuery(UiText.T("子代理 模型 思考"));
+    public bool IsAgentSettingsMatch => MatchesSettingsQuery(UiText.T("自定义代理 提示词 模型 思考"));
+    public bool IsAppearanceSettingsMatch => MatchesSettingsQuery(UiText.T("外观 主题 浅色 深色 系统"));
     public bool IsSourceAccountSettingsMatch => SourceAccounts is not null
         && MatchesSettingsQuery(SourceAccountText.Title + " GitHub PR Pull Request source account");
     public bool IsPersonalSettingsMatch => IsAppearanceSettingsMatch || IsProviderSettingsMatch || IsProxySettingsMatch;
@@ -488,3 +488,4 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         if (!_disposed) SelectInspectorTab("diff");
     }
 }
+

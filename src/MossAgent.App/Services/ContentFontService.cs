@@ -2,6 +2,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using MossAgent.Application.Settings;
 
+using MossAgent.App.Resources;
 namespace MossAgent.App.Services;
 
 public sealed class ContentFontService : IContentFontService, IDisposable
@@ -58,7 +59,7 @@ public sealed class ContentFontService : IContentFontService, IDisposable
         }
         catch
         {
-            PersistenceError = "内容字体已应用，但保存失败。请检查应用数据目录的写入权限。";
+            PersistenceError = UiText.T("内容字体已应用，但保存失败。请检查应用数据目录的写入权限。");
         }
 
         if (_themeService.IsDarkMode == (theme == ThemePreference.Dark)) Apply();
@@ -76,3 +77,4 @@ public sealed class ContentFontService : IContentFontService, IDisposable
         });
     }
 }
+

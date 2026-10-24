@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using CommunityToolkit.Mvvm.ComponentModel;
+using MossAgent.App.Resources;
 using MossAgent.Domain;
 
 namespace MossAgent.App.ViewModels;
@@ -21,8 +22,8 @@ public sealed class ProviderModelGroupViewModel : ObservableObject
     public bool HasNoModels => Models.Count == 0;
     public bool IsProviderDisabled => !Provider.IsEnabled;
     public string ExpansionActionLabel => IsExpanded
-        ? $"收起 {Provider.Name} 的模型"
-        : $"展开 {Provider.Name} 的模型";
+        ? UiText.T("收起 {0} 的模型", Provider.Name)
+        : UiText.T("展开 {0} 的模型", Provider.Name);
 
     public bool IsExpanded
     {

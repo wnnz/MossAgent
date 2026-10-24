@@ -57,7 +57,7 @@ public sealed class WindowNavigationGeometryTests
         Assert.Equal("{Binding #SettingsView.Navigation.IsNavigationVisible}", menus.Attribute("Classes.settings-navigation-visible")?.Value);
         Assert.Equal(["文件", "编辑", "视图", "帮助"], menus.Elements()
             .Select(element => element.Name.LocalName == "AppEditMenu"
-                ? WindowMenuText.Get("Edit") : element.Attribute("Content")?.Value));
+                ? WindowMenuText.Get("Edit") : LocalizableText.Unwrap(element.Attribute("Content")?.Value)));
         var variants = XDocument.Load(Path.Combine(root, "src", "MossAgent.App", "Styles", "SurfaceVariants.axaml"));
         var titlebarStyle = Assert.Single(variants.Descendants(), element => element.Attribute("Selector")?.Value
             == "controls|AppBorder.titlebar-surface");

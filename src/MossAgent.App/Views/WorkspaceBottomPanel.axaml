@@ -1,4 +1,4 @@
-<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="clr-namespace:MossAgent.App.Controls"
              x:Class="MossAgent.App.Views.WorkspaceBottomPanel"
@@ -6,22 +6,22 @@
   <ui:AppBorder Classes="bottom-panel-surface" Height="250">
     <Grid RowDefinitions="40,*,Auto" Margin="18,0,18,12">
       <Grid ColumnDefinitions="*,Auto,Auto,Auto">
-        <ui:AppText Classes="type-12 weight-semibold" Text="终端"
+        <ui:AppText Classes="type-12 weight-semibold" Text="{res:L '终端'}"
                    VerticalAlignment="Center" />
-        <ui:AppButton Grid.Column="1" Content="启动" Classes="ghost panel-action"
+        <ui:AppButton Grid.Column="1" Content="{res:L '启动'}" Classes="ghost panel-action"
                 Command="{Binding Terminal.StartCommand}" />
-        <ui:AppButton Grid.Column="2" Content="停止" Classes="ghost panel-action"
+        <ui:AppButton Grid.Column="2" Content="{res:L '停止'}" Classes="ghost panel-action"
                 Command="{Binding Terminal.StopCommand}" />
         <ui:AppIconButton Grid.Column="3" Command="{Binding ToggleBottomPanelCommand}"
-                          Label="关闭终端" IconData="{StaticResource UiIconClose}" />
+                          Label="{res:L '关闭终端'}" IconData="{StaticResource UiIconClose}" />
       </Grid>
       <ui:AppScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
         <ui:AppSelectableText Classes="type-12 code-font" Text="{Binding Terminal.Output}" />
       </ui:AppScrollViewer>
       <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
         <ui:AppInput Classes="terminal-input code-font" Text="{Binding Terminal.Input}"
-                 PlaceholderText="输入命令..." />
-        <ui:AppButton Grid.Column="1" Content="执行" Classes="ghost"
+                 PlaceholderText="{res:L '输入命令...'}" />
+        <ui:AppButton Grid.Column="1" Content="{res:L '执行'}" Classes="ghost"
                 Command="{Binding Terminal.SendCommand}" />
       </Grid>
     </Grid>

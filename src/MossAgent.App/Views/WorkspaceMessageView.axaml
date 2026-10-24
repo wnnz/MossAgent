@@ -1,4 +1,4 @@
-<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                    xmlns:ui="clr-namespace:MossAgent.App.Controls"
                    xmlns:views="clr-namespace:MossAgent.App.Views"
@@ -24,7 +24,7 @@
       <StackPanel IsVisible="{Binding IsAssistantMessage}" Spacing="2">
         <ui:AppResponseContent Blocks="{Binding Blocks}" CopyCodeCommand="{Binding $parent[views:WorkspaceChatView].CopyCodeCommand}" />
         <StackPanel Orientation="Horizontal" Spacing="2" Margin="0,0,0,4" IsVisible="{Binding HasContent}">
-          <ui:AppIconButton Classes="icon-compact" Label="复制回复"
+          <ui:AppIconButton Classes="icon-compact" Label="{res:L '复制回复'}"
                             Click="HandleCopyMessage" IconData="{StaticResource UiIconCopy}" />
         </StackPanel>
       </StackPanel>
