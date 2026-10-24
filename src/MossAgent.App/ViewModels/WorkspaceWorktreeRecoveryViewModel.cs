@@ -10,6 +10,7 @@ namespace MossAgent.App.ViewModels;
 public sealed class WorkspaceWorktreeRecoveryViewModel : ObservableObject, IDisposable
 {
     private readonly IWorktreeCreationIntents? _intents;
+    private readonly IWorktreeCleanupIntents? _cleanupIntents;
     private readonly SettingsOperationLifetime _lifetime = new();
     private readonly object _gate = new();
     private readonly List<Task> _operations = [];
@@ -20,15 +21,18 @@ public sealed class WorkspaceWorktreeRecoveryViewModel : ObservableObject, IDisp
     private int _busy;
     private bool _disposed;
 
-    public WorkspaceWorktreeRecoveryViewModel(IWorktreeCreationIntents? intents)
+    public WorkspaceWorktreeRecoveryViewModel(IWorktreeCreationIntents? intents,
+        IWorktreeCleanupIntents? cleanupIntents = null)
     {
         _intents = intents;
+        _cleanupIntents = cleanupIntents;
         RefreshCommand = new AsyncRelayCommand(RefreshAsync,
             () => !_disposed && IsAvailable && _project is not null && !IsBusy);
     }
 
     public ObservableCollection<WorkspaceWorktreeRecoveryItemViewModel> Items { get; } = [];
-    public bool IsAvailable => _intents?.SupportsCreationIntents == true;
+    public bool IsAvailable => _intents?.SupportsCreationIntents == true
+        || _cleanupIntents?.SupportsCleanupIntents == true;
     public bool HasItems => Items.Count > 0;
     public bool IsVisible => IsAvailable && (HasItems || HasNotice);
     public bool IsBusy => _busy > 0;
@@ -87,12 +91,19 @@ public sealed class WorkspaceWorktreeRecoveryViewModel : ObservableObject, IDisp
     {
         try
         {
-            var intents = await _intents!.ReadIncompleteAsync(project, operation.Token).ConfigureAwait(false);
+            var creation = _intents?.SupportsCreationIntents == true
+                ? await _intents.ReadIncompleteAsync(project, operation.Token).ConfigureAwait(false)
+                : (IReadOnlyList<WorktreeCreationIntent>)[];
+            var cleanup = _cleanupIntents?.SupportsCleanupIntents == true
+                ? await _cleanupIntents.ReadIncompleteAsync(project, operation.Token).ConfigureAwait(false)
+                : (IReadOnlyList<WorktreeCleanupIntent>)[];
             await AvaloniaUiThread.RunAsync(() =>
             {
                 if (_disposed || generation != _generation || _project?.Id != project.Id) return;
                 Items.Clear();
-                foreach (var intent in intents)
+                foreach (var intent in creation)
+                    Items.Add(new WorkspaceWorktreeRecoveryItemViewModel(intent, AcknowledgeItemAsync, CanMutate));
+                foreach (var intent in cleanup)
                     Items.Add(new WorkspaceWorktreeRecoveryItemViewModel(intent, AcknowledgeItemAsync, CanMutate));
                 NotifyStateChanged();
             }, CancellationToken.None);
@@ -131,19 +142,25 @@ public sealed class WorkspaceWorktreeRecoveryViewModel : ObservableObject, IDisp
         Task task;
         lock (_gate)
         {
-            if (_disposed || _busy > 0 || _intents is null) return Task.CompletedTask;
+            if (_disposed || _busy > 0 || Port(item) is not { } port) return Task.CompletedTask;
             var operation = _lifetime.CreateOperation(CancellationToken.None);
-            task = TrackLocked(AcknowledgeAsync(item, operation));
+            task = TrackLocked(AcknowledgeAsync(item, operation, port));
         }
         NotifyStateChanged();
         return task;
     }
 
-    private async Task AcknowledgeAsync(WorkspaceWorktreeRecoveryItemViewModel item, CancellationTokenSource operation)
+    private Func<Guid, CancellationToken, Task>? Port(WorkspaceWorktreeRecoveryItemViewModel item) =>
+        item.IsCleanupItem
+            ? _cleanupIntents is null ? null : _cleanupIntents.AcknowledgeAsync
+            : _intents is null ? null : _intents.AcknowledgeAsync;
+
+    private async Task AcknowledgeAsync(WorkspaceWorktreeRecoveryItemViewModel item,
+        CancellationTokenSource operation, Func<Guid, CancellationToken, Task> port)
     {
         try
         {
-            await _intents!.AcknowledgeAsync(item.Intent.TaskId, operation.Token).ConfigureAwait(false);
+            await port(item.TaskId, operation.Token).ConfigureAwait(false);
             await AvaloniaUiThread.RunAsync(() =>
             {
                 if (_disposed) return;

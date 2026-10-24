@@ -10,25 +10,50 @@ namespace MossAgent.Infrastructure.Git;
 public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git, TimeProvider? timeProvider = null,
     IRootIdentitySessionFactory? roots = null, SqliteConnectionFactory? connections = null,
     ProjectAuthorizationMonitor? authorizations = null, IWorktreeTargetClaimFactory? targets = null)
-    : IGitWorktreeService, IGitWorktreeAuthorizationService, IWorktreeCreationIntents
+    : IGitWorktreeService, IGitWorktreeAuthorizationService, IWorktreeCreationIntents, IWorktreeCleanupIntents
 {
     private readonly GitWorktreeInspector _inspector = new(git);
     private readonly GitWorktreeRootAuthorization? _authorization = roots is not null && connections is not null
         ? new(roots, connections) : roots is null && connections is null ? null
         : throw new ArgumentException("Worktree identity and persistence must be configured together.");
     private readonly SqliteWorktreeCreationIntents? _intents = connections is null ? null : new(connections);
+    private readonly SqliteWorktreeCleanupIntents? _cleanupIntents = connections is null ? null : new(connections);
 
     public bool SupportsCreationIntents => _intents is not null;
+    public bool SupportsCleanupIntents => _cleanupIntents is not null;
 
     public async Task ReconcileAsync(CancellationToken cancellationToken)
     {
-        if (_intents is null) return;
-        await _intents.ReconcileAsync(cancellationToken).ConfigureAwait(false);
-        foreach (var orphan in await _intents.ReadUnannotatedOrphansAsync(cancellationToken).ConfigureAwait(false))
+        if (_intents is not null)
         {
-            try { await _intents.AnnotateOrphanAsync(orphan.TaskId, ClassifyOrphan(orphan), cancellationToken).ConfigureAwait(false); }
-            catch { }
+            await _intents.ReconcileAsync(cancellationToken).ConfigureAwait(false);
+            foreach (var orphan in await _intents.ReadUnannotatedOrphansAsync(cancellationToken).ConfigureAwait(false))
+            {
+                try { await _intents.AnnotateOrphanAsync(orphan.TaskId, ClassifyOrphan(orphan), cancellationToken).ConfigureAwait(false); }
+                catch { }
+            }
         }
+        if (_cleanupIntents is not null)
+        {
+            await _cleanupIntents.ReconcileAsync(cancellationToken).ConfigureAwait(false);
+            foreach (var orphan in await _cleanupIntents.ReadUnannotatedOrphansAsync(cancellationToken).ConfigureAwait(false))
+            {
+                try { await _cleanupIntents.AnnotateOrphanAsync(orphan.TaskId, ClassifyCleanupOrphan(orphan), cancellationToken).ConfigureAwait(false); }
+                catch { }
+            }
+        }
+    }
+
+    // Annotates orphaned cleanup intents for manual recovery: "removed" the target is gone
+    // but the task still claims it, "retained" the target still exists, "unverified" the
+    // check itself failed.
+    private static string ClassifyCleanupOrphan(WorktreeCleanupIntent intent)
+    {
+        try
+        {
+            return Directory.Exists(intent.Target) || File.Exists(intent.Target) ? "retained" : "removed";
+        }
+        catch (Exception) { return "unverified"; }
     }
 
     // Annotates orphaned intents for manual recovery: "missing" target gone, "untracked" no .git
@@ -72,6 +97,14 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
 
     public Task AcknowledgeAsync(Guid taskId, CancellationToken token) =>
         _intents?.AcknowledgeAsync(taskId, token) ?? Task.CompletedTask;
+
+    Task<IReadOnlyList<WorktreeCleanupIntent>> IWorktreeCleanupIntents.ReadIncompleteAsync(
+        ProjectProfile project, CancellationToken token) =>
+        _cleanupIntents?.ReadIncompleteAsync(project.Id, token)
+        ?? Task.FromResult<IReadOnlyList<WorktreeCleanupIntent>>([]);
+
+    Task IWorktreeCleanupIntents.AcknowledgeAsync(Guid taskId, CancellationToken token) =>
+        _cleanupIntents?.AcknowledgeAsync(taskId, token) ?? Task.CompletedTask;
 
     public Task<WorktreeRootAuthorization?> ReadAuthorizationAsync(Guid taskId, CancellationToken token) =>
         Task.Run(() => (_authorization ?? throw new WorktreeAuthorizationException()).ReadAsync(taskId, token), token);
@@ -218,13 +251,15 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
     private async Task RemoveCoreAsync(ProjectProfile project, string worktreePath, CancellationToken cancellationToken)
     {
         OperationScope? scope = null;
+        Guid taskId = default;
         try
         {
             scope = await OpenScopeAsync(project, cancellationToken).ConfigureAwait(false);
             var token = scope.Token;
             var target = GitWorktreePaths.ManagedTarget(paths, worktreePath, true);
+            taskId = Guid.ParseExact(Path.GetFileName(target), "N");
             using var identity = _authorization is null ? null : await _authorization.OpenAsync(project,
-                Guid.ParseExact(Path.GetFileName(target), "N"), target, token).ConfigureAwait(false);
+                taskId, target, token).ConfigureAwait(false);
             var source = await _inspector.ReadProjectAsync(project, false, token).ConfigureAwait(false);
             if (GitWorktreePaths.Within(source.Root, target))
                 throw new UnauthorizedAccessException("The project's primary repository cannot be removed as a task worktree.");
@@ -232,14 +267,30 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
             GitWorktreePaths.ManagedTarget(paths, target, true);
             GitWorktreePaths.ValidateRepository(source);
             token.ThrowIfCancellationRequested();
+            var cleanupRecorded = false;
+            if (_cleanupIntents is not null)
+            {
+                await _cleanupIntents.RecordAsync(taskId, project, source.Root, target, token).ConfigureAwait(false);
+                cleanupRecorded = true;
+            }
             // Git must delete this directory. The final release-to-remove race is documented separately.
             identity?.Dispose();
             var result = await git.RunAsync(source.Root, source.Command("worktree", "remove", target), token).ConfigureAwait(false);
             if (result.ExitCode != 0) throw new InvalidOperationException("Git worktree removal failed; the directory was retained for inspection.");
+            if (cleanupRecorded)
+                await _cleanupIntents!.MarkStageAsync(taskId,
+                    WorktreeCleanupIntentStage.Recorded, WorktreeCleanupIntentStage.GitRemoved, token).ConfigureAwait(false);
         }
-        catch (OperationCanceledException failure)
+        catch (Exception failure)
         {
-            var mapped = scope?.MapCancellation(failure, cancellationToken, "removal") ?? failure;
+            var mapped = failure is OperationCanceledException cancelled
+                ? scope?.MapCancellation(cancelled, cancellationToken, "removal") ?? cancelled
+                : failure;
+            if (_cleanupIntents is not null && taskId != default && !cancellationToken.IsCancellationRequested)
+            {
+                try { await _cleanupIntents.MarkFailedAsync(taskId, RemovalErrorCode(mapped), CancellationToken.None).ConfigureAwait(false); }
+                catch { }
+            }
             if (!ReferenceEquals(mapped, failure)) throw mapped;
             throw;
         }
@@ -251,6 +302,15 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
         TimeoutException => "timeout",
         WorktreeAuthorizationException => "authorization",
         GitWorktreeReferenceException => "reference",
+        IOException => "io",
+        InvalidOperationException => "git",
+        _ => "unknown",
+    };
+
+    private static string RemovalErrorCode(Exception failure) => failure switch
+    {
+        TimeoutException => "timeout",
+        WorktreeAuthorizationException or UnauthorizedAccessException => "authorization",
         IOException => "io",
         InvalidOperationException => "git",
         _ => "unknown",

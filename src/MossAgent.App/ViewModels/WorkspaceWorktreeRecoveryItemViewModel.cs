@@ -13,23 +13,41 @@ public sealed class WorkspaceWorktreeRecoveryItemViewModel : ObservableObject
         AcknowledgeCommand = new AsyncRelayCommand(() => acknowledge(this), canMutate);
     }
 
-    internal WorktreeCreationIntent Intent { get; }
-    public string Target => Intent.Target;
-    public string StageLabel => WorkspaceText.Get(Intent.Stage == WorktreeCreationIntentStage.Failed
-        ? "WorktreeRecoveryStageFailed" : "WorktreeRecoveryStageOrphaned");
-    public string Reason => Intent.Stage == WorktreeCreationIntentStage.Failed
-        ? FailureReason(Intent.ErrorCode) : OrphanReason(Intent.ErrorCode);
+    internal WorkspaceWorktreeRecoveryItemViewModel(WorktreeCleanupIntent intent,
+        Func<WorkspaceWorktreeRecoveryItemViewModel, Task> acknowledge, Func<bool> canMutate)
+    {
+        CleanupIntent = intent;
+        AcknowledgeCommand = new AsyncRelayCommand(() => acknowledge(this), canMutate);
+    }
+
+    internal WorktreeCreationIntent? Intent { get; }
+    internal WorktreeCleanupIntent? CleanupIntent { get; }
+    internal bool IsCleanupItem => CleanupIntent is not null;
+    public Guid TaskId => Intent?.TaskId ?? CleanupIntent!.TaskId;
+    public string Target => Intent?.Target ?? CleanupIntent!.Target;
+    public string StageLabel => WorkspaceText.Get(IsCleanupItem
+        ? (CleanupIntent!.Stage == WorktreeCleanupIntentStage.Failed
+            ? "WorktreeCleanupStageFailed" : "WorktreeCleanupStageOrphaned")
+        : (Intent!.Stage == WorktreeCreationIntentStage.Failed
+            ? "WorktreeRecoveryStageFailed" : "WorktreeRecoveryStageOrphaned"));
+    public string Reason => IsCleanupItem ? CleanupReason() : CreationReason();
     public string Summary => $"{StageLabel} · {Reason}";
-    public string Detail => string.Format(WorkspaceText.Get("WorktreeRecoveryDetail"), Basis,
-        Intent.CreatedAt.ToLocalTime().ToString("g"));
+    public string Detail => IsCleanupItem
+        ? string.Format(WorkspaceText.Get("WorktreeCleanupDetail"), CleanupIntent!.Repository,
+            CleanupIntent.CreatedAt.ToLocalTime().ToString("g"))
+        : string.Format(WorkspaceText.Get("WorktreeRecoveryDetail"), Basis,
+            Intent!.CreatedAt.ToLocalTime().ToString("g"));
     public string AcknowledgeLabel => WorkspaceText.Get("WorktreeRecoveryAcknowledge");
     public IAsyncRelayCommand AcknowledgeCommand { get; }
 
-    private string Basis => Intent.BaseReference
+    private string Basis => Intent!.BaseReference
         ?? (Intent.BaseCommit is { Length: > 12 } commit ? commit[..12] : Intent.BaseCommit)
         ?? WorkspaceText.Get("WorktreeRecoveryBasisDefault");
 
     internal void NotifyCommands() => AcknowledgeCommand.NotifyCanExecuteChanged();
+
+    private string CreationReason() => Intent!.Stage == WorktreeCreationIntentStage.Failed
+        ? FailureReason(Intent.ErrorCode) : OrphanReason(Intent.ErrorCode);
 
     private static string FailureReason(string? code) => code switch
     {
@@ -51,6 +69,23 @@ public sealed class WorkspaceWorktreeRecoveryItemViewModel : ObservableObject
         "foreign" => WorkspaceText.Get("WorktreeRecoveryOrphanForeign"),
         "unlinked" => WorkspaceText.Get("WorktreeRecoveryOrphanUnlinked"),
         "retained" => WorkspaceText.Get("WorktreeRecoveryOrphanRetained"),
+        "unverified" => WorkspaceText.Get("WorktreeRecoveryOrphanUnverified"),
+        _ => WorkspaceText.Get("WorktreeRecoveryOrphanUnknown"),
+    };
+
+    private string CleanupReason() => CleanupIntent!.Stage == WorktreeCleanupIntentStage.Failed
+        ? CleanupFailureReason(CleanupIntent.ErrorCode) : CleanupOrphanReason(CleanupIntent.ErrorCode);
+
+    private static string CleanupFailureReason(string? code) => code switch
+    {
+        "git" => WorkspaceText.Get("WorktreeCleanupFailureGit"),
+        _ => FailureReason(code),
+    };
+
+    private static string CleanupOrphanReason(string? code) => code switch
+    {
+        "removed" => WorkspaceText.Get("WorktreeCleanupOrphanRemoved"),
+        "retained" => WorkspaceText.Get("WorktreeCleanupOrphanRetained"),
         "unverified" => WorkspaceText.Get("WorktreeRecoveryOrphanUnverified"),
         _ => WorkspaceText.Get("WorktreeRecoveryOrphanUnknown"),
     };

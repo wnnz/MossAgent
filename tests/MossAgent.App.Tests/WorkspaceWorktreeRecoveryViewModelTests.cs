@@ -15,6 +15,11 @@ public sealed class WorkspaceWorktreeRecoveryViewModelTests
             Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N")), stage, error,
             DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
 
+    private static WorktreeCleanupIntent Cleanup(Guid projectId, WorktreeCleanupIntentStage stage, string? error) =>
+        new(Guid.NewGuid(), projectId, @"D:\repo",
+            Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N")), stage, error,
+            DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+
     [Fact]
     public async Task IncompleteIntentsLoadWithLocalizedSummaryAndTitle()
     {
@@ -77,7 +82,7 @@ public sealed class WorkspaceWorktreeRecoveryViewModelTests
 
         Assert.Equal([first.TaskId], intents.Acknowledged);
         var remaining = Assert.Single(viewModel.Items);
-        Assert.Equal(second.TaskId, remaining.Intent.TaskId);
+        Assert.Equal(second.TaskId, remaining.TaskId);
     }
 
     [Fact]
@@ -101,7 +106,7 @@ public sealed class WorkspaceWorktreeRecoveryViewModelTests
         Assert.Equal("记录状态已变化（可能已在其他窗口处理），已重新读取。", viewModel.Notice);
         Assert.Equal(reads + 1, intents.ReadCalls.Count);
         var row = Assert.Single(viewModel.Items);
-        Assert.Equal(intent.TaskId, row.Intent.TaskId);
+        Assert.Equal(intent.TaskId, row.TaskId);
     }
 
     [Fact]
@@ -144,9 +149,57 @@ public sealed class WorkspaceWorktreeRecoveryViewModelTests
         gate.TrySetResult();
 
         var row = Assert.Single(viewModel.Items);
-        Assert.Equal(intentB.TaskId, row.Intent.TaskId);
+        Assert.Equal(intentB.TaskId, row.TaskId);
         Assert.Contains("目录存在但没有 Git 指针", row.Summary);
         Assert.Equal([projectA.Id, projectB.Id], intents.ReadCalls);
+    }
+
+    [Fact]
+    public async Task CleanupIntentsListAndAcknowledgeRoutesToCleanupPort()
+    {
+        var project = Project("a");
+        var creation = Intent(project.Id, WorktreeCreationIntentStage.Orphaned, "missing");
+        var cleanup = Cleanup(project.Id, WorktreeCleanupIntentStage.Orphaned, "retained");
+        var intents = new RecordingWorktreeCreationIntents();
+        var cleanupIntents = new RecordingWorktreeCleanupIntents();
+        intents.SetResults(project.Id, creation);
+        cleanupIntents.SetResults(project.Id, cleanup);
+        using var viewModel = new WorkspaceWorktreeRecoveryViewModel(intents, cleanupIntents);
+        viewModel.SetProject(project);
+        await viewModel.RefreshAsync();
+
+        Assert.Equal(2, viewModel.Items.Count);
+        var row = viewModel.Items[1];
+        Assert.Equal(cleanup.TaskId, row.TaskId);
+        Assert.Contains("清理中断", row.Summary);
+        Assert.Contains("目标目录仍存在", row.Summary);
+        Assert.Contains("D:\\repo", row.Detail);
+
+        await row.AcknowledgeCommand.ExecuteAsync(null);
+
+        Assert.Equal([cleanup.TaskId], cleanupIntents.Acknowledged);
+        Assert.Empty(intents.Acknowledged);
+        var remaining = Assert.Single(viewModel.Items);
+        Assert.Equal(creation.TaskId, remaining.TaskId);
+    }
+
+    [Fact]
+    public async Task CleanupFailureUsesRemovalLabelAndCleanupPortAloneKeepsPanelAvailable()
+    {
+        var project = Project("a");
+        var cleanup = Cleanup(project.Id, WorktreeCleanupIntentStage.Failed, "git");
+        var cleanupIntents = new RecordingWorktreeCleanupIntents();
+        cleanupIntents.SetResults(project.Id, cleanup);
+        using var viewModel = new WorkspaceWorktreeRecoveryViewModel(null, cleanupIntents);
+
+        Assert.True(viewModel.IsAvailable);
+        viewModel.SetProject(project);
+        await viewModel.RefreshAsync();
+
+        var row = Assert.Single(viewModel.Items);
+        Assert.True(row.IsCleanupItem);
+        Assert.Contains("清理失败", row.Summary);
+        Assert.Contains("Git 删除失败", row.Summary);
     }
 
     [Fact]

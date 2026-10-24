@@ -24,6 +24,22 @@ internal static class WorkspaceWorktreeRecoverySeeding
         return taskId;
     }
 
+    public static async Task<Guid> SeedRemovedCleanupOrphanAsync(WorkspaceModelSelectionFixture fixture,
+        ProjectProfile project)
+    {
+        var connections = new SqliteConnectionFactory(new AppDataPaths(fixture.DataRoot));
+        var intents = new SqliteWorktreeCleanupIntents(connections);
+        var taskId = Guid.NewGuid();
+        var target = Path.Combine(fixture.DataRoot, "worktrees", taskId.ToString("N"));
+        await intents.RecordAsync(taskId, project, project.PrimaryDirectory, target, fixture.Token);
+        await ExecuteAsync(connections, """
+            UPDATE worktree_cleanup_intents SET updated_at='2000-01-01T00:00:00.0000000+00:00'
+            WHERE stage<3;
+            """, fixture.Token);
+        await ((IWorktreeCleanupIntents)fixture.Worktrees).ReconcileAsync(fixture.Token);
+        return taskId;
+    }
+
     private static async Task ExecuteAsync(SqliteConnectionFactory connections, string commandText,
         CancellationToken token)
     {

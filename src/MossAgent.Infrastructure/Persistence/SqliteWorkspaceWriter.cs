@@ -58,6 +58,22 @@ internal sealed class SqliteWorkspaceWriter(SqliteConnectionFactory connections)
         command.Parameters.AddWithValue("$worktree", (object?)task.WorktreePath ?? DBNull.Value);
         if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
             throw new InvalidOperationException("A task cannot change its project scope.");
+        if (task.ProjectId is not null && task.WorktreePath is null)
+            await CompleteWorktreeCleanupAsync(connection, transaction, task, cancellationToken);
+    }
+
+    private static async Task CompleteWorktreeCleanupAsync(SqliteConnection connection, SqliteTransaction transaction,
+        AgentTask task, CancellationToken cancellationToken)
+    {
+        await using var complete = connection.CreateCommand();
+        complete.Transaction = transaction;
+        complete.CommandText = """
+            UPDATE worktree_cleanup_intents SET stage=2,updated_at=$now
+            WHERE task_id=$task AND stage<3;
+            """;
+        complete.Parameters.AddWithValue("$task", task.Id.ToString());
+        complete.Parameters.AddWithValue("$now", DateTimeOffset.UtcNow.ToString("O"));
+        await complete.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private static async Task ClaimWorktreeIntentAsync(SqliteConnection connection, SqliteTransaction transaction,
