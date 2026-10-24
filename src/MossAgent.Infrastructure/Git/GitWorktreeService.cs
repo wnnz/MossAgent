@@ -9,7 +9,8 @@ namespace MossAgent.Infrastructure.Git;
 
 public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git, TimeProvider? timeProvider = null,
     IRootIdentitySessionFactory? roots = null, SqliteConnectionFactory? connections = null,
-    ProjectAuthorizationMonitor? authorizations = null, IWorktreeTargetClaimFactory? targets = null)
+    ProjectAuthorizationMonitor? authorizations = null, IWorktreeTargetClaimFactory? targets = null,
+    IWorktreeRemovalGuardFactory? removals = null)
     : IGitWorktreeService, IGitWorktreeAuthorizationService, IWorktreeCreationIntents, IWorktreeCleanupIntents
 {
     private readonly GitWorktreeInspector _inspector = new(git);
@@ -277,10 +278,17 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
                 await _cleanupIntents.RecordAsync(taskId, project, source.Root, target, token).ConfigureAwait(false);
                 cleanupRecorded = true;
             }
-            // Git must delete this directory. The final release-to-remove race is documented separately.
+            // Git must delete the enrolled object itself. The pinning lease releases first
+            // so git can unlink, then the removal guard re-opens that same object with
+            // delete sharing: a substituted target can be deleted in its place, but the
+            // enrolled object then survives and ConfirmRemoved fails closed.
+            var expected = identity?.Roots.Count == 1 ? identity.Roots[0] : null;
             identity?.Dispose();
+            using var guard = removals is null || expected is null ? null
+                : await removals.OpenAsync(target, expected, token).ConfigureAwait(false);
             var result = await git.RunAsync(source.Root, source.Command("worktree", "remove", target), token).ConfigureAwait(false);
             if (result.ExitCode != 0) throw new InvalidOperationException("Git worktree removal failed; the directory was retained for inspection.");
+            guard?.ConfirmRemoved();
             if (cleanupRecorded)
                 await _cleanupIntents!.MarkStageAsync(taskId,
                     WorktreeCleanupIntentStage.Recorded, WorktreeCleanupIntentStage.GitRemoved, token).ConfigureAwait(false);
