@@ -332,8 +332,13 @@ rev-parse 链路固定 commit。网络失败给本地化提示，不静默退化
 
 **现状：** 四协议和设置到运行已通，仍需补齐所有终态变体、真实服务能力及配置竞争矩阵。
 
-1. Providers 维持请求构建/流解析/事件/错误映射分离，逐协议补空流、failed/incomplete、
-   缺失终态 EOF、工具片段缺失、重复终态和取消的 JSON/SSE fixtures；失败不能推动 Queue 自动续发。
+1. 流终态夹具已逐协议补齐（四协议×空流/failed/incomplete/缺失终态 EOF/工具片段缺失/
+   重复终态/取消矩阵审计后补缺）；并修复五个真实解析缺陷：OpenAI Responses 收到
+   `[DONE]` 无终态事件时静默"成功"、Responses/Anthropic 畸形 JSON 帧泄漏原始异常、
+   OpenAI 事件映射对缺失 name/call_id/参数静默丢弃或伪造 call_id、Anthropic
+   `message_stop` 静默丢弃未闭合 tool_use、`message_delta` 忽略 max_tokens/refusal；
+   四协议失败模式各验证请求次数恰为 1（无隐藏重发），`ModelFailed`→`AgentFailureEvent`
+   为终态、不推动 Queue 自动续发。
 2. 将逐模型能力覆盖与协议支持共同用于输入校验，接入 R05 的文件/PDF能力；上下文、输出、
    自定义思考强度和其他参数进入实际请求。未知或不支持参数给修复说明，不静默替代；发现模型不覆盖用户编辑值。
 3. Infrastructure 明确请求开始时的提供商/代理配置快照；测试默认代理、显式直连、带凭据代理、
