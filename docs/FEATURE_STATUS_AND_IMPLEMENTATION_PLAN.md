@@ -121,7 +121,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | R01 | 部分完成；安全阻断 | 命令/PTY/Git hooks/helpers/stdio MCP 等代码执行的真实文件系统隔离 | P0；原生 MXC 独立环境尚未就绪 |
 | R02 | 部分完成、部分未验证 | 最终路径竞争、严格撤权排空、完整入口审计、产物/缓存崩溃回收与配额 | P0；复用已有句柄端口和 schema 26–28 |
 | R03 | 附件 Steer/发送偏好未实现；其他矩阵未验证 | 附件引导、默认发送配置、Queue/Steer 竞争及事务/副作用中崩溃 | P1；R02/R05 |
-| R04 | 部分完成 | 远端分支获取、创建原子认领、句柄级清理、替换对象重新授权及完整崩溃生命周期 | P1；R01/R02 |
+| R04 | 部分完成 | 创建/清理 intent 生命周期、恢复面板、重试移除与 Windows 句柄级删除守卫已落地；清理前 drain、注册槽清理、替换对象重新授权、非 Windows 守卫及完整崩溃生命周期仍缺 | P1；R01/R02 |
 | R05 | 部分完成 | PDF/其他文件、全图查看、子代理图像共享、未引用快照安全回收 | P1；模型协议与产物会话 |
 | R06 | 部分完成、部分未验证 | 全协议终态与断线、真实提供商/模型能力和代理配置竞争矩阵 | P1；获准真实服务账号 |
 | R07 | 部分完成、部分未验证 | 内外/CDP 切换、可靠人工接管、其他创建/副作用崩溃与重启组合 | P1；R01/R02 |
@@ -268,9 +268,18 @@ Acknowledged）：`git worktree remove` 前按授权修订 CAS 记录 intent，�
 保存清除 worktree_path 在同一事务推进 Detached，删除失败尽力标记 Failed+错误码。
 启动对账：任务行已摘挂置 Detached，GitRemoved 且任务行缺失（创建回滚路径）同样判
 完成，其余陈旧在途置 Orphaned 并按目标是否存在标注 removed/retained/unverified；
-恢复面板同时列出清理 intent（清理失败/清理中断）并沿用显式“标记已核实”。清理前
-关闭新运行的 drain、逐句柄最终删除 CAS 与 worktree 注册槽级元数据清理仍未实现；
-清理需要释放禁止删除共享的句柄再调用 Git，因此最终删除窗口仍有竞态。
+恢复面板同时列出清理 intent（清理失败/清理中断）并沿用显式“标记已核实”；对
+Failed/Orphaned 且目标仍存在（非 removed）的清理 intent，面板另提供“重试安全
+移除”，完整复用 `RemoveAsync` 的授权范围/受管路径/任务 ID/授权 grant/源仓库校验与
+intent 记录链路，成功推进 GitRemoved 并刷新列表，授权过期提示陈旧并重读，其它失败
+给不含细节的可操作提示。最终删除窗口在 Windows 已闭合：`IWorktreeRemovalGuard`
+端口由 `WindowsWorktreeRemovalGuard` 实现——释放钉住租约后以 FILE_SHARE_DELETE 按
+相对名重开目标目录并核对卷/文件身份与登记 grant 一致才放行 `git worktree remove`；
+目标被替换则守卫开启失败，git 不执行；Git 成功后用 FILE_STANDARD_INFO.DeletePending
+确认被删的正是登记对象，若替身被删而登记对象存活则记 Failed 不误标 GitRemoved
+（真实 NTFS 测试覆盖改名替换攻击）。清理前关闭新运行的 drain、worktree 注册槽级
+元数据清理与替换对象重新授权仍未实现；无 `IWorktreeRemovalGuardFactory` 注册的平台
+（当前仅 Windows 提供实现）最终删除窗口竞态仍存在。
 
 1. 已落地：受管 runner 的本地分支/标签发现、搜索/分页和固定 commit 预览已并入基准
    选择器，自动发现与手工输入分别保留。远端获取已做成单独显式动作：基准选择器内的
@@ -283,16 +292,18 @@ rev-parse 链路固定 commit。网络失败给本地化提示，不静默退化
    在目录变更前持久化 task/repository/base commit/target/identity intent（schema 29，
    授权修订条件插入、既有工作树任务回填为已认领），成功后首个任务/消息保存同事务
    条件认领；无 intent 的任务保存被拒绝。
-3. 清理先关闭新运行并完成 R02 的 drain；按保存 grant 打开受控删除会话，比较身份后删除原对象。
-   研究仅处理该 worktree 注册槽的 Git 元数据清理，避免对象删除后 Git 再按同名路径删除替换目录，
-   不采用全局 prune。若不能证明交接安全，保留明确失败状态。
+3. 按保存 grant 的受控删除会话已落地（Windows 删除共享守卫 + DeletePending 复核，
+   见上）；恢复面板重试移除已落地。清理前关闭新运行并完成 R02 的 drain 仍未实现。
+   研究仅处理该 worktree 注册槽的 Git 元数据清理，避免对象删除后 Git 再按同名路径
+   删除替换目录，不采用全局 prune。
 4. 创建侧阶段已落地（schema 30：阶段列+错误码，claim/Git/失败/认领逐阶持久化，启动
    对账标记 Orphaned/Consumed，`IWorktreeCreationIntents` 读口与确认）；对账复核已
    解析 `.git` 指针并核对注册槽 commondir 归属本仓库与 gitdir 回指目标。启动恢复展示
    面板已落地（`WorkspaceWorktreeRecoveryViewModel`）。清理侧阶段已落地（schema 31
    `worktree_cleanup_intents`：`IWorktreeCleanupIntents` 端口、记录/推进/失败标记、
-   摘挂同事务完成、启动对账与 orphan 标注、面板同源展示与确认）；清理前的 drain、
-   逐句柄最终删除 CAS、注册槽级元数据清理与替换对象重新授权仍缺。
+   摘挂同事务完成、启动对账与 orphan 标注、面板同源展示与确认、保留对象的重试
+   安全移除）；逐句柄最终删除已在 Windows 以守卫闭合；清理前的 drain、注册槽级
+   元数据清理、替换对象重新授权、非 Windows 守卫实现与完整崩溃组合矩阵仍缺。
 5. 对已登记但被替换的对象，另设计显式重新授权代际和 CAS：完整展示任务/项目/路径，
    提交新 grant 时撤销旧租约，旧 context 不得复用新版本；确认后仍需手动续跑。
 
