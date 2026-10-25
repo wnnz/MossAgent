@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using MossAgent.Tools.Abstractions.Git;
+using MossAgent.Tools.BuiltIn.Resources;
 
 namespace MossAgent.Tools.BuiltIn.Git;
 
@@ -39,4 +40,21 @@ public static class GitRemoteEndpoints
     public static GitRemoteCredentialMethod Credential(Uri uri) => uri.Scheme is "http" or "https"
         ? uri.UserInfo.Length > 0 ? GitRemoteCredentialMethod.Embedded : GitRemoteCredentialMethod.Https
         : uri.UserInfo.Contains(':') ? GitRemoteCredentialMethod.Embedded : GitRemoteCredentialMethod.Ssh;
+
+    // Sanitized endpoint shown to the model: local transports collapse to one marker, anything else is
+    // the masked scheme://host[:port] (or null for unsupported shapes). CAS comparisons reuse this label.
+    public static string? Label(GitRemoteTransport? transport) => transport is null ? null
+        : transport.Method is GitRemoteCredentialMethod.Local ? ToolExecutionText.Get("GitRemoteLocalEndpoint") : transport.Endpoint;
+
+    // Effective credential method across the fetch and push legs of one remote; embedded wins, then
+    // unsupported, then the push leg so the push-facing transport drives the classification.
+    public static GitRemoteCredentialMethod Merge(GitRemoteTransport? fetch, GitRemoteTransport? push)
+    {
+        if (fetch?.Method is GitRemoteCredentialMethod.Embedded || push?.Method is GitRemoteCredentialMethod.Embedded)
+            return GitRemoteCredentialMethod.Embedded;
+        if (fetch is null && push is null
+            || fetch?.Method is GitRemoteCredentialMethod.Unsupported || push?.Method is GitRemoteCredentialMethod.Unsupported)
+            return GitRemoteCredentialMethod.Unsupported;
+        return (push ?? fetch)!.Method;
+    }
 }

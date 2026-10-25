@@ -44,23 +44,11 @@ public sealed class GitRemoteStateReader(AuthorizedPathResolver paths, IGitRepos
         var pushUrls = await TryQueryAsync(repository, ["remote", "get-url", "--push", "--all", "--", name], context, token).ConfigureAwait(false);
         var fetch = fetchUrls.Count > 0 ? GitRemoteEndpoints.Classify(fetchUrls[0]) : null;
         var push = pushUrls.Count > 0 ? GitRemoteEndpoints.Classify(pushUrls[0]) : null;
-        var method = Config(config, $"remote.{name}.vcs") is not null ? GitRemoteCredentialMethod.Unsupported : Merge(fetch, push);
-        return new(name, Label(fetch), Label(push), method, fetch?.Endpoint != push?.Endpoint,
-            pushUrls.Count > 1 ? pushUrls.Count : null);
+        var method = Config(config, $"remote.{name}.vcs") is not null ? GitRemoteCredentialMethod.Unsupported
+            : GitRemoteEndpoints.Merge(fetch, push);
+        return new(name, GitRemoteEndpoints.Label(fetch), GitRemoteEndpoints.Label(push), method,
+            fetch?.Endpoint != push?.Endpoint, pushUrls.Count > 1 ? pushUrls.Count : null);
     }
-
-    private static GitRemoteCredentialMethod Merge(GitRemoteTransport? fetch, GitRemoteTransport? push)
-    {
-        if (fetch?.Method is GitRemoteCredentialMethod.Embedded || push?.Method is GitRemoteCredentialMethod.Embedded)
-            return GitRemoteCredentialMethod.Embedded;
-        if (fetch is null && push is null
-            || fetch?.Method is GitRemoteCredentialMethod.Unsupported || push?.Method is GitRemoteCredentialMethod.Unsupported)
-            return GitRemoteCredentialMethod.Unsupported;
-        return (push ?? fetch)!.Method;
-    }
-
-    private static string? Label(GitRemoteTransport? transport) => transport is null ? null
-        : transport.Method is GitRemoteCredentialMethod.Local ? ToolExecutionText.Get("GitRemoteLocalEndpoint") : transport.Endpoint;
 
     private static (List<GitCredentialHelperEntry> Entries, bool Truncated) Helpers(string config)
     {

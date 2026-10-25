@@ -128,7 +128,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | R08 | 部分完成 | MCP 认证/会话失效/stdio 进程退出的失败分类与可操作建议已落地（开发分支）；认证恢复/OAuth 挑战、配置 CAS/代际、断流/并发取消的完整闭环仍缺 | P1；R01/R02 |
 | R09 | 部分完成、部分未验证 | 子代理当前版本全触发/审批/失败/取消/共享/并发/恢复矩阵 | P1；R05/R06 |
 | R10 | 部分完成；计划级授权快照尚缺，其他组合待验 | 定时计划授权/参数版本、关闭/中断/并发/多实例、时区与 DST，以及关闭后的行为实机验收 | P1；R02/R06 |
-| R11 | 部分完成 | 单文件区块暂存/取消暂存已落地（rename/copy/二进制/新增/删除/仅模式/冲突明确拒绝）；整组暂存/取消暂存已落地（git.stage_paths/unstage_paths，1–64 路径单命令原子、越界/链接/目录逐项拒绝）；提交消息草稿独立版本持久化（git_commit_drafts v40，编辑去抖 CAS 写入、重启恢复）与提交未知结果核对（复核 HEAD/暂存数后消费或保留草稿）已落地；推送非确定性失败后以远端跟踪引用核对实际结果（已推送→明示，未证实→保留原错误，核对失败→明示未知）；预览绑定已落地（git.diff 输出尾部绑定 diff-sha256 与各文件 file-sha256，hunk 工具 required expectedDiff 执行期哈希复核、漂移即拒绝）；远端/上游配置读取与凭据方式展示已落地（git.remotes 只读工具：脱敏 scheme://host 端点、local/ssh/https/embedded/unsupported 凭据方式分类、credential.helper 值链、当前分支上游；推送对话框凭据行揭示 URL 内嵌凭据并警示）；远端 set-url/上游条件变更端口、真实远端核对、非快进引导及原生验收仍缺 | P2；R01/R02 |
+| R11 | 部分完成 | 单文件区块暂存/取消暂存已落地（rename/copy/二进制/新增/删除/仅模式/冲突明确拒绝）；整组暂存/取消暂存已落地（git.stage_paths/unstage_paths，1–64 路径单命令原子、越界/链接/目录逐项拒绝）；提交消息草稿独立版本持久化（git_commit_drafts v40，编辑去抖 CAS 写入、重启恢复）与提交未知结果核对（复核 HEAD/暂存数后消费或保留草稿）已落地；推送非确定性失败后以远端跟踪引用核对实际结果（已推送→明示，未证实→保留原错误，核对失败→明示未知）；预览绑定已落地（git.diff 输出尾部绑定 diff-sha256 与各文件 file-sha256，hunk 工具 required expectedDiff 执行期哈希复核、漂移即拒绝）；远端/上游配置读取与凭据方式展示已落地（git.remotes 只读工具：脱敏 scheme://host 端点、local/ssh/https/embedded/unsupported 凭据方式分类、credential.helper 值链、当前分支上游；推送对话框凭据行揭示 URL 内嵌凭据并警示）；远端/上游条件变更端口已落地（git.remote_set_url 按脱敏端点+凭据方式做语义级 CAS、本地目的地复用推送授权端口、永不回显内嵌凭据，git.branch_upstream 按原文 CAS 写 branch.*.remote/merge 并如实报告部分应用）；非快进引导、真实远端核对及原生验收仍缺 | P2；R01/R02 |
 | R12 | 部分完成 | PR 收件箱、reviews/activity、版本标记、确认写入、OAuth/GitLab/云审阅 | P2；独立写授权与公开接口 |
 | R13 | 未实现完整链路 | 插件/技能/扩展目录、安装、启停、执行、升级和卸载 | P2；R01/R08及目录/账号接口 |
 | R14 | 部分基础，完整操作未实现 | 目标窗口绑定的桌面指针、键盘、接管和恢复 | P2；Windows 原生输入与 R02 |
@@ -514,7 +514,14 @@ required expectedDiff 携带模型所见哈希，应用前对实时捕获的差�
    脱敏 scheme://host[:port] 端点、local/ssh/https/embedded/unsupported 凭据方式分类
    （embedded 揭示 URL 内嵌凭据风险但绝不回显 userinfo）、credential.helper 值链与
    当前分支上游；git.push_preview 携带凭据方式，推送对话框凭据行对内嵌凭据追加警示。
-   远端 set-url/上游条件变更端口仍缺。账号或系统凭据集成须明确选择，不扫描任意浏览器/CLI 凭据。
+   条件变更端口已落地：git.remote_set_url 以 expectedFetch/expectedPush 声明最近一次
+   git.remotes 的脱敏端点与凭据方式（endpoint 为 null 断言该侧无已配置 URL），执行期重读真实
+   get-url 分类逐项比对、不符即 git_remote_changed 且不写；新 URL 复用同一形状分类，unsupported
+   拒绝、embedded 允许、local 目标复用推送目的地授权端口；两侧顺序写并如实报告部分应用。
+   git.branch_upstream 以可空 expectedRemote/expectedMergeRef 原文 CAS 后顺序写
+   branch.<b>.remote/merge（游离 HEAD 必须显式指定已存在分支、remote 必须已配置、mergeRef
+   限 refs/heads/）。真实远端核对、非快进引导与原生验收仍缺。账号或系统凭据集成须明确选择，
+   不扫描任意浏览器/CLI 凭据。
 3. ~~提交消息用独立版本草稿持久化；失败、取消或断线后先核对实际 HEAD 再保留或消费草稿~~
    提交侧已落地（v40 表、CAS 写入、失败/超时后以 git.commit_preview 复核 HEAD 与暂存数：
    HEAD 变且暂存空→消费草稿，HEAD 同→保留，HEAD 变且仍有暂存→保留并提示外部变更，核对

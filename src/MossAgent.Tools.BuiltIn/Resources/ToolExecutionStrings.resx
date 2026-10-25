@@ -66,6 +66,24 @@
   <data name="GitRemotesDescription" xml:space="preserve"><value>只读列出已配置远端及其脱敏传输端点、凭据方式分类与当前分支上游，以及 credential.helper 值链；不连接远端，不回显 URL 内嵌凭据。</value></data>
   <data name="GitRemotesReady" xml:space="preserve"><value>远端与凭据方式读取完成，未连接远端。</value></data>
   <data name="GitRemotesReadFailed" xml:space="preserve"><value>无法完整读取远端与凭据配置，请检查仓库、权限及输出规模。</value></data>
+  <data name="GitRemoteSetUrlDescription" xml:space="preserve"><value>条件变更指定远端的 fetch 或 push URL：expectedFetch/expectedPush 必须先按最近一次 git.remotes 输出的脱敏端点与凭据方式逐项声明（endpoint 为 null 表示期望该侧没有已配置 URL），任一不符即拒绝且不写入；写入 url 需同时声明 expectedFetch，写入 pushUrl 需同时声明 expectedPush。新 URL 为不支持的传输即拒绝；本地目标须是明确授权的 Git 仓库；URL 原文（含可能的内嵌凭据）不会回显。</value></data>
+  <data name="GitRemoteSetUrlSucceeded" xml:space="preserve"><value>远端 URL 已更新并完成复核，未连接远端。</value></data>
+  <data name="GitRemoteSetUrlFailed" xml:space="preserve"><value>远端 URL 写入失败，未应用任何更改。请用 git.remotes 复核远端配置后手动重试。</value></data>
+  <data name="GitRemoteSetUrlPartial" xml:space="preserve"><value>fetch URL 已更新但 push URL 写入失败，远端处于部分应用状态。请用 git.remotes 复核实际配置后继续，不要假设两项都已生效或都未生效。</value></data>
+  <data name="GitRemoteMissing" xml:space="preserve"><value>指定的远端不存在或未在 git remote 中配置，请核对远端名称。</value></data>
+  <data name="GitRemoteChanged" xml:space="preserve"><value>远端 URL 配置与声明的期望值不符，未执行写入。请重新运行 git.remotes 核对脱敏端点与凭据方式后再试。</value></data>
+  <data name="GitRemoteTransportUnsupported" xml:space="preserve"><value>新 URL 不是受支持的标准 Git 传输；请使用 HTTP(S)、SSH、git 或明确授权的本地仓库路径，不使用自定义远端助手。</value></data>
+  <data name="GitRemoteSelectionInvalid" xml:space="preserve"><value>远端名称或新 URL 无效，请检查格式后重试。</value></data>
+  <data name="GitRemoteExpectationMissing" xml:space="preserve"><value>写入某一侧 URL 必须同时声明该侧的期望值；请先用 git.remotes 读取当前状态。</value></data>
+  <data name="GitBranchUpstreamDescription" xml:space="preserve"><value>设置本地分支的上游（branch.&lt;branch&gt;.remote 与 branch.&lt;branch&gt;.merge）；branch 缺省时使用当前 HEAD 分支，游离 HEAD 必须显式指定存在的分支；expectedRemote/expectedMergeRef 为可空条件期望值（null 表示期望该键不存在，缺省不校验），不符即拒绝且不写入。remote 必须已配置，mergeRef 必须是 refs/heads/ 下的分支。</value></data>
+  <data name="GitUpstreamSucceeded" xml:space="preserve"><value>分支 {0} 的上游已更新。</value></data>
+  <data name="GitUpstreamDetached" xml:space="preserve"><value>HEAD 处于游离状态且未指定 branch，无法确定要设置上游的分支；请显式填写存在的分支名。</value></data>
+  <data name="GitUpstreamChanged" xml:space="preserve"><value>当前上游配置与声明的期望值不符，未执行写入。请用 git.remotes 复核上游后重新声明。</value></data>
+  <data name="GitUpstreamFailed" xml:space="preserve"><value>上游配置写入失败，未应用任何更改。请复核仓库配置后手动重试。</value></data>
+  <data name="GitUpstreamPartial" xml:space="preserve"><value>branch 的 remote 键已写入但 merge 键写入失败，上游处于部分应用状态。请复核 branch 配置后继续，不要假设两项都已生效或都未生效。</value></data>
+  <data name="GitUpstreamReadFailed" xml:space="preserve"><value>无法完整读取分支上游配置，请检查仓库、权限及输出规模。</value></data>
+  <data name="GitUpstreamSelectionInvalid" xml:space="preserve"><value>远端、分支或 mergeRef 无效；mergeRef 必须是 refs/heads/ 前缀的合法分支名。</value></data>
+  <data name="GitBranchMissing" xml:space="preserve"><value>指定分支不存在于 refs/heads 下，请核对分支名。</value></data>
   <data name="GitPushSucceeded" xml:space="preserve"><value>普通单分支推送已完成，未强推或修改上游配置。</value></data>
   <data name="GitPushFailed" xml:space="preserve"><value>无法确认推送完成。请检查远端分支是否已更新、访问凭据、非快进冲突及钩子/签名配置；不要直接重复操作。原始输出可能含凭据，未显示。</value></data>
   <data name="SourceFilesDescription" xml:space="preserve"><value>只读获取明确授权 PR 在已展示提交版本下的变更文件和有界补丁，缺失或不完整补丁明确标记。</value></data>
