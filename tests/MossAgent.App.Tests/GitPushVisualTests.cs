@@ -41,7 +41,7 @@ public sealed class GitPushVisualTests : IAsyncLifetime
         {
             if (request.ToolName == "git.push_preview") return Task.FromResult(ToolResult.Success("preview", JsonSerializer.Serialize(
                 new GitPushPreview(new string('a', 64), new string('b', 40), "feature/source", "origin", "feature/review",
-                    "https://example.invalid", ["origin", "upstream"]), JsonSerializerOptions.Web)));
+                    "https://example.invalid", ["origin", "upstream"], null), JsonSerializerOptions.Web)));
             operation = token; return pending.Task;
         } };
         await using var model = new GitPushViewModel(executor, _ => Task.CompletedTask);

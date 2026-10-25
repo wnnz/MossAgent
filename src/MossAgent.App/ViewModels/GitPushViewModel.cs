@@ -106,6 +106,7 @@ public sealed class GitPushViewModel : ObservableObject, IDisposable, IAsyncDisp
         var context = _context! with { AuthorizedRoots = _context!.AuthorizedRoots.ToArray() };
         var generation = _generation;
         var revision = _inputRevision;
+        var expectedHead = _preview?.Head;
         var arguments = Arguments(push);
         var close = false;
         using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(5));
@@ -117,6 +118,13 @@ public sealed class GitPushViewModel : ObservableObject, IDisposable, IAsyncDisp
         try
         {
             var result = await _tools.ExecuteAsync(new(Guid.NewGuid().ToString("N"), push ? "git.push" : "git.push_preview", arguments), context, operation.Token).ConfigureAwait(false);
+            // After a non-deterministic failure the push may have landed anyway; a successful push
+            // refreshes refs/remotes/<remote>/<target> locally, so re-reading the preview with the
+            // same operation token proves the outcome without touching network or credentials.
+            var verification = GitPushVerification.None;
+            if (push && !result.IsSuccess && !operation.IsCancellationRequested
+                && !GitPushOutcomeClassifier.IsDeterministic(result.ErrorCode))
+                verification = await VerifyPushAsync(context, arguments, expectedHead, operation.Token).ConfigureAwait(false);
             var preview = !push && result.IsSuccess && !operation.IsCancellationRequested ? Parse(result.Content) : null;
             if (push && result.IsSuccess && IsCurrent(generation) && !operation.IsCancellationRequested)
             {
@@ -128,8 +136,7 @@ public sealed class GitPushViewModel : ObservableObject, IDisposable, IAsyncDisp
             {
                 if (!IsCurrent(generation)) return;
                 _preview = null;
-                Status = InspectorText.Get(operation.IsCancellationRequested ? "GitPushInterrupted" : !result.IsSuccess ? FailureKey(result.ErrorCode)
-                    : revision != _inputRevision ? push ? "GitPushChangedAfterSuccess" : "GitPushSelectionChanged" : push ? "GitPushSucceeded" : "GitPushReview");
+                Status = InspectorText.Get(StatusKey(push, result, verification, revision != _inputRevision, operation.IsCancellationRequested));
                 if (!push && preview is not null && !operation.IsCancellationRequested && revision == _inputRevision)
                 {
                     _remote = preview.Remote;
@@ -159,6 +166,24 @@ public sealed class GitPushViewModel : ObservableObject, IDisposable, IAsyncDisp
         return JsonSerializer.SerializeToElement(values);
     }
 
+    private async Task<GitPushVerification> VerifyPushAsync(ToolExecutionContext context, JsonElement pushArguments,
+        string? expectedHead, CancellationToken token)
+    {
+        try
+        {
+            var selection = new Dictionary<string, string>();
+            if (pushArguments.TryGetProperty("remote", out var remote)) selection["remote"] = remote.GetString()!;
+            if (pushArguments.TryGetProperty("targetBranch", out var target)) selection["targetBranch"] = target.GetString()!;
+            var result = await _tools.ExecuteAsync(new(Guid.NewGuid().ToString("N"), "git.push_preview",
+                JsonSerializer.SerializeToElement(selection)), context, token).ConfigureAwait(false);
+            if (!result.IsSuccess) return GitPushVerification.Unknown;
+            var preview = Parse(result.Content);
+            return expectedHead is { } head && string.Equals(preview.RemoteHead, head, StringComparison.OrdinalIgnoreCase)
+                ? GitPushVerification.Landed : GitPushVerification.Unproven;
+        }
+        catch (Exception) { return GitPushVerification.Unknown; }
+    }
+
     private static GitPushPreview Parse(string? content)
     {
         var preview = JsonSerializer.Deserialize<GitPushPreview>(content ?? string.Empty, JsonSerializerOptions.Web);
@@ -166,9 +191,20 @@ public sealed class GitPushViewModel : ObservableObject, IDisposable, IAsyncDisp
             || preview.Head.Length is not (40 or 64) || !preview.Head.All(char.IsAsciiHexDigit)
             || !GitPushNames.IsRemote(preview.Remote) || !GitPushNames.IsBranch(preview.TargetBranch)
             || preview.Remotes is null || preview.Remotes.Count is 0 or > 128 || preview.Remotes.Any(remote => !GitPushNames.IsRemote(remote))
-            || preview.Destination.Length is 0 or > 2048 || preview.Destination.Any(char.IsControl))
+            || preview.Destination.Length is 0 or > 2048 || preview.Destination.Any(char.IsControl)
+            || preview.RemoteHead is { } remoteHead && (remoteHead.Length is not (40 or 64) || !remoteHead.All(char.IsAsciiHexDigit)))
             throw new InvalidOperationException("Invalid push preview.");
         return preview;
+    }
+
+    private static string StatusKey(bool push, ToolResult result, GitPushVerification verification, bool changed, bool cancelled)
+    {
+        if (verification == GitPushVerification.Landed) return "GitPushProbablyLanded";
+        if (cancelled) return "GitPushInterrupted";
+        if (verification == GitPushVerification.Unknown) return "GitPushOutcomeUnknown";
+        if (!result.IsSuccess) return FailureKey(result.ErrorCode);
+        if (changed) return push ? "GitPushChangedAfterSuccess" : "GitPushSelectionChanged";
+        return push ? "GitPushSucceeded" : "GitPushReview";
     }
 
     private static string FailureKey(string? code) => code switch

@@ -16,9 +16,9 @@ public sealed class GitPushViewModelTests : IAsyncLifetime
     public ValueTask InitializeAsync() => ValueTask.CompletedTask;
     public ValueTask DisposeAsync() => _session.DisposeAsync();
     private static ToolExecutionContext Context() => new(Guid.NewGuid(), "D:\\synthetic", ["D:\\synthetic"], ApprovalPolicy.FullAccess);
-    private static ToolResult Preview(string remote = "origin", string branch = "feature/review") => ToolResult.Success("preview",
+    private static ToolResult Preview(string remote = "origin", string branch = "feature/review", string? remoteHead = null) => ToolResult.Success("preview",
         JsonSerializer.Serialize(new GitPushPreview(new string('a', 64), new string('b', 40), "feature/source", remote,
-            branch, "https://example.invalid", ["origin", "upstream"]), JsonSerializerOptions.Web));
+            branch, "https://example.invalid", ["origin", "upstream"], remoteHead), JsonSerializerOptions.Web));
 
     [Theory]
     [InlineData("git_state_changed", "GitPushStateChanged")]

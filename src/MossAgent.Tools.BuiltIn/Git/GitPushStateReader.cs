@@ -50,13 +50,18 @@ public sealed class GitPushStateReader(AuthorizedPathResolver paths, IGitReposit
         var target = request.Arguments.GetOptionalString("targetBranch") ?? (tracking?.StartsWith("refs/heads/", StringComparison.Ordinal) == true ? tracking[11..] : source);
         if (target is null || !GitPushNames.IsBranch(target)) throw new GitPushException("git_push_branch", "GitPushBranchRequired");
         if (Config(config, $"remote.{selected}.vcs") is not null) throw new GitPushException("git_push_transport", "GitPushTransportUnsupported");
+        // A successful push refreshes refs/remotes/<selected>/<target> locally, so the remote-tracking
+        // ref is the offline proof used after non-deterministic push failures; missing refs read empty.
+        var remoteHead = (await QueryAsync(repository, ["rev-parse", "--verify", "--quiet", $"refs/remotes/{selected}/{target}"],
+            context, token, true).ConfigureAwait(false)).TrimEnd('\r', '\n');
+        if (remoteHead.Length > 0 && (remoteHead.Length is not (40 or 64) || !remoteHead.All(char.IsAsciiHexDigit))) throw Incomplete();
         var urls = (await QueryAsync(repository, ["remote", "get-url", "--push", "--all", "--", selected], context, token).ConfigureAwait(false))
             .TrimEnd('\r', '\n').Split('\n').Select(value => value.TrimEnd('\r')).ToArray();
         if (urls.Length != 1) throw new GitPushException("git_push_multiple_urls", "GitPushMultipleUrls");
         var endpoint = await endpoints.ReadAsync(urls[0], repository.Root, target, context, token).ConfigureAwait(false);
         var state = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\0', repository.Root,
-            repository.GitDirectory, repository.CommonDirectory, head, branch, config, selected, target, urls[0], endpoint.Identity))));
-        return new(repository, new(state, head, source, selected, target, endpoint.Label, names), endpoint.Protocol);
+            repository.GitDirectory, repository.CommonDirectory, head, branch, config, selected, target, urls[0], endpoint.Identity, remoteHead))));
+        return new(repository, new(state, head, source, selected, target, endpoint.Label, names, remoteHead.Length == 0 ? null : remoteHead), endpoint.Protocol);
     }
 
     private async Task<string> QueryAsync(ToolGitRepository repository, string[] arguments, ToolExecutionContext context, CancellationToken token, bool acceptMissing = false)

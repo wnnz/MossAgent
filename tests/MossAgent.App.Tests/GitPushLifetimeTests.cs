@@ -17,7 +17,7 @@ public sealed class GitPushLifetimeTests : IAsyncLifetime
     public ValueTask DisposeAsync() => _session.DisposeAsync();
     private static ToolExecutionContext Context() => new(Guid.NewGuid(), "D:\\synthetic", ["D:\\synthetic"], ApprovalPolicy.FullAccess);
     private static ToolResult Preview() => ToolResult.Success("preview", JsonSerializer.Serialize(new GitPushPreview(
-        new string('a', 64), new string('b', 40), "fixture", "origin", "fixture", "local", ["origin"]), JsonSerializerOptions.Web));
+        new string('a', 64), new string('b', 40), "fixture", "origin", "fixture", "local", ["origin"], null), JsonSerializerOptions.Web));
 
     [Fact]
     public Task DelayedPreviewCannotReplaceEditedSelection() => _session.DispatchAsync(async () =>
