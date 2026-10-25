@@ -75,7 +75,7 @@ public sealed class SqliteConversationSteeringRecoveryTests
         await using var fixture = await ConversationSteeringTestFixture.CreateAsync();
         var message = new ConversationMessage(Guid.NewGuid(), fixture.Task.Id, MessageRole.User, "legacy", DateTimeOffset.UtcNow);
         await fixture.Workspaces.AppendMessageAsync(message, fixture.Token);
-        await fixture.ExecuteAsync("DROP TABLE conversation_steering_inputs; DROP TABLE conversation_steering_runs; DELETE FROM schema_versions WHERE version=25; CREATE TRIGGER reject_steering_version BEFORE INSERT ON schema_versions WHEN NEW.version=25 BEGIN SELECT RAISE(ABORT,'synthetic migration failure'); END;");
+        await fixture.ExecuteAsync("DROP TABLE conversation_steering_input_attachments; DROP TABLE conversation_steering_inputs; DROP TABLE conversation_steering_runs; DELETE FROM schema_versions WHERE version IN(25,39); CREATE TRIGGER reject_steering_version BEFORE INSERT ON schema_versions WHEN NEW.version=25 BEGIN SELECT RAISE(ABORT,'synthetic migration failure'); END;");
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Initializer.InitializeAsync(fixture.Token));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM sqlite_master WHERE name LIKE 'conversation_steering_%';"));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions WHERE version=25;"));

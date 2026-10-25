@@ -3,7 +3,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.App.Browser;
 using MossAgent.Application.Agent;
+using MossAgent.Application.Attachments;
 using MossAgent.Application.Conversations;
+using MossAgent.Application.Models;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 
@@ -50,12 +52,12 @@ public sealed class WorkspaceSteeringViewModel : ObservableObject, IDisposable
     public bool CanSubmit => !_disposed && IsAvailable && !_operations.IsStopping && !IsBusy && _canAct()
         && _catalog.SelectedTask is { } task && task.ProjectId == _catalog.SelectedProject?.Id
         && _drafts.Scope == new ConversationDraftScope(task.ProjectId, task.Id) && _drafts.CanSend
-        && _drafts.Attachments.Count == 0 && !string.IsNullOrWhiteSpace(_drafts.Text)
+        && !string.IsNullOrWhiteSpace(_drafts.Text)
         && _drafts.Text.Length <= ConversationSteeringInput.MaximumTextLength
         && _runs.TryGet(task.Id, out var state) && state?.Steering is { IsAccepting: true } session && _drafts.CanSteerTo(session);
     public string SubmitLabel => WorkspaceText.Get(IsBusy ? "SteeringReceiving" : "SteeringSubmit");
-    public string Hint => WorkspaceText.Get(_drafts.Attachments.Count > 0 ? "SteeringTextOnly"
-        : _drafts.Text.Length > ConversationSteeringInput.MaximumTextLength ? "SteeringTooLong" : "SteeringHint");
+    public string Hint => WorkspaceText.Get(_drafts.Text.Length > ConversationSteeringInput.MaximumTextLength
+        ? "SteeringTooLong" : "SteeringHint");
     public bool HasNotice => _catalog.SelectedTask is { } task && _notices.ContainsKey(task.Id);
     public string Notice => _catalog.SelectedTask is { } task && _notices.TryGetValue(task.Id, out var key) ? WorkspaceText.Get(key) : string.Empty;
     public IAsyncRelayCommand SubmitCommand { get; }
@@ -96,6 +98,8 @@ public sealed class WorkspaceSteeringViewModel : ObservableObject, IDisposable
         ConversationDraftConflictException => "DraftConflict",
         ConversationSteeringException failure => failure.Code,
         SourceReviewException or UnauthorizedAccessException => "SteeringScopeChanged",
+        ModelCapabilityException => "SteeringModelUnsupported",
+        ConversationAttachmentUnavailableException or IOException or InvalidDataException => "SteeringAttachmentUnavailable",
         OperationCanceledException => "SteeringStopped",
         ArgumentException => "SteeringInvalid",
         _ => "SteeringFailed"

@@ -102,7 +102,7 @@ public sealed class WorkspaceSteeringDraftTests : IAsyncLifetime
     }, TestContext.Current.CancellationToken);
 
     [Fact]
-    public Task AttachmentsOrAnotherDraftStoreCannotBeSilentlyConsumedAsTextInput() => _session.DispatchAsync(async () =>
+    public Task AttachmentsSteerWithTextWhileWhitespaceTextIsStillRejected() => _session.DispatchAsync(async () =>
     {
         await using var fixture = await CreateAsync();
         var session = await StartAsync(fixture);
@@ -111,14 +111,29 @@ public sealed class WorkspaceSteeringDraftTests : IAsyncLifetime
         Assert.Throws<InvalidOperationException>(() => other.CreateSteeringSubmission(session, drafts.Scope, "wrong store"));
         drafts.Text = "text with an attachment";
         var path = Path.Combine(fixture.DataRoot, "attachment.txt");
-        drafts.SetAttachments(drafts.Scope, [new(Guid.NewGuid(), path,
-            "attachment.txt", "content", 7, WorkspaceAttachmentAuthorization.CreateSelection(path))]);
+        var attachment = new ConversationDraftAttachment(Guid.NewGuid(), path,
+            "attachment.txt", "content", 7, WorkspaceAttachmentAuthorization.CreateSelection(path));
+        drafts.SetAttachments(drafts.Scope, [attachment]);
         var submission = drafts.CreateSteeringSubmission(session, drafts.Scope, drafts.Text);
-        var failure = await Assert.ThrowsAsync<ConversationSteeringException>(() => submission.SaveAsync(session, session.RunId, Guid.NewGuid(), fixture.Token));
-        Assert.Equal("SteeringTextOnly", failure.Code);
-        Assert.Equal("text with an attachment", drafts.Text);
+        var inputId = Guid.NewGuid();
+        var accepted = await submission.SaveAsync(session, session.RunId, inputId, fixture.Token);
+        Assert.False(accepted.AlreadyAccepted);
+        var persisted = Assert.Single(accepted.Input.AttachmentItems);
+        Assert.Equal(attachment.Id, persisted.Id);
+        Assert.Equal("attachment.txt", persisted.DisplayPath);
+        Assert.Equal(inputId, persisted.MessageId);
+        Assert.Empty(drafts.Attachments);
+        Assert.Equal(string.Empty, drafts.Text);
+        var stored = Assert.Single((await fixture.Steering.GetInputsAsync(session.TaskId, long.MaxValue, 64, fixture.Token)).Items);
+        Assert.Equal(attachment.Id, Assert.Single(stored.AttachmentItems).Id);
+        drafts.Text = "   ";
+        drafts.SetAttachments(drafts.Scope, [attachment]);
+        var rejected = drafts.CreateSteeringSubmission(session, drafts.Scope, drafts.Text);
+        var failure = await Assert.ThrowsAsync<ArgumentException>(() => rejected.SaveAsync(session, session.RunId, Guid.NewGuid(), fixture.Token));
+        Assert.Equal("Invalid steering text.", failure.Message);
+        Assert.Equal("   ", drafts.Text);
         Assert.Single(drafts.Attachments);
-        Assert.Empty((await fixture.Steering.GetInputsAsync(session.TaskId, long.MaxValue, 64, fixture.Token)).Items);
+        Assert.Single((await fixture.Steering.GetInputsAsync(session.TaskId, long.MaxValue, 64, fixture.Token)).Items);
         drafts.SetAttachments(drafts.Scope, []);
         fixture.Runs.Cancel(session.TaskId);
         await fixture.WaitUntilAsync(() => !fixture.Runs.IsRunning(session.TaskId));

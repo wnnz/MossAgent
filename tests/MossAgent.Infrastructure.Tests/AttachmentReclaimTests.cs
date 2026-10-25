@@ -184,6 +184,33 @@ public sealed class AttachmentReclaimTests
     }
 
     [Fact]
+    public async Task SteeringReferencedDraftSnapshotIsKeptAfterDraftConsumption()
+    {
+        await using var fixture = await ConversationSteeringTestFixture.CreateAsync();
+        var paths = Paths(fixture.Inner);
+        var repository = new SqliteConversationSteeringRepository(fixture.Connections, paths: paths);
+        var drafts = ConversationDraftAttachmentTestData.Repository(fixture.Inner);
+        var scope = new ConversationDraftScope(fixture.Project.Id, fixture.Task.Id);
+        var attachment = ConversationDraftAttachmentTestData.Attachment(fixture.Inner, "steered bytes");
+        Assert.True(await drafts.SaveAsync([new(scope, "text", 0, [attachment])], fixture.Token));
+        var file = ConversationDraftAttachmentTestData.Snapshot(fixture.Inner, attachment);
+        var run = await fixture.OpenAsync();
+        Assert.NotNull(await repository.AcceptAsync(run.TaskId, run.Id, Guid.NewGuid(), "text",
+            new ConversationDraftUpdate(scope, string.Empty, 1, [attachment]), fixture.Token));
+        Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_draft_attachments;"));
+        Age(file);
+
+        var kept = await Reaper(fixture.Inner).ReclaimAsync(fixture.Token);
+        Assert.True(File.Exists(file));
+        Assert.Equal(0, kept.Reclaimed);
+
+        await fixture.ExecuteAsync("DELETE FROM conversation_steering_input_attachments;");
+        var reclaimed = await Reaper(fixture.Inner).ReclaimAsync(fixture.Token);
+        Assert.False(File.Exists(file));
+        Assert.Equal(1, reclaimed.Reclaimed);
+    }
+
+    [Fact]
     public async Task TemporaryWriteLeftoverIsReclaimed()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();

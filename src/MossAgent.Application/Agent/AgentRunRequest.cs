@@ -1,3 +1,4 @@
+using MossAgent.Application.Attachments;
 using MossAgent.Application.Models;
 using MossAgent.Domain;
 using MossAgent.Tools.Abstractions;
@@ -12,4 +13,5 @@ public sealed record AgentRunRequest(
     int MaximumTurns = 20,
     string? AgentInstructions = null,
     string? PinnedUserContext = null,
-    IAgentSteeringInput? Steering = null);
+    IAgentSteeringInput? Steering = null,
+    IConversationAttachmentStore? AttachmentStore = null);

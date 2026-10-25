@@ -1,4 +1,5 @@
 using MossAgent.Application.Agent;
+using MossAgent.Application.Models;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 
@@ -11,17 +12,19 @@ public sealed class ConversationSteeringSession : IAgentSteeringInput
     private readonly Func<CancellationToken, Task>? _validateAccess;
     private readonly Func<CancellationToken, Task>? _validateEmptyBoundary;
     private readonly ConversationSteeringAuthorization? _authorization;
+    private readonly bool _supportsImages;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private int _stopping;
 
     private ConversationSteeringSession(IConversationSteeringRepository repository, ConversationSteeringRun run,
         CancellationToken runCancellation, Func<CancellationToken, Task>? validateAccess, ConversationSteeringAuthorization? authorization,
-        Func<CancellationToken, Task>? validateEmptyBoundary)
+        Func<CancellationToken, Task>? validateEmptyBoundary, bool supportsImages)
     {
         _repository = repository; _runCancellation = runCancellation;
         _validateAccess = validateAccess;
         _validateEmptyBoundary = validateEmptyBoundary;
         _authorization = authorization;
+        _supportsImages = supportsImages;
         TaskId = run.TaskId; RunId = run.Id;
     }
 
@@ -33,7 +36,7 @@ public sealed class ConversationSteeringSession : IAgentSteeringInput
     public static async Task<ConversationSteeringSession?> OpenAsync(IConversationSteeringRepository repository,
         AgentTask task, CancellationToken runCancellation, CancellationToken cancellationToken,
         Func<CancellationToken, Task>? validateAccess = null, ConversationSteeringAuthorization? authorization = null,
-        Func<CancellationToken, Task>? validateEmptyBoundary = null)
+        Func<CancellationToken, Task>? validateEmptyBoundary = null, bool supportsImages = false)
     {
         runCancellation.ThrowIfCancellationRequested();
         if (authorization?.Project is { } project)
@@ -42,7 +45,7 @@ public sealed class ConversationSteeringSession : IAgentSteeringInput
         deadline.CancelAfter(TimeSpan.FromSeconds(30));
         if (validateAccess is not null) await validateAccess(deadline.Token);
         var run = await repository.OpenAsync(task, Guid.NewGuid(), deadline.Token, authorization);
-        return run is null ? null : new(repository, run, runCancellation, validateAccess, authorization, validateEmptyBoundary);
+        return run is null ? null : new(repository, run, runCancellation, validateAccess, authorization, validateEmptyBoundary, supportsImages);
     }
 
     public async Task<ConversationSteeringAcceptance> AcceptAsync(Guid expectedRunId, Guid inputId, string text,
@@ -57,6 +60,11 @@ public sealed class ConversationSteeringSession : IAgentSteeringInput
             if (_validateAccess is not null) await _validateAccess(deadline.Token);
             deadline.Token.ThrowIfCancellationRequested();
             if (!IsAccepting) throw Unavailable();
+            if (!_supportsImages && draft is not null
+                && draft.AttachmentItems.Any(item => AttachmentImage.IsSupportedMediaType(item.MediaType)))
+                throw new ModelCapabilityException(ModelCapabilityException.UnsupportedImageInput,
+                    "The selected model does not support image inputs. Remove the image attachments "
+                    + "or switch to a model that supports images.");
             return await _repository.AcceptAsync(TaskId, RunId, inputId, text, draft, deadline.Token, _authorization)
                 ?? throw new ConversationSteeringException("SteeringRefused");
         }

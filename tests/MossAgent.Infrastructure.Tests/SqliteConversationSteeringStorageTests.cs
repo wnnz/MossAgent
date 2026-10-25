@@ -1,8 +1,10 @@
 using Microsoft.Data.Sqlite;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
+using MossAgent.Infrastructure.Attachments;
 using MossAgent.Infrastructure.Persistence;
 using Xunit;
+using static MossAgent.Infrastructure.Tests.ConversationDraftAttachmentTestData;
 
 namespace MossAgent.Infrastructure.Tests;
 
@@ -78,5 +80,84 @@ public sealed class SqliteConversationSteeringStorageTests
         Assert.Equal("guidance", Assert.Single(next.Items).Text);
         Assert.Empty((await fixture.InputsAsync(Guid.NewGuid())).Items);
         Assert.Equal(new("next draft", 2), await drafts.GetAsync(scope, fixture.Token));
+    }
+
+    [Fact]
+    public async Task AttachmentSnapshotsTransferIntoTheInputAndTheDraftIsConsumedAtomically()
+    {
+        await using var fixture = await ConversationSteeringTestFixture.CreateAsync();
+        var repository = new SqliteConversationSteeringRepository(fixture.Connections,
+            paths: new AppDataPaths(fixture.Project.PrimaryDirectory));
+        var drafts = Repository(fixture.Inner);
+        var scope = new ConversationDraftScope(fixture.Project.Id, fixture.Task.Id);
+        var attachment = Attachment(fixture.Inner, "steered file text");
+        Assert.True(await drafts.SaveAsync([new(scope, "guidance", 0, [attachment])], fixture.Token));
+        var run = await fixture.OpenAsync();
+        var id = Guid.NewGuid();
+        var ack = Assert.IsType<ConversationSteeringAcceptance>(await repository.AcceptAsync(run.TaskId, run.Id, id,
+            "guidance", new ConversationDraftUpdate(scope, string.Empty, 1, [attachment]), fixture.Token));
+        Assert.False(ack.AlreadyAccepted);
+        var persisted = Assert.Single(ack.Input.AttachmentItems);
+        Assert.Equal(attachment.Id, persisted.Id);
+        Assert.Equal(attachment.DisplayPath, persisted.DisplayPath);
+        Assert.Equal(attachment.ByteCount, persisted.ByteCount);
+        Assert.Equal(64, persisted.Sha256.Length);
+        Assert.Equal("text/plain", persisted.MediaType);
+        Assert.Equal(id, persisted.MessageId);
+        Assert.Equal(run.TaskId, persisted.TaskId);
+        var draft = Assert.IsType<ConversationDraft>(await drafts.GetAsync(scope, fixture.Token));
+        Assert.Equal(string.Empty, draft.Text);
+        Assert.Empty(draft.AttachmentItems);
+        Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_steering_input_attachments;"));
+        Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_draft_attachments;"));
+        Assert.True(File.Exists(Snapshot(fixture.Inner, attachment)));
+        var pending = Assert.IsType<ConversationSteeringPending>(await repository.GetPendingAsync(run.TaskId, run.Id, fixture.Token));
+        Assert.Equal(attachment.Id, Assert.Single(Assert.Single(pending.Inputs).AttachmentItems).Id);
+        var page = await repository.GetInputsAsync(run.TaskId, long.MaxValue, 64, fixture.Token);
+        Assert.Equal(attachment.Id, Assert.Single(Assert.Single(page.Items).AttachmentItems).Id);
+    }
+
+    [Fact]
+    public async Task AcceptedAttachmentsParticipateInReceiptIdentityIdempotency()
+    {
+        await using var fixture = await ConversationSteeringTestFixture.CreateAsync();
+        var repository = new SqliteConversationSteeringRepository(fixture.Connections,
+            paths: new AppDataPaths(fixture.Project.PrimaryDirectory));
+        var drafts = Repository(fixture.Inner);
+        var scope = new ConversationDraftScope(fixture.Project.Id, fixture.Task.Id);
+        var attachment = Attachment(fixture.Inner);
+        var other = Attachment(fixture.Inner, "different attachment");
+        Assert.True(await drafts.SaveAsync([new(scope, "guidance", 0, [attachment])], fixture.Token));
+        var run = await fixture.OpenAsync();
+        var id = Guid.NewGuid();
+        var ack = Assert.IsType<ConversationSteeringAcceptance>(await repository.AcceptAsync(run.TaskId, run.Id, id,
+            "guidance", new ConversationDraftUpdate(scope, string.Empty, 1, [attachment]), fixture.Token));
+        var duplicate = Assert.IsType<ConversationSteeringAcceptance>(await repository.AcceptAsync(run.TaskId, run.Id, id,
+            "guidance", new ConversationDraftUpdate(scope, string.Empty, 1, [attachment]), fixture.Token));
+        Assert.True(duplicate.AlreadyAccepted);
+        Assert.Equal(ack.Input.Id, duplicate.Input.Id);
+        Assert.Equal(ack.Input.AttachmentItems, duplicate.Input.AttachmentItems);
+        Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_steering_input_attachments;"));
+        await Assert.ThrowsAsync<ArgumentException>(() => repository.AcceptAsync(run.TaskId, run.Id, id,
+            "guidance", new ConversationDraftUpdate(scope, string.Empty, 1, [other]), fixture.Token));
+        await Assert.ThrowsAsync<ArgumentException>(() => repository.AcceptAsync(run.TaskId, run.Id, id,
+            "guidance", new ConversationDraftUpdate(scope, string.Empty, 1), fixture.Token));
+    }
+
+    [Fact]
+    public async Task AttachmentsWithoutSnapshotStorageFailBeforePersistingAnything()
+    {
+        await using var fixture = await ConversationSteeringTestFixture.CreateAsync();
+        var drafts = Repository(fixture.Inner);
+        var scope = new ConversationDraftScope(fixture.Project.Id, fixture.Task.Id);
+        var attachment = Attachment(fixture.Inner);
+        Assert.True(await drafts.SaveAsync([new(scope, "guidance", 0, [attachment])], fixture.Token));
+        var run = await fixture.OpenAsync();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Repository.AcceptAsync(run.TaskId, run.Id,
+            Guid.NewGuid(), "guidance", new ConversationDraftUpdate(scope, string.Empty, 1, [attachment]), fixture.Token));
+        Assert.Empty((await fixture.InputsAsync()).Items);
+        var draft = Assert.IsType<ConversationDraft>(await drafts.GetAsync(scope, fixture.Token));
+        Assert.Equal("guidance", draft.Text);
+        Assert.Equal(attachment, Assert.Single(draft.AttachmentItems));
     }
 }

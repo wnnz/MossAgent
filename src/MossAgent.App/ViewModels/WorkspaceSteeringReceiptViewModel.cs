@@ -18,9 +18,13 @@ public sealed class WorkspaceSteeringReceiptViewModel(ConversationSteeringInput 
     });
     public string AcceptedAt => _input.AcceptedAt.ToLocalTime().ToString("g", System.Globalization.CultureInfo.CurrentCulture);
     public string Preview => Text.Length <= 160 ? Text : Text[..(char.IsHighSurrogate(Text[159]) ? 159 : 160)] + "…";
+    public bool HasAttachments => _input.AttachmentItems.Count > 0;
+    public string AttachmentLabel => string.Format(WorkspaceText.Get("SteeringAttachmentCount"), _input.AttachmentItems.Count);
     internal void Update(ConversationSteeringInput value)
     {
         _input = value;
         OnPropertyChanged(nameof(Status));
+        OnPropertyChanged(nameof(HasAttachments));
+        OnPropertyChanged(nameof(AttachmentLabel));
     }
 }

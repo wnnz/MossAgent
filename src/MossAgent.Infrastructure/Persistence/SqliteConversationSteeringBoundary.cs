@@ -26,7 +26,8 @@ internal static class SqliteConversationSteeringBoundary
         var messages = new List<ConversationMessage>();
         foreach (var input in pending.Take(ids.Length))
         {
-            var message = new ConversationMessage(input.Id, input.TaskId, MessageRole.User, input.Text, appendedAt);
+            var message = new ConversationMessage(input.Id, input.TaskId, MessageRole.User, input.Text, appendedAt,
+                Attachments: input.AttachmentItems.Count == 0 ? null : input.AttachmentItems);
             await SqliteWorkspaceWriter.WriteMessageAsync(connection, transaction, message, token);
             messages.Add(message);
             command.CommandText = "UPDATE conversation_steering_inputs SET state=1,applied_at=$now WHERE id=$id AND run_id=$run AND state=0;";

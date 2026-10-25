@@ -26,7 +26,10 @@ internal static class SqliteConversationSteeringReader
         command.CommandText = $"SELECT {Columns} FROM conversation_steering_inputs WHERE id=$id;";
         command.Parameters.AddWithValue("$id", inputId.ToString());
         await using var reader = await command.ExecuteReaderAsync(token);
-        return await reader.ReadAsync(token) ? ReadInput(reader) : null;
+        if (!await reader.ReadAsync(token)) return null;
+        var input = ReadInput(reader);
+        var restored = await SqliteConversationSteeringAttachments.RestoreAsync(connection, transaction, input.TaskId, [input], token);
+        return restored[0];
     }
 
     public static ConversationSteeringInput ReadInput(SqliteDataReader reader)
@@ -53,7 +56,7 @@ internal static class SqliteConversationSteeringReader
         if (inputs.Count > ConversationSteeringInput.MaximumPendingItems
             || inputs.Sum(input => System.Text.Encoding.UTF8.GetByteCount(input.Text)) > ConversationSteeringInput.MaximumPendingBytes)
             throw new InvalidDataException("Steering pending input exceeds its budget.");
-        return inputs;
+        return await SqliteConversationSteeringAttachments.RestoreAsync(connection, transaction, expected.TaskId, inputs, token);
     }
 
     public static SqliteCommand Create(SqliteConnection connection, SqliteTransaction? transaction, Guid taskId, Guid runId)

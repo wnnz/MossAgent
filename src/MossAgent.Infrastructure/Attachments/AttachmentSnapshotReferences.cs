@@ -79,10 +79,20 @@ internal static class AttachmentSnapshotReferences
         await using var command = connection.CreateCommand();
         command.CommandText = "SELECT scope_key FROM conversation_draft_attachments WHERE attachment_id=$attachment;";
         command.Parameters.AddWithValue("$attachment", candidate.AttachmentId!.Value.ToString("D"));
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
         {
-            var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(reader.GetString(0))));
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(reader.GetString(0))));
+                if (hash.Equals(candidate.ScopeHash, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+        }
+        command.CommandText = "SELECT task_id FROM conversation_steering_input_attachments WHERE attachment_id=$attachment;";
+        await using var steering = await command.ExecuteReaderAsync(cancellationToken);
+        while (await steering.ReadAsync(cancellationToken))
+        {
+            var scope = $"task:{Guid.Parse(steering.GetString(0)):D}";
+            var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(scope)));
             if (hash.Equals(candidate.ScopeHash, StringComparison.OrdinalIgnoreCase)) return true;
         }
         return false;

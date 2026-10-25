@@ -1,7 +1,11 @@
+using MossAgent.Application.Attachments;
 using MossAgent.Application.Conversations;
 using MossAgent.Application.Models;
 using MossAgent.Domain;
+using MossAgent.Infrastructure.Attachments;
+using MossAgent.Infrastructure.Persistence;
 using Xunit;
+using static MossAgent.Infrastructure.Tests.ConversationDraftAttachmentTestData;
 
 namespace MossAgent.Infrastructure.Tests;
 
@@ -66,5 +70,41 @@ public sealed class ConversationSteeringSessionTests
         await session.StopAsync(fixture.Token);
         Assert.Equal(ConversationSteeringInputState.Interrupted, Assert.Single((await fixture.InputsAsync()).Items).State);
         Assert.Empty(await fixture.Workspaces.GetMessagesAsync(fixture.Task.Id, fixture.Token));
+    }
+
+    [Fact]
+    public async Task ImageAttachmentsRequireAnImageCapableSessionBeforePersisting()
+    {
+        await using var fixture = await ConversationSteeringTestFixture.CreateAsync();
+        var paths = new AppDataPaths(fixture.Project.PrimaryDirectory);
+        var decoder = new SkiaAttachmentImageDecoder();
+        var repository = new SqliteConversationSteeringRepository(fixture.Connections, paths: paths, images: decoder);
+        var drafts = new SqliteConversationDraftRepository(fixture.Connections, paths, images: decoder);
+        var scope = new ConversationDraftScope(fixture.Project.Id, fixture.Task.Id);
+        var bytes = AttachmentImageTestData.Static("image/png");
+        var image = await decoder.DecodeAsync(bytes, fixture.Token);
+        var attachment = new ConversationDraftAttachment(Guid.NewGuid(),
+            Path.Combine(fixture.Project.PrimaryDirectory, "selected.png"), "selected.png", null, bytes.LongLength,
+            WorkspaceAttachmentAuthorization.Create(fixture.Project), "image/png", image);
+        Assert.True(await drafts.SaveAsync([new(scope, "guidance", 0, [attachment])], fixture.Token));
+        var textOnly = Assert.IsType<ConversationSteeringSession>(await ConversationSteeringSession.OpenAsync(
+            repository, fixture.Task, fixture.Token, fixture.Token));
+        var update = new ConversationDraftUpdate(scope, string.Empty, 1, [attachment]);
+        var failure = await Assert.ThrowsAsync<ModelCapabilityException>(
+            () => textOnly.AcceptAsync(textOnly.RunId, Guid.NewGuid(), "guidance", update, fixture.Token));
+        Assert.Equal(ModelCapabilityException.UnsupportedImageInput, failure.Code);
+        Assert.Empty((await fixture.InputsAsync()).Items);
+        var draft = Assert.IsType<ConversationDraft>(await drafts.GetAsync(scope, fixture.Token));
+        Assert.Equal("guidance", draft.Text);
+        Assert.Equal(attachment.Id, Assert.Single(draft.AttachmentItems).Id);
+        await textOnly.StopAsync(fixture.Token);
+        var capable = Assert.IsType<ConversationSteeringSession>(await ConversationSteeringSession.OpenAsync(
+            repository, fixture.Task, fixture.Token, fixture.Token, supportsImages: true));
+        var ack = await capable.AcceptAsync(capable.RunId, Guid.NewGuid(), "guidance", update, fixture.Token);
+        Assert.False(ack.AlreadyAccepted);
+        Assert.Equal(attachment.Id, Assert.Single(ack.Input.AttachmentItems).Id);
+        Assert.Empty((await drafts.GetAsync(scope, fixture.Token))!.AttachmentItems);
+        await textOnly.StopAsync(fixture.Token);
+        await capable.StopAsync(fixture.Token);
     }
 }

@@ -2,13 +2,15 @@ using System.Text;
 using Microsoft.Data.Sqlite;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
+using MossAgent.Infrastructure.Attachments;
 
 namespace MossAgent.Infrastructure.Persistence;
 
 internal static class SqliteConversationSteeringAcceptance
 {
     public static async Task<ConversationSteeringAcceptance?> AcceptAsync(SqliteConnection connection,
-        SqliteConversationDraftWriter drafts, Guid taskId, Guid runId, Guid inputId, string text,
+        SqliteConversationDraftWriter drafts, ConversationDraftAttachmentFiles? files,
+        Guid taskId, Guid runId, Guid inputId, string text,
         ConversationDraftUpdate? draft, DateTimeOffset now, CancellationToken token, ConversationSteeringAuthorization? authorization)
     {
         await using var transaction = connection.BeginTransaction();
@@ -19,14 +21,23 @@ internal static class SqliteConversationSteeringAcceptance
         var duplicate = await SqliteConversationSteeringReader.ReadInputAsync(connection, transaction, inputId, token);
         if (duplicate is not null)
         {
-            if (duplicate.TaskId != taskId || duplicate.RunId != runId || duplicate.Text != text)
+            var expected = draft?.AttachmentItems.Select(item => item.Id) ?? [];
+            if (duplicate.TaskId != taskId || duplicate.RunId != runId || duplicate.Text != text
+                || !duplicate.AttachmentItems.Select(item => item.Id).SequenceEqual(expected))
                 throw new ArgumentException("A steering identity cannot be reused with different input.");
             return new(duplicate, run.Revision, true);
         }
         if (!run.IsOpen || run.Revision == long.MaxValue) return null;
         if (!await InsertAsync(connection, transaction, taskId, runId, inputId, text, now, token)) return null;
-        if (draft is not null && !await drafts.WriteAsync(connection, transaction, [draft], token))
-            throw new ConversationDraftConflictException();
+        if (draft is not null)
+        {
+            var metadata = draft.AttachmentItems.Count == 0 ? []
+                : await (files ?? throw new InvalidOperationException("Attachment persistence is unavailable."))
+                    .WriteAsync(draft.Scope, draft.AttachmentItems, token);
+            await SqliteConversationSteeringAttachments.WriteAsync(connection, transaction, taskId, inputId, metadata, token);
+            if (!await drafts.WriteAsync(connection, transaction, [draft with { Attachments = null }], token))
+                throw new ConversationDraftConflictException();
+        }
         await using var advance = SqliteConversationSteeringReader.Create(connection, transaction, taskId, runId);
         advance.CommandText = "UPDATE conversation_steering_runs SET revision=revision+1 WHERE task_id=$task AND run_id=$run;";
         await advance.ExecuteNonQueryAsync(token);
@@ -42,12 +53,10 @@ internal static class SqliteConversationSteeringAcceptance
         await using var command = connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = """
-            SELECT COUNT(*) FROM agent_tasks WHERE id=$task AND project_id IS $project
-            AND NOT EXISTS(SELECT 1 FROM conversation_draft_attachments WHERE scope_key=$scope);
+            SELECT COUNT(*) FROM agent_tasks WHERE id=$task AND project_id IS $project;
             """;
         command.Parameters.AddWithValue("$task", taskId.ToString());
         command.Parameters.AddWithValue("$project", (object?)draft.Scope.ProjectId?.ToString() ?? DBNull.Value);
-        command.Parameters.AddWithValue("$scope", draft.Scope.Key);
         return Convert.ToInt64(await command.ExecuteScalarAsync(token)) == 1;
     }
 

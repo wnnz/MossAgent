@@ -44,7 +44,8 @@ public sealed class WorkspaceRunExecutor(
         state.Steering = steering is null ? null : await ConversationSteeringSession.OpenAsync(
             steering, state.Task, cancellationToken, cancellationToken,
             steeringAccess.ValidateAsync, new ConversationSteeringAuthorization(state.Project, review),
-            steeringAccess.ValidateEmptyBoundaryAsync)
+            steeringAccess.ValidateEmptyBoundaryAsync,
+            state.Model.SupportsImages && ModelProtocolCapabilities.AcceptsImages(state.Provider.Protocol))
             ?? throw new ConversationSteeringException("SteeringRunUnavailable");
         try
         {
@@ -54,7 +55,7 @@ public sealed class WorkspaceRunExecutor(
                 messages,
                 context,
                 AgentInstructions: review is null ? state.AgentInstructions : sourceReads ? SourceReviewContextBuilder.ReadOnlyInstructions : SourceReviewContextBuilder.Instructions,
-                PinnedUserContext: review?.Context, Steering: state.Steering);
+                PinnedUserContext: review?.Context, Steering: state.Steering, AttachmentStore: attachments);
             var failed = false;
             TaskFailureReason? failureReason = null;
             await foreach (var agentEvent in agent.RunAsync(request, cancellationToken))

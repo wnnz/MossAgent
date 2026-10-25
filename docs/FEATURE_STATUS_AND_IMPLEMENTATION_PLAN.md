@@ -43,7 +43,7 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 | C03 | 每任务运行控制、独立取消及事件流；发送准备可取消，失败保留草稿，提交后取消有可查看终态；启动恢复为中断，不自动重放 | [发送准备取消](archive/CONVERSATIONS.md#send-preparation-cancellation-acceptance)、[关闭恢复](archive/TERMINAL_TOOLS.md#shutdown-recovery-acceptance)；其他崩溃断点见 R03/R04/R23 |
 | C04 | 对话、新项目会话和无项目草稿隔离；文本/附件草稿持久化、导航恢复、版本冲突保护；消息提交与草稿消费共用 SQLite 事务，保留发送时的新输入 | [草稿持久化](archive/CONVERSATIONS.md#draft-background-persistence-acceptance)、[原子发送](archive/CONVERSATIONS.md#conversation-submission-acceptance)；事务中真实终止及原生组合见 R03/R23 |
 | C05 | Queue：运行中 Enter 入队，编辑/排序/移除/手动继续；保存模型、强度、提示词、授权和附件快照，按原任务分派；仅成功活动链自动续发 | [Queue 运行](archive/CONVERSATIONS.md#conversation-followup-runtime-acceptance)、[分派](archive/CONVERSATIONS.md#conversation-followup-dispatch-acceptance)、[进程恢复](archive/CONVERSATIONS.md#conversation-followup-process-recovery)；其余竞争见 R03 |
-| C06 | 文本 Steer：活动 Ctrl+Enter 接收草稿及 receipt，在当前工具批次后的模型边界应用；保持原运行模型/权限，有界 mailbox、幂等和历史状态 | [文本引导](archive/CONVERSATIONS.md#conversation-steering-acceptance)；附件引导、发送偏好未实现，见 R03 |
+| C06 | 文本与附件 Steer：活动 Ctrl+Enter 接收草稿及 receipt，附件元数据随接收原子转移（schema 39），在当前工具批次后的模型边界应用为携带附件记录的用户消息；保持原运行模型/权限、有界 mailbox、幂等和历史状态 | [文本引导](archive/CONVERSATIONS.md#conversation-steering-acceptance)；附件引导已落地但仍要求非空文字，竞争/崩溃矩阵见 R03 |
 
 ### 2.2 授权、文件、Git 和终端
 
@@ -120,7 +120,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | --- | --- | --- | --- |
 | R01 | 部分完成；安全阻断 | 命令/PTY/Git hooks/helpers/stdio MCP 等代码执行的真实文件系统隔离 | P0；原生 MXC 独立环境尚未就绪 |
 | R02 | 部分完成、部分未验证 | 产物/diff 输入会话恢复期刊已落地（schema 37：创建即登记、阶段分级、启动对账、恢复面板人工核实）；最终路径竞争、严格撤权排空、完整入口审计、下载网络/缓存配额、SDK 暂存清理与引用回收仍缺 | P0；复用已有句柄端口和 schema 26–28 |
-| R03 | 附件 Steer/发送偏好未实现；其他矩阵未验证 | 附件引导、默认发送配置、Queue/Steer 竞争及事务/副作用中崩溃 | P1；R02/R05 |
+| R03 | 附件 Steer 与发送偏好已落地；其他矩阵未验证 | schema 39 附件引导已接入（原子 receipt/草稿消费、模型图像能力门控、上下文预算）；Queue/Steer 竞争及事务/副作用中崩溃仍缺 | P1；R02/R05 |
 | R04 | 部分完成 | 创建/清理 intent 生命周期、恢复面板、重试移除与 Windows 句柄级删除守卫已落地；清理前 drain、注册槽清理、替换对象重新授权、非 Windows 守卫及完整崩溃生命周期仍缺 | P1；R01/R02 |
 | R05 | 部分完成 | PDF/其他文件、全图查看、子代理图像共享、未引用快照安全回收 | P1；模型协议与产物会话 |
 | R06 | 部分完成、部分未验证 | 流终态夹具与能力门控已落地并修复六个真实缺陷；剩代理配置快照、显式重试边界与真实账号验证 | P1；获准真实服务账号 |
@@ -234,13 +234,20 @@ Git 元数据，根外不读不写，外部并发修改不丢失。验证撤权�
 
 ### R03：附件 Steer、发送偏好和 Queue/Steer 竞争
 
-**现状：** Queue 与文本 Steer 已贯通；附件引导和可保存的默认/替代发送方式尚未实现，
+**现状：** Queue 与文本 Steer 已贯通；附件引导和可保存的默认/替代发送方式已在开发分支落地，
 事务中止、分派/终态与引导竞争和原生输入组合尚未全部验证。
 
 当前开发分支增量：运行中 Enter 的默认行为可在「设置 → 对话与发送」选择入队或引导，
 Ctrl+Enter 使用另一种行为，Shift+Enter 始终换行；偏好经独立 JSON 原子保存，读取失败时
-回退默认并提示，键盘与共享按钮仍共用同一命令与可用性判断。附件引导、竞争/崩溃矩阵和
-原生 IME 验收仍缺，R03 保持部分完成。
+回退默认并提示，键盘与共享按钮仍共用同一命令与可用性判断。
+
+附件引导增量（schema 39）：`conversation_steering_input_attachments` 只存元数据（display path、
+byte count、sha256、media type、attachment id），字节继续放在 draft-attachments 快照；接收时在同一
+SQLite 事务内转移附件元数据、写入 receipt 并消费草稿，重复 receipt 按附件标识幂等返回且不再消费新草稿。
+应用时 `conversation_attachments` 行与用户消息同事务写入；Agent 边界经 `IConversationAttachmentStore`
+读取快照（draft 目录兜底），文本/PDF 进入文档上下文，图像转为原生模型图像。图像能力（模型+协议）、
+每轮 10 张/10 MiB 与上下文预算在应用前失败关闭；引导仍要求非空文字，附件单独不构成输入。
+引导记录显示本地化附件数标记；竞争/崩溃矩阵和原生 IME 验收仍缺，R03 保持部分完成。
 
 1. Domain/Application 将附件引导表示为任务所属不可变快照引用；请求前验证 MIME、模型能力、
    hash 和整轮预算，再将 receipt 接收与草稿消费原子提交。拒绝时保留草稿，不能扩大活动任务的原权限。

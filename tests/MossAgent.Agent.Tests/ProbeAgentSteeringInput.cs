@@ -19,6 +19,14 @@ internal sealed class ProbeAgentSteeringInput(Guid taskId) : IAgentSteeringInput
         _pending.Add(new(Guid.NewGuid(), TaskId, RunId, ++Revision, text, ConversationSteeringInputState.Pending, DateTimeOffset.UtcNow));
     }
 
+    public void Accept(string text, params ConversationAttachment[] attachments)
+    {
+        if (Closed) throw new InvalidOperationException("Run closed.");
+        var id = Guid.NewGuid();
+        _pending.Add(new(id, TaskId, RunId, ++Revision, text, ConversationSteeringInputState.Pending, DateTimeOffset.UtcNow,
+            Attachments: attachments.Select(item => item with { TaskId = TaskId, MessageId = id }).ToArray()));
+    }
+
     public Task<ConversationSteeringApplication?> ApplyAtBoundaryAsync(string? precedingAssistant, bool completeIfEmpty,
         Action<IReadOnlyList<ConversationSteeringInput>> validate, CancellationToken cancellationToken)
     {

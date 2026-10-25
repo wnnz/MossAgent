@@ -195,7 +195,7 @@ public sealed class WorkspaceComposerDraftsViewModel : ObservableObject, IDispos
         ConversationDraftScope scope, string sentText) => _repository is null || !session.SupportsDrafts(_repository)
         ? throw new InvalidOperationException("Live input and composer must share the same draft store.") : new(_repository, scope, sentText,
             token => _steering.AcquireAsync(scope, sentText, token),
-            (taskId, updates) => AcceptSubmission(scope, taskId, sentText, [], updates),
+            (taskId, submitted, updates) => AcceptSubmission(scope, taskId, sentText, submitted, updates),
             () => { lock (_gate) GetEntry(scope).ErrorKey = "DraftConflict"; Publish(); });
 
     internal WorkspaceQueuedDraftSubmission CreateQueuedSubmission(IConversationFollowupRepository repository,

@@ -1,4 +1,5 @@
 using MossAgent.Application.Agent;
+using MossAgent.Application.Attachments;
 using MossAgent.Application.Models;
 using MossAgent.Domain;
 using MossAgent.Tools.Abstractions;
@@ -92,6 +93,111 @@ public sealed class AgentSteeringBoundaryTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => RunAsync(runner, request));
         Assert.Empty(provider.Requests);
         Assert.Equal(0, tool.Calls);
+    }
+
+    [Fact]
+    public async Task AttachmentContentsReachTheModelAsContextTextAndNativeImages()
+    {
+        var taskId = Guid.NewGuid();
+        var input = new ProbeAgentSteeringInput(taskId);
+        var textAttachment = new ConversationAttachment(Guid.NewGuid(), taskId, Guid.Empty, "notes.txt", 9, new string('a', 64));
+        var imageAttachment = new ConversationAttachment(Guid.NewGuid(), taskId, Guid.Empty, "shot.png", 8, new string('b', 64), "image/png");
+        var store = new ProbeConversationAttachmentStore
+        {
+            Resolve = attachments => attachments.Select(item => item.MediaType == "image/png"
+                ? new WorkspaceAttachmentContent("src/shot.png", item.DisplayPath, string.Empty, item.ByteCount,
+                    AttachmentImage.FromDecodedBytes("image/png", new byte[8], 1, 1))
+                : new WorkspaceAttachmentContent("src/notes.txt", item.DisplayPath, "file body", item.ByteCount)).ToArray()
+        };
+        var provider = new SteeringProbeModelProvider
+        {
+            DuringStream = turn =>
+            {
+                if (turn == 1) { input.Accept("guidance", textAttachment); input.Accept("with image", imageAttachment); }
+            }
+        };
+        var (runner, request, _) = Create(taskId, provider, input, false);
+        request = request with { Model = request.Model with { SupportsImages = true }, AttachmentStore = store };
+        var events = await RunAsync(runner, request);
+        var later = provider.Requests[1].Messages.Where(message => message.Role != ModelRole.System).ToArray();
+        var steered = later.Where(message => message.Role == ModelRole.User).Skip(1).ToArray();
+        Assert.Equal(2, steered.Length);
+        Assert.StartsWith("guidance", steered[0].Content);
+        Assert.Contains("<workspace_attachments>", steered[0].Content);
+        Assert.Contains("file body", steered[0].Content);
+        Assert.True(steered[0].Images.IsDefaultOrEmpty);
+        Assert.Equal("with image", steered[1].Content);
+        var image = Assert.Single(steered[1].Images);
+        Assert.Equal("image/png", image.MediaType);
+        Assert.Equal(8, image.ByteCount);
+        Assert.Single(events.OfType<AgentSteeringAppliedEvent>());
+        Assert.Equal(2, store.Reads.Count);
+        Assert.All(store.Reads, read => Assert.Equal(taskId, read.TaskId));
+    }
+
+    [Fact]
+    public async Task ImageAttachmentsWithoutModelCapabilityStayPendingAndFailTheBoundary()
+    {
+        var taskId = Guid.NewGuid();
+        var input = new ProbeAgentSteeringInput(taskId);
+        var image = new ConversationAttachment(Guid.NewGuid(), taskId, Guid.Empty, "shot.png", 8, new string('b', 64), "image/png");
+        var provider = new SteeringProbeModelProvider { DuringStream = turn => { if (turn == 1) input.Accept("with image", image); } };
+        var (runner, request, _) = Create(taskId, provider, input, false);
+        var failure = await Assert.ThrowsAsync<ModelCapabilityException>(() => RunAsync(runner, request));
+        Assert.Equal(ModelCapabilityException.UnsupportedImageInput, failure.Code);
+        Assert.Single(provider.Requests);
+        Assert.Equal(1, input.PendingCount);
+        Assert.Empty(input.Applications);
+    }
+
+    [Theory]
+    [InlineData("count")]
+    [InlineData("bytes")]
+    public async Task ImageLimitViolationsStayPendingAndFailTheBoundary(string kind)
+    {
+        var taskId = Guid.NewGuid();
+        var input = new ProbeAgentSteeringInput(taskId);
+        var attachments = kind == "count"
+            ? Enumerable.Range(0, ModelImageRequestValidation.MaximumImages + 1).Select(_ =>
+                new ConversationAttachment(Guid.NewGuid(), taskId, Guid.Empty, "shot.png", 8, new string('b', 64), "image/png")).ToArray()
+            : [new ConversationAttachment(Guid.NewGuid(), taskId, Guid.Empty, "shot.png",
+                AttachmentImage.MaximumTotalByteCount + 1, new string('b', 64), "image/png")];
+        var provider = new SteeringProbeModelProvider { DuringStream = turn => { if (turn == 1) input.Accept("with image", attachments); } };
+        var (runner, request, _) = Create(taskId, provider, input, false);
+        request = request with { Model = request.Model with { SupportsImages = true }, AttachmentStore = new ProbeConversationAttachmentStore() };
+        var failure = await Assert.ThrowsAsync<ArgumentException>(() => RunAsync(runner, request));
+        Assert.IsType<ArgumentException>(failure);
+        Assert.Equal(1, input.PendingCount);
+        Assert.Empty(input.Applications);
+    }
+
+    [Fact]
+    public async Task AttachmentCostsCountAgainstTheContextBudgetBeforeApplying()
+    {
+        var taskId = Guid.NewGuid();
+        var input = new ProbeAgentSteeringInput(taskId);
+        var attachment = new ConversationAttachment(Guid.NewGuid(), taskId, Guid.Empty, "large.txt", 30000, new string('a', 64));
+        var provider = new SteeringProbeModelProvider { DuringStream = turn => { if (turn == 1) input.Accept("guidance", attachment); } };
+        var (runner, request, _) = Create(taskId, provider, input, false);
+        request = request with { Model = request.Model with { ContextLength = 2048 }, AttachmentStore = new ProbeConversationAttachmentStore() };
+        await Assert.ThrowsAsync<PinnedModelContextException>(() => RunAsync(runner, request));
+        Assert.Single(provider.Requests);
+        Assert.Equal(1, input.PendingCount);
+        Assert.Empty(input.Applications);
+    }
+
+    [Fact]
+    public async Task AttachmentSnapshotReadFailureSurfacesAsUnavailableAfterApplication()
+    {
+        var taskId = Guid.NewGuid();
+        var input = new ProbeAgentSteeringInput(taskId);
+        var attachment = new ConversationAttachment(Guid.NewGuid(), taskId, Guid.Empty, "notes.txt", 9, new string('a', 64));
+        var store = new ProbeConversationAttachmentStore { ReadFailure = new IOException("missing snapshot") };
+        var provider = new SteeringProbeModelProvider { DuringStream = turn => { if (turn == 1) input.Accept("guidance", attachment); } };
+        var (runner, request, _) = Create(taskId, provider, input, false);
+        request = request with { AttachmentStore = store };
+        await Assert.ThrowsAsync<ConversationAttachmentUnavailableException>(() => RunAsync(runner, request));
+        Assert.Single(input.Applications);
     }
 
     private static (AgentRunner Runner, AgentRunRequest Request, CountingAgentTool Tool) Create(Guid taskId,

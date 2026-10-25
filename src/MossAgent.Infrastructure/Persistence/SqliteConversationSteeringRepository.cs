@@ -1,12 +1,17 @@
+using MossAgent.Application.Attachments;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
+using MossAgent.Infrastructure.Attachments;
 
 namespace MossAgent.Infrastructure.Persistence;
 
-public sealed class SqliteConversationSteeringRepository(SqliteConnectionFactory connections, TimeProvider? timeProvider = null)
+public sealed class SqliteConversationSteeringRepository(SqliteConnectionFactory connections, TimeProvider? timeProvider = null,
+    AppDataPaths? paths = null, IAttachmentImageDecoder? images = null,
+    IAttachmentDocumentTextExtractor? documents = null, AttachmentSnapshotLeases? leases = null)
     : IConversationSteeringRepository
 {
     private readonly SqliteConversationDraftWriter _drafts = new(null);
+    private readonly ConversationDraftAttachmentFiles? _files = paths is null ? null : new(paths, images, documents, leases);
     private DateTimeOffset Now => (timeProvider ?? TimeProvider.System).GetUtcNow();
 
     public bool SupportsDrafts(IConversationDraftRepository drafts) =>
@@ -52,7 +57,9 @@ public sealed class SqliteConversationSteeringRepository(SqliteConnectionFactory
             await using var reader = await command.ExecuteReaderAsync(token);
             var items = new List<ConversationSteeringInput>();
             while (await reader.ReadAsync(token)) items.Add(SqliteConversationSteeringReader.ReadInput(reader));
-            return new ConversationSteeringPage(items.Take(pageSize).ToArray(), items.Count > pageSize);
+            var page = items.Take(pageSize).ToArray();
+            var restored = await SqliteConversationSteeringAttachments.RestoreAsync(connection, null, taskId, page, token);
+            return new ConversationSteeringPage(restored, items.Count > pageSize);
         }, cancellationToken);
     }
 
@@ -65,15 +72,20 @@ public sealed class SqliteConversationSteeringRepository(SqliteConnectionFactory
             throw new ArgumentException("Invalid steering input.");
         if (draft is not null)
         {
-            _drafts.Validate([draft]);
-            if (draft.Scope.TaskId != taskId || draft.AttachmentItems.Count != 0)
+            _drafts.Validate([draft with { Attachments = null }]);
+            if (draft.AttachmentItems.Count != 0)
+            {
+                if (_files is null) throw new InvalidOperationException("Attachment persistence is unavailable.");
+                ConversationDraftAttachmentValidation.Validate(draft.Scope, draft.AttachmentItems);
+            }
+            if (draft.Scope.TaskId != taskId)
                 throw new ArgumentException("Invalid steering draft consumption.");
         }
         return RunAsync(async token =>
         {
             await using var connection = connections.Create();
             await connection.OpenAsync(token);
-            return await SqliteConversationSteeringAcceptance.AcceptAsync(connection, _drafts, taskId, runId,
+            return await SqliteConversationSteeringAcceptance.AcceptAsync(connection, _drafts, _files, taskId, runId,
                 inputId, text, draft, Now, token, authorization);
         }, cancellationToken);
     }

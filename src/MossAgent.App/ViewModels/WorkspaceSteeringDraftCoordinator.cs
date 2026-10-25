@@ -15,7 +15,6 @@ internal sealed class WorkspaceSteeringDraftCoordinator(object gate, SemaphoreSl
             if (scope.TaskId is null || unavailable()) throw new ConversationSteeringException("SteeringStopped");
             var entry = getEntry(scope);
             if (entry.IsSteeringSubmission) throw new ConversationSteeringException("SteeringBusy");
-            if (entry.Attachments.Length != 0) throw new ConversationSteeringException("SteeringTextOnly");
             var update = WorkspaceDraftSubmissionState.Capture(entry, entry, text, []).Single();
             entry.IsSteeringSubmission = true;
             return new(update, () =>

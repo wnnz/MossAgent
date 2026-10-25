@@ -1,9 +1,8 @@
 using System.Text.Json;
-using MossAgent.Application.Attachments;
 
-namespace MossAgent.App.ViewModels;
+namespace MossAgent.Application.Attachments;
 
-internal static class WorkspaceAttachmentContextBuilder
+public static class WorkspaceAttachmentContextBuilder
 {
     public static string? Build(IEnumerable<WorkspaceAttachmentContent> attachments)
     {

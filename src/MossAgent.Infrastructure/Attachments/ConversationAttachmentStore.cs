@@ -2,14 +2,16 @@ using System.Security.Cryptography;
 using MossAgent.Application.Artifacts;
 using MossAgent.Application.Attachments;
 using MossAgent.Domain;
+using MossAgent.Infrastructure.Persistence;
 
 namespace MossAgent.Infrastructure.Attachments;
 
 public sealed class ConversationAttachmentStore(ITaskArtifactPaths paths, TimeProvider? timeProvider = null,
     IAttachmentImageDecoder? images = null, IAttachmentDocumentTextExtractor? documents = null,
-    AttachmentSnapshotLeases? leases = null) : IConversationAttachmentStore
+    AttachmentSnapshotLeases? leases = null, AppDataPaths? appPaths = null) : IConversationAttachmentStore
 {
     private readonly ConversationAttachmentPaths _paths = new(paths);
+    private readonly ConversationSteeringAttachmentPaths? _drafts = appPaths is null ? null : new(appPaths);
     private readonly AttachmentContentCodec _codec = new(images, documents);
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
     private readonly AttachmentSnapshotLeases? _leases = leases;
@@ -90,6 +92,11 @@ public sealed class ConversationAttachmentStore(ITaskArtifactPaths paths, TimePr
         {
             cancellationToken.ThrowIfCancellationRequested();
             var path = _paths.GetPath(attachment);
+            if (_drafts is not null && !File.Exists(path))
+            {
+                var draft = _drafts.GetPath(taskId, attachment);
+                if (File.Exists(draft)) path = draft;
+            }
             using var lease = _leases?.Acquire(path);
             cancellationToken.ThrowIfCancellationRequested();
             await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read,

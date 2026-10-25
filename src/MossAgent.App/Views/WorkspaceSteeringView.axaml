@@ -27,6 +27,7 @@
                     <StackPanel Spacing="3">
                       <ui:AppText Classes="type-10-5 text-muted" Text="{Binding Status}" TextWrapping="Wrap" />
                       <ui:AppText Classes="type-11" Text="{Binding Preview}" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
+                      <ui:AppText Classes="type-10-5 text-muted" Text="{Binding AttachmentLabel}" IsVisible="{Binding HasAttachments}" />
                       <ui:AppText Classes="type-10-5 text-muted" Text="{Binding AcceptedAt}" />
                     </StackPanel>
                   </ui:AppExpander.Header>

@@ -15,6 +15,8 @@ internal sealed class ConversationSteeringTestFixture : IAsyncDisposable
     }
 
     public CancellationToken Token => _inner.Token;
+    internal SqliteFailurePersistenceFixture Inner => _inner;
+    public ProjectProfile Project => _inner.Project;
     public AgentTask Task { get; }
     public SqliteConversationSteeringRepository Repository { get; }
     public SqliteWorkspaceRepository Workspaces => _inner.Repository;

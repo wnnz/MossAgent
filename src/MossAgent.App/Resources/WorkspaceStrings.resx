@@ -250,7 +250,6 @@
 <data name="ComposerSettingsSaveFailed" xml:space="preserve"><value>发送偏好保存失败，原发送方式保持不变。请检查应用数据目录后重试。</value></data>
 <data name="ComposerQueueFirstHint" xml:space="preserve"><value>Enter 加入下一轮队列，Ctrl+Enter 引导当前运行；Shift+Enter 换行。空闲时发送新消息。</value></data>
 <data name="ComposerSteerFirstHint" xml:space="preserve"><value>Enter 引导当前运行，Ctrl+Enter 加入下一轮队列；Shift+Enter 换行。空闲时发送新消息。</value></data>
-<data name="SteeringTextOnly" xml:space="preserve"><value>当前引导仅接收文字。请移除附件，或将完整消息加入下一轮队列；附件不会被丢弃。</value></data>
 <data name="SteeringTooLong" xml:space="preserve"><value>引导文字不能超过 32,768 个 UTF-16 单元，请缩短后重试。</value></data>
 <data name="SteeringInvalid" xml:space="preserve"><value>引导文字为空、过长或包含无效字符，草稿已保留。请编辑后重试。</value></data>
 <data name="SteeringScopeChanged" xml:space="preserve"><value>项目、工作树或源审阅授权已变化，未继续接收或注入指导。请检查授权；草稿及已接收记录保留。</value></data>
@@ -267,6 +266,9 @@
 <data name="SteeringPending" xml:space="preserve"><value>已接收，等待当前请求和工具批次结束</value></data>
 <data name="SteeringApplied" xml:space="preserve"><value>已加入本地模型输入；不代表服务端接收或处理成功</value></data>
 <data name="SteeringInterrupted" xml:space="preserve"><value>已中断，未自动加入后续运行</value></data>
+<data name="SteeringAttachmentCount" xml:space="preserve"><value>{0} 个附件</value></data>
+<data name="SteeringModelUnsupported" xml:space="preserve"><value>当前模型或协议不支持所选输入（如图像附件），引导未被接收。请移除不兼容的附件或切换模型后重试；草稿已保留。</value></data>
+<data name="SteeringAttachmentUnavailable" xml:space="preserve"><value>保存的附件无法校验或写入快照，引导未被接收，草稿已保留。请检查后重试。</value></data>
 <data name="TaskFailureWorkspaceAuthorizationChanged" xml:space="preserve"><value>项目目录授权已变更，本次运行已停止。已发生的操作不会自动撤销或重跑；请核实结果、刷新项目后手动继续。</value></data>
 <data name="WorktreeRecoveryTitle" xml:space="preserve"><value>工作树创建待核实（{0}）</value></data>
 <data name="WorktreeRecoveryHint" xml:space="preserve"><value>以下工作树创建在中途失败或中断。请手动检查目标目录与 Git 注册（git worktree list）后再处理；“标记已核实”只关闭此提示，不会删除目录、清理 Git 注册或重新创建，也不会继续任何任务。</value></data>
