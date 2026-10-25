@@ -88,11 +88,11 @@ public sealed class AgentRunner(
             }
 
             AppendAssistantToolCall(messages, state);
+            var shared = hasSubagents ? SubagentConversationContextBuilder.Build(messages) : null;
             var context = request.ToolContext with
             {
-                ConversationContext = !hasSubagents
-                    ? null
-                    : SubagentConversationContextBuilder.Build(messages),
+                ConversationContext = shared?.Text,
+                SubagentImages = shared?.Images,
                 SubagentTools = hasSubagents
                     ? new SubagentToolGateway(tools, executor, request.ToolContext)
                     : null

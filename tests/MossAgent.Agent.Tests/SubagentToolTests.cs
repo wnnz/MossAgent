@@ -63,6 +63,88 @@ public sealed class SubagentToolTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_AttachesSharedImagesToCapableChildUserMessage()
+    {
+        var setup = CreateSetup([new TextDelta("完成")], supportsImages: true);
+        var executor = CreateExecutor(setup.Tool, new FixedToolApprovalService(true));
+        var context = CreateContext(conversationContext: "用户：旧问题") with
+        {
+            SubagentImages = [new SubagentSharedImage("image/png", 4, "AQIDBA==")]
+        };
+
+        var result = await ExecuteAsync(
+            executor, """{"agent":"review","task":"检查"}""", context,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        var user = setup.Provider.LastRequest!.Messages[1];
+        var attached = Assert.Single(user.Images);
+        Assert.Equal("image/png", attached.MediaType);
+        Assert.Equal(4, attached.ByteCount);
+        Assert.Equal("AQIDBA==", attached.Base64Data);
+        Assert.True(setup.Provider.LastRequest.Messages[0].Images.IsDefaultOrEmpty);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_OmitsSharedImagesWhenSharingIsDisabled()
+    {
+        var setup = CreateSetup([new TextDelta("完成")], shareContext: false, supportsImages: true);
+        var executor = CreateExecutor(setup.Tool, new FixedToolApprovalService(true));
+        var context = CreateContext(conversationContext: "不应传递的旧上下文") with
+        {
+            SubagentImages = [new SubagentSharedImage("image/png", 4, "AQIDBA==")]
+        };
+
+        var result = await ExecuteAsync(
+            executor, """{"agent":"review","task":"单独任务"}""", context,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("单独任务", setup.Provider.LastRequest!.Messages[1].Content);
+        Assert.True(setup.Provider.LastRequest.Messages[1].Images.IsDefaultOrEmpty);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_FailsExplicitlyWhenChildModelCannotAcceptImages()
+    {
+        var setup = CreateSetup([new TextDelta("unused")]);
+        var executor = CreateExecutor(setup.Tool, new FixedToolApprovalService(true));
+        var context = CreateContext(conversationContext: "用户：旧问题") with
+        {
+            SubagentImages = [new SubagentSharedImage("image/png", 4, "AQIDBA==")]
+        };
+
+        var result = await ExecuteAsync(
+            executor, """{"agent":"review","task":"检查"}""", context,
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("subagent_images_unsupported", result.ErrorCode);
+        Assert.False(string.IsNullOrWhiteSpace(result.Summary));
+        Assert.Equal(0, setup.Provider.Calls);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_FailsExplicitlyWhenChildProtocolCannotCarryImages()
+    {
+        var setup = CreateSetup([new TextDelta("unused")],
+            supportsImages: true, protocol: (ProviderProtocol)999);
+        var executor = CreateExecutor(setup.Tool, new FixedToolApprovalService(true));
+        var context = CreateContext(conversationContext: "用户：旧问题") with
+        {
+            SubagentImages = [new SubagentSharedImage("image/png", 4, "AQIDBA==")]
+        };
+
+        var result = await ExecuteAsync(
+            executor, """{"agent":"review","task":"检查"}""", context,
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("subagent_images_unsupported", result.ErrorCode);
+        Assert.Equal(0, setup.Provider.Calls);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_OmitsConversationWhenSharingIsDisabled()
     {
         var setup = CreateSetup([new TextDelta("完成")], shareContext: false);
@@ -165,15 +247,17 @@ public sealed class SubagentToolTests
         IReadOnlyList<ModelEvent> events,
         TimeSpan delay = default,
         bool shareContext = true,
-        bool enabled = true)
+        bool enabled = true,
+        bool supportsImages = false,
+        ProviderProtocol protocol = ProviderProtocol.OpenAiResponses)
     {
         var provider = new AiProvider(
-            Guid.NewGuid(), "test", ProviderProtocol.OpenAiResponses,
+            Guid.NewGuid(), "test", protocol,
             new Uri("https://example.test/v1"), "test-key", null, false, true,
             new Dictionary<string, string>());
         var model = new ModelProfile(
             Guid.NewGuid(), provider.Id, "sub-model", "Sub model", 16_000, 2_000,
-            "low", null, null, false, false, false, true, "{}");
+            "low", null, null, supportsImages, false, false, true, "{}");
         var profile = new SubagentProfile(
             Guid.NewGuid(), "review", "独立审查改动", "检查代码并报告问题。",
             provider.Id, model.Id, "high", shareContext, enabled);

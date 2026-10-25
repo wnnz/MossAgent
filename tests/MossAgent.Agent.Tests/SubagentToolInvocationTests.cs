@@ -107,6 +107,61 @@ public sealed class SubagentToolInvocationTests
     }
 
     [Fact]
+    public async Task RunAsync_ChildReceivesSharedWindowImagesWhenCapable()
+    {
+        var image = ModelImage.FromBytes("image/png", new byte[64]);
+        var fixture = CreateFixture(approveChildTool: true, childSupportsImages: true,
+            messages:
+            [
+                new ModelMessage(ModelRole.User, "共享图", Images: [image]),
+                new ModelMessage(ModelRole.User, "最新请求")
+            ]);
+        var events = await CollectEventsAsync(fixture.Runner, fixture.Request);
+
+        var childRequest = fixture.Requests.First(request => request.Model.Id == fixture.ChildModel.Id);
+        var user = childRequest.Messages[1];
+        var attached = Assert.Single(user.Images);
+        Assert.Equal(image.MediaType, attached.MediaType);
+        Assert.Equal(image.ByteCount, attached.ByteCount);
+        Assert.Equal(image.Base64Data, attached.Base64Data);
+        Assert.Contains("共享图", user.Content);
+        Assert.Contains("[包含 1 张图像输入]", user.Content);
+        Assert.DoesNotContain(image.Base64Data, user.Content);
+        Assert.True(Assert.Single(events.OfType<AgentToolEvent>()).Result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task RunAsync_ChildReceivesNoSharedTextOrImagesWhenSharingIsOff()
+    {
+        var image = ModelImage.FromBytes("image/png", new byte[64]);
+        var fixture = CreateFixture(approveChildTool: true, shareContext: false,
+            childSupportsImages: true,
+            messages: [new ModelMessage(ModelRole.User, "私有图", Images: [image])]);
+        var events = await CollectEventsAsync(fixture.Runner, fixture.Request);
+
+        var childRequest = fixture.Requests.First(request => request.Model.Id == fixture.ChildModel.Id);
+        var user = childRequest.Messages[1];
+        Assert.True(user.Images.IsDefaultOrEmpty);
+        Assert.Equal("检查当前改动", user.Content);
+        Assert.DoesNotContain("私有图", user.Content);
+        Assert.True(Assert.Single(events.OfType<AgentToolEvent>()).Result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task RunAsync_ChildRunFailsBeforeModelCallWhenImagesUnsupported()
+    {
+        var image = ModelImage.FromBytes("image/png", new byte[64]);
+        var fixture = CreateFixture(approveChildTool: true, childSupportsImages: false,
+            messages: [new ModelMessage(ModelRole.User, "共享图", Images: [image])]);
+        var events = await CollectEventsAsync(fixture.Runner, fixture.Request);
+
+        Assert.DoesNotContain(fixture.Requests, request => request.Model.Id == fixture.ChildModel.Id);
+        var result = Assert.Single(events.OfType<AgentToolEvent>()).Result;
+        Assert.False(result.IsSuccess);
+        Assert.Equal("subagent_images_unsupported", result.ErrorCode);
+    }
+
+    [Fact]
     public async Task ChildSignedContinuation_StaysInChildRequestsAndNeverEntersDialogue()
     {
         var fixture = CreateFixture(approveChildTool: true, signed: true);
@@ -143,17 +198,21 @@ public sealed class SubagentToolInvocationTests
         List<ModelRequest> Requests) CreateFixture(
         bool approveChildTool,
         string requestedToolName = "test.read",
-        bool signed = false)
+        bool signed = false,
+        bool shareContext = true,
+        bool childSupportsImages = false,
+        IReadOnlyList<ModelMessage>? messages = null)
     {
         var provider = new AiProvider(
             Guid.NewGuid(), "test", signed ? ProviderProtocol.GeminiGenerateContent : ProviderProtocol.OpenAiResponses,
             new Uri("https://example.test/v1"), "test-key", null, false, true,
             new Dictionary<string, string>());
-        var mainModel = CreateModel(provider.Id, "main");
-        var childModel = CreateModel(provider.Id, signed ? "gemini-3-flash-preview" : "child");
+        var hasImages = messages?.Any(static message => !message.Images.IsDefaultOrEmpty) == true;
+        var mainModel = CreateModel(provider.Id, "main", hasImages);
+        var childModel = CreateModel(provider.Id, signed ? "gemini-3-flash-preview" : "child", childSupportsImages);
         var profile = new SubagentProfile(
             Guid.NewGuid(), "review", "检查改动", "审查代码。",
-            provider.Id, childModel.Id, "high", true, true);
+            provider.Id, childModel.Id, "high", shareContext, true);
         var requests = new List<ModelRequest>();
         var parentTurns = 0;
         var childTurns = 0;
@@ -196,11 +255,11 @@ public sealed class SubagentToolInvocationTests
             Guid.NewGuid(), Path.GetTempPath(), [Path.GetTempPath()],
             ApprovalPolicy.AskEveryTime);
         var request = new AgentRunRequest(provider, mainModel,
-            [new ModelMessage(ModelRole.User, "审查代码")], context);
+            messages ?? [new ModelMessage(ModelRole.User, "审查代码")], context);
         return (runner, request, childModel, childTool, requests);
     }
 
-    private static ModelProfile CreateModel(Guid providerId, string modelId) =>
+    private static ModelProfile CreateModel(Guid providerId, string modelId, bool supportsImages = false) =>
         new(Guid.NewGuid(), providerId, modelId, modelId, 16_000, 2_000,
-            "medium", null, null, false, false, false, true, "{}");
+            "medium", null, null, supportsImages, false, false, true, "{}");
 }

@@ -74,9 +74,10 @@ public sealed class ModelContinuationTests
         var context = SubagentConversationContextBuilder.Build([new(ModelRole.User, "question"),
             new(ModelRole.Assistant, "visible", Continuation: Continuation("opaque-secret"))]);
 
-        Assert.Contains("visible", context);
-        Assert.DoesNotContain("opaque-secret", context);
-        Assert.DoesNotContain("thoughtSignature", context);
+        Assert.NotNull(context);
+        Assert.Contains("visible", context.Text);
+        Assert.DoesNotContain("opaque-secret", context.Text);
+        Assert.DoesNotContain("thoughtSignature", context.Text);
     }
 
     private static ModelContinuation Continuation(string signature) => new(Guid.NewGuid(), ProviderProtocol.GeminiGenerateContent,

@@ -74,10 +74,14 @@ public sealed class SubagentToolGatewayTests
             return Task.FromResult(result);
         });
         var gateway = new SubagentToolGateway(catalog, executor);
-        context = context with { SubagentTools = gateway };
+        context = context with
+        {
+            SubagentTools = gateway,
+            SubagentImages = [new SubagentSharedImage("image/png", 3, "AQID")]
+        };
 
         Assert.Same(result, await gateway.ExecuteAsync(request, context, TestContext.Current.CancellationToken));
-        Assert.Equal(context with { ConversationContext = null, SubagentTools = null, SubagentProgress = null }, forwarded);
+        Assert.Equal(context with { ConversationContext = null, SubagentTools = null, SubagentProgress = null, SubagentImages = null }, forwarded);
         Assert.Same(context.FileSnapshots, forwarded!.FileSnapshots);
         Assert.Same(context.Progress, forwarded.Progress);
         Assert.Same(gateway, context.SubagentTools);

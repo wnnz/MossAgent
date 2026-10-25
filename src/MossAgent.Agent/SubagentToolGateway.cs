@@ -31,6 +31,7 @@ internal sealed class SubagentToolGateway(
             ConversationContext = null,
             SubagentTools = null,
             SubagentProgress = null,
+            SubagentImages = null,
             SourceScope = parentScope?.SourceScope ?? context.SourceScope,
             SourceReviewRevision = parentScope?.SourceReviewRevision ?? context.SourceReviewRevision,
             ToolsEnabled = context.ToolsEnabled && parentScope?.ToolsEnabled != false,

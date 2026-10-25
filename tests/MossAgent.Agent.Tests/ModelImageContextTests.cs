@@ -56,16 +56,20 @@ public sealed class ModelImageContextTests
     [Theory]
     [InlineData("")]
     [InlineData("describe this")]
-    public void SharedChildContext_ExplicitlyMarksImagesAsUnavailable(string text)
+    public void SharedChildContext_CarriesImagesAndMarksTheirCount(string text)
     {
         var image = ModelImage.FromBytes("image/png", new byte[128]);
 
         var context = SubagentConversationContextBuilder.Build([new(ModelRole.User, text, Images: [image])]);
 
         Assert.NotNull(context);
-        Assert.Contains("Image inputs omitted", context);
-        Assert.DoesNotContain(image.Base64Data, context);
-        if (text.Length > 0) Assert.Contains(text, context);
+        Assert.Contains("[包含 1 张图像输入]", context.Text);
+        Assert.DoesNotContain(image.Base64Data, context.Text);
+        var shared = Assert.Single(context.Images);
+        Assert.Equal(image.MediaType, shared.MediaType);
+        Assert.Equal(image.ByteCount, shared.ByteCount);
+        Assert.Equal(image.Base64Data, shared.Base64Data);
+        if (text.Length > 0) Assert.Contains(text, context.Text);
     }
 
     private static ModelProfile Model() => new(Guid.NewGuid(), Guid.NewGuid(), "fixture", "fixture",

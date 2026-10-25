@@ -4,6 +4,7 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="ImagesUnsupported" xml:space="preserve"><value>子代理所选模型或协议不支持图像输入，共享图片未发送。请在子代理设置中改选支持图像的模型后重试。</value></data>
   <data name="RunFailed" xml:space="preserve"><value>子代理执行失败，请检查代理配置和工具审计记录。</value></data>
   <data name="ReasoningUnavailable" xml:space="preserve"><value>子代理所选模型不支持已配置的思考强度。请在子代理设置中重新选择支持的档位后重试。</value></data>
 </root>

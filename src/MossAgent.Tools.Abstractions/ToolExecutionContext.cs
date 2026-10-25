@@ -15,7 +15,8 @@ public sealed record ToolExecutionContext(
     IBrowserSession? BrowserSession = null,
     string? ConversationContext = null,
     ISubagentToolGateway? SubagentTools = null,
-    Action<ToolDialogueMessage>? SubagentProgress = null)
+    Action<ToolDialogueMessage>? SubagentProgress = null,
+    IReadOnlyList<SubagentSharedImage>? SubagentImages = null)
 {
     private FrozenSet<string>? _allowedToolNames;
 

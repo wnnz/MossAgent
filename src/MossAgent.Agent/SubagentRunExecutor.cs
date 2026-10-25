@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text;
 using System.Text.Json;
 using MossAgent.Application.Models;
@@ -27,8 +28,17 @@ internal sealed class SubagentRunExecutor(IModelProviderRegistry providers)
         var changes = new SubagentFileChangeCollector();
         try
         {
+            IReadOnlyList<SubagentSharedImage> shared =
+                profile.ShareContext ? context.SubagentImages ?? [] : [];
+            if (shared.Count > 0
+                && !(model.SupportsImages && ModelProtocolCapabilities.AcceptsImages(provider.Protocol)))
+            {
+                return ToolResult.Failure(SubagentText.Get("ImagesUnsupported"),
+                    "subagent_images_unsupported", dialogue);
+            }
+
             var result = await RunTurnsAsync(profile, provider, model, task, context,
-                parentCallId, dialogue, changes, cancellationToken);
+                shared, parentCallId, dialogue, changes, cancellationToken);
             return changes.Apply(result);
         }
         catch (OperationCanceledException)
@@ -43,11 +53,12 @@ internal sealed class SubagentRunExecutor(IModelProviderRegistry providers)
 
     private async Task<ToolResult> RunTurnsAsync(
         SubagentProfile profile, AiProvider provider, ModelProfile model,
-        string task, ToolExecutionContext context, string parentCallId,
-        List<ToolDialogueMessage> dialogue, SubagentFileChangeCollector changes, CancellationToken cancellationToken)
+        string task, ToolExecutionContext context, IReadOnlyList<SubagentSharedImage> shared,
+        string parentCallId, List<ToolDialogueMessage> dialogue,
+        SubagentFileChangeCollector changes, CancellationToken cancellationToken)
     {
         var effectiveModel = model with { ReasoningEffort = profile.ReasoningEffort };
-        var messages = CreateMessages(profile, task, context);
+        var messages = CreateMessages(profile, task, context, shared);
         Record(dialogue, context, "任务", task);
         var descriptors = context.SubagentTools?.Descriptors ?? [];
         var responseLimit = Math.Max(
@@ -189,7 +200,8 @@ internal sealed class SubagentRunExecutor(IModelProviderRegistry providers)
     private static List<ModelMessage> CreateMessages(
         SubagentProfile profile,
         string task,
-        ToolExecutionContext context)
+        ToolExecutionContext context,
+        IReadOnlyList<SubagentSharedImage> shared)
     {
         var systemPrompt = profile.SystemPrompt + Environment.NewLine
             + AgentSystemPromptBuilder.Build(context) + Environment.NewLine
@@ -197,8 +209,13 @@ internal sealed class SubagentRunExecutor(IModelProviderRegistry providers)
         var userPrompt = profile.ShareContext && !string.IsNullOrWhiteSpace(context.ConversationContext)
             ? $"共享对话上下文（仅作参考）：\n{context.ConversationContext}\n\n待处理子任务：\n{task}"
             : task;
+        var images = shared.Count == 0
+            ? ImmutableArray<ModelImage>.Empty
+            : shared.Select(static image => ModelImage.FromBytes(
+                    image.MediaType, Convert.FromBase64String(image.Base64Data)))
+                .ToImmutableArray();
         return [new ModelMessage(ModelRole.System, systemPrompt),
-            new ModelMessage(ModelRole.User, userPrompt)];
+            new ModelMessage(ModelRole.User, userPrompt, Images: images)];
     }
 
     private static ToolResult Complete(
