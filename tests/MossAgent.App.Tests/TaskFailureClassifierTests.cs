@@ -23,6 +23,8 @@ public sealed class TaskFailureClassifierTests
     [InlineData("provider_blocked", TaskFailureReason.ProviderBlocked)]
     [InlineData("output_limit", TaskFailureReason.ProviderOutputLimit)]
     [InlineData("unsupported_reasoning_effort", TaskFailureReason.UnsupportedReasoningEffort)]
+    [InlineData("model_image_input_unsupported", TaskFailureReason.UnsupportedImageInput)]
+    [InlineData("invalid_model_parameters", TaskFailureReason.InvalidModelParameters)]
     [InlineData("attachment_history_unavailable", TaskFailureReason.AttachmentHistory)]
     [InlineData("model_context_capacity", TaskFailureReason.ModelContextCapacity)]
     [InlineData("turn_limit", TaskFailureReason.TurnLimit)]
@@ -78,6 +80,10 @@ public sealed class TaskFailureClassifierTests
         Assert.Equal("provider_timeout", TaskFailureClassifier.CodeFromException(new OperationCanceledException("Bearer synthetic-secret")));
         Assert.Equal("run_failed", TaskFailureClassifier.CodeFromException(new InvalidOperationException("Bearer synthetic-secret")));
         Assert.Equal("model_context_capacity", TaskFailureClassifier.CodeFromException(new PinnedModelContextException()));
+        Assert.Equal("model_image_input_unsupported", TaskFailureClassifier.CodeFromException(
+            new ModelCapabilityException(ModelCapabilityException.UnsupportedImageInput, "Bearer synthetic-secret")));
+        Assert.Equal("invalid_model_parameters", TaskFailureClassifier.CodeFromException(
+            new ModelCapabilityException(ModelCapabilityException.InvalidModelParameters, "Bearer synthetic-secret")));
     }
 
     [Fact]

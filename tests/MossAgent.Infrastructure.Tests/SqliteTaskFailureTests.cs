@@ -24,6 +24,9 @@ public sealed class SqliteTaskFailureTests
     [InlineData(14)]
     [InlineData(15)]
     [InlineData(16)]
+    [InlineData(17)]
+    [InlineData(18)]
+    [InlineData(19)]
     public async Task FailureCategories_RoundTripAcrossAllCatalogs(int category)
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
@@ -75,7 +78,7 @@ public sealed class SqliteTaskFailureTests
 
     [Theory]
     [InlineData("-1")]
-    [InlineData("18")]
+    [InlineData("20")]
     [InlineData("14.5")]
     [InlineData("'Bearer synthetic-secret'")]
     [InlineData("NULL")]
@@ -100,7 +103,7 @@ public sealed class SqliteTaskFailureTests
         await fixture.ExecuteAsync("DROP TABLE agent_task_failures; DROP TABLE conversation_model_preferences; DROP TRIGGER project_authorization_changed; ALTER TABLE projects DROP COLUMN authorization_revision; DELETE FROM schema_versions WHERE version>=7;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(34, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(35, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(fixture.Task with { IsPinned = true }, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)));
         Assert.Equal(archived, Assert.Single(await fixture.Repository.GetArchivedTasksAsync(fixture.Project.Id, fixture.Token)));
         Assert.Equal(message, Assert.Single(await fixture.Repository.GetMessagesAsync(fixture.Task.Id, fixture.Token)));

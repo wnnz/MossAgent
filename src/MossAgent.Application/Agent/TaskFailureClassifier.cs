@@ -25,6 +25,8 @@ public static class TaskFailureClassifier
         "provider_blocked" => TaskFailureReason.ProviderBlocked,
         "output_limit" => TaskFailureReason.ProviderOutputLimit,
         "unsupported_reasoning_effort" => TaskFailureReason.UnsupportedReasoningEffort,
+        ModelCapabilityException.UnsupportedImageInput => TaskFailureReason.UnsupportedImageInput,
+        ModelCapabilityException.InvalidModelParameters => TaskFailureReason.InvalidModelParameters,
         "attachment_history_unavailable" => TaskFailureReason.AttachmentHistory,
         "model_context_capacity" => TaskFailureReason.ModelContextCapacity,
         "workspace_authorization_changed" => TaskFailureReason.WorkspaceAuthorizationChanged,
@@ -35,6 +37,7 @@ public static class TaskFailureClassifier
 
     public static string CodeFromException(Exception exception) => exception switch
     {
+        ModelCapabilityException capability => capability.Code,
         ConversationAttachmentUnavailableException => "attachment_history_unavailable",
         PinnedModelContextException => "model_context_capacity",
         WorkspaceAuthorizationException => "workspace_authorization_changed",

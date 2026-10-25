@@ -88,7 +88,10 @@
   <data name="ToolPhaseExecutingSummary" xml:space="preserve"><value>{0} · 正在执行工具</value></data>
   <data name="ToolPhaseFinalizingSummary" xml:space="preserve"><value>{0} · 正在保存工具结果</value></data>
   <data name="ToolProgressGenericName" xml:space="preserve"><value>工具</value></data>
-  <data name="TaskFailureUnsupportedReasoningEffort" xml:space="preserve"><value>所选 Gemini 模型不支持当前思考强度。请在模型设置中选择支持的档位，再手动重试。</value></data>
+  <data name="TaskFailureUnsupportedReasoningEffort" xml:space="preserve"><value>当前模型不支持配置的思考强度。请在模型设置中选择支持的档位，再手动重试。</value></data>
+  <data name="TaskFailureUnsupportedImageInput" xml:space="preserve"><value>当前模型或协议不支持图像输入，任务未发出请求。请移除图像附件或切换到支持图像的模型后手动重试。</value></data>
+  <data name="TaskFailureInvalidModelParameters" xml:space="preserve"><value>模型的高级参数无效或覆盖了受管理字段，任务未发出请求。请在模型设置中修正高级参数后手动重试。</value></data>
+  <data name="SendModelCapabilityUnsupported" xml:space="preserve"><value>当前模型或协议不支持所选输入（如图像附件）。请移除不兼容的附件或切换模型后重试；草稿会保留。</value></data>
   <data name="FileChangesTitle" xml:space="preserve"><value>已编辑 {0} 个文件</value></data>
   <data name="FileChangesScope" xml:space="preserve"><value>此任务 · 文件工具记录</value></data>
   <data name="FileChangesScopeHint" xml:space="preserve"><value>查看本任务文件工具实际提交的前后快照，包含子代理；连续写入合并为最初与最终版本。不读取当前文件或此前 Git 工作区变更。缺失快照或历史不连续时会明确提示；不包含 Shell/MCP 自行修改。</value></data>
@@ -214,6 +217,7 @@
 <data name="FollowupFull" xml:space="preserve"><value>队列已达 16 项上限，请先移除或发送已有条目。</value></data>
 <data name="FollowupEmpty" xml:space="preserve"><value>队列中没有待发送消息。</value></data>
 <data name="FollowupAttachmentUnavailable" xml:space="preserve"><value>保存的附件无法校验或读取，消息未续发。请移除该条目并重新选择附件。</value></data>
+<data name="FollowupModelUnsupported" xml:space="preserve"><value>保存的模型或协议不再支持该条目的输入（如图像附件），消息未续发。请恢复模型设置，或移除条目后重新加入。</value></data>
 <data name="FollowupCommittedFailed" xml:space="preserve"><value>消息已进入对话，但执行未启动。请刷新历史确认状态；已保存消息不会重新入队。</value></data>
 <data name="FollowupFailed" xml:space="preserve"><value>队列操作未能完成，请刷新核对后重试；没有自动重试。</value></data>
 <data name="FollowupInvalidPrompt" xml:space="preserve"><value>请保留有效消息文字；文字不能超过草稿长度上限。仅图片附件可以单独发送。</value></data>

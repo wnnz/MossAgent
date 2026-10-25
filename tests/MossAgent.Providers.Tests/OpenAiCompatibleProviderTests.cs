@@ -62,7 +62,7 @@ public sealed class OpenAiCompatibleProviderTests
             Model = request.Model with
             {
                 AdvancedParametersJson =
-                    "{\"messages\":[],\"max_completion_tokens\":999999,\"metadata\":{\"tag\":\"safe\"}}"
+                    "{\"max_completion_tokens\":512,\"metadata\":{\"tag\":\"safe\"}}"
             }
         };
         var handler = new RecordingResponseHandler(HttpStatusCode.OK,
@@ -78,11 +78,39 @@ public sealed class OpenAiCompatibleProviderTests
         var body = document.RootElement;
         Assert.Single(body.GetProperty("messages").EnumerateArray());
         Assert.False(body.TryGetProperty("max_tokens", out _));
-        Assert.Equal(1_024, body.GetProperty("max_completion_tokens").GetInt32());
+        Assert.Equal(512, body.GetProperty("max_completion_tokens").GetInt32());
         Assert.Equal("safe", body.GetProperty("metadata").GetProperty("tag").GetString());
     }
 
-    private static ModelRequest CreateRequest(ToolDescriptor tool)
+    [Theory]
+    [InlineData("{\"messages\":[],\"max_completion_tokens\":999999,\"metadata\":{\"tag\":\"safe\"}}")]
+    [InlineData("{\"temperature\":2}")]
+    [InlineData("{malformed")]
+    public async Task StreamAsync_RejectsInvalidAdvancedParametersBeforeHttp(string advancedJson)
+    {
+        var request = CreateRequest();
+        request = request with
+        {
+            Model = request.Model with { AdvancedParametersJson = advancedJson }
+        };
+        var handler = new RecordingResponseHandler(HttpStatusCode.OK,
+            "data: [DONE]\n\n", contentType: "text/event-stream");
+        var clients = new StaticProviderHttpClientFactory(handler);
+        var provider = new OpenAiCompatibleProvider(clients);
+        var events = new List<ModelEvent>();
+
+        await foreach (var modelEvent in provider.StreamAsync(request, TestContext.Current.CancellationToken))
+        {
+            events.Add(modelEvent);
+        }
+
+        var failure = Assert.IsType<ModelFailed>(Assert.Single(events));
+        Assert.Equal("invalid_model_parameters", failure.Code);
+        Assert.Null(handler.RequestUri);
+        Assert.DoesNotContain("fixture-api-key", failure.Message);
+    }
+
+    private static ModelRequest CreateRequest(ToolDescriptor? tool = null)
     {
         var providerId = Guid.NewGuid();
         var provider = new AiProvider(
@@ -93,6 +121,7 @@ public sealed class OpenAiCompatibleProviderTests
             Guid.NewGuid(), providerId, "fixture-model", "Fixture model", 8_192, 1_024,
             "off", null, null, false, false, true, true, "{}");
         return new ModelRequest(
-            provider, model, [new ModelMessage(ModelRole.User, "hello")], [tool]);
+            provider, model, [new ModelMessage(ModelRole.User, "hello")],
+            tool is null ? [] : [tool]);
     }
 }

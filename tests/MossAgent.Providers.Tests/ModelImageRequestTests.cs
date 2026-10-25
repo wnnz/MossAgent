@@ -62,8 +62,9 @@ public sealed class ModelImageRequestTests
         var request = ModelImageTestFixture.Request(protocol);
         request = request with { Model = request.Model with { SupportsImages = false, SupportsFiles = true } };
 
-        var error = Assert.Throws<ArgumentException>(() => ModelImageTestFixture.Build(request));
+        var error = Assert.Throws<ModelCapabilityException>(() => ModelImageTestFixture.Build(request));
 
+        Assert.Equal("model_image_input_unsupported", error.Code);
         Assert.DoesNotContain(request.Provider.ApiKey, error.Message);
         Assert.DoesNotContain(request.Messages[0].Images[0].Base64Data, error.Message);
     }
@@ -110,10 +111,12 @@ public sealed class ModelImageRequestTests
     {
         var request = ModelImageTestFixture.Request(protocol);
         request = request with { Model = request.Model with { AdvancedParametersJson = "{\"messages\":[],\"contents\":[],\"input\":[]}" } };
-        using var document = JsonDocument.Parse(ModelImageTestFixture.Build(request));
-        var content = ModelImageTestFixture.Content(document.RootElement, protocol);
 
-        ModelImageTestFixture.AssertImage(content[1], protocol, request.Messages[0].Images[0]);
+        var error = Assert.Throws<ModelCapabilityException>(() => ModelImageTestFixture.Build(request));
+
+        Assert.Equal("invalid_model_parameters", error.Code);
+        Assert.DoesNotContain(request.Provider.ApiKey, error.Message);
+        Assert.DoesNotContain(request.Messages[0].Images[0].Base64Data, error.Message);
     }
 
     [Fact]

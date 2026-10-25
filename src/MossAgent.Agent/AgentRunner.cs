@@ -126,7 +126,7 @@ public sealed class AgentRunner(
         yield return new AgentStatusEvent($"模型处理中 · 第 {turn} 轮");
         var contextMessages = ModelContextWindowBuilder.Build(messages, descriptors, request.Model, request.PinnedUserContext, required);
         var modelRequest = new ModelRequest(request.Provider, request.Model, contextMessages, descriptors);
-        ModelImageRequestValidation.Validate(modelRequest);
+        ModelCapabilityGate.Validate(modelRequest);
         var provider = providers.Get(request.Provider.Protocol);
 
         await foreach (var modelEvent in provider.StreamAsync(modelRequest, cancellationToken))

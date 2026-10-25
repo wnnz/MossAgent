@@ -1,4 +1,3 @@
-using System.Text.Json;
 using MossAgent.Application.Models;
 using MossAgent.Domain;
 
@@ -63,42 +62,20 @@ internal static class ModelSettingsValidator
     private static string? ValidateAdvancedParameters(
         string? advancedJson, ProviderProtocol protocol, int maximumOutputTokens)
     {
-        try
-        {
-            using var document = JsonDocument.Parse(advancedJson ?? string.Empty);
-            if (document.RootElement.ValueKind != JsonValueKind.Object)
-                return UiText.T("高级参数必须是 JSON 对象。");
-
-            foreach (var property in document.RootElement.EnumerateObject())
-            {
-                if (protocol == ProviderProtocol.OpenAiCompatible
-                    && property.Name.Equals("max_completion_tokens", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (property.Value.ValueKind != JsonValueKind.Number
-                        || !property.Value.TryGetInt32(out var alternateLimit)
-                        || alternateLimit is < 1 || alternateLimit > maximumOutputTokens)
-                        return UiText.T("max_completion_tokens 必须为不超过最大输出 Token 的正整数。");
-                    continue;
-                }
-
-                if (ModelParameterPolicy.IsManagedRoot(protocol, property.Name))
-                    return UiText.T("高级参数不能覆盖由界面管理的模型、消息、工具或输出设置。");
-
-                var objectName = ModelParameterPolicy.MergeableObjectName(protocol, property.Name);
-                if (objectName is null) continue;
-                if (property.Value.ValueKind != JsonValueKind.Object)
-                    return UiText.T("高级参数中的嵌套配置必须是 JSON 对象。");
-                if (property.Value.EnumerateObject().Any(nested =>
-                    ModelParameterPolicy.IsManagedNested(protocol, objectName, nested.Name)))
-                    return UiText.T("高级参数不能覆盖由界面管理的模型、消息、工具或输出设置。");
-            }
-
-            return null;
-        }
-        catch (JsonException)
-        {
+        if (string.IsNullOrWhiteSpace(advancedJson))
             return UiText.T("高级参数必须是 JSON 对象。");
-        }
+
+        return ModelParameterPolicy.Check(protocol, advancedJson, maximumOutputTokens) switch
+        {
+            null => null,
+            { Kind: ModelParameterViolationKind.NotJsonObject } =>
+                UiText.T("高级参数必须是 JSON 对象。"),
+            { Kind: ModelParameterViolationKind.AlternateCompletionLimit } =>
+                UiText.T("max_completion_tokens 必须为不超过最大输出 Token 的正整数。"),
+            { Kind: ModelParameterViolationKind.MergeableNotObject } =>
+                UiText.T("高级参数中的嵌套配置必须是 JSON 对象。"),
+            _ => UiText.T("高级参数不能覆盖由界面管理的模型、消息、工具或输出设置。")
+        };
     }
 }
 

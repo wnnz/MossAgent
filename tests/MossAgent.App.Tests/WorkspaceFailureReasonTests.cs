@@ -16,6 +16,8 @@ public sealed class WorkspaceFailureReasonTests
     [InlineData("output_limit", TaskFailureReason.ProviderOutputLimit)]
     [InlineData("proxy_authentication_failed", TaskFailureReason.ProxyAuthentication)]
     [InlineData("unsupported_reasoning_effort", TaskFailureReason.UnsupportedReasoningEffort)]
+    [InlineData("model_image_input_unsupported", TaskFailureReason.UnsupportedImageInput)]
+    [InlineData("invalid_model_parameters", TaskFailureReason.InvalidModelParameters)]
     [InlineData("attachment_history_unavailable", TaskFailureReason.AttachmentHistory)]
     [InlineData("model_context_capacity", TaskFailureReason.ModelContextCapacity)]
     [InlineData("Bearer synthetic-secret", TaskFailureReason.Unknown)]

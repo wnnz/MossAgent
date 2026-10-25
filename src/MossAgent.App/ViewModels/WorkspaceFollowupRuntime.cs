@@ -115,6 +115,7 @@ internal sealed class WorkspaceFollowupRuntime : IDisposable
     internal static string FailureKey(Exception exception) => exception switch
     {
         ConversationFollowupException failure => failure.Code,
+        MossAgent.Application.Models.ModelCapabilityException => "FollowupModelUnsupported",
         OperationCanceledException => "FollowupPaused",
         UnauthorizedAccessException => "FollowupScopeChanged",
         MossAgent.Application.Attachments.ConversationAttachmentUnavailableException => "FollowupAttachmentUnavailable",

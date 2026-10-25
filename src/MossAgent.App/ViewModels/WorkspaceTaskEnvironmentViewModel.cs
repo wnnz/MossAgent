@@ -103,6 +103,7 @@ public sealed class WorkspaceTaskEnvironmentViewModel : ObservableObject
     {
         WorkspaceWorktreePreparationException recovery => string.Format(WorkspaceText.Get("TaskEnvironmentRecoveryNotice"), recovery.WorktreePath),
         WorkspacePreparationFinalizationException finalization => string.Format(WorkspaceText.Get("PreparationFinalizationFailure"), finalization.TaskId),
+        MossAgent.Application.Models.ModelCapabilityException => WorkspaceText.Get("SendModelCapabilityUnsupported"),
         WorktreeAuthorizationException => WorkspaceText.Get("WorktreeObjectRunFailure"),
         UnauthorizedAccessException => WorkspaceText.Get("TaskEnvironmentAuthorizationFailure"),
         GitWorktreeReferenceException => WorkspaceText.Get("TaskEnvironmentBaseReferenceFailure"),

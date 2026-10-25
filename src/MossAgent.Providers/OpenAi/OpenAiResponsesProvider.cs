@@ -18,6 +18,12 @@ public sealed class OpenAiResponsesProvider(IProviderHttpClientFactory clients) 
         ModelRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (ModelCapabilityGate.Check(request) is { } capabilityFailure)
+        {
+            yield return capabilityFailure;
+            yield break;
+        }
         var toolNames = new ProviderToolNameMap(request.Tools);
         using var client = await clients.CreateAsync(request.Provider, cancellationToken);
         using var message = new HttpRequestMessage(HttpMethod.Post, "responses");

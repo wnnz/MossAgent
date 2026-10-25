@@ -1,4 +1,5 @@
 using MossAgent.Application.Attachments;
+using MossAgent.Application.Models;
 using MossAgent.Domain;
 
 namespace MossAgent.Application.Persistence;
@@ -42,6 +43,8 @@ public static class ConversationFollowupValidation
             throw new ArgumentException("Invalid follow-up model snapshot.");
         ConversationAttachmentValidation.Validate(taskId, item.Id, item.Attachments);
         if (!model.SupportsImages && item.Attachments.Any(attachment => AttachmentImage.IsSupportedMediaType(attachment.MediaType)))
-            throw new ArgumentException("The follow-up model does not support image inputs.");
+            throw new ModelCapabilityException(ModelCapabilityException.UnsupportedImageInput,
+                "The follow-up model does not support image inputs. Remove the queued item or "
+                + "restore the model's image capability.");
     }
 }

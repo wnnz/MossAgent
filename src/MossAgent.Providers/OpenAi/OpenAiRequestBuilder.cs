@@ -9,7 +9,14 @@ internal static class OpenAiRequestBuilder
 {
     public static string Build(ModelRequest request, ProviderToolNameMap toolNames)
     {
-        var images = new ModelImageRequestValidation(request.Model.SupportsImages);
+        var images = ModelImageRequestValidation.For(request);
+        if (!ModelReasoningPolicy.Supports(request.Provider.Protocol,
+                request.Model.ModelId, request.Model.ReasoningEffort))
+        {
+            throw new ModelCapabilityException(ModelCapabilityException.UnsupportedReasoningEffort,
+                "The configured reasoning effort is not a valid effort token for this protocol. "
+                + "Fix it in model settings.");
+        }
         var root = new JsonObject
         {
             ["model"] = request.Model.ModelId,
@@ -36,7 +43,8 @@ internal static class OpenAiRequestBuilder
             root["previous_response_id"] = request.PreviousResponseId;
         }
 
-        AdvancedParameterMerger.Merge(root, request.Model.AdvancedParametersJson, request.Provider.Protocol);
+        AdvancedParameterMerger.Merge(root, request.Model.AdvancedParametersJson,
+            request.Provider.Protocol, request.Model.MaximumOutputTokens);
         return ModelRequestJson.Serialize(root, images.ContainsImages);
     }
 

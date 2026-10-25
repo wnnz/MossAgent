@@ -18,7 +18,7 @@ internal sealed class WorkspaceFollowupEnqueuer(
         if (request.Scope != new ConversationDraftScope(task.ProjectId, task.Id) || task.ProjectId != request.Project?.Id)
             throw new ConversationFollowupException("FollowupScopeChanged");
         var contents = request.Attachments.Select(item => item.Content).ToArray();
-        ConversationAttachmentValidation.ValidateModel(request.Model, contents);
+        ConversationAttachmentValidation.ValidateModel(request.Model, request.Provider.Protocol, contents);
         var queue = await repository.GetAsync(task.Id, cancellationToken);
         if (queue.Items.Count >= ConversationFollowupQueue.MaximumItems) throw new ConversationFollowupException("FollowupFull");
         var id = Guid.NewGuid();

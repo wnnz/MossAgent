@@ -1,3 +1,4 @@
+using System.Text.Json;
 using MossAgent.Domain;
 
 namespace MossAgent.Application.Models;
@@ -55,4 +56,59 @@ public static class ModelParameterPolicy
                 || key.Equals("thinkingConfig", StringComparison.OrdinalIgnoreCase),
             _ => false
         };
+
+    /// <summary>
+    /// Returns the first policy violation in an advanced-parameters JSON
+    /// document, or null when every entry may merge into a protocol request.
+    /// Callers must surface the violation as an actionable explanation instead
+    /// of silently dropping the parameter.
+    /// </summary>
+    public static ModelParameterViolation? Check(
+        ProviderProtocol protocol,
+        string? advancedJson,
+        int maximumOutputTokens)
+    {
+        if (string.IsNullOrWhiteSpace(advancedJson)) return null;
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(advancedJson ?? string.Empty);
+        }
+        catch (JsonException)
+        {
+            return new(ModelParameterViolationKind.NotJsonObject, null);
+        }
+
+        using (document)
+        {
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+                return new(ModelParameterViolationKind.NotJsonObject, null);
+            foreach (var property in document.RootElement.EnumerateObject())
+            {
+                if (protocol == ProviderProtocol.OpenAiCompatible
+                    && property.Name.Equals("max_completion_tokens", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (property.Value.ValueKind != JsonValueKind.Number
+                        || !property.Value.TryGetInt32(out var alternateLimit)
+                        || alternateLimit is < 1 || alternateLimit > maximumOutputTokens)
+                        return new(ModelParameterViolationKind.AlternateCompletionLimit, property.Name);
+                    continue;
+                }
+
+                if (IsManagedRoot(protocol, property.Name))
+                    return new(ModelParameterViolationKind.ManagedRoot, property.Name);
+
+                var objectName = MergeableObjectName(protocol, property.Name);
+                if (objectName is null) continue;
+                if (property.Value.ValueKind != JsonValueKind.Object)
+                    return new(ModelParameterViolationKind.MergeableNotObject, property.Name);
+                var nested = property.Value.EnumerateObject()
+                    .FirstOrDefault(item => IsManagedNested(protocol, objectName, item.Name));
+                if (nested.Name is not null)
+                    return new(ModelParameterViolationKind.ManagedNested, nested.Name);
+            }
+        }
+
+        return null;
+    }
 }

@@ -24,7 +24,8 @@ internal sealed class WorkspaceSendCoordinator(
     {
         var selected = request.Attachments;
         var prompt = request.Draft.Trim();
-        ConversationAttachmentValidation.ValidateModel(request.Model, selected.Select(item => item.Content).ToArray());
+        ConversationAttachmentValidation.ValidateModel(request.Model, request.Provider.Protocol,
+            selected.Select(item => item.Content).ToArray());
         var attachmentIds = selected.Select(item => item.SelectionId).ToArray();
         var submission = drafts.CreateSubmission(tasks.Submissions, request.Scope, request.Draft, attachmentIds);
         var task = await tasks.PrepareAsync(request.Project, request.ExistingTask, prompt, request.ApprovalPolicy,

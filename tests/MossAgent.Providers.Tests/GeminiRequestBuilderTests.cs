@@ -69,7 +69,7 @@ public sealed class GeminiRequestBuilderTests
         var request = CreateRequest("none", "gemini-2.5-pro");
         var toolNames = new ProviderToolNameMap([]);
 
-        Assert.Throws<ArgumentException>(() => GeminiRequestBuilder.Build(request, toolNames));
+        Assert.Throws<ModelCapabilityException>(() => GeminiRequestBuilder.Build(request, toolNames));
     }
 
     private static ModelRequest CreateRequest(

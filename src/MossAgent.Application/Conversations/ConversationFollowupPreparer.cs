@@ -36,7 +36,7 @@ public sealed class ConversationFollowupPreparer(
         var project = await ResolveProjectAsync(task, item, cancellationToken);
         if (reviews is not null) await reviews.ResolveAsync(task, cancellationToken);
         var contents = await attachments.ReadAsync(task.Id, item.Id, item.Attachments, cancellationToken);
-        ConversationAttachmentValidation.ValidateModel(model, contents);
+        ConversationAttachmentValidation.ValidateModel(model, provider.Protocol, contents);
         cancellationToken.ThrowIfCancellationRequested();
         return new(task, project, provider, model, item, queue.Revision);
     }

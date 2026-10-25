@@ -33,10 +33,11 @@ public sealed class ConversationDocumentAttachmentValidationTests
         var pdf = new WorkspaceAttachmentContent("a.pdf", "a.pdf", "text", 64,
             Document: AttachmentDocument.FromExtractedText(AttachmentDocument.PdfMediaType,
                 AttachmentDocumentTestData.Pdf("x"), 1, 1, 1, false));
-        ConversationAttachmentValidation.ValidateModel(model, [pdf]);
+        ConversationAttachmentValidation.ValidateModel(model, ProviderProtocol.OpenAiCompatible, [pdf]);
         var image = new WorkspaceAttachmentContent("a.png", "a.png", string.Empty, 64,
             Image: AttachmentImage.FromDecodedBytes("image/png",
                 Convert.FromBase64String(AttachmentImageTestData.Png), 1, 1));
-        Assert.Throws<ArgumentException>(() => ConversationAttachmentValidation.ValidateModel(model, [image]));
+        Assert.Throws<MossAgent.Application.Models.ModelCapabilityException>(() =>
+            ConversationAttachmentValidation.ValidateModel(model, ProviderProtocol.OpenAiCompatible, [image]));
     }
 }

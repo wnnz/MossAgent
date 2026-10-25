@@ -146,7 +146,7 @@ internal sealed class SubagentRunExecutor(IModelProviderRegistry providers)
         var preview = new SubagentTextPreview(context.SubagentProgress);
         try
         {
-            ModelImageRequestValidation.Validate(request);
+            ModelCapabilityGate.Validate(request);
             await foreach (var modelEvent in providers.Get(request.Provider.Protocol)
                                .StreamAsync(request, cancellationToken))
             {
@@ -171,6 +171,11 @@ internal sealed class SubagentRunExecutor(IModelProviderRegistry providers)
         {
             if (text.Length > 0) Record(dialogue, context, "子代理", text.ToString());
             throw;
+        }
+        catch (ModelCapabilityException capability)
+        {
+            Record(dialogue, context, "能力校验", capability.Message);
+            return (text.ToString(), calls, false, true, false, null);
         }
         catch
         {

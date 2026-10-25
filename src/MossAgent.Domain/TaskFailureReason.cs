@@ -19,5 +19,7 @@ public enum TaskFailureReason
     ProxyAuthentication = 14,
     AttachmentHistory = 15,
     ModelContextCapacity = 16,
-    WorkspaceAuthorizationChanged = 17
+    WorkspaceAuthorizationChanged = 17,
+    UnsupportedImageInput = 18,
+    InvalidModelParameters = 19
 }

@@ -12,16 +12,15 @@ namespace MossAgent.Providers.Tests;
 public sealed class ModelAdvancedParametersTests
 {
     [Fact]
-    public void Responses_PreservesManagedFieldsAndMergesSafeReasoningOptions()
+    public void Responses_MergesSafeReasoningOptionsAndMetadata()
     {
         var request = CreateRequest(ProviderProtocol.OpenAiResponses,
-            """{"input":[],"max_output_tokens":999999,"previous_response_id":"fake","temperature":2,"reasoning":{"effort":"high","summary":"auto"},"metadata":{"tag":"safe"}}""");
+            """{"reasoning":{"summary":"auto"},"metadata":{"tag":"safe"}}""");
 
         using var document = JsonDocument.Parse(OpenAiRequestBuilder.Build(request, new ProviderToolNameMap([])));
         var root = document.RootElement;
         Assert.Equal(2, root.GetProperty("input").GetArrayLength());
         Assert.Equal(8_192, root.GetProperty("max_output_tokens").GetInt32());
-        Assert.False(root.TryGetProperty("previous_response_id", out _));
         Assert.Equal(0.25, root.GetProperty("temperature").GetDouble());
         Assert.Equal(0.75, root.GetProperty("top_p").GetDouble());
         Assert.Equal("low", root.GetProperty("reasoning").GetProperty("effort").GetString());
@@ -29,11 +28,32 @@ public sealed class ModelAdvancedParametersTests
         Assert.Equal("safe", root.GetProperty("metadata").GetProperty("tag").GetString());
     }
 
+    [Theory]
+    [InlineData("""{"input":[]}""")]
+    [InlineData("""{"max_output_tokens":999999}""")]
+    [InlineData("""{"previous_response_id":"fake"}""")]
+    [InlineData("""{"temperature":2}""")]
+    [InlineData("""{"tools":[]}""")]
+    [InlineData("""{"model":"override"}""")]
+    [InlineData("""{"stream":false}""")]
+    [InlineData("""{"reasoning":{"effort":"high"}}""")]
+    [InlineData("""{"reasoning":"high"}""")]
+    public void Responses_RejectsManagedOrMalformedOverrides(string advancedJson)
+    {
+        var request = CreateRequest(ProviderProtocol.OpenAiResponses, advancedJson);
+
+        var error = Assert.Throws<ModelCapabilityException>(
+            () => OpenAiRequestBuilder.Build(request, new ProviderToolNameMap([])));
+
+        Assert.Equal("invalid_model_parameters", error.Code);
+        Assert.DoesNotContain("test-key", error.Message);
+    }
+
     [Fact]
-    public void Compatible_PreservesMessagesAndOutputLimit()
+    public void Compatible_MergesSafeExtensionParameters()
     {
         var request = CreateRequest(ProviderProtocol.OpenAiCompatible,
-            """{"messages":[],"max_tokens":999999,"temperature":2,"reasoning_effort":"xhigh","metadata":{"tag":"safe"}}""");
+            """{"metadata":{"tag":"safe"},"vendor_param":123}""");
 
         using var document = JsonDocument.Parse(OpenAiCompatibleRequestBuilder.Build(request, new ProviderToolNameMap([])));
         var root = document.RootElement;
@@ -42,12 +62,29 @@ public sealed class ModelAdvancedParametersTests
         Assert.Equal(0.25, root.GetProperty("temperature").GetDouble());
         Assert.Equal("low", root.GetProperty("reasoning_effort").GetString());
         Assert.Equal("safe", root.GetProperty("metadata").GetProperty("tag").GetString());
+        Assert.Equal(123, root.GetProperty("vendor_param").GetInt32());
     }
 
     [Theory]
-    [InlineData(4_096, 4_096)]
-    [InlineData(999_999, 8_192)]
-    public void Compatible_UsesBoundedAlternateCompletionLimit(int requested, int expected)
+    [InlineData("""{"messages":[]}""")]
+    [InlineData("""{"max_tokens":999999}""")]
+    [InlineData("""{"temperature":2}""")]
+    [InlineData("""{"reasoning_effort":"xhigh"}""")]
+    [InlineData("""{"system":"replaced"}""")]
+    public void Compatible_RejectsManagedOverrides(string advancedJson)
+    {
+        var request = CreateRequest(ProviderProtocol.OpenAiCompatible, advancedJson);
+
+        var error = Assert.Throws<ModelCapabilityException>(
+            () => OpenAiCompatibleRequestBuilder.Build(request, new ProviderToolNameMap([])));
+
+        Assert.Equal("invalid_model_parameters", error.Code);
+    }
+
+    [Theory]
+    [InlineData(4_096)]
+    [InlineData(8_192)]
+    public void Compatible_UsesBoundedAlternateCompletionLimit(int requested)
     {
         var request = CreateRequest(ProviderProtocol.OpenAiCompatible,
             $$"""{"max_completion_tokens":{{requested}}}""");
@@ -55,14 +92,30 @@ public sealed class ModelAdvancedParametersTests
         using var document = JsonDocument.Parse(OpenAiCompatibleRequestBuilder.Build(request, new ProviderToolNameMap([])));
         var root = document.RootElement;
         Assert.False(root.TryGetProperty("max_tokens", out _));
-        Assert.Equal(expected, root.GetProperty("max_completion_tokens").GetInt32());
+        Assert.Equal(requested, root.GetProperty("max_completion_tokens").GetInt32());
+    }
+
+    [Theory]
+    [InlineData("""{"max_completion_tokens":999999}""")]
+    [InlineData("""{"max_completion_tokens":8193}""")]
+    [InlineData("""{"max_completion_tokens":0}""")]
+    [InlineData("""{"max_completion_tokens":"8192"}""")]
+    public void Compatible_RejectsOutOfRangeAlternateCompletionLimit(string advancedJson)
+    {
+        var request = CreateRequest(ProviderProtocol.OpenAiCompatible, advancedJson);
+
+        var error = Assert.Throws<ModelCapabilityException>(
+            () => OpenAiCompatibleRequestBuilder.Build(request, new ProviderToolNameMap([])));
+
+        Assert.Equal("invalid_model_parameters", error.Code);
+        Assert.Contains("max_completion_tokens", error.Message);
     }
 
     [Fact]
-    public void Anthropic_PreservesSystemAndThinkingWhileMergingOutputOptions()
+    public void Anthropic_MergesSafeOutputOptionsAndMetadata()
     {
         var request = CreateRequest(ProviderProtocol.AnthropicMessages,
-            """{"system":"replaced","messages":[],"max_tokens":999999,"thinking":{"type":"disabled"},"output_config":{"effort":"xhigh","format":{"type":"json_schema"}},"metadata":{"user_id":"safe"}}""");
+            """{"output_config":{"format":{"type":"json_schema"}},"metadata":{"user_id":"safe"}}""");
 
         using var document = JsonDocument.Parse(AnthropicRequestBuilder.Build(request, new ProviderToolNameMap([])));
         var root = document.RootElement;
@@ -76,11 +129,28 @@ public sealed class ModelAdvancedParametersTests
         Assert.Equal(0.75, root.GetProperty("top_p").GetDouble());
     }
 
+    [Theory]
+    [InlineData("""{"system":"replaced"}""")]
+    [InlineData("""{"messages":[]}""")]
+    [InlineData("""{"max_tokens":999999}""")]
+    [InlineData("""{"thinking":{"type":"disabled"}}""")]
+    [InlineData("""{"output_config":{"effort":"xhigh"}}""")]
+    [InlineData("""{"output_config":"high"}""")]
+    public void Anthropic_RejectsManagedOrMalformedOverrides(string advancedJson)
+    {
+        var request = CreateRequest(ProviderProtocol.AnthropicMessages, advancedJson);
+
+        var error = Assert.Throws<ModelCapabilityException>(
+            () => AnthropicRequestBuilder.Build(request, new ProviderToolNameMap([])));
+
+        Assert.Equal("invalid_model_parameters", error.Code);
+    }
+
     [Fact]
-    public void Gemini_PreservesSystemAndLimitsWhileMergingGenerationOptions()
+    public void Gemini_MergesSafeGenerationOptions()
     {
         var request = CreateRequest(ProviderProtocol.GeminiGenerateContent,
-            """{"systemInstruction":{"parts":[{"text":"replaced"}]},"contents":[],"generationConfig":{"maxOutputTokens":999999,"thinkingConfig":{"thinkingLevel":"HIGH"},"responseMimeType":"application/json"}}""");
+            """{"generationConfig":{"responseMimeType":"application/json","candidateCount":1}}""");
 
         using var document = JsonDocument.Parse(GeminiRequestBuilder.Build(request, new ProviderToolNameMap([])));
         var root = document.RootElement;
@@ -89,9 +159,46 @@ public sealed class ModelAdvancedParametersTests
         Assert.Single(root.GetProperty("contents").EnumerateArray());
         var generation = root.GetProperty("generationConfig");
         Assert.Equal(8_192, generation.GetProperty("maxOutputTokens").GetInt32());
-        Assert.Equal("LOW", generation.GetProperty("thinkingConfig")
-            .GetProperty("thinkingLevel").GetString());
         Assert.Equal("application/json", generation.GetProperty("responseMimeType").GetString());
+        Assert.Equal(1, generation.GetProperty("candidateCount").GetInt32());
+    }
+
+    [Theory]
+    [InlineData("""{"systemInstruction":{"parts":[{"text":"replaced"}]}}""")]
+    [InlineData("""{"contents":[]}""")]
+    [InlineData("""{"generationConfig":{"maxOutputTokens":999999}}""")]
+    [InlineData("""{"generationConfig":{"temperature":2}}""")]
+    [InlineData("""{"generationConfig":{"thinkingConfig":{"thinkingLevel":"HIGH"}}}""")]
+    [InlineData("""{"generationConfig":"fast"}""")]
+    public void Gemini_RejectsManagedOrMalformedOverrides(string advancedJson)
+    {
+        var request = CreateRequest(ProviderProtocol.GeminiGenerateContent, advancedJson);
+
+        var error = Assert.Throws<ModelCapabilityException>(
+            () => GeminiRequestBuilder.Build(request, new ProviderToolNameMap([])));
+
+        Assert.Equal("invalid_model_parameters", error.Code);
+    }
+
+    [Theory]
+    [InlineData("""{"unclosed":""")]
+    [InlineData("""[1,2,3]""")]
+    [InlineData("""["a"]""")]
+    [InlineData("""42""")]
+    [InlineData("\"a string\"")]
+    public void MalformedAdvancedJson_IsRejectedExplicitly(string advancedJson)
+    {
+        foreach (var protocol in new[]
+        {
+            ProviderProtocol.OpenAiResponses, ProviderProtocol.OpenAiCompatible,
+            ProviderProtocol.AnthropicMessages, ProviderProtocol.GeminiGenerateContent
+        })
+        {
+            var request = CreateRequest(protocol, advancedJson);
+            var error = Assert.Throws<ModelCapabilityException>(
+                () => ModelImageTestFixture.Build(request));
+            Assert.Equal("invalid_model_parameters", error.Code);
+        }
     }
 
     private static ModelRequest CreateRequest(ProviderProtocol protocol, string advancedJson)

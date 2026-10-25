@@ -34,17 +34,16 @@ public sealed class AnthropicRequestBuilderTests
     [Fact]
     public void Build_UsesEffortAlongsideBudgetForOpus45()
     {
-        using var document = Build("claude-opus-4-5", "xhigh", 16_384);
+        using var document = Build("claude-opus-4-5", "high", 16_384);
         var root = document.RootElement;
 
-        Assert.Equal(15_360, root.GetProperty("thinking").GetProperty("budget_tokens").GetInt32());
+        Assert.Equal(8_192, root.GetProperty("thinking").GetProperty("budget_tokens").GetInt32());
         Assert.Equal("high", root.GetProperty("output_config").GetProperty("effort").GetString());
     }
 
     [Theory]
     [InlineData("none")]
     [InlineData("off")]
-    [InlineData("default")]
     public void Build_DoesNotSetThinkingForDisabledEffort(string effort)
     {
         using var document = Build("claude-sonnet-4-6", effort);
@@ -86,10 +85,25 @@ public sealed class AnthropicRequestBuilderTests
         Assert.False(document.RootElement.TryGetProperty("thinking", out _));
     }
 
-    [Fact]
-    public void Build_MapsUnsupportedXHighEffortToHigh()
+    [Theory]
+    [InlineData("claude-sonnet-4-6", "xhigh")]
+    [InlineData("claude-sonnet-4-6", "ultra")]
+    [InlineData("claude-opus-4-5", "xhigh")]
+    [InlineData("claude-sonnet-4-6", "default")]
+    public void Build_RejectsEffortOutsideModelCapability(string modelId, string effort)
     {
-        using var document = Build("claude-sonnet-4-6", "xhigh");
+        var error = Assert.Throws<ModelCapabilityException>(
+            () => Build(modelId, effort));
+
+        Assert.Equal("unsupported_reasoning_effort", error.Code);
+    }
+
+    [Fact]
+    public void Build_MapsXHighToHighForCatalogUnknownDatedVariants()
+    {
+        // The dated variant is absent from the bundled catalog, so the generic
+        // effort set admits xhigh and the conservative family map lowers it.
+        using var document = Build("claude-sonnet-4-6-20250929", "xhigh");
 
         Assert.Equal("high", document.RootElement.GetProperty("output_config")
             .GetProperty("effort").GetString());

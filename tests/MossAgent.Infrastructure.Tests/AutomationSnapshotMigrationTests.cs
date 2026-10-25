@@ -12,7 +12,7 @@ public sealed class AutomationSnapshotMigrationTests
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
 
-        Assert.Equal(34, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(35, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='automation_snapshots';"));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM automation_snapshots;"));
@@ -30,7 +30,7 @@ public sealed class AutomationSnapshotMigrationTests
         Assert.True(await repository.SaveAsync(plan, fixture.Token));
         await fixture.ExecuteAsync("""
             DROP TABLE automation_snapshots;
-            DELETE FROM schema_versions WHERE version=34;
+            DELETE FROM schema_versions WHERE version>=34;
             CREATE TRIGGER reject_version_thirty_four BEFORE INSERT ON schema_versions
             WHEN NEW.version=34 BEGIN SELECT RAISE(ABORT,'synthetic migration failure'); END;
             """);
@@ -46,7 +46,7 @@ public sealed class AutomationSnapshotMigrationTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(34, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(35, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var restored = Assert.Single(await repository.GetAllAsync(fixture.Token));
         Assert.Equal(plan.Id, restored.Id);
         Assert.Null(restored.AuthorizationSnapshot);

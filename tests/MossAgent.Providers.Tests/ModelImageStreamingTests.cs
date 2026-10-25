@@ -40,11 +40,12 @@ public sealed class ModelImageStreamingTests
         var request = ModelImageTestFixture.Request(protocol);
         request = request with { Model = request.Model with { SupportsImages = false } };
 
-        await Assert.ThrowsAsync<ArgumentException>(async () =>
-        {
-            await foreach (var unused in provider.StreamAsync(request, TestContext.Current.CancellationToken)) { }
-        });
+        var events = new List<ModelEvent>();
+        await foreach (var modelEvent in provider.StreamAsync(request, TestContext.Current.CancellationToken))
+            events.Add(modelEvent);
 
+        var failure = Assert.IsType<ModelFailed>(Assert.Single(events));
+        Assert.Equal("model_image_input_unsupported", failure.Code);
         Assert.Null(handler.RequestUri);
         Assert.Null(handler.RequestBody);
     }

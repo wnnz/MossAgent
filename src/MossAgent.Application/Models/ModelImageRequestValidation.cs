@@ -10,9 +10,19 @@ public struct ModelImageRequestValidation(bool supportsImages)
 
     public readonly bool ContainsImages => _count > 0;
 
+    /// <summary>
+    /// Joint model x protocol image capability: the protocol must be able to
+    /// carry image blocks and the model profile must declare image support.
+    /// Unknown models stay fail-closed because their profiles default the flag
+    /// to false until the user explicitly opts in.
+    /// </summary>
+    public static ModelImageRequestValidation For(ModelRequest request) =>
+        new(request.Model.SupportsImages
+            && ModelProtocolCapabilities.AcceptsImages(request.Provider.Protocol));
+
     public static void Validate(ModelRequest request)
     {
-        var validation = new ModelImageRequestValidation(request.Model.SupportsImages);
+        var validation = For(request);
         foreach (var message in request.Messages)
             validation.Include(message);
     }
@@ -21,7 +31,9 @@ public struct ModelImageRequestValidation(bool supportsImages)
     {
         if (message.Images.IsDefaultOrEmpty) return;
         if (!supportsImages)
-            throw new ArgumentException("The selected model does not support image inputs.", nameof(message));
+            throw new ModelCapabilityException(ModelCapabilityException.UnsupportedImageInput,
+                "The selected model does not support image inputs. Remove the image attachments "
+                + "or switch to a model that supports images.");
         if (message.Role != ModelRole.User || message.Continuation is not null
             || message.ToolCallId is not null || message.ToolName is not null
             || message.ToolCalls is { Count: > 0 })

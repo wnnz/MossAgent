@@ -1,4 +1,6 @@
 using System.Text.Json.Nodes;
+using MossAgent.Application.Models;
+using MossAgent.Domain;
 
 namespace MossAgent.Providers.Anthropic;
 
@@ -130,6 +132,20 @@ internal static class AnthropicThinkingOptions
 
     private static string MapSupportedEffort(string modelId, string effort)
     {
+        if (effort is not ("xhigh" or "max"))
+        {
+            return effort;
+        }
+
+        // Catalog entries carry the authoritative effort list, which
+        // ModelReasoningPolicy.Supports already enforced upstream.
+        if (ModelCapabilityCatalog.Find(ProviderProtocol.AnthropicMessages, modelId) is not null)
+        {
+            return effort;
+        }
+
+        // For unknown or aliased model IDs the bundled catalog cannot confirm
+        // support; keep the conservative family-name map rather than guessing.
         if (effort == "xhigh" && !SupportsXHigh(modelId)
             || effort == "max" && !SupportsMax(modelId))
         {

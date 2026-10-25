@@ -1,13 +1,24 @@
+using MossAgent.Application.Models;
 using MossAgent.Domain;
 
 namespace MossAgent.Application.Attachments;
 
 public static class ConversationAttachmentValidation
 {
-    public static void ValidateModel(ModelProfile model, IReadOnlyList<WorkspaceAttachmentContent> attachments)
+    /// <summary>
+    /// Compose-time capability gate for selected attachments. Images require
+    /// the joint model x protocol image capability; document attachments travel
+    /// as extracted text and only need text input, so they are always allowed
+    /// (native file input would be gated by <see cref="ModelProfile.SupportsFiles"/>).
+    /// </summary>
+    public static void ValidateModel(ModelProfile model, ProviderProtocol protocol,
+        IReadOnlyList<WorkspaceAttachmentContent> attachments)
     {
-        if (attachments.Any(item => item.Image is not null) && !model.SupportsImages)
-            throw new ArgumentException("The selected model does not support image inputs.", nameof(model));
+        if (attachments.Any(item => item.Image is not null)
+            && !(model.SupportsImages && ModelProtocolCapabilities.AcceptsImages(protocol)))
+            throw new ModelCapabilityException(ModelCapabilityException.UnsupportedImageInput,
+                "The selected model does not support image inputs. Remove the image attachments "
+                + "or switch to a model that supports images.");
     }
 
     public static void Validate(Guid taskId, Guid messageId, IReadOnlyList<ConversationAttachment> attachments)

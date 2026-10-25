@@ -17,10 +17,9 @@ public sealed class GeminiGenerateContentProvider(IProviderHttpClientFactory cli
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (!ModelReasoningPolicy.Supports(Protocol, request.Model.ModelId, request.Model.ReasoningEffort))
+        if (ModelCapabilityGate.Check(request) is { } capabilityFailure)
         {
-            yield return new ModelFailed("unsupported_reasoning_effort",
-                "This Gemini model does not support the selected reasoning effort. Choose a supported effort in model settings.");
+            yield return capabilityFailure;
             yield break;
         }
         var toolNames = new ProviderToolNameMap(request.Tools);

@@ -8,7 +8,14 @@ internal static class AnthropicRequestBuilder
 {
     public static string Build(ModelRequest request, ProviderToolNameMap toolNames)
     {
-        var images = new ModelImageRequestValidation(request.Model.SupportsImages);
+        var images = ModelImageRequestValidation.For(request);
+        if (!ModelReasoningPolicy.Supports(request.Provider.Protocol,
+                request.Model.ModelId, request.Model.ReasoningEffort))
+        {
+            throw new ModelCapabilityException(ModelCapabilityException.UnsupportedReasoningEffort,
+                "The selected model does not support the configured reasoning effort. "
+                + "Choose a supported effort in model settings.");
+        }
         var root = new JsonObject
         {
             ["model"] = request.Model.ModelId,
@@ -39,7 +46,8 @@ internal static class AnthropicRequestBuilder
             request.Model.ReasoningEffort,
             request.Model.MaximumOutputTokens);
 
-        AdvancedParameterMerger.Merge(root, request.Model.AdvancedParametersJson, request.Provider.Protocol);
+        AdvancedParameterMerger.Merge(root, request.Model.AdvancedParametersJson,
+            request.Provider.Protocol, request.Model.MaximumOutputTokens);
         return ModelRequestJson.Serialize(root, images.ContainsImages);
     }
 

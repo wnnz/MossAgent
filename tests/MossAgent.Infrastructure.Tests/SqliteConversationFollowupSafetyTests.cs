@@ -1,3 +1,4 @@
+using MossAgent.Application.Models;
 using MossAgent.Domain;
 using MossAgent.Infrastructure.Persistence;
 using Xunit;
@@ -34,6 +35,8 @@ public sealed class SqliteConversationFollowupSafetyTests
                 item.Id, "fixture.png", 10, new('A', 64), "image/png")] }];
         if (kind == "foreign-attachment")
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => repository.SaveAsync(new(fixture.Task.Id, 0, items), [], fixture.Token));
+        else if (kind == "image-model")
+            await Assert.ThrowsAsync<ModelCapabilityException>(() => repository.SaveAsync(new(fixture.Task.Id, 0, items), [], fixture.Token));
         else
             await Assert.ThrowsAsync<ArgumentException>(() => repository.SaveAsync(new(fixture.Task.Id, 0, items), [], fixture.Token));
         Assert.Empty((await repository.GetAsync(fixture.Task.Id, fixture.Token)).Items);

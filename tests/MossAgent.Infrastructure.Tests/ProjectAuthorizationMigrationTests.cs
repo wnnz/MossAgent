@@ -16,7 +16,7 @@ public sealed class ProjectAuthorizationMigrationTests
         await RestoreVersion25Async(fixture);
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(34, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(35, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var project = Assert.Single(await fixture.Repository.GetProjectsAsync(fixture.Token));
         Assert.Equal(1, project.AuthorizationRevision);
         Assert.Equal(fixture.Project.Id, project.Id);
@@ -27,7 +27,7 @@ public sealed class ProjectAuthorizationMigrationTests
             Assert.Single(await fixture.Repository.GetTasksAsync(project.Id, fixture.Token)).FailureReason);
         await Assert.ThrowsAsync<SqliteException>(() => fixture.ExecuteAsync("UPDATE projects SET authorization_revision=0;"));
         await Assert.ThrowsAsync<SqliteException>(() => fixture.ExecuteAsync("UPDATE projects SET authorization_revision=1.5;"));
-        await Assert.ThrowsAsync<SqliteException>(() => fixture.ExecuteAsync("UPDATE agent_task_failures SET reason=18;"));
+        await Assert.ThrowsAsync<SqliteException>(() => fixture.ExecuteAsync("UPDATE agent_task_failures SET reason=20;"));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM pragma_foreign_key_check;"));
     }
 
@@ -46,7 +46,7 @@ public sealed class ProjectAuthorizationMigrationTests
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM sqlite_master WHERE name IN ('project_authorization_changed','agent_task_failures_v26');"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_v26;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(34, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(35, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(fixture.Task, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)));
     }
 
