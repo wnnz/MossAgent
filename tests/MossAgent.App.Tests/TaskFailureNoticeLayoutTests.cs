@@ -40,7 +40,7 @@ public sealed class TaskFailureNoticeLayoutTests : IAsyncLifetime
         try
         {
             window.UpdateLayout();
-            var text = Assert.Single(notice.GetVisualDescendants().OfType<AppText>());
+            var text = Assert.Single(notice.GetVisualDescendants().OfType<AppText>(), item => item.IsEffectivelyVisible);
             var icon = Assert.Single(notice.GetVisualDescendants().OfType<AppIcon>());
             var card = Assert.Single(notice.GetVisualDescendants().OfType<AppCard>());
             var origin = text.TranslatePoint(new Point(0, 0), notice)!.Value;

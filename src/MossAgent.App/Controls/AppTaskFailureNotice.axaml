@@ -4,11 +4,30 @@
                    x:Class="MossAgent.App.Controls.AppTaskFailureNotice"
                    x:Name="Notice" Classes="app-task-failure-notice" x:CompileBindings="False">
   <ui:AppCard Classes="card-inset-tight">
-    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
-      <ui:AppIcon Classes="ui-icon icon-small status-error failure-notice-icon"
-                  Data="{StaticResource UiIconWarning}" IsHitTestVisible="False" />
-      <ui:AppText Grid.Column="1" Classes="type-13 status-error"
-                  Text="{Binding Hint, ElementName=Notice}" TextWrapping="Wrap" />
-    </Grid>
+    <StackPanel Spacing="8">
+      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+        <ui:AppIcon Classes="ui-icon icon-small status-error failure-notice-icon"
+                    Data="{StaticResource UiIconWarning}" IsHitTestVisible="False" />
+        <ui:AppText Grid.Column="1" Classes="type-13 status-error"
+                    Text="{Binding Hint, ElementName=Notice}" TextWrapping="Wrap"
+                    VerticalAlignment="Center" />
+        <ui:AppButton Grid.Column="2" Classes="file-change-review"
+                      Content="{Binding Retry.RetryLabel, ElementName=Notice}"
+                      Command="{Binding Retry.RequestRetryCommand, ElementName=Notice}"
+                      IsVisible="{Binding Retry.ShowsRequest, ElementName=Notice, FallbackValue=False}" />
+      </Grid>
+      <StackPanel Spacing="6" IsVisible="{Binding Retry.IsConfirmationVisible, ElementName=Notice, FallbackValue=False}">
+        <ui:AppText Classes="type-12 status-error"
+                    Text="{Binding Retry.ConfirmationText, ElementName=Notice}" TextWrapping="Wrap" />
+        <WrapPanel>
+          <ui:AppButton Classes="file-change-review"
+                        Content="{Binding Retry.ConfirmLabel, ElementName=Notice}"
+                        Command="{Binding Retry.ConfirmRetryCommand, ElementName=Notice}" />
+          <ui:AppButton Classes="ghost file-change-undo-action"
+                        Content="{Binding Retry.CancelLabel, ElementName=Notice}"
+                        Command="{Binding Retry.CancelRetryCommand, ElementName=Notice}" />
+        </WrapPanel>
+      </StackPanel>
+    </StackPanel>
   </ui:AppCard>
 </ui:AppUserControl>

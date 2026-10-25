@@ -85,7 +85,7 @@
         <StackPanel MaxWidth="740" HorizontalAlignment="Stretch">
         <ui:AppConversationTimeline Messages="{Binding Messages}" IsRunning="{Binding IsRunning}" />
         <ui:AppFileChangeSummary Summary="{Binding FileChanges}" IsVisible="{Binding FileChanges.HasChanges}" />
-        <ui:AppTaskFailureNotice Hint="{Binding TaskFailureHint}"
+        <ui:AppTaskFailureNotice Hint="{Binding TaskFailureHint}" Retry="{Binding RunRetry}"
                                  IsVisible="{Binding IsSelectedTaskFailed}" />
         </StackPanel>
       </ui:AppScrollViewer>

@@ -194,6 +194,12 @@
   <data name="WorktreeObjectCancelled" xml:space="preserve"><value>工作树授权检查已取消或超时。请刷新授权状态；不会自动继续任务。</value></data>
   <data name="WorktreeObjectRunFailure" xml:space="preserve"><value>工作树未确认或目录对象已变更，消息尚未发送。旧工作树请在输入区下方核对路径并确认；已登记对象变更时请恢复原对象或新建任务。</value></data>
   <data name="PreparationFinalizationFailure" xml:space="preserve"><value>消息可能已经保存，但取消状态尚未确认（任务：{0}）。请先刷新并检查该对话，再决定是否继续；不要重复发送。</value></data>
+  <data name="RunRetryLabel" xml:space="preserve"><value>重试</value></data>
+  <data name="RunRetryConfirmLabel" xml:space="preserve"><value>确认重试</value></data>
+  <data name="RunRetryCancelLabel" xml:space="preserve"><value>取消</value></data>
+  <data name="RunRetryConfirmPossiblySubmitted" xml:space="preserve"><value>请求可能已发送到提供商并可能已计费，确认后将重新发送</value></data>
+  <data name="RunRetryConfirmToolsExecuted" xml:space="preserve"><value>任务已执行工具操作，重试不会撤销已产生的副作用</value></data>
+  <data name="RunRetryConfirmUnknown" xml:space="preserve"><value>无法确定请求是否已提交，重试可能产生重复请求</value></data>
   <data name="PreparationCommittedCancelled" xml:space="preserve"><value>消息已保存，执行已取消；如需继续，请手动发送后续消息。</value></data>
 <data name="FollowupTitle" xml:space="preserve"><value>待发送（{0}）</value></data>
 <data name="FollowupEnqueue" xml:space="preserve"><value>加入队列</value></data>
