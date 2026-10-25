@@ -5,9 +5,10 @@ using MossAgent.Infrastructure.Attachments;
 
 namespace MossAgent.Infrastructure.Persistence;
 
-internal sealed class SqliteConversationDraftWriter(AppDataPaths? paths, IAttachmentImageDecoder? images = null)
+internal sealed class SqliteConversationDraftWriter(AppDataPaths? paths, IAttachmentImageDecoder? images = null,
+    IAttachmentDocumentTextExtractor? documents = null)
 {
-    private readonly ConversationDraftAttachmentFiles? _files = paths is null ? null : new(paths, images);
+    private readonly ConversationDraftAttachmentFiles? _files = paths is null ? null : new(paths, images, documents);
     internal const string ScopeExists = """
         (($task IS NULL AND ($project IS NULL OR EXISTS(SELECT 1 FROM projects WHERE id=$project)))
         OR ($task IS NOT NULL AND EXISTS(SELECT 1 FROM agent_tasks task

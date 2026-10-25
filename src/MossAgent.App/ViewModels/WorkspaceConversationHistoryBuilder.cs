@@ -30,7 +30,7 @@ internal sealed class WorkspaceConversationHistoryBuilder(IConversationAttachmen
             budget -= messages[index].Content.Length + 32;
             var message = history[index];
             if (message.Attachments is not { Count: > 0 } items) continue;
-            var images = items.Where(item => item.MediaType != "text/plain").ToArray();
+            var images = items.Where(item => AttachmentImage.IsSupportedMediaType(item.MediaType)).ToArray();
             if (index != lastUser && (items.Sum(EstimateCost) > budget || imageCount + images.Length > ModelImageRequestValidation.MaximumImages
                 || imageBytes + images.Sum(item => item.ByteCount) > AttachmentImage.MaximumTotalByteCount))
             {
@@ -53,8 +53,12 @@ internal sealed class WorkspaceConversationHistoryBuilder(IConversationAttachmen
         return messages;
     }
 
-    private static long EstimateCost(ConversationAttachment attachment) => attachment.MediaType == "text/plain"
-        ? attachment.ByteCount : ((attachment.ByteCount + 2) / 3 * 4) + 128;
+    private static long EstimateCost(ConversationAttachment attachment) => attachment.MediaType switch
+    {
+        "text/plain" => attachment.ByteCount,
+        AttachmentDocument.PdfMediaType => Math.Min(attachment.ByteCount, AttachmentDocument.MaximumTextCharacters),
+        _ => ((attachment.ByteCount + 2) / 3 * 4) + 128
+    };
 
     private static async Task<IReadOnlyList<WorkspaceAttachmentContent>> ReadAsync(IConversationAttachmentStore store,
         Guid taskId, Guid messageId, IReadOnlyList<ConversationAttachment> items, CancellationToken cancellationToken)

@@ -289,4 +289,9 @@
 <data name="WorktreeCleanupOrphanRemoved" xml:space="preserve"><value>目标目录已删除，任务关联未更新</value></data>
 <data name="WorktreeCleanupOrphanRetained" xml:space="preserve"><value>目标目录仍存在，清理未完成</value></data>
 <data name="TaskOpenedActivity" xml:space="preserve"><value>已打开任务：{0}</value></data>
+<data name="AttachmentDocumentInvalid" xml:space="preserve"><value>PDF 文件无效或已损坏，请重新导出后选择。</value></data>
+<data name="AttachmentDocumentEncrypted" xml:space="preserve"><value>不支持受密码保护的 PDF，请移除密码后重新选择。</value></data>
+<data name="AttachmentDocumentUnsupported" xml:space="preserve"><value>暂不支持此文档类型，请选择 PDF 文件。</value></data>
+<data name="AttachmentDocumentSizeLimit" xml:space="preserve"><value>PDF 超出限制：单个最多 10 MiB、合计 25 MiB。请移除部分 PDF 后重试。</value></data>
+<data name="AttachmentDocumentExtractorUnavailable" xml:space="preserve"><value>PDF 文本提取组件不可用，请检查应用安装后重试。</value></data>
 </root>

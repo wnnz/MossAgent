@@ -8,7 +8,8 @@ internal sealed class ConversationAttachmentPaths(ITaskArtifactPaths paths)
     public string GetPath(ConversationAttachment attachment)
     {
         var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(paths.GetTaskDirectory(attachment.TaskId)));
-        var path = Path.Combine(root, "attachments", attachment.MessageId.ToString("N"), attachment.Id.ToString("N") + ".txt");
+        var extension = AttachmentDocument.IsSupportedMediaType(attachment.MediaType) ? ".pdf" : ".txt";
+        var path = Path.Combine(root, "attachments", attachment.MessageId.ToString("N"), attachment.Id.ToString("N") + extension);
         Validate(path, root);
         return path;
     }

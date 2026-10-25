@@ -18,6 +18,9 @@ public sealed class FilePreviewTabViewModel : ObservableObject, IDisposable
     private bool _fit = true;
     private ToolArtifact? _artifact;
     private double _scale = 1;
+    private int _documentPages;
+    private int _documentTotalPages;
+    private bool _documentTruncated;
 
     public FilePreviewTabViewModel(string path, string name, string displayPath, string? relativePath = null)
     {
@@ -78,13 +81,28 @@ public sealed class FilePreviewTabViewModel : ObservableObject, IDisposable
         }
     }
     public bool IsImage => Image is not null;
+    public bool IsDocument => Artifact?.MediaType == "application/pdf";
+    public int DocumentProcessedPages { get => _documentPages; private set => SetProperty(ref _documentPages, value); }
+    public int DocumentTotalPages { get => _documentTotalPages; private set => SetProperty(ref _documentTotalPages, value); }
+    public bool IsDocumentTruncated { get => _documentTruncated; private set => SetProperty(ref _documentTruncated, value); }
+    public string DocumentPageStatus => IsDocument
+        ? InspectorText.Format("PreviewPdfPages", DocumentProcessedPages, DocumentTotalPages) : string.Empty;
     internal CancellationTokenSource? Loading { get; set; }
     public bool IsDiff => Change is not null || Artifact?.MediaType == "text/x-diff";
     internal ToolFileChange? Change { get; init; }
     internal ToolArtifact? Artifact
     {
         get => _artifact;
-        set { _artifact = value; OnPropertyChanged(nameof(IsDiff)); Search.SetAvailable(!_disposed && IsReady && !IsImage && !IsDiff); }
+        set { _artifact = value; OnPropertyChanged(nameof(IsDiff)); OnPropertyChanged(nameof(IsDocument));
+            OnPropertyChanged(nameof(DocumentPageStatus)); Search.SetAvailable(!_disposed && IsReady && !IsImage && !IsDiff); }
+    }
+
+    internal void SetDocumentStats(int processedPages, int totalPages, bool truncated)
+    {
+        DocumentProcessedPages = processedPages;
+        DocumentTotalPages = totalPages;
+        IsDocumentTruncated = truncated;
+        OnPropertyChanged(nameof(DocumentPageStatus));
     }
     internal bool IsStoredArtifact { get; set; }
 

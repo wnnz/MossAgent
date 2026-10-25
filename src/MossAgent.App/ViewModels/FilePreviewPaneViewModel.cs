@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Avalonia.Media.Imaging;
 using MossAgent.Application.Artifacts;
+using MossAgent.Application.Attachments;
 using MossAgent.App.Resources;
 using MossAgent.App.Services;
 using MossAgent.Tools.Abstractions;
@@ -16,6 +17,7 @@ public sealed class FilePreviewPaneViewModel : ObservableObject, IDisposable
     public const int MaximumTabs = 8;
     private readonly IToolExecutor _tools;
     private readonly ITaskArtifactContentReader _reader;
+    private readonly IAttachmentDocumentTextExtractor? _documents;
     private ToolExecutionContext? _context;
     private FilePreviewTabViewModel? _active;
     private bool _isOpen;
@@ -25,10 +27,12 @@ public sealed class FilePreviewPaneViewModel : ObservableObject, IDisposable
     private CancellationTokenSource? _revealCancellation;
     private int _revealGeneration;
 
-    public FilePreviewPaneViewModel(IToolExecutor tools, ITaskArtifactContentReader reader, IFilePickerService? filePicker = null)
+    public FilePreviewPaneViewModel(IToolExecutor tools, ITaskArtifactContentReader reader,
+        IFilePickerService? filePicker = null, IAttachmentDocumentTextExtractor? documents = null)
     {
         _tools = tools;
         _reader = reader;
+        _documents = documents;
         OpenCommand = new AsyncRelayCommand<string>((path, token) => OpenAsync(path, token), path => HasTask && !string.IsNullOrWhiteSpace(path),
             AsyncRelayCommandOptions.AllowConcurrentExecutions);
         OpenArtifactCommand = new AsyncRelayCommand<ToolArtifactRecord>((artifact, token) => OpenArtifactAsync(artifact, token),
@@ -196,7 +200,16 @@ public sealed class FilePreviewPaneViewModel : ObservableObject, IDisposable
             var bytes = await _reader.ReadAsync(context.TaskId, artifact, cancellation.Token);
             if (!IsCurrent()) return;
             tab.Artifact = artifact;
-            if (artifact.MediaType.StartsWith("image/", StringComparison.Ordinal))
+            if (artifact.MediaType == "application/pdf")
+            {
+                var extraction = _documents is null
+                    ? throw new InvalidDataException()
+                    : await _documents.ExtractAsync(bytes, cancellation.Token);
+                if (!IsCurrent()) return;
+                tab.Text = extraction.Text;
+                tab.SetDocumentStats(extraction.PageCount, extraction.TotalPages, extraction.Truncated);
+            }
+            else if (artifact.MediaType.StartsWith("image/", StringComparison.Ordinal))
             {
                 using var stream = new MemoryStream(bytes, writable: false);
                 tab.Image = new Bitmap(stream);
@@ -208,6 +221,11 @@ public sealed class FilePreviewPaneViewModel : ObservableObject, IDisposable
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         { if (!_disposed && generation == _generation && Tabs.Contains(tab)) tab.Status = InspectorText.Get("PreviewCancelled"); }
+        catch (AttachmentDocumentValidationException document)
+        {
+            if (IsCurrent()) tab.Status = InspectorText.Get(document.Failure == AttachmentDocumentFailure.Encrypted
+                ? "PreviewPdfEncrypted" : "PreviewPdfFailed");
+        }
         catch (Exception)
         { if (IsCurrent()) tab.Status = InspectorText.Get("PreviewFailed"); }
         finally

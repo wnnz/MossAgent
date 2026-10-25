@@ -20,6 +20,7 @@ public static class FilePreviewFormat
             return "image/png";
         }
         if (bytes.StartsWith(new byte[] { 255, 216 })) return DetectJpeg(bytes);
+        if (bytes.StartsWith("%PDF-"u8)) return "application/pdf";
         if (bytes.Length > MaximumTextBytes || bytes.Contains((byte)0)) throw new InvalidDataException();
         _ = new UTF8Encoding(false, true).GetString(bytes);
         return "text/plain";

@@ -54,7 +54,8 @@ internal sealed class WorkspaceAttachmentDraftCoordinator : IDisposable
             {
                 var items = _attachments.Items.Select(item => new ConversationDraftAttachment(item.SelectionId,
                     item.FullPath, item.DisplayPath, item.IsAvailable && item.Content.Image is null ? item.Content.Content : null,
-                    item.Content.ByteCount, item.AuthorizationStamp, item.Content.MediaType, item.IsAvailable ? item.Content.Image : null)).ToArray();
+                    item.Content.ByteCount, item.AuthorizationStamp, item.Content.MediaType,
+                    item.IsAvailable ? item.Content.Image : null, item.IsAvailable ? item.Content.Document : null)).ToArray();
                 _drafts.SetAttachments(_scope, items);
                 _lastApplied = _drafts.Attachments;
                 UpdateAuthorization(items);
@@ -82,7 +83,7 @@ internal sealed class WorkspaceAttachmentDraftCoordinator : IDisposable
         var existing = _attachments.Items.ToArray();
         var restored = items.Select(item => existing.FirstOrDefault(candidate => Matches(candidate, item))
             ?? _attachments.CreateItem(new WorkspaceAttachmentContent(item.FullPath, item.DisplayPath,
-                item.Content ?? string.Empty, item.ByteCount, item.Image) { MediaType = item.MediaType },
+                item.Content ?? string.Empty, item.ByteCount, item.Image, item.Document) { MediaType = item.MediaType },
                 item.Id, item.AuthorizationStamp, item.IsAvailable)).ToArray();
         if (!existing.SequenceEqual(restored))
         {
@@ -96,7 +97,9 @@ internal sealed class WorkspaceAttachmentDraftCoordinator : IDisposable
         candidate.SelectionId == item.Id && candidate.FullPath == item.FullPath && candidate.DisplayPath == item.DisplayPath
         && candidate.AuthorizationStamp == item.AuthorizationStamp && candidate.Content.ByteCount == item.ByteCount
         && candidate.Content.MediaType == item.MediaType && candidate.IsAvailable == item.IsAvailable
-        && (!candidate.IsAvailable || (item.Image is null ? candidate.Content.Content == item.Content
+        && (!candidate.IsAvailable || (item.Document is not null
+            ? candidate.Content.Content == item.Content && candidate.Content.Document?.Base64Data == item.Document.Base64Data
+            : item.Image is null ? candidate.Content.Content == item.Content
             : candidate.Content.Image?.Base64Data == item.Image.Base64Data));
 
     private void UpdateAuthorization(IReadOnlyList<ConversationDraftAttachment> items)

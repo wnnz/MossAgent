@@ -16,6 +16,10 @@ public sealed partial class AppAttachmentChip : AppUserControl
         AvaloniaProperty.Register<AppAttachmentChip, ICommand?>(nameof(RemoveCommand));
     public static readonly DirectProperty<AppAttachmentChip, bool> HasRemoveActionProperty =
         AvaloniaProperty.RegisterDirect<AppAttachmentChip, bool>(nameof(HasRemoveAction), chip => chip.HasRemoveAction);
+    public static readonly StyledProperty<string> KindLabelProperty =
+        AvaloniaProperty.Register<AppAttachmentChip, string>(nameof(KindLabel), string.Empty);
+    public static readonly DirectProperty<AppAttachmentChip, bool> HasKindLabelProperty =
+        AvaloniaProperty.RegisterDirect<AppAttachmentChip, bool>(nameof(HasKindLabel), chip => chip.HasKindLabel);
     public static readonly StyledProperty<AttachmentThumbnailSource?> ThumbnailProperty =
         AvaloniaProperty.Register<AppAttachmentChip, AttachmentThumbnailSource?>(nameof(Thumbnail));
     public static readonly DirectProperty<AppAttachmentChip, bool> HasThumbnailRequestProperty =
@@ -41,7 +45,14 @@ public sealed partial class AppAttachmentChip : AppUserControl
         set => SetValue(RemoveCommandProperty, value);
     }
 
+    public string KindLabel
+    {
+        get => GetValue(KindLabelProperty);
+        set => SetValue(KindLabelProperty, value);
+    }
+
     public bool HasRemoveAction => RemoveCommand is not null;
+    public bool HasKindLabel => !string.IsNullOrEmpty(KindLabel);
     public bool HasThumbnailRequest => Thumbnail is not null;
 
     public AttachmentThumbnailSource? Thumbnail
@@ -57,6 +68,9 @@ public sealed partial class AppAttachmentChip : AppUserControl
             AutomationProperties.SetName(this, AttachmentChipText.AccessibleName(DisplayPath, SizeLabel));
         if (change.Property == RemoveCommandProperty)
             RaisePropertyChanged(HasRemoveActionProperty, change.OldValue is not null, change.NewValue is not null);
+        if (change.Property == KindLabelProperty)
+            RaisePropertyChanged(HasKindLabelProperty, !string.IsNullOrEmpty(change.OldValue as string),
+                !string.IsNullOrEmpty(change.NewValue as string));
         if (change.Property == ThumbnailProperty)
             RaisePropertyChanged(HasThumbnailRequestProperty, change.OldValue is not null, change.NewValue is not null);
     }

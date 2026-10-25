@@ -20,13 +20,20 @@ public static class ConversationAttachmentValidation
             if (attachment.Id == Guid.Empty || attachment.TaskId != taskId || attachment.MessageId != messageId)
                 throw new UnauthorizedAccessException("Conversation attachment belongs to another message.");
             if (string.IsNullOrWhiteSpace(attachment.DisplayPath) || attachment.DisplayPath.Length > 1024
-                || attachment.DisplayPath.Contains('\0') || attachment.ByteCount < 0
-                || (attachment.MediaType == "text/plain" ? attachment.ByteCount > WorkspaceAttachmentLimits.MaximumBytesPerFile
-                    : !AttachmentImage.IsSupportedMediaType(attachment.MediaType) || attachment.ByteCount is < 1 or > AttachmentImage.MaximumByteCount)
+                || attachment.DisplayPath.Contains('\0') || !IsBoundedByteCount(attachment.MediaType, attachment.ByteCount)
                 || string.IsNullOrEmpty(attachment.Sha256) || attachment.Sha256.Length != 64 || !attachment.Sha256.All(char.IsAsciiHexDigit))
                 throw new InvalidDataException("Invalid conversation attachment metadata.");
         }
-        if (attachments.Where(item => item.MediaType != "text/plain").Sum(item => item.ByteCount) > AttachmentImage.MaximumTotalByteCount)
+        if (attachments.Where(item => AttachmentImage.IsSupportedMediaType(item.MediaType)).Sum(item => item.ByteCount) > AttachmentImage.MaximumTotalByteCount)
             throw new InvalidDataException("Image attachments exceed their aggregate byte limit.");
+        if (attachments.Where(item => AttachmentDocument.IsSupportedMediaType(item.MediaType)).Sum(item => item.ByteCount) > AttachmentDocument.MaximumTotalByteCount)
+            throw new InvalidDataException("Document attachments exceed their aggregate byte limit.");
     }
+
+    internal static bool IsBoundedByteCount(string mediaType, long byteCount) => mediaType switch
+    {
+        "text/plain" => byteCount is >= 0 and <= WorkspaceAttachmentLimits.MaximumBytesPerFile,
+        AttachmentDocument.PdfMediaType => byteCount is >= 1 and <= AttachmentDocument.MaximumByteCount,
+        _ => AttachmentImage.IsSupportedMediaType(mediaType) && byteCount is >= 1 and <= AttachmentImage.MaximumByteCount
+    };
 }

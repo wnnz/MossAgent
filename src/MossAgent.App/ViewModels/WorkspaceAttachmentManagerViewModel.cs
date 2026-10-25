@@ -54,7 +54,7 @@ public sealed class WorkspaceAttachmentManagerViewModel : ObservableObject, IDis
     public string SelectionHint => WorkspaceText.Get("AttachmentSelectionHint");
 
     public bool HasItems => Items.Count > 0;
-    public bool HasImageItems => Items.Any(item => item.Content.MediaType != "text/plain");
+    public bool HasImageItems => Items.Any(item => item.Content.Image is not null);
     public bool IsModelCompatible => !HasImageItems || _model?.SupportsImages == true;
 
     public string Status
@@ -144,6 +144,9 @@ public sealed class WorkspaceAttachmentManagerViewModel : ObservableObject, IDis
             if (Items.Select(item => item.Content).Concat(contents).Where(item => item.Image is not null)
                 .Sum(item => item.ByteCount) > AttachmentImage.MaximumTotalByteCount)
             { Status = WorkspaceText.Get("AttachmentImageSizeLimit"); return; }
+            if (Items.Select(item => item.Content).Concat(contents).Where(item => item.Document is not null)
+                .Sum(item => item.ByteCount) > AttachmentDocument.MaximumTotalByteCount)
+            { Status = WorkspaceText.Get("AttachmentDocumentSizeLimit"); return; }
             foreach (var content in contents)
             {
                 Items.Add(CreateItem(content,
@@ -162,6 +165,7 @@ public sealed class WorkspaceAttachmentManagerViewModel : ObservableObject, IDis
             if (IsCurrent()) Status = WorkspaceText.Get(exception switch
             {
                 AttachmentImageValidationException image => "AttachmentImage" + image.Failure,
+                AttachmentDocumentValidationException document => "AttachmentDocument" + document.Failure,
                 UnauthorizedAccessException => "AttachmentUnauthorized",
                 FileNotFoundException or DirectoryNotFoundException => "AttachmentMissing",
                 _ => "AttachmentFailed"

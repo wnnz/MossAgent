@@ -17,8 +17,13 @@
                      IsVisible="{Binding !HasThumbnail, ElementName=ThumbnailImage}" />
       </Grid>
       <StackPanel x:Name="FileDetails" Grid.Column="1" Spacing="1" VerticalAlignment="Center">
-        <ui:AppText x:Name="PathLabel" Classes="attachment-path"
-                     Text="{Binding DisplayPath, ElementName=Chip}" TextTrimming="CharacterEllipsis" />
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <ui:AppText x:Name="PathLabel" Classes="attachment-path"
+                       Text="{Binding DisplayPath, ElementName=Chip}" TextTrimming="CharacterEllipsis" />
+          <ui:AppText x:Name="KindBadge" Classes="subtle attachment-size"
+                       Text="{Binding KindLabel, ElementName=Chip}"
+                       IsVisible="{Binding HasKindLabel, ElementName=Chip}" />
+        </StackPanel>
         <ui:AppText x:Name="SizeText" Classes="subtle attachment-size"
                      Text="{Binding SizeLabel, ElementName=Chip}" />
       </StackPanel>

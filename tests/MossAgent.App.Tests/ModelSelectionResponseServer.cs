@@ -47,7 +47,9 @@ internal sealed class ModelSelectionResponseServer : IAsyncDisposable
             data = ResponseOverride?.Invoke(document.RootElement, _requests.Count) ?? data;
             var incomplete = Interlocked.Exchange(ref _incompleteNext, 0);
             var body = incomplete == 2 ? string.Empty : $"data: {data}\n\n";
-            if (incomplete == 0) body += "data: [DONE]\n\n";
+            if (incomplete == 0)
+                body += "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"fixture-response\"}}\n\n"
+                    + "data: [DONE]\n\n";
             var bytes = Encoding.UTF8.GetBytes(body);
             var header = Encoding.ASCII.GetBytes($"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n"
                 + $"Content-Length: {bytes.Length}\r\nConnection: close\r\n\r\n");

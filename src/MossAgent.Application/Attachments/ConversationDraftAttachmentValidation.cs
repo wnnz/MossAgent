@@ -16,9 +16,8 @@ public static class ConversationDraftAttachmentValidation
             if (attachment.Id == Guid.Empty || string.IsNullOrWhiteSpace(attachment.FullPath)
                 || attachment.FullPath.Length > 32768 || attachment.FullPath.Contains('\0') || !Path.IsPathFullyQualified(attachment.FullPath)
                 || string.IsNullOrWhiteSpace(attachment.DisplayPath) || attachment.DisplayPath.Length > 1024
-                || attachment.DisplayPath.Contains('\0') || attachment.ByteCount < 0
-                || (attachment.MediaType == "text/plain" ? attachment.ByteCount > WorkspaceAttachmentLimits.MaximumBytesPerFile
-                    : !AttachmentImage.IsSupportedMediaType(attachment.MediaType) || attachment.ByteCount is < 1 or > AttachmentImage.MaximumByteCount)
+                || attachment.DisplayPath.Contains('\0')
+                || !ConversationAttachmentValidation.IsBoundedByteCount(attachment.MediaType, attachment.ByteCount)
                 || string.IsNullOrEmpty(attachment.AuthorizationStamp) || attachment.AuthorizationStamp.Length != 64
                 || !attachment.AuthorizationStamp.All(char.IsAsciiHexDigit))
                 throw new ArgumentException("Invalid draft attachment metadata.");
@@ -31,17 +30,30 @@ public static class ConversationDraftAttachmentValidation
             }
             if (attachment.MediaType != "text/plain")
             {
-                if (!string.IsNullOrEmpty(attachment.Content) || attachment.Image!.MediaType != attachment.MediaType
+                if (attachment.MediaType == AttachmentDocument.PdfMediaType)
+                {
+                    if (attachment.Image is not null || attachment.Document!.MediaType != attachment.MediaType
+                        || attachment.Document.ByteCount != attachment.ByteCount
+                        || attachment.Content is null || attachment.Content.Length > AttachmentDocument.MaximumTextCharacters
+                        || attachment.Content.Contains('\0') || attachment.Document.TextCharacters != attachment.Content.Length)
+                        throw new InvalidDataException("Invalid draft document content.");
+                    continue;
+                }
+                if (attachment.Document is not null || !string.IsNullOrEmpty(attachment.Content)
+                    || attachment.Image!.MediaType != attachment.MediaType
                     || attachment.Image.ByteCount != attachment.ByteCount)
                     throw new InvalidDataException("Invalid draft image content.");
                 continue;
             }
-            if (attachment.Image is not null) throw new InvalidDataException("Text attachment cannot contain image bytes.");
+            if (attachment.Image is not null || attachment.Document is not null)
+                throw new InvalidDataException("Text attachment cannot contain image or document bytes.");
             if (attachment.Content!.Length > WorkspaceAttachmentLimits.MaximumBytesPerFile || attachment.Content.Contains('\0')
                 || new UTF8Encoding(false, true).GetByteCount(attachment.Content) != attachment.ByteCount)
                 throw new InvalidDataException("Draft attachment must be bounded UTF-8 text.");
         }
-        if (attachments.Where(item => item.MediaType != "text/plain").Sum(item => item.ByteCount) > AttachmentImage.MaximumTotalByteCount)
+        if (attachments.Where(item => AttachmentImage.IsSupportedMediaType(item.MediaType)).Sum(item => item.ByteCount) > AttachmentImage.MaximumTotalByteCount)
             throw new InvalidDataException("Draft images exceed their aggregate byte limit.");
+        if (attachments.Where(item => AttachmentDocument.IsSupportedMediaType(item.MediaType)).Sum(item => item.ByteCount) > AttachmentDocument.MaximumTotalByteCount)
+            throw new InvalidDataException("Draft documents exceed their aggregate byte limit.");
     }
 }

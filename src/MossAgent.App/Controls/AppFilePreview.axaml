@@ -174,10 +174,22 @@
       <Grid Grid.Row="2" IsVisible="{Binding !Active.IsLoading}">
         <ui:AppEmptyState Title="{Binding Active.Status}" IconData="{StaticResource UiIconDocument}" IsVisible="{Binding !Active.IsReady}" />
         <Grid IsVisible="{Binding Active.IsReady}">
-        <ui:AppCodePreview Code="{Binding Active.Text}" FilePath="{Binding Active.Name}" IsDiff="{Binding Active.IsDiff}" IsVisible="{Binding !Active.IsImage}"
-                           SearchQuery="{Binding Active.Search.ActiveQuery}" SelectedLine="{Binding Active.Search.SelectedLine}" />
-        <ui:AppImagePreview Source="{Binding Active.Image}" IsVisible="{Binding Active.IsImage}"
-                            IsFit="{Binding Active.IsFit}" Scale="{Binding Active.Scale}" />
+        <Grid RowDefinitions="Auto,*">
+          <ui:AppBorder x:Name="PdfNote" Classes="file-preview-search" IsVisible="{Binding Active.IsDocument}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <ui:AppText Text="{x:Static text:InspectorText.PreviewPdfExtraction}" Classes="file-preview-notice" TextWrapping="Wrap" />
+              <ui:AppText Text="{Binding Active.DocumentPageStatus}" Classes="file-preview-notice" />
+              <ui:AppText Text="{x:Static text:InspectorText.PreviewPdfTruncated}" Classes="file-preview-notice"
+                          IsVisible="{Binding Active.IsDocumentTruncated}" />
+            </StackPanel>
+          </ui:AppBorder>
+          <Grid Grid.Row="1">
+          <ui:AppCodePreview Code="{Binding Active.Text}" FilePath="{Binding Active.Name}" IsDiff="{Binding Active.IsDiff}" IsVisible="{Binding !Active.IsImage}"
+                             SearchQuery="{Binding Active.Search.ActiveQuery}" SelectedLine="{Binding Active.Search.SelectedLine}" />
+          <ui:AppImagePreview Source="{Binding Active.Image}" IsVisible="{Binding Active.IsImage}"
+                              IsFit="{Binding Active.IsFit}" Scale="{Binding Active.Scale}" />
+          </Grid>
+        </Grid>
         </Grid>
       </Grid>
       <ui:AppText Grid.Row="3" Text="{Binding Active.Status}" Classes="file-preview-status" TextWrapping="Wrap" />

@@ -33,5 +33,7 @@ public sealed class WorkspaceAttachmentViewModel
     public string SizeLabel => IsAvailable ? ChatMessageAttachmentViewModel.FormatSize(Content.ByteCount)
         : WorkspaceText.Get("DraftAttachmentUnavailableLabel");
 
+    public string KindLabel => IsAvailable && Content.Document is not null ? "PDF" : string.Empty;
+
     public IRelayCommand RemoveCommand { get; }
 }

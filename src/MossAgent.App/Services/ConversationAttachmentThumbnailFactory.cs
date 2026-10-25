@@ -10,7 +10,7 @@ public sealed class ConversationAttachmentThumbnailFactory(
 
     public AttachmentThumbnailSource? Create(ConversationMessage message, ConversationAttachment attachment)
     {
-        if (message.Role != MessageRole.User || attachment.MediaType == "text/plain") return null;
+        if (message.Role != MessageRole.User || !AttachmentImage.IsSupportedMediaType(attachment.MediaType)) return null;
         return new(token => LoadAsync(message.TaskId, message.Id, attachment, token));
     }
 

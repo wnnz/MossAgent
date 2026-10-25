@@ -2,6 +2,7 @@
   <ItemGroup>
     <ProjectReference Include="../MossAgent.Application/MossAgent.Application.csproj" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="PdfPig" />
     <PackageReference Include="SkiaSharp" />
     <PackageReference Include="SkiaSharp.NativeAssets.Win32" />
   </ItemGroup>

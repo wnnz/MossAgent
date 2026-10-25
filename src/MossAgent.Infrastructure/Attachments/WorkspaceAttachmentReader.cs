@@ -3,10 +3,11 @@ using MossAgent.Domain;
 
 namespace MossAgent.Infrastructure.Attachments;
 
-public sealed class WorkspaceAttachmentReader(IAttachmentImageDecoder? images = null, TimeProvider? timeProvider = null)
+public sealed class WorkspaceAttachmentReader(IAttachmentImageDecoder? images = null, TimeProvider? timeProvider = null,
+    IAttachmentDocumentTextExtractor? documents = null)
     : IWorkspaceAttachmentReader, ISelectedAttachmentReader
 {
-    private readonly AttachmentContentCodec _codec = new(images);
+    private readonly AttachmentContentCodec _codec = new(images, documents);
 
     public Task<IReadOnlyList<WorkspaceAttachmentContent>> ReadAsync(
         ProjectProfile project,
@@ -49,6 +50,8 @@ public sealed class WorkspaceAttachmentReader(IAttachmentImageDecoder? images = 
             results.Add(await ReadOneAsync(path, roots, cancellationToken));
             if (results.Where(item => item.Image is not null).Sum(item => item.ByteCount) > AttachmentImage.MaximumTotalByteCount)
                 throw new AttachmentImageValidationException(AttachmentImageFailure.SizeLimit);
+            if (results.Where(item => item.Document is not null).Sum(item => item.ByteCount) > AttachmentDocument.MaximumTotalByteCount)
+                throw new AttachmentDocumentValidationException(AttachmentDocumentFailure.SizeLimit);
         }
 
         return results;
@@ -92,10 +95,13 @@ public sealed class WorkspaceAttachmentReader(IAttachmentImageDecoder? images = 
         var prefix = new byte[(int)Math.Min(12, stream.Length)];
         await stream.ReadExactlyAsync(prefix, cancellationToken);
         var image = AttachmentImage.DetectMediaType(prefix) is not null || AttachmentContentCodec.IsImagePath(path);
-        var limit = image ? AttachmentImage.MaximumByteCount : WorkspaceAttachmentLimits.MaximumBytesPerFile;
+        var document = !image && (AttachmentDocument.DetectMediaType(prefix) is not null || AttachmentContentCodec.IsDocumentPath(path));
+        var limit = image ? AttachmentImage.MaximumByteCount
+            : document ? AttachmentDocument.MaximumByteCount : WorkspaceAttachmentLimits.MaximumBytesPerFile;
         if (stream.Length > limit)
         {
             if (image) throw new AttachmentImageValidationException(AttachmentImageFailure.SizeLimit);
+            if (document) throw new AttachmentDocumentValidationException(AttachmentDocumentFailure.SizeLimit);
             throw new InvalidOperationException(
                 $"附件不能超过 {WorkspaceAttachmentLimits.MaximumBytesPerFile / 1024} KiB。");
         }

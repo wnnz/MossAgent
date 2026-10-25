@@ -7,10 +7,11 @@ using MossAgent.Infrastructure.Attachments;
 namespace MossAgent.Infrastructure.Persistence;
 
 public sealed class SqliteConversationDraftRepository(SqliteConnectionFactory connections,
-    AppDataPaths? paths = null, TimeProvider? timeProvider = null, IAttachmentImageDecoder? images = null) : IConversationDraftRepository
+    AppDataPaths? paths = null, TimeProvider? timeProvider = null, IAttachmentImageDecoder? images = null,
+    IAttachmentDocumentTextExtractor? documents = null) : IConversationDraftRepository
 {
-    private readonly ConversationDraftAttachmentFiles? _files = paths is null ? null : new(paths, images);
-    private readonly SqliteConversationDraftWriter _writer = new(paths, images);
+    private readonly ConversationDraftAttachmentFiles? _files = paths is null ? null : new(paths, images, documents);
+    private readonly SqliteConversationDraftWriter _writer = new(paths, images, documents);
     internal bool UsesConnections(SqliteConnectionFactory candidate) => ReferenceEquals(connections, candidate);
 
     public Task<ConversationDraft?> GetAsync(ConversationDraftScope scope, CancellationToken cancellationToken) =>

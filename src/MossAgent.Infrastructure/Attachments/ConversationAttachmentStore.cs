@@ -6,10 +6,10 @@ using MossAgent.Domain;
 namespace MossAgent.Infrastructure.Attachments;
 
 public sealed class ConversationAttachmentStore(ITaskArtifactPaths paths, TimeProvider? timeProvider = null,
-    IAttachmentImageDecoder? images = null) : IConversationAttachmentStore
+    IAttachmentImageDecoder? images = null, IAttachmentDocumentTextExtractor? documents = null) : IConversationAttachmentStore
 {
     private readonly ConversationAttachmentPaths _paths = new(paths);
-    private readonly AttachmentContentCodec _codec = new(images);
+    private readonly AttachmentContentCodec _codec = new(images, documents);
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
     public Task<IReadOnlyList<ConversationAttachment>> SaveAsync(Guid taskId, Guid messageId,
@@ -32,12 +32,14 @@ public sealed class ConversationAttachmentStore(ITaskArtifactPaths paths, TimePr
         if (attachments.Count > WorkspaceAttachmentLimits.MaximumFiles) throw new InvalidDataException("Too many attachments.");
         if (attachments.Where(item => item.Image is not null).Sum(item => item.ByteCount) > AttachmentImage.MaximumTotalByteCount)
             throw new InvalidDataException("Image attachments exceed their aggregate byte limit.");
+        if (attachments.Where(item => item.Document is not null).Sum(item => item.ByteCount) > AttachmentDocument.MaximumTotalByteCount)
+            throw new InvalidDataException("Document attachments exceed their aggregate byte limit.");
         var snapshots = new List<ConversationAttachment>();
         foreach (var content in attachments)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var bytes = _codec.Encode(content);
-            if (content.Image is not null)
+            if (content.Image is not null || content.Document is not null)
                 await _codec.DecodeAsync(content.FullPath, content.DisplayPath, bytes, content.MediaType, cancellationToken);
             var attachment = new ConversationAttachment(Guid.NewGuid(), taskId, messageId, content.DisplayPath,
                 bytes.LongLength, Convert.ToHexString(SHA256.HashData(bytes)), content.MediaType);

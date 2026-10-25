@@ -25,9 +25,21 @@ public sealed class AvaloniaFilePickerService : IFilePickerService
             new FilePickerOpenOptions
             {
                 Title = title,
-                AllowMultiple = true
+                AllowMultiple = true,
+                FileTypeFilter = CreateFilters()
             });
         cancellationToken.ThrowIfCancellationRequested();
         return files.Select(static file => file.Path.LocalPath).ToArray();
     }
+
+    internal static IReadOnlyList<FilePickerFileType> CreateFilters() =>
+    [
+        FilePickerFileTypes.All,
+        new FilePickerFileType(InspectorText.Get("PreviewFilterSupported"))
+        {
+            Patterns = ["*.txt", "*.md", "*.json", "*.csv", "*.log",
+                "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.pdf"]
+        },
+        new FilePickerFileType(InspectorText.Get("PreviewFilterDocuments")) { Patterns = ["*.pdf"] }
+    ];
 }

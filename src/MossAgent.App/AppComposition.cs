@@ -108,6 +108,7 @@ internal static class AppComposition
         services.AddSingleton<ISidebarPreferenceStore, JsonSidebarPreferenceStore>();
         services.AddSingleton<IComposerPreferenceStore, JsonComposerPreferenceStore>();
         services.AddSingleton<IAttachmentImageDecoder, SkiaAttachmentImageDecoder>();
+        services.AddSingleton<IAttachmentDocumentTextExtractor, PdfTextExtractor>();
         services.AddSingleton<IAttachmentThumbnailRenderer, SkiaAttachmentThumbnailRenderer>();
         services.AddSingleton<WorkspaceAttachmentReader>();
         services.AddSingleton<IWorkspaceAttachmentReader>(static provider => provider.GetRequiredService<WorkspaceAttachmentReader>());

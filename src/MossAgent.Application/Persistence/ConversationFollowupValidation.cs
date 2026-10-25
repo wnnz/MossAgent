@@ -41,7 +41,7 @@ public static class ConversationFollowupValidation
             || model.ContextLength <= 0 || model.MaximumOutputTokens <= 0)
             throw new ArgumentException("Invalid follow-up model snapshot.");
         ConversationAttachmentValidation.Validate(taskId, item.Id, item.Attachments);
-        if (!model.SupportsImages && item.Attachments.Any(attachment => attachment.MediaType != "text/plain"))
+        if (!model.SupportsImages && item.Attachments.Any(attachment => AttachmentImage.IsSupportedMediaType(attachment.MediaType)))
             throw new ArgumentException("The follow-up model does not support image inputs.");
     }
 }

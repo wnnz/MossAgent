@@ -228,4 +228,11 @@
   <data name="AuditInterrupted" xml:space="preserve"><value>已中断</value></data>
   <data name="AuditInterruptedHint" xml:space="preserve"><value>应用关闭前未收到完成结果，操作可能已发生。请先核实实际状态，再手动继续；应用不会自动重放该操作。</value></data>
   <data name="AuditUnknownDuration" xml:space="preserve"><value>执行结果未知</value></data>
+<data name="PreviewPdfExtraction" xml:space="preserve"><value>PDF 将以提取的文字发送（非原始文件）</value></data>
+<data name="PreviewPdfTruncated" xml:space="preserve"><value>已截断</value></data>
+<data name="PreviewPdfPages" xml:space="preserve"><value>第 {0} 页 / 共 {1} 页</value></data>
+<data name="PreviewPdfFailed" xml:space="preserve"><value>无法提取此 PDF 的文本。文件可能已损坏或不受支持，请检查文件后重试。</value></data>
+<data name="PreviewPdfEncrypted" xml:space="preserve"><value>此 PDF 已加密，无法提取文本。请提供未加密的文件。</value></data>
+<data name="PreviewFilterSupported" xml:space="preserve"><value>文本、图像与 PDF</value></data>
+<data name="PreviewFilterDocuments" xml:space="preserve"><value>PDF 文档</value></data>
 </root>

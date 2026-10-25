@@ -77,4 +77,6 @@ public static class InspectorText
     public static string PreviewOpenOptions => Get("PreviewOpenOptions");
     public static string PreviewReveal => Get("PreviewReveal");
     public static string PreviewRevealHint => Get("PreviewRevealHint");
+    public static string PreviewPdfExtraction => Get("PreviewPdfExtraction");
+    public static string PreviewPdfTruncated => Get("PreviewPdfTruncated");
 }

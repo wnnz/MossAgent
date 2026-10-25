@@ -48,7 +48,7 @@ internal sealed class WorkspaceSendCoordinator(
     private void StartRun(WorkspaceSendRequest request, AgentTask task, string prompt)
     {
         var messageAttachments = request.Attachments.Select(item => new ChatMessageAttachmentViewModel(
-            item.DisplayPath, item.SizeLabel, item.Thumbnail)).ToArray();
+            item.DisplayPath, item.SizeLabel, item.Thumbnail, item.KindLabel)).ToArray();
         var assistant = new ChatMessageViewModel("MossAgent", string.Empty);
         var messages = new ObservableCollection<ChatMessageViewModel>(request.VisibleMessages)
             { new(UiText.T("你"), prompt, attachments: messageAttachments, createdAt: task.UpdatedAt), assistant };

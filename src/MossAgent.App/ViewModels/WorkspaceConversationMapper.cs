@@ -18,7 +18,8 @@ internal static class WorkspaceConversationMapper
         }
         var attachments = message.Attachments?.Select(attachment => new ChatMessageAttachmentViewModel(
             attachment.DisplayPath, ChatMessageAttachmentViewModel.FormatSize(attachment.ByteCount),
-            thumbnails?.Create(message, attachment))).ToArray();
+            thumbnails?.Create(message, attachment),
+            attachment.MediaType == AttachmentDocument.PdfMediaType ? "PDF" : string.Empty)).ToArray();
         return new ChatMessageViewModel(ToDisplayRole(message.Role), message.Content, attachments: attachments, createdAt: message.CreatedAt);
     }
 
