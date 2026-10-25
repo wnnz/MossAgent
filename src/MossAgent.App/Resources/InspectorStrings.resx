@@ -233,6 +233,13 @@
   <data name="GitPushFailed" xml:space="preserve"><value>无法确认推送完成，请检查远端历史、访问凭据、非快进冲突及钩子/签名配置，再刷新预览。原始输出可能含凭据，未显示。</value></data>
   <data name="GitPushProbablyLanded" xml:space="preserve"><value>推送可能已完成——远端跟踪引用已指向本次推送的提交。请核对远端历史确认，勿直接重推；如未生效请刷新预览后重新推送。</value></data>
   <data name="GitPushOutcomeUnknown" xml:space="preserve"><value>无法确认推送结果，远端可能已收到提交。请先核对远端历史，再决定重试；勿直接重复推送。</value></data>
+  <data name="GitPushCredential" xml:space="preserve"><value>凭据方式：{0}</value></data>
+  <data name="GitPushCredentialMethodLocal" xml:space="preserve"><value>本地</value></data>
+  <data name="GitPushCredentialMethodSsh" xml:space="preserve"><value>SSH</value></data>
+  <data name="GitPushCredentialMethodHttps" xml:space="preserve"><value>HTTPS</value></data>
+  <data name="GitPushCredentialMethodEmbedded" xml:space="preserve"><value>URL 内嵌凭据</value></data>
+  <data name="GitPushCredentialMethodUnsupported" xml:space="preserve"><value>未知传输</value></data>
+  <data name="GitPushCredentialEmbedded" xml:space="preserve"><value>该远端 URL 内嵌凭据，推送将使用它们。</value></data>
   <data name="AuditInterrupted" xml:space="preserve"><value>已中断</value></data>
   <data name="AuditInterruptedHint" xml:space="preserve"><value>应用关闭前未收到完成结果，操作可能已发生。请先核实实际状态，再手动继续；应用不会自动重放该操作。</value></data>
   <data name="AuditUnknownDuration" xml:space="preserve"><value>执行结果未知</value></data>

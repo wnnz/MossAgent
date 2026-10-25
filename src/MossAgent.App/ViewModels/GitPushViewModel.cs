@@ -60,6 +60,21 @@ public sealed class GitPushViewModel : ObservableObject, IDisposable, IAsyncDisp
     public string Status { get => _status; private set { if (SetProperty(ref _status, value)) OnPropertyChanged(nameof(HasStatus)); } }
     public string PreviewSummary => _preview is { } preview ? InspectorText.Format("GitPushSummary", preview.Head[..Math.Min(12, preview.Head.Length)],
         preview.Remote, preview.TargetBranch, preview.Destination) : string.Empty;
+    public bool HasCredential => _preview is not null;
+    public bool HasCredentialWarning => _preview?.CredentialMethod == GitRemoteCredentialMethod.Embedded;
+    public string CredentialSummary => _preview is { } preview
+        ? InspectorText.Format("GitPushCredential", InspectorText.Get(MethodKey(preview.CredentialMethod)))
+            + (preview.CredentialMethod == GitRemoteCredentialMethod.Embedded ? " " + InspectorText.Get("GitPushCredentialEmbedded") : string.Empty)
+        : string.Empty;
+
+    private static string MethodKey(GitRemoteCredentialMethod method) => method switch
+    {
+        GitRemoteCredentialMethod.Local => "GitPushCredentialMethodLocal",
+        GitRemoteCredentialMethod.Ssh => "GitPushCredentialMethodSsh",
+        GitRemoteCredentialMethod.Https => "GitPushCredentialMethodHttps",
+        GitRemoteCredentialMethod.Embedded => "GitPushCredentialMethodEmbedded",
+        _ => "GitPushCredentialMethodUnsupported"
+    };
 
     private void Edit(ref string field, string? value, string property)
     {
@@ -231,7 +246,7 @@ public sealed class GitPushViewModel : ObservableObject, IDisposable, IAsyncDisp
 
     private void NotifyState()
     {
-        foreach (var property in new[] { nameof(HasContext), nameof(IsBusy), nameof(IsEditorEnabled), nameof(HasPreview), nameof(CanPush), nameof(CanCancel), nameof(PreviewSummary) }) OnPropertyChanged(property);
+        foreach (var property in new[] { nameof(HasContext), nameof(IsBusy), nameof(IsEditorEnabled), nameof(HasPreview), nameof(CanPush), nameof(CanCancel), nameof(PreviewSummary), nameof(HasCredential), nameof(HasCredentialWarning), nameof(CredentialSummary) }) OnPropertyChanged(property);
         OpenCommand.NotifyCanExecuteChanged();
         RefreshPreviewCommand.NotifyCanExecuteChanged();
         PushCommand.NotifyCanExecuteChanged();

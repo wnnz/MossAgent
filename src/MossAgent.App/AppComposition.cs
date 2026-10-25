@@ -169,6 +169,7 @@ internal static class AppComposition
         services.AddSingleton<GitCommitStateReader>();
         services.AddSingleton<GitPushEndpoints>();
         services.AddSingleton<GitPushStateReader>();
+        services.AddSingleton<GitRemoteStateReader>();
         services.AddSingleton<IGitPushDestinationAuthorization, GitPushDestinationAuthorization>();
         services.AddSingleton<IBrowserSessionFactory, PlaywrightBrowserSessionFactory>();
         services.AddSingleton<EmbeddedBrowserWorkspaceViewModel>();
@@ -215,6 +216,7 @@ internal static class AppComposition
         services.AddSingleton<IAgentTool, GitCommitTool>();
         services.AddSingleton<IAgentTool, GitPushPreviewTool>();
         services.AddSingleton<IAgentTool, GitPushTool>();
+        services.AddSingleton<IAgentTool, GitRemotesTool>();
         services.AddSingleton<IAgentTool, GitLogTool>();
         services.AddSingleton<IAgentTool, GitCreateWorktreeTool>();
         services.AddSingleton<IAgentTool, SubagentTool>();

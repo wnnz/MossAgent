@@ -15,6 +15,8 @@
       <ui:AppInput x:Name="PushBranchInput" Text="{Binding TargetBranch}" MaxLength="1024" IsEnabled="{Binding IsEditorEnabled}"
                    PlaceholderText="{x:Static text:GitPushLabels.BranchHint}" AutomationProperties.Name="{x:Static text:GitPushLabels.Branch}" />
       <ui:AppText Text="{Binding PreviewSummary}" Classes="muted type-12" TextWrapping="Wrap" IsVisible="{Binding HasPreview}" />
+      <ui:AppText x:Name="PushCredentialText" Text="{Binding CredentialSummary}" Classes="muted type-12"
+                  Classes.status-warning="{Binding HasCredentialWarning}" TextWrapping="Wrap" IsVisible="{Binding HasCredential}" />
     </StackPanel>
     <ui:AppSettingsDialog.Footer>
       <StackPanel Spacing="8">

@@ -61,7 +61,8 @@ public sealed class GitPushStateReader(AuthorizedPathResolver paths, IGitReposit
         var endpoint = await endpoints.ReadAsync(urls[0], repository.Root, target, context, token).ConfigureAwait(false);
         var state = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\0', repository.Root,
             repository.GitDirectory, repository.CommonDirectory, head, branch, config, selected, target, urls[0], endpoint.Identity, remoteHead))));
-        return new(repository, new(state, head, source, selected, target, endpoint.Label, names, remoteHead.Length == 0 ? null : remoteHead), endpoint.Protocol);
+        return new(repository, new(state, head, source, selected, target, endpoint.Label, names,
+            remoteHead.Length == 0 ? null : remoteHead, endpoint.CredentialMethod), endpoint.Protocol);
     }
 
     private async Task<string> QueryAsync(ToolGitRepository repository, string[] arguments, ToolExecutionContext context, CancellationToken token, bool acceptMissing = false)

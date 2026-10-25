@@ -1,4 +1,5 @@
 using MossAgent.Domain;
+using MossAgent.Tools.Abstractions.Git;
 using Xunit;
 
 namespace MossAgent.Tools.Tests;
@@ -89,11 +90,24 @@ public sealed class GitPushWorkflowTests
         Assert.True(result.IsSuccess, result.Summary);
         Assert.DoesNotContain("private-fixture-value", result.ToString());
         Assert.DoesNotContain("fixture-user", result.ToString());
+        Assert.Contains("\"credentialMethod\":\"embedded\"", result.Content);
         await fixture.SourceGitAsync("remote", "set-url", "--add", "--push", "origin", fixture.Remote);
         Assert.Equal("git_push_multiple_urls", (await fixture.ExecuteAsync("git.push_preview", new { })).ErrorCode);
         await fixture.SourceGitAsync("config", "--unset-all", "remote.origin.pushurl");
         await fixture.SourceGitAsync("config", "remote.origin.vcs", "untrusted-helper");
         Assert.Equal("git_push_transport", (await fixture.ExecuteAsync("git.push_preview", new { })).ErrorCode);
         Assert.Empty(await fixture.RemoteGitAsync("for-each-ref"));
+    }
+
+    [Fact]
+    public async Task PreviewClassifiesTheSelectedTransportCredentialMethod()
+    {
+        using var fixture = new GitPushFixture();
+        await fixture.InitializeAsync();
+        Assert.Equal(GitRemoteCredentialMethod.Local, (await fixture.PreviewAsync()).CredentialMethod);
+        await fixture.SourceGitAsync("remote", "set-url", "--push", "origin", "https://example.invalid/project");
+        Assert.Equal(GitRemoteCredentialMethod.Https, (await fixture.PreviewAsync()).CredentialMethod);
+        await fixture.SourceGitAsync("remote", "set-url", "--push", "origin", "git@example.invalid:project.git");
+        Assert.Equal(GitRemoteCredentialMethod.Ssh, (await fixture.PreviewAsync()).CredentialMethod);
     }
 }

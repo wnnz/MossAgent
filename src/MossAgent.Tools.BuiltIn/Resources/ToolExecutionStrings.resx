@@ -62,6 +62,10 @@
   <data name="GitPushTransportUnsupported" xml:space="preserve"><value>此目标不是受支持的标准 Git 传输；请使用 HTTP(S)、SSH、git 或明确授权的本地仓库，不使用自定义远端助手。</value></data>
   <data name="GitPushMultipleUrls" xml:space="preserve"><value>该远端配置了多个推送地址，尚不支持一次写入多个目标。请明确配置单一推送地址后重新预览。</value></data>
   <data name="GitPushLocalDestination" xml:space="preserve"><value>明确授权的本地 Git 仓库</value></data>
+  <data name="GitRemoteLocalEndpoint" xml:space="preserve"><value>本地 Git 仓库</value></data>
+  <data name="GitRemotesDescription" xml:space="preserve"><value>只读列出已配置远端及其脱敏传输端点、凭据方式分类与当前分支上游，以及 credential.helper 值链；不连接远端，不回显 URL 内嵌凭据。</value></data>
+  <data name="GitRemotesReady" xml:space="preserve"><value>远端与凭据方式读取完成，未连接远端。</value></data>
+  <data name="GitRemotesReadFailed" xml:space="preserve"><value>无法完整读取远端与凭据配置，请检查仓库、权限及输出规模。</value></data>
   <data name="GitPushSucceeded" xml:space="preserve"><value>普通单分支推送已完成，未强推或修改上游配置。</value></data>
   <data name="GitPushFailed" xml:space="preserve"><value>无法确认推送完成。请检查远端分支是否已更新、访问凭据、非快进冲突及钩子/签名配置；不要直接重复操作。原始输出可能含凭据，未显示。</value></data>
   <data name="SourceFilesDescription" xml:space="preserve"><value>只读获取明确授权 PR 在已展示提交版本下的变更文件和有界补丁，缺失或不完整补丁明确标记。</value></data>

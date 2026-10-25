@@ -19,7 +19,8 @@ public sealed class GitPushEndpoints(IGitPushDestinationAuthorization destinatio
                 return await LocalAsync(uri.LocalPath, targetBranch, context, token).ConfigureAwait(false);
             }
             if (uri.Scheme is "http" or "https" or "ssh" or "git" && uri.Host.Length > 0)
-                return new(uri.Scheme, uri.GetComponents(UriComponents.SchemeAndServer, UriFormat.UriEscaped), url);
+                return new(uri.Scheme, uri.GetComponents(UriComponents.SchemeAndServer, UriFormat.UriEscaped), url,
+                    GitRemoteEndpoints.Credential(uri));
             if (url.Contains("://", StringComparison.Ordinal) || url.Contains("::", StringComparison.Ordinal)) throw Unsupported();
         }
         var scp = Regex.Match(url, @"^(?:[^@\s/:]+@)?(?<host>\[[0-9A-Fa-f:]+\]|[^/@\s:]+):.+$", RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
@@ -27,7 +28,7 @@ public sealed class GitPushEndpoints(IGitPushDestinationAuthorization destinatio
         {
             var host = scp.Groups["host"].Value;
             if (Uri.CheckHostName(host.Trim('[', ']')) == UriHostNameType.Unknown) throw Unsupported();
-            return new("ssh", "ssh://" + host, url);
+            return new("ssh", "ssh://" + host, url, GitRemoteCredentialMethod.Ssh);
         }
         if (url.Contains(':')) throw Unsupported();
         return await LocalAsync(Path.GetFullPath(url, repository), targetBranch, context, token).ConfigureAwait(false);
@@ -37,7 +38,7 @@ public sealed class GitPushEndpoints(IGitPushDestinationAuthorization destinatio
     {
         var target = await destinations.AuthorizeAsync(path, branch, context, token).ConfigureAwait(false);
         return new("file", Resources.ToolExecutionText.Get("GitPushLocalDestination"),
-            string.Join('\0', target.Root, target.GitDirectory, target.CommonDirectory));
+            string.Join('\0', target.Root, target.GitDirectory, target.CommonDirectory), GitRemoteCredentialMethod.Local);
     }
 
     private static GitPushException Unsupported() => new("git_push_transport", "GitPushTransportUnsupported");
