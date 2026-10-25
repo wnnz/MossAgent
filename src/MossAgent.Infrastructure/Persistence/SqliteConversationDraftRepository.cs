@@ -8,10 +8,11 @@ namespace MossAgent.Infrastructure.Persistence;
 
 public sealed class SqliteConversationDraftRepository(SqliteConnectionFactory connections,
     AppDataPaths? paths = null, TimeProvider? timeProvider = null, IAttachmentImageDecoder? images = null,
-    IAttachmentDocumentTextExtractor? documents = null) : IConversationDraftRepository
+    IAttachmentDocumentTextExtractor? documents = null, AttachmentSnapshotLeases? leases = null,
+    AttachmentSnapshotReaper? reaper = null) : IConversationDraftRepository
 {
-    private readonly ConversationDraftAttachmentFiles? _files = paths is null ? null : new(paths, images, documents);
-    private readonly SqliteConversationDraftWriter _writer = new(paths, images, documents);
+    private readonly ConversationDraftAttachmentFiles? _files = paths is null ? null : new(paths, images, documents, leases);
+    private readonly SqliteConversationDraftWriter _writer = new(paths, images, documents, leases);
     internal bool UsesConnections(SqliteConnectionFactory candidate) => ReferenceEquals(connections, candidate);
 
     public Task<ConversationDraft?> GetAsync(ConversationDraftScope scope, CancellationToken cancellationToken) =>
@@ -76,6 +77,7 @@ public sealed class SqliteConversationDraftRepository(SqliteConnectionFactory co
         await using var transaction = connection.BeginTransaction();
         if (!await _writer.WriteAsync(connection, transaction, updates, cancellationToken)) return false;
         await transaction.CommitAsync(cancellationToken);
+        foreach (var scope in updates.Select(update => update.Scope)) reaper?.QueuePass(scope);
         return true;
     }
 

@@ -114,6 +114,10 @@ internal static class AppComposition
         services.AddSingleton<IWorkspaceAttachmentReader>(static provider => provider.GetRequiredService<WorkspaceAttachmentReader>());
         services.AddSingleton<ISelectedAttachmentReader>(static provider => provider.GetRequiredService<WorkspaceAttachmentReader>());
         services.AddSingleton<IConversationAttachmentStore, ConversationAttachmentStore>();
+        services.AddSingleton<AttachmentSnapshotLeases>();
+        services.AddSingleton<AttachmentSnapshotReaper>();
+        services.AddSingleton<IAttachmentSnapshotReaper>(
+            static provider => provider.GetRequiredService<AttachmentSnapshotReaper>());
         services.AddSingleton<ITaskArtifactPaths, TaskArtifactPaths>();
         services.AddSingleton<ITaskArtifactContentReader, TaskArtifactContentReader>();
         services.AddSingleton<IBrowserProfilePaths, BrowserProfilePaths>();

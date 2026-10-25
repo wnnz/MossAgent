@@ -1,5 +1,6 @@
 using Avalonia.Threading;
 using MossAgent.App.ViewModels;
+using MossAgent.Application.Attachments;
 using MossAgent.Application.Git;
 using MossAgent.Mcp;
 
@@ -11,18 +12,20 @@ public sealed class AppStartupService : IAsyncDisposable
     private readonly AppStartupViewModel _state;
     private readonly Action<Action> _publish;
     private readonly IWorktreeCreationIntents? _creationIntents;
+    private readonly IAttachmentSnapshotReaper? _reaper;
     private readonly CancellationTokenSource _shutdown = new();
     private readonly object _gate = new();
     private Task? _loading;
     private bool _disposed;
 
     public AppStartupService(IMcpManager mcp, AppStartupViewModel state, Action<Action>? publish = null,
-        IWorktreeCreationIntents? creationIntents = null)
+        IWorktreeCreationIntents? creationIntents = null, IAttachmentSnapshotReaper? reaper = null)
     {
         _mcp = mcp;
         _state = state;
         _publish = publish ?? (callback => Dispatcher.UIThread.Post(callback));
         _creationIntents = creationIntents;
+        _reaper = reaper;
     }
 
     public Task StartAsync()
@@ -41,6 +44,7 @@ public sealed class AppStartupService : IAsyncDisposable
     {
         var hasWarning = false;
         var worktreeWarning = false;
+        var storageWarning = false;
         try
         {
             await _mcp.ReloadAsync(_shutdown.Token).ConfigureAwait(false);
@@ -54,6 +58,12 @@ public sealed class AppStartupService : IAsyncDisposable
             catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { return; }
             catch (Exception) { worktreeWarning = true; }
         }
+        if (_reaper is not null)
+        {
+            try { storageWarning = (await _reaper.ReclaimAsync(_shutdown.Token).ConfigureAwait(false)).HasFailures; }
+            catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { return; }
+            catch (Exception) { storageWarning = true; }
+        }
         lock (_gate)
         {
             if (_disposed) return;
@@ -61,7 +71,7 @@ public sealed class AppStartupService : IAsyncDisposable
             {
                 lock (_gate)
                 {
-                    if (!_disposed) _state.Complete(hasWarning, worktreeWarning);
+                    if (!_disposed) _state.Complete(hasWarning, worktreeWarning, storageWarning);
                 }
             });
         }

@@ -7,9 +7,10 @@ using MossAgent.Infrastructure.Persistence;
 namespace MossAgent.Infrastructure.Attachments;
 
 internal sealed class ConversationDraftAttachmentFiles(AppDataPaths paths, IAttachmentImageDecoder? images,
-    IAttachmentDocumentTextExtractor? documents = null)
+    IAttachmentDocumentTextExtractor? documents = null, AttachmentSnapshotLeases? leases = null)
 {
     private readonly AttachmentContentCodec _codec = new(images, documents);
+    private readonly AttachmentSnapshotLeases? _leases = leases;
 
     public async Task<IReadOnlyList<ConversationDraftAttachmentMetadata>> WriteAsync(ConversationDraftScope scope,
         IReadOnlyList<ConversationDraftAttachment> attachments, CancellationToken cancellationToken)
@@ -40,6 +41,7 @@ internal sealed class ConversationDraftAttachmentFiles(AppDataPaths paths, IAtta
         if (metadata.Sha256.Length != 64 || !metadata.Sha256.All(char.IsAsciiHexDigit)) throw new InvalidDataException();
         cancellationToken.ThrowIfCancellationRequested();
         var path = GetPath(metadata);
+        using var lease = _leases?.Acquire(path);
         await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read,
             81920, FileOptions.Asynchronous | FileOptions.SequentialScan);
         if (stream.Length != metadata.Attachment.ByteCount) throw new InvalidDataException();
@@ -58,6 +60,7 @@ internal sealed class ConversationDraftAttachmentFiles(AppDataPaths paths, IAtta
     private async Task WriteFileAsync(ConversationDraftAttachmentMetadata metadata, byte[] bytes, CancellationToken cancellationToken)
     {
         var path = GetPath(metadata);
+        using var lease = _leases?.Acquire(path);
         cancellationToken.ThrowIfCancellationRequested();
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         GetPath(metadata);

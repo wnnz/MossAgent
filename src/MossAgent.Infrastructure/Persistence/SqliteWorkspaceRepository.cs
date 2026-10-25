@@ -4,18 +4,20 @@ using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 using MossAgent.Application.Attachments;
 using MossAgent.Application.Authorization;
+using MossAgent.Infrastructure.Attachments;
 using MossAgent.Tools.Abstractions.Files;
 
 namespace MossAgent.Infrastructure.Persistence;
 
 public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connections,
     AppDataPaths? paths = null, IAttachmentImageDecoder? images = null, IProjectAuthorizationChanges? authorizationChanges = null,
-    IRootIdentitySessionFactory? rootIdentities = null)
+    IRootIdentitySessionFactory? rootIdentities = null, AttachmentSnapshotLeases? leases = null,
+    AttachmentSnapshotReaper? reaper = null)
     : IWorkspaceRepository, IConversationSubmissionRepository, IProjectAuthorizationReader, IProjectAuthorizationWriter, IProjectAuthorizationConfirmation
 {
     private readonly SqliteWorkspaceWriter _writer = new(connections);
     private readonly SqliteTaskRenameWriter _renameWriter = new(connections);
-    private readonly SqliteConversationDraftWriter _draftWriter = new(paths, images);
+    private readonly SqliteConversationDraftWriter _draftWriter = new(paths, images, leases: leases);
     private readonly SqliteProjectAuthorization _projects = new(connections, authorizationChanges, rootIdentities);
     public bool CanConfirmRootObjects => rootIdentities is not null;
 
@@ -45,6 +47,7 @@ public sealed class SqliteWorkspaceRepository(SqliteConnectionFactory connection
                 if (!await _draftWriter.WriteAsync(connection, transaction, snapshot, token))
                     throw new ConversationDraftConflictException();
             });
+            foreach (var scope in snapshot.Select(update => update.Scope)) reaper?.QueuePass(scope);
         }, cancellationToken);
     }
 

@@ -60,6 +60,52 @@ public sealed class AppStartupServiceTests
         Assert.Equal("查看 MCP 设置", state.OpenSettingsLabel);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task AttachmentReclaimFailures_PublishStorageWarningWithoutBlockingTheWorkspace(bool unexpected)
+    {
+        var manager = new DeferredStartupMcpManager();
+        var reaper = new RecordingAttachmentReaper();
+        if (unexpected) reaper.Failure = new InvalidOperationException("synthetic-reclaim-secret");
+        else reaper.Summary = new(4, 3, 0, 1);
+        var state = new AppStartupViewModel();
+        var queue = new ConcurrentQueue<Action>();
+        await using var startup = new AppStartupService(manager, state, queue.Enqueue, reaper: reaper);
+        var loading = startup.StartAsync();
+        manager.Release.TrySetResult();
+        await loading.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+
+        Assert.Single(queue)();
+
+        Assert.Equal(1, reaper.Invocations);
+        Assert.True(state.IsReady);
+        Assert.True(state.HasStatus);
+        Assert.False(state.HasWarning);
+        Assert.DoesNotContain("synthetic-reclaim-secret", state.Status, StringComparison.Ordinal);
+        Assert.Equal("附件快照回收对账未完成，残留文件将保留待处理。", state.Status);
+    }
+
+    [Fact]
+    public async Task SuccessfulReclaim_PublishesNoStorageWarning()
+    {
+        var manager = new DeferredStartupMcpManager();
+        var reaper = new RecordingAttachmentReaper { Summary = new(7, 2, 5, 0) };
+        var state = new AppStartupViewModel();
+        var queue = new ConcurrentQueue<Action>();
+        await using var startup = new AppStartupService(manager, state, queue.Enqueue, reaper: reaper);
+        var loading = startup.StartAsync();
+        manager.Release.TrySetResult();
+        await loading.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+
+        Assert.Single(queue)();
+
+        Assert.Equal(1, reaper.Invocations);
+        Assert.True(state.IsReady);
+        Assert.False(state.HasStatus);
+        Assert.False(state.HasWarning);
+    }
+
     [Fact]
     public async Task ClosingDuringStartup_CancelsLoadingWithoutWaitingForTheUiQueueOrDisposingTheManager()
     {

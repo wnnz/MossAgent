@@ -6,11 +6,13 @@ using MossAgent.Domain;
 namespace MossAgent.Infrastructure.Attachments;
 
 public sealed class ConversationAttachmentStore(ITaskArtifactPaths paths, TimeProvider? timeProvider = null,
-    IAttachmentImageDecoder? images = null, IAttachmentDocumentTextExtractor? documents = null) : IConversationAttachmentStore
+    IAttachmentImageDecoder? images = null, IAttachmentDocumentTextExtractor? documents = null,
+    AttachmentSnapshotLeases? leases = null) : IConversationAttachmentStore
 {
     private readonly ConversationAttachmentPaths _paths = new(paths);
     private readonly AttachmentContentCodec _codec = new(images, documents);
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
+    private readonly AttachmentSnapshotLeases? _leases = leases;
 
     public Task<IReadOnlyList<ConversationAttachment>> SaveAsync(Guid taskId, Guid messageId,
         IReadOnlyList<WorkspaceAttachmentContent> attachments, CancellationToken cancellationToken)
@@ -54,6 +56,7 @@ public sealed class ConversationAttachmentStore(ITaskArtifactPaths paths, TimePr
     private async Task WriteAsync(ConversationAttachment attachment, byte[] bytes, CancellationToken cancellationToken)
     {
         var path = _paths.GetPath(attachment);
+        using var lease = _leases?.Acquire(path);
         cancellationToken.ThrowIfCancellationRequested();
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         _paths.Validate(attachment);
@@ -87,6 +90,7 @@ public sealed class ConversationAttachmentStore(ITaskArtifactPaths paths, TimePr
         {
             cancellationToken.ThrowIfCancellationRequested();
             var path = _paths.GetPath(attachment);
+            using var lease = _leases?.Acquire(path);
             cancellationToken.ThrowIfCancellationRequested();
             await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read,
                 81920, FileOptions.Asynchronous | FileOptions.SequentialScan);

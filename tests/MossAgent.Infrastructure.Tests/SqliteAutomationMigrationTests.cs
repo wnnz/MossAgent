@@ -28,7 +28,7 @@ public sealed class SqliteAutomationMigrationTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(32, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(33, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(2, await fixture.CountAsync("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name LIKE 'automation_%';"));
         Assert.Equal(fixture.Task, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)));
     }

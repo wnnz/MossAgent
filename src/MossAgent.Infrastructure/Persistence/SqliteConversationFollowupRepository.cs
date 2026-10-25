@@ -4,14 +4,16 @@ using MossAgent.Application.Attachments;
 using MossAgent.Application.Conversations;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
+using MossAgent.Infrastructure.Attachments;
 
 namespace MossAgent.Infrastructure.Persistence;
 
 public sealed class SqliteConversationFollowupRepository(SqliteConnectionFactory connections,
-    AppDataPaths? paths = null, IAttachmentImageDecoder? images = null, TimeProvider? timeProvider = null)
+    AppDataPaths? paths = null, IAttachmentImageDecoder? images = null, TimeProvider? timeProvider = null,
+    AttachmentSnapshotLeases? leases = null, AttachmentSnapshotReaper? reaper = null)
     : IConversationFollowupRepository
 {
-    private readonly SqliteConversationDraftWriter _drafts = new(paths, images);
+    private readonly SqliteConversationDraftWriter _drafts = new(paths, images, leases: leases);
 
     public bool SupportsDrafts(IConversationDraftRepository drafts) =>
         drafts is SqliteConversationDraftRepository sqlite && sqlite.UsesConnections(connections);
@@ -57,6 +59,7 @@ public sealed class SqliteConversationFollowupRepository(SqliteConnectionFactory
         await SqliteConversationFollowupStorage.ReplaceAsync(connection, transaction, queue.TaskId, queue.Items, payloads, cancellationToken);
         if (drafts.Length > 0 && !await _drafts.WriteAsync(connection, transaction, drafts, cancellationToken)) return false;
         await transaction.CommitAsync(cancellationToken);
+        reaper?.QueuePass(null);
         return true;
     }
 

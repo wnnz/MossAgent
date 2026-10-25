@@ -32,7 +32,7 @@ public sealed class SqliteSourceAccountRepositoryTests
         Assert.Equal(saved.AccessToken, restored.AccessToken);
         Assert.Equal(saved.ApiEndpoint, restored.ApiEndpoint);
         Assert.Equal(1, restored.Revision);
-        Assert.Equal(32, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(33, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(fixture.Project.Id, Assert.Single(await fixture.Repository.GetProjectsAsync(fixture.Token)).Id);
         Assert.Equal(fixture.Task.Id, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)).Id);
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM pragma_foreign_key_check;"));

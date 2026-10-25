@@ -10,27 +10,31 @@ public sealed class AppStartupViewModel : ObservableObject
     private bool _isLoading;
     private bool _hasWarning;
     private bool _worktreeWarning;
+    private bool _storageWarning;
 
     public bool IsLoading => _isLoading;
     public bool IsReady => !_isLoading;
     public bool HasWarning => _hasWarning;
-    public bool HasStatus => IsLoading || _hasWarning || _worktreeWarning;
+    public bool HasStatus => IsLoading || _hasWarning || _worktreeWarning || _storageWarning;
     public string Status => Label(IsLoading ? "ConnectingMcp"
-        : _hasWarning ? "McpStartupWarning" : "WorktreeRecoveryWarning");
+        : _hasWarning ? "McpStartupWarning"
+        : _worktreeWarning ? "WorktreeRecoveryWarning" : "AttachmentReclaimWarning");
     public string OpenSettingsLabel => Label("OpenMcpSettings");
 
     internal void Begin()
     {
         _hasWarning = false;
         _worktreeWarning = false;
+        _storageWarning = false;
         _isLoading = true;
         NotifyStateChanged();
     }
 
-    internal void Complete(bool hasWarning, bool worktreeWarning = false)
+    internal void Complete(bool hasWarning, bool worktreeWarning = false, bool storageWarning = false)
     {
         _hasWarning = hasWarning;
         _worktreeWarning = worktreeWarning;
+        _storageWarning = storageWarning;
         _isLoading = false;
         NotifyStateChanged();
     }
