@@ -2,11 +2,16 @@ using System.Text;
 
 namespace MossAgent.Tools.BuiltIn.Processes;
 
-internal sealed class BoundedTextBuffer(int maximumCharacters)
+public sealed class BoundedTextBuffer(int maximumCharacters)
 {
     private readonly StringBuilder _builder = new();
     private readonly Lock _lock = new();
     private bool _truncated;
+
+    public bool IsTruncated
+    {
+        get { lock (_lock) return _truncated; }
+    }
 
     public void Append(ReadOnlySpan<char> value)
     {

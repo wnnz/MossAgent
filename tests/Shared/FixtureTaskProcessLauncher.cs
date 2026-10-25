@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using MossAgent.Tools.Abstractions.Processes;
 
 namespace MossAgent.Testing;
@@ -15,7 +16,10 @@ internal sealed class FixtureTaskProcessLauncher : ITaskProcessLauncher
             RedirectStandardError = true,
             RedirectStandardInput = request.RedirectStandardInput,
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
+            StandardInputEncoding = request.RedirectStandardInput ? new UTF8Encoding(false) : null
         };
         foreach (var argument in request.Arguments) start.ArgumentList.Add(argument);
         if (request.Environment is not null)

@@ -164,6 +164,7 @@ internal static class AppComposition
             static provider => provider.GetRequiredService<AuthorizedPathResolver>());
         services.AddSingleton<GitCommandRunner>();
         services.AddSingleton<GitIndexPaths>();
+        services.AddSingleton<GitHunkApplier>();
         services.AddSingleton<GitCommitStateReader>();
         services.AddSingleton<GitPushEndpoints>();
         services.AddSingleton<GitPushStateReader>();
@@ -205,6 +206,8 @@ internal static class AppComposition
         services.AddSingleton<IAgentTool, GitDiffTool>();
         services.AddSingleton<IAgentTool, GitStageFileTool>();
         services.AddSingleton<IAgentTool, GitUnstageFileTool>();
+        services.AddSingleton<IAgentTool, GitStageHunksTool>();
+        services.AddSingleton<IAgentTool, GitUnstageHunksTool>();
         services.AddSingleton<IAgentTool, GitCommitPreviewTool>();
         services.AddSingleton<IAgentTool, GitCommitTool>();
         services.AddSingleton<IAgentTool, GitPushPreviewTool>();

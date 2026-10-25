@@ -24,6 +24,20 @@
   <data name="GitStageDescription" xml:space="preserve"><value>仅暂存指定文件及其重命名来源，不提交或推送；仓库过滤器可能执行外部程序。</value></data>
   <data name="GitUnstageDescription" xml:space="preserve"><value>仅取消指定文件及其重命名来源的暂存，不提交或推送；Git 操作本身不改写工作文件，但仓库钩子可能执行外部程序。</value></data>
   <data name="GitIndexPathDenied" xml:space="preserve"><value>只能操作授权仓库内的明确文件；不允许目录、Git 元数据、链接或路径别名。</value></data>
+  <data name="GitStageHunksDescription" xml:space="preserve"><value>仅暂存单个已修改跟踪文件的选定区块，区块按 0 起始编号，与 git.diff 未暂存输出的区块顺序一致；不支持重命名/复制、二进制、新增、删除、仅模式变更或冲突差异，整文件请用 git.stage_file。不提交或推送；仓库过滤器可能执行外部程序。</value></data>
+  <data name="GitUnstageHunksDescription" xml:space="preserve"><value>仅取消单个已暂存文件选定区块的暂存，区块按 0 起始编号，与 git.diff 已暂存输出的区块顺序一致；不改写工作文件，不支持重命名/复制、二进制、新增、删除、仅模式变更或冲突差异，整文件请用 git.unstage_file；仓库钩子可能执行外部程序。</value></data>
+  <data name="GitHunksNone" xml:space="preserve"><value>该文件在此方向上没有可选择的区块。</value></data>
+  <data name="GitHunksOutOfRange" xml:space="preserve"><value>区块编号超出范围：有效编号为 0 到 {0}（共 {1} 个区块）。请先用 git.diff 查看该文件的区块顺序。</value></data>
+  <data name="GitHunksBinary" xml:space="preserve"><value>该文件是二进制差异，不支持按区块操作；请改用 git.stage_file 或 git.unstage_file 整文件处理。</value></data>
+  <data name="GitHunksRenameOrCopy" xml:space="preserve"><value>该文件差异包含重命名或复制，不支持按区块操作；请改用 git.stage_file 或 git.unstage_file 整文件处理。</value></data>
+  <data name="GitHunksNewFile" xml:space="preserve"><value>该文件在此方向上是新增文件，不能按区块选择；请改用 git.stage_file 或 git.unstage_file 整文件处理。</value></data>
+  <data name="GitHunksDeletedFile" xml:space="preserve"><value>该文件在此方向上是删除文件，不能按区块选择；请改用 git.stage_file 或 git.unstage_file 整文件处理。</value></data>
+  <data name="GitHunksModeOnly" xml:space="preserve"><value>该文件仅有文件模式变更，没有可选择的区块；请改用 git.stage_file 或 git.unstage_file 整文件处理。</value></data>
+  <data name="GitHunksConflict" xml:space="preserve"><value>该文件存在未解决的合并冲突，不能按区块操作；请先解决冲突后再处理。</value></data>
+  <data name="GitHunksMalformed" xml:space="preserve"><value>无法解析该文件的差异输出，未执行任何更改。</value></data>
+  <data name="GitHunksTruncated" xml:space="preserve"><value>该文件的差异输出超出大小限制，无法安全选择区块。</value></data>
+  <data name="GitHunksStaged" xml:space="preserve"><value>已暂存 {0}/{1} 个区块。</value></data>
+  <data name="GitHunksUnstaged" xml:space="preserve"><value>已取消暂存 {0}/{1} 个区块。</value></data>
   <data name="GitCommitPreviewDescription" xml:space="preserve"><value>只读检查当前分支、HEAD 与暂存区，返回提交确认令牌和已暂存文件数；不暂存、不提交。</value></data>
   <data name="GitCommitDescription" xml:space="preserve"><value>在重新校验确认令牌后，仅提交当前已暂存更改；保留仓库钩子和签名设置，可能执行外部程序。不自动暂存、修改身份、变基、修订或推送。</value></data>
   <data name="GitCommitPreviewReady" xml:space="preserve"><value>提交预览已就绪，请核对暂存变更后确认。</value></data>
