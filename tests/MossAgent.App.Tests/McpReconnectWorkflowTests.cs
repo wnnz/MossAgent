@@ -12,20 +12,21 @@ public sealed class McpReconnectWorkflowTests
             transport: McpTransportKind.StreamableHttp);
         var original = Assert.Single(fixture.McpSettings.Items);
         var unavailable = original with { Url = new Uri(fixture.HttpServer.Endpoint, "../unavailable/") };
-        await fixture.McpConfigurations.SaveAsync(unavailable, fixture.Token);
+        var unavailableSaved = await fixture.McpConfigurations.SaveAsync(unavailable, fixture.Token);
 
         await fixture.McpSettings.ReloadCommand.ExecuteAsync(null);
 
-        Assert.Equal(unavailable, Assert.Single(fixture.McpSettings.Items));
+        Assert.Equal(unavailableSaved, Assert.Single(fixture.McpSettings.Items));
         Assert.Contains(original.Name, fixture.McpManager.Errors.Keys);
         Assert.DoesNotContain(fixture.Tools.Descriptors, tool => tool.Name == fixture.ToolName);
         Assert.Empty(fixture.Model.Requests);
         Assert.False(fixture.Approval.IsPending);
-        await fixture.McpConfigurations.SaveAsync(original, fixture.Token);
+        var restored = await fixture.McpConfigurations.SaveAsync(
+            original with { Revision = unavailableSaved.Revision }, fixture.Token);
 
         await fixture.McpSettings.ReloadCommand.ExecuteAsync(null);
 
-        Assert.Equal(original, Assert.Single(fixture.McpSettings.Items));
+        Assert.Equal(restored, Assert.Single(fixture.McpSettings.Items));
         Assert.Empty(fixture.McpManager.Errors);
         Assert.Contains(fixture.Tools.Descriptors, tool => tool.Name == fixture.ToolName);
         Assert.Empty(fixture.Model.Requests);
@@ -41,6 +42,6 @@ public sealed class McpReconnectWorkflowTests
         Assert.True(fixture.HttpServer.CustomHeaderObserved);
         Assert.True(fixture.HttpServer.SessionHeaderObserved);
         Assert.Equal(2, fixture.Model.Requests.Count);
-        Assert.Equal(original, Assert.Single(await fixture.McpConfigurations.GetAllAsync(fixture.Token)));
+        Assert.Equal(restored, Assert.Single(await fixture.McpConfigurations.GetAllAsync(fixture.Token)));
     }
 }

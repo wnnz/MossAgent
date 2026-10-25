@@ -187,8 +187,10 @@ public sealed class McpSettingsViewModelTests
                     INSERT INTO mcp_servers(id,name,transport,command,arguments_json,
                         environment_json,headers_json,is_enabled)
                     VALUES($id,'legacy-id',0,'missing-command','[]','{}','{}',1);
+                    CREATE TRIGGER mcp_update_blocker BEFORE UPDATE ON mcp_servers
+                    BEGIN SELECT RAISE(ABORT,'toggle-failure-blocked'); END;
                     """;
-                command.Parameters.AddWithValue("$id", Guid.NewGuid().ToString("N"));
+                command.Parameters.AddWithValue("$id", Guid.NewGuid().ToString());
                 await command.ExecuteNonQueryAsync(cancellationToken);
             }
 

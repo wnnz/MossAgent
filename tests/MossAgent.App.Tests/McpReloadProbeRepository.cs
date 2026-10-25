@@ -21,12 +21,14 @@ internal sealed class McpReloadProbeRepository : IMcpConfigurationRepository
         return Reader?.Invoke(cancellationToken) ?? Task.FromResult(Items);
     }
 
-    public async Task SaveAsync(McpServerProfile profile, CancellationToken cancellationToken)
+    public async Task<McpServerProfile> SaveAsync(McpServerProfile profile, CancellationToken cancellationToken)
     {
         WriteCalls++;
         WriteToken = cancellationToken;
         if (BeforeSave is not null) await BeforeSave(cancellationToken);
-        Items = Items.Where(item => item.Id != profile.Id).Append(profile).ToArray();
+        var stored = profile with { Revision = (Items.FirstOrDefault(item => item.Id == profile.Id)?.Revision ?? 0) + 1 };
+        Items = Items.Where(item => item.Id != profile.Id).Append(stored).ToArray();
+        return stored;
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)

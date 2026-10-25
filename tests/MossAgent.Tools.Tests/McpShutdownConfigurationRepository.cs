@@ -18,6 +18,7 @@ internal sealed class McpShutdownConfigurationRepository : IMcpConfigurationRepo
         return ReadReleased.Task;
     }
 
-    public Task SaveAsync(McpServerProfile profile, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public Task<McpServerProfile> SaveAsync(McpServerProfile profile, CancellationToken cancellationToken) =>
+        throw new NotSupportedException();
     public Task DeleteAsync(Guid id, CancellationToken cancellationToken) => throw new NotSupportedException();
 }

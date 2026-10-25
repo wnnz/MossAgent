@@ -31,6 +31,7 @@ internal sealed class McpHttpFixtureServer : IAsyncDisposable
     public IReadOnlyList<string> ToolNames { get; set; } = ["echo"];
     public IReadOnlySet<string> MutatingToolNames { get; set; } = new HashSet<string>(StringComparer.Ordinal);
     public string ResultPrefix { get; set; } = "echo";
+    public Func<Task>? BeforeCallResponse { get; set; }
     public ConcurrentQueue<string> Calls { get; } = new();
 
     public async ValueTask DisposeAsync()
@@ -119,6 +120,10 @@ internal sealed class McpHttpFixtureServer : IAsyncDisposable
             "tools/call" => CallResult(root.GetProperty("params")),
             _ => new { }
         };
+        if (method == "tools/call" && BeforeCallResponse is { } beforeCallResponse)
+        {
+            await beforeCallResponse();
+        }
         if (method == "initialize")
         {
             context.Response.Headers["Mcp-Session-Id"] = "fixture-session";

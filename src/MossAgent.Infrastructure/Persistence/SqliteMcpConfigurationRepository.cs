@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 
@@ -13,7 +14,7 @@ public sealed class SqliteMcpConfigurationRepository(SqliteConnectionFactory con
         await using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT id,name,transport,command,arguments_json,working_directory,
-                environment_json,url,headers_json,proxy_id,is_enabled
+                environment_json,url,headers_json,proxy_id,is_enabled,revision
             FROM mcp_servers ORDER BY name;
             """;
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -26,31 +27,29 @@ public sealed class SqliteMcpConfigurationRepository(SqliteConnectionFactory con
         return results;
     }
 
-    public async Task SaveAsync(McpServerProfile profile, CancellationToken cancellationToken)
+    public async Task<McpServerProfile> SaveAsync(McpServerProfile profile, CancellationToken cancellationToken)
     {
+        if (profile.Revision < 0)
+            throw new ArgumentException("Invalid MCP server configuration revision.", nameof(profile));
         await using var connection = connections.Create();
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
-        command.CommandText = """
+        command.CommandText = profile.Revision == 0 ? """
             INSERT INTO mcp_servers(id,name,transport,command,arguments_json,working_directory,
-                environment_json,url,headers_json,proxy_id,is_enabled)
-            VALUES($id,$name,$transport,$command,$arguments,$working,$environment,$url,$headers,$proxy,$enabled)
-            ON CONFLICT(id) DO UPDATE SET name=$name,transport=$transport,command=$command,
+                environment_json,url,headers_json,proxy_id,is_enabled,revision)
+            SELECT $id,$name,$transport,$command,$arguments,$working,$environment,$url,$headers,$proxy,$enabled,1
+            WHERE $revision=0
+            ON CONFLICT(id) DO NOTHING;
+            """ : """
+            UPDATE mcp_servers SET name=$name,transport=$transport,command=$command,
                 arguments_json=$arguments,working_directory=$working,environment_json=$environment,
-                url=$url,headers_json=$headers,proxy_id=$proxy,is_enabled=$enabled;
+                url=$url,headers_json=$headers,proxy_id=$proxy,is_enabled=$enabled,revision=revision+1
+            WHERE id=$id AND revision=$revision AND revision<9223372036854775807;
             """;
-        command.Parameters.AddWithValue("$id", profile.Id.ToString());
-        command.Parameters.AddWithValue("$name", profile.Name);
-        command.Parameters.AddWithValue("$transport", (int)profile.Transport);
-        command.Parameters.AddWithValue("$command", (object?)profile.Command ?? DBNull.Value);
-        command.Parameters.AddWithValue("$arguments", profile.ArgumentsJson);
-        command.Parameters.AddWithValue("$working", (object?)profile.WorkingDirectory ?? DBNull.Value);
-        command.Parameters.AddWithValue("$environment", profile.EnvironmentJson);
-        command.Parameters.AddWithValue("$url", (object?)profile.Url?.ToString() ?? DBNull.Value);
-        command.Parameters.AddWithValue("$headers", profile.HeadersJson);
-        command.Parameters.AddWithValue("$proxy", (object?)profile.ProxyId?.ToString() ?? DBNull.Value);
-        command.Parameters.AddWithValue("$enabled", profile.IsEnabled);
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        AddParameters(command, profile);
+        if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
+            throw new McpConfigurationConflictException();
+        return profile with { Revision = checked(profile.Revision + 1) };
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
@@ -63,7 +62,7 @@ public sealed class SqliteMcpConfigurationRepository(SqliteConnectionFactory con
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static McpServerProfile Read(Microsoft.Data.Sqlite.SqliteDataReader reader)
+    private static McpServerProfile Read(SqliteDataReader reader)
     {
         Uri? url = reader.IsDBNull(7) ? null : new Uri(reader.GetString(7));
         Guid? proxyId = reader.IsDBNull(9) ? null : Guid.Parse(reader.GetString(9));
@@ -72,6 +71,22 @@ public sealed class SqliteMcpConfigurationRepository(SqliteConnectionFactory con
             (McpTransportKind)reader.GetInt32(2),
             reader.IsDBNull(3) ? null : reader.GetString(3), reader.GetString(4),
             reader.IsDBNull(5) ? null : reader.GetString(5), reader.GetString(6),
-            url, reader.GetString(8), proxyId, reader.GetBoolean(10));
+            url, reader.GetString(8), proxyId, reader.GetBoolean(10), reader.GetInt64(11));
+    }
+
+    private static void AddParameters(SqliteCommand command, McpServerProfile profile)
+    {
+        command.Parameters.AddWithValue("$id", profile.Id.ToString());
+        command.Parameters.AddWithValue("$name", profile.Name);
+        command.Parameters.AddWithValue("$transport", (int)profile.Transport);
+        command.Parameters.AddWithValue("$command", (object?)profile.Command ?? DBNull.Value);
+        command.Parameters.AddWithValue("$arguments", profile.ArgumentsJson);
+        command.Parameters.AddWithValue("$working", (object?)profile.WorkingDirectory ?? DBNull.Value);
+        command.Parameters.AddWithValue("$environment", profile.EnvironmentJson);
+        command.Parameters.AddWithValue("$url", (object?)profile.Url?.ToString() ?? DBNull.Value);
+        command.Parameters.AddWithValue("$headers", profile.HeadersJson);
+        command.Parameters.AddWithValue("$proxy", (object?)profile.ProxyId?.ToString() ?? DBNull.Value);
+        command.Parameters.AddWithValue("$enabled", profile.IsEnabled);
+        command.Parameters.AddWithValue("$revision", profile.Revision);
     }
 }

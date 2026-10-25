@@ -174,6 +174,7 @@
   <data name="McpTargetUnavailable" xml:space="preserve"><value>MCP 服务已不存在，请重新连接后重新选择。</value></data>
   <data name="McpDuplicateName" xml:space="preserve"><value>已有同名 MCP 服务，请使用其他名称。</value></data>
   <data name="McpSaveFailed" xml:space="preserve"><value>无法保存 MCP 服务，请检查名称是否重复、数据目录是否可写。</value></data>
+  <data name="McpSaveConflict" xml:space="preserve"><value>MCP 配置已被其他操作修改，请刷新后重试。</value></data>
   <data name="McpToggleFailed" xml:space="preserve"><value>无法切换 MCP 服务状态，请检查数据目录并重试。</value></data>
   <data name="McpDeleteFailed" xml:space="preserve"><value>无法删除 MCP 服务，请检查数据目录并重试。</value></data>
   <data name="McpSavedRefreshFailed" xml:space="preserve"><value>已保存 MCP 服务，但无法刷新连接状态，请重新连接。</value></data>

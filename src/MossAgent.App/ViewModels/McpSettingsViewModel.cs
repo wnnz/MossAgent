@@ -35,6 +35,7 @@ public sealed class McpSettingsViewModel : SettingsEditorViewModel, IDisposable
     private bool _disposed;
     private Guid _editorId = Guid.NewGuid();
     private bool _editingExisting;
+    private long _profileRevision;
 
     public McpSettingsViewModel(
         IMcpConfigurationRepository configurations,
@@ -175,6 +176,7 @@ public sealed class McpSettingsViewModel : SettingsEditorViewModel, IDisposable
             return;
         }
         var editing = _editingExisting;
+        profile = profile with { Revision = editing ? _profileRevision : 0 };
         var existing = await _configurations.GetAllAsync(token);
         token.ThrowIfCancellationRequested();
         if (_disposed) return;
@@ -189,7 +191,8 @@ public sealed class McpSettingsViewModel : SettingsEditorViewModel, IDisposable
             ReportStatus(revision, "McpDuplicateName");
             return;
         }
-        await _configurations.SaveAsync(profile, token);
+        var saved = await _configurations.SaveAsync(profile, token);
+        _profileRevision = saved.Revision;
         token.ThrowIfCancellationRequested();
         if (_disposed || !await TryRefreshAsync(profile.Id, revision, token, "McpSavedRefreshFailed")) return;
         if (!OwnsEditor(revision))
@@ -331,6 +334,7 @@ public sealed class McpSettingsViewModel : SettingsEditorViewModel, IDisposable
         using var operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
         try { await mutation(revision, operation.Token); }
         catch (OperationCanceledException) when (operation.IsCancellationRequested) { ReportStatus(revision, "McpOperationCancelled", false); }
+        catch (McpConfigurationConflictException) { ReportStatus(revision, "McpSaveConflict"); }
         catch (Exception) { ReportStatus(revision, failureKey); }
     }
 
@@ -411,6 +415,7 @@ public sealed class McpSettingsViewModel : SettingsEditorViewModel, IDisposable
 
         _editorId = profile.Id;
         _editingExisting = true;
+        _profileRevision = profile.Revision;
         Name = profile.Name;
         Transport = profile.Transport;
         Command = profile.Command ?? string.Empty;
@@ -429,6 +434,7 @@ public sealed class McpSettingsViewModel : SettingsEditorViewModel, IDisposable
         SelectedItem = null;
         _editorId = Guid.NewGuid();
         _editingExisting = false;
+        _profileRevision = 0;
         InvalidateEditor();
         Name = string.Empty;
         Transport = McpTransportKind.Stdio;

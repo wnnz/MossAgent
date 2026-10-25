@@ -54,6 +54,7 @@ public sealed class SqliteDatabaseInitializer(
         await ApplyVersionAsync(connection, 33, AttachmentReclaimDatabaseSchema.VersionThirtyThree, cancellationToken);
         await ApplyVersionAsync(connection, 34, AutomationSnapshotDatabaseSchema.VersionThirtyFour, cancellationToken);
         await ApplyVersionAsync(connection, 35, ModelCapabilityFailureDatabaseSchema.VersionThirtyFive, cancellationToken);
+        await ApplyVersionAsync(connection, 36, McpServerRevisionDatabaseSchema.VersionThirtySix, cancellationToken);
         await SqliteInterruptedWorkRecovery.RecoverAsync(connection, cancellationToken);
     }
 

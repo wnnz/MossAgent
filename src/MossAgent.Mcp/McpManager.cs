@@ -12,13 +12,15 @@ public sealed class McpManager(
     IMutableToolCatalog tools,
     ITaskProcessLauncher processes,
     TimeSpan? initializationTimeout = null,
-    TimeProvider? timeProvider = null) : IMcpManager
+    TimeProvider? timeProvider = null,
+    TimeSpan? drainTimeout = null) : IMcpManager
 {
-    private readonly ConcurrentDictionary<Guid, IMcpClient> _clients = [];
+    private readonly ConcurrentDictionary<Guid, McpClientHandle> _clients = [];
     private readonly Dictionary<string, string> _errors = [];
     private readonly SemaphoreSlim _reloadGate = new(1, 1);
     private readonly McpReloadLifetime _lifetime = new();
     private readonly TimeSpan _initializationTimeout = initializationTimeout ?? TimeSpan.FromSeconds(15);
+    private readonly TimeSpan _drainTimeout = drainTimeout ?? TimeSpan.FromSeconds(5);
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
     public IReadOnlyDictionary<string, string> Errors
@@ -42,8 +44,10 @@ public sealed class McpManager(
             try
             {
                 linked.Token.ThrowIfCancellationRequested();
-                await DisposeClientsAsync().ConfigureAwait(false);
+                // Tools go unavailable before clients drain so new lookups fail
+                // fast and in-flight calls are never retargeted to new clients.
                 tools.RemoveByPrefix("mcp.");
+                await DisposeClientsAsync().ConfigureAwait(false);
                 lock (_errors) { _errors.Clear(); }
 
                 var profiles = await configurations.GetAllAsync(linked.Token).ConfigureAwait(false);
@@ -64,10 +68,13 @@ public sealed class McpManager(
 
     private async Task CleanupAsync()
     {
-        try { await DisposeClientsAsync().ConfigureAwait(false); }
-        finally
+        try
         {
             tools.RemoveByPrefix("mcp.");
+            await DisposeClientsAsync().ConfigureAwait(false);
+        }
+        finally
+        {
             _reloadGate.Dispose();
         }
     }
@@ -82,13 +89,14 @@ public sealed class McpManager(
         try
         {
             client = await CreateClientAsync(profile, timeout.Token).ConfigureAwait(false);
-            await client.InitializeAsync(timeout.Token).ConfigureAwait(false);
-            var definitions = await client.ListToolsAsync(timeout.Token).ConfigureAwait(false);
-            var registrations = McpToolRegistration.Create(profile, definitions, client, timeout.Token);
+            var handle = new McpClientHandle(client);
+            await handle.InitializeAsync(timeout.Token).ConfigureAwait(false);
+            var definitions = await handle.ListToolsAsync(timeout.Token).ConfigureAwait(false);
+            var registrations = McpToolRegistration.Create(profile, definitions, handle, timeout.Token);
             cancellationToken.ThrowIfCancellationRequested();
             foreach (var registration in registrations) tools.RegisterOrReplace(registration);
 
-            _clients[profile.Id] = client;
+            _clients[profile.Id] = handle;
             client = null;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -149,12 +157,19 @@ public sealed class McpManager(
 
     private async Task DisposeClientsAsync()
     {
-        foreach (var client in _clients.Values)
-        {
-            await client.DisposeAsync().ConfigureAwait(false);
-        }
-
+        var handles = _clients.Values.ToArray();
         _clients.Clear();
+        foreach (var handle in handles)
+        {
+            try
+            {
+                await handle.DrainAsync(_drainTimeout).ConfigureAwait(false);
+            }
+            finally
+            {
+                await handle.DisposeAsync().ConfigureAwait(false);
+            }
+        }
     }
 
 }

@@ -29,15 +29,15 @@ public sealed class McpStdioManagerLifecycleTests
             await using var manager = new McpManager(configurations, new McpHttpClientFactory(proxies), tools,
                 new WindowsTaskProcessLauncher());
             var profile = CreateProfile(root);
-            await configurations.SaveAsync(profile, cancellationToken);
+            var saved = await configurations.SaveAsync(profile, cancellationToken);
             await manager.ReloadAsync(cancellationToken);
             Assert.Contains(tools.Descriptors, tool => tool.Name.StartsWith($"mcp.fixture.{profile.Id:N}.echo__", StringComparison.Ordinal));
 
-            await configurations.SaveAsync(profile with { IsEnabled = false }, cancellationToken);
+            saved = await configurations.SaveAsync(saved with { IsEnabled = false }, cancellationToken);
             await manager.ReloadAsync(cancellationToken);
             Assert.DoesNotContain(tools.Descriptors, IsMcpTool);
 
-            await configurations.SaveAsync(profile, cancellationToken);
+            saved = await configurations.SaveAsync(saved with { IsEnabled = true }, cancellationToken);
             await manager.ReloadAsync(cancellationToken);
             await configurations.DeleteAsync(profile.Id, cancellationToken);
             await manager.ReloadAsync(cancellationToken);

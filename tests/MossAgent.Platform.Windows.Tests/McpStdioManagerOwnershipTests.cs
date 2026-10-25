@@ -18,7 +18,10 @@ public sealed class McpStdioManagerOwnershipTests
         Assert.All(processes, process => Assert.False(process.HasExited));
         Assert.Single(fixture.Tools.Descriptors);
         if (change == "disable")
-            await fixture.Configurations.SaveAsync(fixture.Server.Profile with { IsEnabled = false }, token);
+        {
+            var persisted = Assert.Single(await fixture.Configurations.GetAllAsync(token));
+            await fixture.Configurations.SaveAsync(persisted with { IsEnabled = false }, token);
+        }
         else if (change == "delete")
             await fixture.Configurations.DeleteAsync(fixture.Server.Profile.Id, token);
 
