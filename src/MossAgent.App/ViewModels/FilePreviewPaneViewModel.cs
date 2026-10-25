@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -8,6 +9,7 @@ using MossAgent.Application.Artifacts;
 using MossAgent.Application.Attachments;
 using MossAgent.App.Resources;
 using MossAgent.App.Services;
+using MossAgent.Domain;
 using MossAgent.Tools.Abstractions;
 
 namespace MossAgent.App.ViewModels;
@@ -18,6 +20,7 @@ public sealed class FilePreviewPaneViewModel : ObservableObject, IDisposable
     private readonly IToolExecutor _tools;
     private readonly ITaskArtifactContentReader _reader;
     private readonly IAttachmentDocumentTextExtractor? _documents;
+    private readonly IConversationAttachmentStore? _attachments;
     private ToolExecutionContext? _context;
     private FilePreviewTabViewModel? _active;
     private bool _isOpen;
@@ -28,15 +31,21 @@ public sealed class FilePreviewPaneViewModel : ObservableObject, IDisposable
     private int _revealGeneration;
 
     public FilePreviewPaneViewModel(IToolExecutor tools, ITaskArtifactContentReader reader,
-        IFilePickerService? filePicker = null, IAttachmentDocumentTextExtractor? documents = null)
+        IFilePickerService? filePicker = null, IAttachmentDocumentTextExtractor? documents = null,
+        IConversationAttachmentStore? attachments = null)
     {
         _tools = tools;
         _reader = reader;
         _documents = documents;
+        _attachments = attachments;
         OpenCommand = new AsyncRelayCommand<string>((path, token) => OpenAsync(path, token), path => HasTask && !string.IsNullOrWhiteSpace(path),
             AsyncRelayCommandOptions.AllowConcurrentExecutions);
         OpenArtifactCommand = new AsyncRelayCommand<ToolArtifactRecord>((artifact, token) => OpenArtifactAsync(artifact, token),
             artifact => HasTask && artifact?.TaskId == _context?.TaskId);
+        OpenAttachmentCommand = new AsyncRelayCommand<ChatMessageAttachmentViewModel>(
+            (item, token) => OpenAttachmentAsync(item, token),
+            item => HasTask && (item?.Attachment is not null || item?.Thumbnail is not null),
+            AsyncRelayCommandOptions.AllowConcurrentExecutions);
         SelectCommand = new RelayCommand<FilePreviewTabViewModel>(Select, tab => tab is not null && Tabs.Contains(tab));
         CloseCommand = new RelayCommand<FilePreviewTabViewModel>(Close, tab => tab is not null && Tabs.Contains(tab));
         HideCommand = new RelayCommand(Hide);
@@ -60,6 +69,7 @@ public sealed class FilePreviewPaneViewModel : ObservableObject, IDisposable
     public bool HasNotice => !string.IsNullOrEmpty(Notice);
     public IAsyncRelayCommand<string> OpenCommand { get; }
     public IAsyncRelayCommand<ToolArtifactRecord> OpenArtifactCommand { get; }
+    public IAsyncRelayCommand<ChatMessageAttachmentViewModel> OpenAttachmentCommand { get; }
     public IRelayCommand<FilePreviewTabViewModel> SelectCommand { get; }
     public IRelayCommand<FilePreviewTabViewModel> CloseCommand { get; }
     public IAsyncRelayCommand RefreshCommand { get; }
@@ -123,18 +133,37 @@ public sealed class FilePreviewPaneViewModel : ObservableObject, IDisposable
         if (tab.Artifact is null && !tab.IsLoading) await LoadAsync(tab, token);
     }
 
-    private FilePreviewTabViewModel? GetOrAdd(string path, string name, ToolFileChange? change = null)
+    public async Task OpenAttachmentAsync(ChatMessageAttachmentViewModel? item, CancellationToken token = default)
+    {
+        if (!HasTask || item is null || (item.Attachment is null && item.Thumbnail is null)) return;
+        var identity = item.Attachment?.Id.ToString("N") ?? Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(item.DisplayPath + "\n" + item.KindLabel + "\n" + item.SizeLabel)));
+        var tab = GetOrAdd("attachment:" + identity, item.DisplayPath, attachment: item);
+        if (tab is null) return;
+        tab.IsStoredArtifact = true;
+        Select(tab);
+        await LoadAsync(tab, token);
+    }
+
+    private FilePreviewTabViewModel? GetOrAdd(string path, string name, ToolFileChange? change = null,
+        ChatMessageAttachmentViewModel? attachment = null)
     {
         Notice = string.Empty;
         var existing = Tabs.FirstOrDefault(tab => tab.Path.Equals(path, StringComparison.OrdinalIgnoreCase) && tab.Change == change);
         if (existing is not null) return existing;
         if (Tabs.Count >= MaximumTabs) { Notice = InspectorText.Get("PreviewTabLimit"); return null; }
-        var relative = System.IO.Path.GetRelativePath(_context!.WorkingDirectory, path);
-        var outsideWorkingDirectory = System.IO.Path.IsPathRooted(relative) || relative == ".."
-            || relative.StartsWith(".." + System.IO.Path.DirectorySeparatorChar, StringComparison.Ordinal);
-        var displayPath = outsideWorkingDirectory ? name :
-            System.IO.Path.GetFileName(System.IO.Path.TrimEndingDirectorySeparator(_context.WorkingDirectory)) + " > " + relative.Replace(System.IO.Path.DirectorySeparatorChar.ToString(), " > ", StringComparison.Ordinal);
-        var created = new FilePreviewTabViewModel(path, name, displayPath, outsideWorkingDirectory ? null : relative) { Change = change };
+        string? relative = null;
+        if (attachment is null)
+        {
+            var candidate = System.IO.Path.GetRelativePath(_context!.WorkingDirectory, path);
+            if (!System.IO.Path.IsPathRooted(candidate) && candidate != ".."
+                && !candidate.StartsWith(".." + System.IO.Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                relative = candidate;
+        }
+        var displayPath = relative is null ? name :
+            System.IO.Path.GetFileName(System.IO.Path.TrimEndingDirectorySeparator(_context!.WorkingDirectory)) + " > " + relative.Replace(System.IO.Path.DirectorySeparatorChar.ToString(), " > ", StringComparison.Ordinal);
+        var created = new FilePreviewTabViewModel(path, name, displayPath, relative)
+        { Change = change, Attachment = attachment?.Attachment, AttachmentPreview = attachment?.Thumbnail };
         Tabs.Add(created);
         NotifyState();
         return created;
@@ -185,42 +214,17 @@ public sealed class FilePreviewPaneViewModel : ObservableObject, IDisposable
             && ReferenceEquals(tab.Loading, cancellation) && !cancellation.IsCancellationRequested;
         try
         {
-            var artifact = tab.Artifact;
-            if (!tab.IsStoredArtifact)
-            {
-                var request = tab.Change is { } change
-                    ? new ToolRequest(Guid.NewGuid().ToString("N"), "filesystem.review_change", JsonSerializer.SerializeToElement(new { change }))
-                    : new ToolRequest(Guid.NewGuid().ToString("N"), "filesystem.preview_file", JsonSerializer.SerializeToElement(new { path = tab.Path }));
-                var result = await _tools.ExecuteAsync(request, context with { Timeout = TimeSpan.FromSeconds(30), ReviewedChange = tab.Change }, cancellation.Token);
-                if (!IsCurrent()) return;
-                if (!result.IsSuccess) { tab.Status = tab.Change is null ? InspectorText.Get("PreviewFailed") : result.Summary; return; }
-                artifact = result.Artifacts?.FirstOrDefault();
-            }
-            if (artifact is null) throw new InvalidDataException();
-            var bytes = await _reader.ReadAsync(context.TaskId, artifact, cancellation.Token);
-            if (!IsCurrent()) return;
-            tab.Artifact = artifact;
-            if (artifact.MediaType == "application/pdf")
-            {
-                var extraction = _documents is null
-                    ? throw new InvalidDataException()
-                    : await _documents.ExtractAsync(bytes, cancellation.Token);
-                if (!IsCurrent()) return;
-                tab.Text = extraction.Text;
-                tab.SetDocumentStats(extraction.PageCount, extraction.TotalPages, extraction.Truncated);
-            }
-            else if (artifact.MediaType.StartsWith("image/", StringComparison.Ordinal))
-            {
-                using var stream = new MemoryStream(bytes, writable: false);
-                tab.Image = new Bitmap(stream);
-            }
-            else tab.Text = new UTF8Encoding(false, true).GetString(bytes).TrimStart('\uFEFF');
-            tab.IsReady = true;
-            tab.Status = tab.IsDiff ? tab.Text.Length == 0 ? InspectorText.Get("SnapshotNoTextDiff")
-                : InspectorText.Format("SnapshotPreviewSize", bytes.Length / 1024d) : InspectorText.Format("PreviewSize", bytes.Length / 1024d);
+            if (tab.Attachment is { } attachment)
+                await LoadAttachmentAsync(tab, context, attachment, IsCurrent, cancellation.Token);
+            else if (tab.AttachmentPreview is { } preview)
+                await LoadAttachmentPreviewAsync(tab, preview, IsCurrent, cancellation.Token);
+            else
+                await LoadFileAsync(tab, context, IsCurrent, cancellation.Token);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         { if (!_disposed && generation == _generation && Tabs.Contains(tab)) tab.Status = InspectorText.Get("PreviewCancelled"); }
+        catch (ConversationAttachmentUnavailableException)
+        { if (IsCurrent()) tab.Status = InspectorText.Get("PreviewAttachmentUnavailable"); }
         catch (AttachmentDocumentValidationException document)
         {
             if (IsCurrent()) tab.Status = InspectorText.Get(document.Failure == AttachmentDocumentFailure.Encrypted
@@ -238,6 +242,91 @@ public sealed class FilePreviewPaneViewModel : ObservableObject, IDisposable
                 if (generation == _generation) NotifyState();
             }
         }
+    }
+
+    private async Task LoadFileAsync(FilePreviewTabViewModel tab, ToolExecutionContext context,
+        Func<bool> isCurrent, CancellationToken token)
+    {
+        var artifact = tab.Artifact;
+        if (!tab.IsStoredArtifact)
+        {
+            var request = tab.Change is { } change
+                ? new ToolRequest(Guid.NewGuid().ToString("N"), "filesystem.review_change", JsonSerializer.SerializeToElement(new { change }))
+                : new ToolRequest(Guid.NewGuid().ToString("N"), "filesystem.preview_file", JsonSerializer.SerializeToElement(new { path = tab.Path }));
+            var result = await _tools.ExecuteAsync(request, context with { Timeout = TimeSpan.FromSeconds(30), ReviewedChange = tab.Change }, token);
+            if (!isCurrent()) return;
+            if (!result.IsSuccess) { tab.Status = tab.Change is null ? InspectorText.Get("PreviewFailed") : result.Summary; return; }
+            artifact = result.Artifacts?.FirstOrDefault();
+        }
+        if (artifact is null) throw new InvalidDataException();
+        var bytes = await _reader.ReadAsync(context.TaskId, artifact, token);
+        if (!isCurrent()) return;
+        tab.Artifact = artifact;
+        if (artifact.MediaType == "application/pdf")
+        {
+            var extraction = _documents is null
+                ? throw new InvalidDataException()
+                : await _documents.ExtractAsync(bytes, token);
+            if (!isCurrent()) return;
+            tab.Text = extraction.Text;
+            tab.SetDocumentStats(extraction.PageCount, extraction.TotalPages, extraction.Truncated);
+        }
+        else if (artifact.MediaType.StartsWith("image/", StringComparison.Ordinal))
+        {
+            using var stream = new MemoryStream(bytes, writable: false);
+            tab.Image = new Bitmap(stream);
+        }
+        else tab.Text = new UTF8Encoding(false, true).GetString(bytes).TrimStart('\uFEFF');
+        tab.IsReady = true;
+        tab.Status = tab.IsDiff ? tab.Text.Length == 0 ? InspectorText.Get("SnapshotNoTextDiff")
+            : InspectorText.Format("SnapshotPreviewSize", bytes.Length / 1024d) : InspectorText.Format("PreviewSize", bytes.Length / 1024d);
+    }
+
+    private async Task LoadAttachmentAsync(FilePreviewTabViewModel tab, ToolExecutionContext context,
+        ConversationAttachment attachment, Func<bool> isCurrent, CancellationToken token)
+    {
+        var store = _attachments ?? throw new InvalidOperationException("Conversation attachment storage is unavailable.");
+        WorkspaceAttachmentContent content;
+        try
+        {
+            ConversationAttachmentValidation.Validate(context.TaskId, attachment.MessageId, [attachment]);
+            var contents = await store.ReadAsync(context.TaskId, attachment.MessageId, [attachment], token);
+            content = contents.Count == 1 ? contents[0] : throw new InvalidDataException();
+        }
+        catch (Exception exception) when (!token.IsCancellationRequested
+            && exception is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException
+                or OperationCanceledException or TimeoutException or DecoderFallbackException)
+        {
+            throw new ConversationAttachmentUnavailableException();
+        }
+        if (!isCurrent()) return;
+        tab.Artifact = new ToolArtifact(content.DisplayPath, tab.Path, content.MediaType, content.ByteCount, attachment.Sha256);
+        if (content.Image is { } image)
+        {
+            using var stream = new MemoryStream(Convert.FromBase64String(image.Base64Data), writable: false);
+            tab.Image = new Bitmap(stream);
+        }
+        else if (content.Document is { } document)
+        {
+            tab.Text = content.Content;
+            tab.SetDocumentStats(document.PageCount, document.TotalPages, document.Truncated);
+        }
+        else tab.Text = content.Content;
+        tab.IsReady = true;
+        tab.Status = InspectorText.Format("PreviewSize", content.ByteCount / 1024d);
+    }
+
+    private async Task LoadAttachmentPreviewAsync(FilePreviewTabViewModel tab, AttachmentThumbnailSource preview,
+        Func<bool> isCurrent, CancellationToken token)
+    {
+        var image = await preview.LoadAsync(token);
+        if (!isCurrent()) return;
+        var bytes = Convert.FromBase64String(image.Base64Data);
+        using var stream = new MemoryStream(bytes, writable: false);
+        tab.Artifact = new ToolArtifact(tab.Name, tab.Path, image.MediaType, image.ByteCount, string.Empty);
+        tab.Image = new Bitmap(stream);
+        tab.IsReady = true;
+        tab.Status = InspectorText.Format("PreviewSize", image.ByteCount / 1024d);
     }
 
     private async Task RevealAsync(CancellationToken commandToken)
@@ -278,6 +367,7 @@ public sealed class FilePreviewPaneViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(ContextVersion));
         OpenCommand.NotifyCanExecuteChanged();
         OpenArtifactCommand.NotifyCanExecuteChanged();
+        OpenAttachmentCommand.NotifyCanExecuteChanged();
         SelectCommand.NotifyCanExecuteChanged();
         CloseCommand.NotifyCanExecuteChanged();
         RefreshCommand.NotifyCanExecuteChanged();

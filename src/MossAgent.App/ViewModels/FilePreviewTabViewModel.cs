@@ -2,6 +2,8 @@ using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.App.Resources;
+using MossAgent.App.Services;
+using MossAgent.Domain;
 using MossAgent.Tools.Abstractions;
 
 namespace MossAgent.App.ViewModels;
@@ -90,6 +92,8 @@ public sealed class FilePreviewTabViewModel : ObservableObject, IDisposable
     internal CancellationTokenSource? Loading { get; set; }
     public bool IsDiff => Change is not null || Artifact?.MediaType == "text/x-diff";
     internal ToolFileChange? Change { get; init; }
+    internal ConversationAttachment? Attachment { get; init; }
+    internal AttachmentThumbnailSource? AttachmentPreview { get; init; }
     internal ToolArtifact? Artifact
     {
         get => _artifact;

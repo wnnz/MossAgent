@@ -362,8 +362,9 @@ Windows 应用清单声明兼容系统和 DPI，
 用户可配置的颜色通过 `AppColorSwatch.ColorHex` 等语义属性传递，
 而不是让页面直接改变组件的 `Background`。
 
-附件统一使用 `AppAttachmentChip`，通过 `DisplayPath`、`SizeLabel` 和 `RemoveCommand`
-传递数据。输入区传移除命令，消息中的附件不传命令，组件自动隐藏移除按钮；
+附件统一使用 `AppAttachmentChip`，通过 `DisplayPath`、`SizeLabel`、`RemoveCommand`
+和可选的 `OpenCommand`/`OpenCommandParameter` 传递数据。输入区传移除命令，
+消息中的附件不传移除命令、改传打开命令，组件分别自动隐藏对应操作；
 命令不可执行时保留禁用状态，不把它当作可用操作。图标、双行文字、截断宽度、
 圆角、内边距、四周浅色阴影和移除点击区域统一在 `AttachmentChipVariants.axaml`
 维护。业务页不能替换 Content、内边距或尺寸，也不要手动拼装另一套附件卡片。

@@ -10,6 +10,8 @@ public static class AttachmentChipText
 
     public static string RemoveLabel => Get("AttachmentRemoveLabel");
 
+    public static string OpenLabel => Get("AttachmentOpenLabel");
+
     public static string AccessibleName(string path, string size) => string.IsNullOrWhiteSpace(size)
         ? path
         : string.Format(CultureInfo.CurrentUICulture, Get("AttachmentAccessibleNameFormat"), path, size);

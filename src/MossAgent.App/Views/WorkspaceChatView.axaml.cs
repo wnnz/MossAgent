@@ -22,6 +22,7 @@ public partial class WorkspaceChatView : AppUserControl
     public WorkspaceChatView()
     {
         CopyCodeCommand = new AsyncRelayCommand<string>(CopyCodeAsync);
+        OpenAttachmentCommand = new AsyncRelayCommand<ChatMessageAttachmentViewModel>(OpenAttachmentAsync);
         InitializeComponent();
         Loaded += HandleLoaded;
         Unloaded += HandleUnloaded;
@@ -29,6 +30,7 @@ public partial class WorkspaceChatView : AppUserControl
     }
 
     public ICommand CopyCodeCommand { get; }
+    public ICommand OpenAttachmentCommand { get; }
 
     private void HandleLoaded(object? sender, Avalonia.Interactivity.RoutedEventArgs args)
     {
@@ -103,6 +105,9 @@ public partial class WorkspaceChatView : AppUserControl
     {
         if (code is not null) await CopyTextAsync(code);
     }
+
+    private Task OpenAttachmentAsync(ChatMessageAttachmentViewModel? item, CancellationToken token) =>
+        (DataContext as WorkspaceViewModel)?.FilePreview.OpenAttachmentAsync(item, token) ?? Task.CompletedTask;
 
     private async Task CopyTextAsync(string text)
     {

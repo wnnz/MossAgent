@@ -107,6 +107,7 @@
   <data name="TerminalCancellationReturned" xml:space="preserve"><value>取消请求已结束；操作可能已生效，请确认终端状态。</value></data>
   <data name="TerminalContextChanged" xml:space="preserve"><value>先前上下文的终端操作已返回，可以重新确认终端状态。</value></data>
   <data name="PreviewFailed" xml:space="preserve"><value>无法预览此文件。请检查权限、文件是否仍存在或是否超过预览限制。</value></data>
+  <data name="PreviewAttachmentUnavailable" xml:space="preserve"><value>附件快照不可用，可能已被清理或损坏。</value></data>
   <data name="PreviewCancelled" xml:space="preserve"><value>预览已取消或超时，可以刷新重试。</value></data>
   <data name="PreviewTabLimit" xml:space="preserve"><value>最多打开 8 个文件，请先关闭一个标签页。</value></data>
   <data name="PreviewSize" xml:space="preserve"><value>{0:0.#} KiB · 只读预览</value></data>

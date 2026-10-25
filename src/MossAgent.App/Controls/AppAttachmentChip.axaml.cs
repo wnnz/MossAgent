@@ -24,6 +24,12 @@ public sealed partial class AppAttachmentChip : AppUserControl
         AvaloniaProperty.Register<AppAttachmentChip, AttachmentThumbnailSource?>(nameof(Thumbnail));
     public static readonly DirectProperty<AppAttachmentChip, bool> HasThumbnailRequestProperty =
         AvaloniaProperty.RegisterDirect<AppAttachmentChip, bool>(nameof(HasThumbnailRequest), chip => chip.HasThumbnailRequest);
+    public static readonly StyledProperty<ICommand?> OpenCommandProperty =
+        AvaloniaProperty.Register<AppAttachmentChip, ICommand?>(nameof(OpenCommand));
+    public static readonly StyledProperty<object?> OpenCommandParameterProperty =
+        AvaloniaProperty.Register<AppAttachmentChip, object?>(nameof(OpenCommandParameter));
+    public static readonly DirectProperty<AppAttachmentChip, bool> HasOpenActionProperty =
+        AvaloniaProperty.RegisterDirect<AppAttachmentChip, bool>(nameof(HasOpenAction), chip => chip.HasOpenAction);
 
     public AppAttachmentChip() => InitializeComponent();
 
@@ -54,6 +60,19 @@ public sealed partial class AppAttachmentChip : AppUserControl
     public bool HasRemoveAction => RemoveCommand is not null;
     public bool HasKindLabel => !string.IsNullOrEmpty(KindLabel);
     public bool HasThumbnailRequest => Thumbnail is not null;
+    public bool HasOpenAction => OpenCommand is not null;
+
+    public ICommand? OpenCommand
+    {
+        get => GetValue(OpenCommandProperty);
+        set => SetValue(OpenCommandProperty, value);
+    }
+
+    public object? OpenCommandParameter
+    {
+        get => GetValue(OpenCommandParameterProperty);
+        set => SetValue(OpenCommandParameterProperty, value);
+    }
 
     public AttachmentThumbnailSource? Thumbnail
     {
@@ -73,5 +92,7 @@ public sealed partial class AppAttachmentChip : AppUserControl
                 !string.IsNullOrEmpty(change.NewValue as string));
         if (change.Property == ThumbnailProperty)
             RaisePropertyChanged(HasThumbnailRequestProperty, change.OldValue is not null, change.NewValue is not null);
+        if (change.Property == OpenCommandProperty)
+            RaisePropertyChanged(HasOpenActionProperty, change.OldValue is not null, change.NewValue is not null);
     }
 }

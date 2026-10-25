@@ -27,6 +27,11 @@
         <ui:AppText x:Name="SizeText" Classes="subtle attachment-size"
                      Text="{Binding SizeLabel, ElementName=Chip}" />
       </StackPanel>
+      <ui:AppButton x:Name="OpenButton" Grid.ColumnSpan="3" Classes="ghost attachment-open"
+                    Command="{Binding OpenCommand, ElementName=Chip}"
+                    CommandParameter="{Binding OpenCommandParameter, ElementName=Chip}"
+                    IsVisible="{Binding HasOpenAction, ElementName=Chip}"
+                    AutomationProperties.Name="{x:Static text:AttachmentChipText.OpenLabel}" />
       <ui:AppIconButton x:Name="RemoveButton" Grid.Column="2" Classes="attachment-remove"
                         Label="{x:Static text:AttachmentChipText.RemoveLabel}"
                         IconData="{DynamicResource UiIconClose}"
