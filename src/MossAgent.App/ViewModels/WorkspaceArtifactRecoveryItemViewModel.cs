@@ -23,10 +23,15 @@ public sealed class WorkspaceArtifactRecoveryItemViewModel : ObservableObject
         "completed" => "ArtifactRecoveryStageCompleted",
         "cleanup_unknown" => "ArtifactRecoveryStageCleanupUnknown",
         "unverified" => "ArtifactRecoveryStageUnverified",
+        "sdk_temp" => "ArtifactRecoveryStageSdkTemp",
         _ => "ArtifactRecoveryStageUnknown",
     });
-    public string KindLabel => WorkspaceText.Get(Record.Kind == ArtifactSessionKind.DiffInput
-        ? "ArtifactRecoveryKindDiffInput" : "ArtifactRecoveryKindArtifact");
+    public string KindLabel => WorkspaceText.Get(Record.Kind switch
+    {
+        ArtifactSessionKind.DiffInput => "ArtifactRecoveryKindDiffInput",
+        ArtifactSessionKind.ExternalSdkTemp => "ArtifactRecoveryKindSdkTemp",
+        _ => "ArtifactRecoveryKindArtifact",
+    });
     public string Summary => $"{StageLabel} · {KindLabel}";
     public string Detail => string.Format(WorkspaceText.Get("ArtifactRecoveryDetail"),
         TaskId.ToString("N")[..8], Record.CreatedAt.ToLocalTime().ToString("g"));

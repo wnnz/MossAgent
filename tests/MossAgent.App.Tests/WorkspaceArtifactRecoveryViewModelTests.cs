@@ -138,6 +138,23 @@ public sealed class WorkspaceArtifactRecoveryViewModelTests
     }
 
     [Fact]
+    public async Task SdkTempRecordsUseKindAndStageLabels()
+    {
+        var project = Project("a");
+        var sdkTemp = Record(ArtifactSessionKind.ExternalSdkTemp, "sdk_temp");
+        var journal = new RecordingArtifactSessionJournal();
+        journal.SetResults(project.Id, sdkTemp);
+        using var viewModel = new WorkspaceArtifactRecoveryViewModel(journal);
+
+        viewModel.SetProject(project);
+        await viewModel.RefreshAsync();
+
+        Assert.Contains("浏览器暂存未确认", viewModel.Items[0].Summary);
+        Assert.Contains("浏览器下载暂存", viewModel.Items[0].Summary);
+        Assert.Equal(sdkTemp.FileName, viewModel.Items[0].FileName);
+    }
+
+    [Fact]
     public async Task ProjectSwitchClearsItemsAndStopsLoadingTheOldProject()
     {
         var journal = new RecordingArtifactSessionJournal();

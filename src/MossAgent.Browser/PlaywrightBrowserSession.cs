@@ -1,5 +1,6 @@
 using Microsoft.Playwright;
 using MossAgent.Tools.Abstractions.Browser;
+using MossAgent.Tools.Abstractions.Files;
 
 namespace MossAgent.Browser;
 
@@ -8,6 +9,8 @@ public sealed class PlaywrightBrowserSession : IBrowserSession
     private readonly IPlaywright _playwright;
     private readonly PlaywrightBrowserTabSet _tabs;
     private readonly PlaywrightBrowserOperation _operations;
+    private readonly IArtifactSessionJournal? _journal;
+    private readonly Guid? _taskId;
     private readonly object _lifetimeSync = new();
     private Task? _disposeTask;
     private IPage _page;
@@ -17,12 +20,16 @@ public sealed class PlaywrightBrowserSession : IBrowserSession
         IBrowserContext context,
         IPage page,
         bool closeContext,
-        bool ownsInitialPage = false)
+        bool ownsInitialPage = false,
+        IArtifactSessionJournal? journal = null,
+        Guid? taskId = null)
     {
         _playwright = playwright;
         _page = page;
         _tabs = new PlaywrightBrowserTabSet(context, page, closeContext, ownsInitialPage);
         _operations = new(DisposeAsync);
+        _journal = journal;
+        _taskId = taskId;
     }
 
     public string Id { get; } = Guid.NewGuid().ToString("N");
@@ -172,7 +179,8 @@ public sealed class PlaywrightBrowserSession : IBrowserSession
         string selector,
         Stream destination,
         CancellationToken cancellationToken) => _operations.RunAsync(
-            () => PlaywrightDownloadTransfer.RunAsync(_page, selector, destination, cancellationToken), cancellationToken);
+            () => PlaywrightDownloadTransfer.RunAsync(_page, selector, destination,
+                _journal, _taskId, cancellationToken), cancellationToken);
 
     public ValueTask DisposeAsync()
     {

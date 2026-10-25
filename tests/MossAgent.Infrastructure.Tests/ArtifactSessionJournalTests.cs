@@ -131,6 +131,40 @@ public sealed class ArtifactSessionJournalTests
     }
 
     [Fact]
+    public async Task ReconcileClassifiesSdkTempRowsOutsideTaskDirectory()
+    {
+        await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
+        var journal = Journal(fixture);
+        var tempDirectory = Path.Combine(fixture.Project.PrimaryDirectory, "sdk-temp");
+        Directory.CreateDirectory(tempDirectory);
+        var live = Path.Combine(tempDirectory, $"dl-{Guid.NewGuid():N}.download");
+        await File.WriteAllTextAsync(live, "partial", fixture.Token);
+        var held = Path.Combine(tempDirectory, $"dl-{Guid.NewGuid():N}.download");
+        await File.WriteAllTextAsync(held, "partial", fixture.Token);
+        var liveId = await SeedAsync(fixture, journal, fixture.Task.Id, ArtifactSessionStage.Recorded,
+            live, kind: ArtifactSessionKind.ExternalSdkTemp);
+        var heldId = await SeedAsync(fixture, journal, fixture.Task.Id, ArtifactSessionStage.CleanupUnknown,
+            held, "browser_download_cleanup_failed", kind: ArtifactSessionKind.ExternalSdkTemp);
+        var missingId = await SeedAsync(fixture, journal, fixture.Task.Id, ArtifactSessionStage.Recorded,
+            Path.Combine(tempDirectory, "gone.download"), kind: ArtifactSessionKind.ExternalSdkTemp);
+
+        await journal.ReconcileAsync(fixture.Token);
+
+        var records = await journal.ReadTaskAsync(fixture.Task.Id, fixture.Token);
+        Assert.Equal(ArtifactSessionStage.Orphaned, Stage(records, liveId));
+        Assert.Equal("sdk_temp", Error(records, liveId));
+        Assert.Equal(ArtifactSessionStage.Orphaned, Stage(records, heldId));
+        Assert.Equal("sdk_temp", Error(records, heldId));
+        Assert.Equal(ArtifactSessionStage.Discarded, Stage(records, missingId));
+        Assert.Null(Error(records, missingId));
+        Assert.True(File.Exists(live));
+        Assert.True(File.Exists(held));
+
+        var unresolved = await journal.ReadUnresolvedAsync(fixture.Project, fixture.Token);
+        Assert.Equal([liveId, heldId], unresolved.Select(record => record.Id).OrderBy(id => id));
+    }
+
+    [Fact]
     public async Task ReconcileRefusesPathsOutsideRecordedTaskDirectory()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();

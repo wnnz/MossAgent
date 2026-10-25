@@ -197,13 +197,17 @@ Windows 验收环境尚未就绪；本机已有诊断只获得较弱 DACL 层，
 
 当前开发分支增量：schema 37 `artifact_session_records` 期刊已落地——任务产物会话与
 Git diff 临时输入会话在创建即登记（记录失败则拒绝创建并回滚文件），完成/保留/丢弃/
-清理未知分级推进；清理失败先记 CleanupUnknown 再抛出原有错误码。启动对账只处理陈旧
-非终态记录（默认宽限 5 分钟），按任务产物目录与文件名复核归属：文件缺失归 Discarded、
-存在归 Orphaned 并按原阶段记 staged/completed/cleanup_unknown 子码，路径复核未通过
-记 unverified；对账从不删除文件、不自动确认。编辑器区新增产物恢复面板（与 worktree
-恢复面板同构），按当前项目列出 Orphaned 记录并提供条件化“标记已核实”（并发变化给出
-stale 提示并刷新）。浏览器下载网络/缓存配额、Playwright SDK 暂存目录清理、引用回收
-（依赖 R05）与跨进程排空仍未覆盖，R02 保持部分完成。
+清理未知分级推进；清理失败先记 CleanupUnknown 再抛出原有错误码。schema 38 为
+ExternalSdkTemp 放宽 kind 约束：Playwright 下载在流出前登记 SDK 暂存路径（记录失败
+同样拒绝传输并取消+删除下载），解析到的暂存文件超过 32 MiB 即取消并拒绝流出；SDK
+取消+删除成功后记 Discarded，清理失败先记 CleanupUnknown 再抛原错。启动对账只处理
+陈旧非终态记录（默认宽限 5 分钟），按任务产物目录与文件名复核归属：文件缺失归
+Discarded、存在归 Orphaned 并按原阶段记 staged/completed/cleanup_unknown 子码，路径
+复核未通过记 unverified；SDK 暂存记录不落在任务产物目录内属合法，存在即记 sdk_temp；
+对账从不删除文件、不自动确认。编辑器区新增产物恢复面板（与 worktree 恢复面板同构），
+按当前项目列出 Orphaned 记录并提供条件化“标记已核实”（并发变化给出 stale 提示并
+刷新）。浏览器下载的网络/缓存实时配额（暂存尺寸只在下载完成后核对，无法中途限量）、
+引用回收（依赖 R05）与跨进程排空仍未覆盖，R02 保持部分完成。
 
 1. Application 建立 task/run/授权代际的资源登记与状态：可接收新操作、撤销中、资源已排空、
    清理未知。撤权先关闭新入口，再取消 Agent/工具/PTY/Git/Browser/MCP，限时等待实际资源退出；

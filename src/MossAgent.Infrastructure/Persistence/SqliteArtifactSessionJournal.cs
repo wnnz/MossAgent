@@ -72,9 +72,16 @@ public sealed class SqliteArtifactSessionJournal(SqliteConnectionFactory connect
 
     // Orphan classification only ever marks journal rows; files are never deleted here.
     // A recorded path that no longer resolves inside its task artifact directory is
-    // treated as unverifiable rather than trusted.
+    // treated as unverifiable rather than trusted. ExternalSdkTemp paths legitimately
+    // live outside the task directory (e.g. browser SDK temp), so only existence is checked.
     private (int Stage, string? Error) Classify(ArtifactSessionRecord record)
     {
+        if (record.Kind == ArtifactSessionKind.ExternalSdkTemp)
+        {
+            return File.Exists(record.FullPath)
+                ? ((int)ArtifactSessionStage.Orphaned, "sdk_temp")
+                : ((int)ArtifactSessionStage.Discarded, null);
+        }
         if (!IsTaskArtifactFile(record))
             return ((int)ArtifactSessionStage.Orphaned, "unverified");
         if (!File.Exists(record.FullPath))

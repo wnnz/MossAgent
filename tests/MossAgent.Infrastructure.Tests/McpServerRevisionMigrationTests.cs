@@ -20,7 +20,7 @@ public sealed class McpServerRevisionMigrationTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(37, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(38, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM pragma_table_info('mcp_servers') WHERE name='revision';"));
         var persisted = Assert.Single(await fixture.Repository.GetAllAsync(fixture.Token));
@@ -52,7 +52,7 @@ public sealed class McpServerRevisionMigrationTests
 
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(37, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(38, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var persisted = Assert.Single(await fixture.Repository.GetAllAsync(fixture.Token));
         Assert.Equal(1, persisted.Revision);
         Assert.Equal("legacy-command", persisted.Command);

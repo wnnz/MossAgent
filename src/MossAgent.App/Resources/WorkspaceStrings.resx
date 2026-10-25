@@ -318,9 +318,11 @@
 <data name="ArtifactRecoveryStageCompleted" xml:space="preserve"><value>已提交未保留</value></data>
 <data name="ArtifactRecoveryStageCleanupUnknown" xml:space="preserve"><value>清理未确认</value></data>
 <data name="ArtifactRecoveryStageUnverified" xml:space="preserve"><value>路径复核未通过</value></data>
+<data name="ArtifactRecoveryStageSdkTemp" xml:space="preserve"><value>浏览器暂存未确认</value></data>
 <data name="ArtifactRecoveryStageUnknown" xml:space="preserve"><value>尚未复核</value></data>
 <data name="ArtifactRecoveryKindArtifact" xml:space="preserve"><value>任务产物</value></data>
 <data name="ArtifactRecoveryKindDiffInput" xml:space="preserve"><value>差异输入</value></data>
+<data name="ArtifactRecoveryKindSdkTemp" xml:space="preserve"><value>浏览器下载暂存</value></data>
 <data name="ArtifactRecoveryDetail" xml:space="preserve"><value>任务 {0} · 记录于 {1}</value></data>
 <data name="ArtifactRecoveryLoadFailed" xml:space="preserve"><value>无法读取产物会话记录，请刷新重试。</value></data>
 </root>

@@ -1,19 +1,24 @@
 using Microsoft.Playwright;
 using MossAgent.Domain;
 using MossAgent.Tools.Abstractions.Browser;
+using MossAgent.Tools.Abstractions.Files;
 
 namespace MossAgent.Browser;
 
 public sealed class PlaywrightBrowserSessionFactory : IBrowserSessionFactory
 {
     private readonly Func<Task<IPlaywright>> _createRuntime;
+    private readonly IArtifactSessionJournal? _journal;
 
-    public PlaywrightBrowserSessionFactory() : this(Playwright.CreateAsync) { }
+    public PlaywrightBrowserSessionFactory(IArtifactSessionJournal? journal = null)
+        : this(Playwright.CreateAsync, journal) { }
 
-    internal PlaywrightBrowserSessionFactory(Func<Task<IPlaywright>> createRuntime)
+    internal PlaywrightBrowserSessionFactory(Func<Task<IPlaywright>> createRuntime,
+        IArtifactSessionJournal? journal = null)
     {
         ArgumentNullException.ThrowIfNull(createRuntime);
         _createRuntime = createRuntime;
+        _journal = journal;
     }
 
     public async Task<IBrowserSession> CreateAsync(
@@ -41,8 +46,8 @@ public sealed class PlaywrightBrowserSessionFactory : IBrowserSessionFactory
         {
             cancellationToken.ThrowIfCancellationRequested();
             session = cdpEndpoint is not null
-                ? await ConnectAsync(playwright, cdpEndpoint, cancellationToken)
-                : await LaunchAsync(playwright, options, cancellationToken);
+                ? await ConnectAsync(playwright, cdpEndpoint, options.TaskId, _journal, cancellationToken)
+                : await LaunchAsync(playwright, options, _journal, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             return session;
         }
@@ -72,6 +77,7 @@ public sealed class PlaywrightBrowserSessionFactory : IBrowserSessionFactory
     private static async Task<IBrowserSession> LaunchAsync(
         IPlaywright playwright,
         BrowserLaunchOptions options,
+        IArtifactSessionJournal? journal,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -90,7 +96,8 @@ public sealed class PlaywrightBrowserSessionFactory : IBrowserSessionFactory
             cancellationToken.ThrowIfCancellationRequested();
             var page = context.Pages.FirstOrDefault() ?? await context.NewPageAsync().ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
-            return new PlaywrightBrowserSession(playwright, context, page, closeContext: true);
+            return new PlaywrightBrowserSession(playwright, context, page, closeContext: true,
+                journal: journal, taskId: options.TaskId);
         }
         catch
         {
@@ -111,6 +118,8 @@ public sealed class PlaywrightBrowserSessionFactory : IBrowserSessionFactory
     private static async Task<IBrowserSession> ConnectAsync(
         IPlaywright playwright,
         Uri endpoint,
+        Guid? taskId,
+        IArtifactSessionJournal? journal,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -124,7 +133,8 @@ public sealed class PlaywrightBrowserSessionFactory : IBrowserSessionFactory
                 ?? throw new InvalidOperationException("CDP 浏览器没有可用上下文。");
             var page = createdPage = await context.NewPageAsync().ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
-            return new PlaywrightBrowserSession(playwright, context, page, closeContext: false, ownsInitialPage: true);
+            return new PlaywrightBrowserSession(playwright, context, page, closeContext: false,
+                ownsInitialPage: true, journal: journal, taskId: taskId);
         }
         catch
         {

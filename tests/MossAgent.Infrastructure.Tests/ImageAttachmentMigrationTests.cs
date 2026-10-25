@@ -30,7 +30,7 @@ public sealed class ImageAttachmentMigrationTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_sixteen;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(37, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(38, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var restored = Assert.Single(await fixture.Repository.GetMessagesAsync(fixture.Task.Id, fixture.Token));
         Assert.Equal(message with { Attachments = null }, restored with { Attachments = null });
         Assert.Equal(message.Attachments!.ToArray(), restored.Attachments!.ToArray());
