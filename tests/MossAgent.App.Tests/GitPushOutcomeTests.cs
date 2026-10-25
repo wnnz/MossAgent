@@ -41,6 +41,24 @@ public sealed class GitPushOutcomeTests : IAsyncLifetime
     }, TestContext.Current.CancellationToken);
 
     [Fact]
+    public Task NonFastForwardRejectionIsDeterministicAndShowsNextStepGuidance() => _session.DispatchAsync(async () =>
+    {
+        var previews = 0;
+        var executor = new InspectorProbeToolExecutor { Execute = (request, _, _) =>
+        {
+            if (request.ToolName == "git.push_preview") previews++;
+            return Task.FromResult(request.ToolName == "git.push" ? ToolResult.Failure("private-value", "git_push_non_ff") : Preview());
+        } };
+        await using var model = new GitPushViewModel(executor, _ => throw new InvalidOperationException("Must not refresh."));
+        model.Attach(Context());
+        await model.OpenCommand.ExecuteAsync(null);
+        await model.PushCommand.ExecuteAsync(null);
+        Assert.Equal(1, previews);
+        Assert.Equal(InspectorText.Get("GitPushNonFastForward"), model.Status);
+        Assert.DoesNotContain("private-value", model.Status);
+    }, TestContext.Current.CancellationToken);
+
+    [Fact]
     public Task TimeoutWithRemoteHeadMatchingThePushedCommitReportsProbablyLanded() => _session.DispatchAsync(async () =>
     {
         var attempted = false;

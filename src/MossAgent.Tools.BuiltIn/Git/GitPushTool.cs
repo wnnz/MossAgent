@@ -25,8 +25,12 @@ public sealed class GitPushTool(GitPushStateReader states, GitCommandRunner git)
                 "--no-force", "--no-mirror", "--no-prune", "--no-follow-tags", "--no-push-option", "--recurse-submodules=no",
                 "--receive-pack=git-receive-pack", "--", snapshot.Preview.Remote, $"{snapshot.Preview.Head}:refs/heads/{snapshot.Preview.TargetBranch}"),
                 context, cancellationToken).ConfigureAwait(false);
-            return result.IsSuccess ? ToolResult.Success(ToolExecutionText.Get("GitPushSucceeded"))
-                : ToolResult.Failure(ToolExecutionText.Get("GitPushFailed"), "git_push_failed");
+            if (result.IsSuccess) return ToolResult.Success(ToolExecutionText.Get("GitPushSucceeded"));
+            // Raw output may echo the remote URL with embedded credentials, so it is classified
+            // here and dropped; the failure text stays a fixed localized message.
+            var nonFastForward = GitPushFailureClassifier.IsNonFastForward(result.Summary);
+            return ToolResult.Failure(ToolExecutionText.Get(nonFastForward ? "GitPushNonFastForward" : "GitPushFailed"),
+                nonFastForward ? "git_push_non_ff" : "git_push_failed");
         }
         catch (GitPushException error) { return ToolResult.Failure(error.Message, error.Code); }
         catch (TimeoutException) { return ToolResult.Failure(ToolExecutionText.Get("ExecutionTimedOut"), "tool_timeout"); }

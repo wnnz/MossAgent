@@ -52,6 +52,36 @@ public sealed class GitPushExecutionTests
         Assert.Equal(new[] { "GIT_" }, request.RemovedEnvironmentPrefixes);
     }
 
+    [Theory]
+    [InlineData("! [rejected]        fixture -> fixture (non-fast-forward)\nerror: failed to push some refs to 'https://user:private-probe@example.invalid/x'")]
+    [InlineData("! [rejected]        fixture -> fixture (stale info)\nerror: failed to push some refs")]
+    [InlineData("! [rejected]        fixture -> fixture (fetch first)\nerror: failed to push some refs")]
+    public async Task NonFastForwardRejectionReportsDedicatedCodeWithoutEchoingDiagnostics(string stderr)
+    {
+        using var fixture = new GitPushExecutionFixture();
+        var preview = await fixture.PreviewAsync();
+        fixture.Processes.Push.ExitCode = 1;
+        fixture.Processes.Push.StandardError = new StringReader(stderr);
+        var result = await fixture.ExecuteAsync("git.push", new { remote = preview.Remote, targetBranch = preview.TargetBranch, expectedState = preview.State }, TestContext.Current.CancellationToken);
+        Assert.Equal("git_push_non_ff", result.ErrorCode);
+        Assert.False(result.IsSuccess);
+        Assert.DoesNotContain("private-probe", result.ToString());
+        Assert.DoesNotContain("example.invalid", result.ToString());
+        Assert.Equal(result.ErrorCode, fixture.Audit.Completion?.ErrorCode);
+    }
+
+    [Fact]
+    public async Task OtherPushFailureStaysGenericWithoutEchoingDiagnostics()
+    {
+        using var fixture = new GitPushExecutionFixture();
+        var preview = await fixture.PreviewAsync();
+        fixture.Processes.Push.ExitCode = 1;
+        fixture.Processes.Push.StandardError = new StringReader("error: failed to push some refs to 'https://user:private-probe@example.invalid/x'\nremote: hook declined");
+        var result = await fixture.ExecuteAsync("git.push", new { remote = preview.Remote, targetBranch = preview.TargetBranch, expectedState = preview.State }, TestContext.Current.CancellationToken);
+        Assert.Equal("git_push_failed", result.ErrorCode);
+        Assert.DoesNotContain("private-probe", result.ToString());
+    }
+
     [Fact]
     public async Task OversizedConfigurationAndRevokedGuardFailBeforePush()
     {

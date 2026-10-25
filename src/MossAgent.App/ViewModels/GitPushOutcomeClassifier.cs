@@ -2,8 +2,9 @@ namespace MossAgent.App.ViewModels;
 
 internal static class GitPushOutcomeClassifier
 {
-    // Deterministic failures are raised before `git push` actually runs: pipeline
-    // validation/approval rejection plus the tool's own pre-push snapshot checks.
+    // Deterministic failures either are raised before `git push` actually runs (pipeline
+    // validation/approval rejection plus the tool's own pre-push snapshot checks) or are a
+    // definite server-side rejection of the only refspec (git_push_non_ff).
     // Everything else (tool_timeout, tool_cancelled, git_push_failed, …) may have
     // already updated the remote, so the outcome needs a fresh preview to judge.
     public static bool IsDeterministic(string? errorCode) => errorCode is
@@ -11,5 +12,6 @@ internal static class GitPushOutcomeClassifier
         or "capability_denied" or "tool_scope_denied" or "workspace_denied" or "path_denied"
         or "approval_denied" or "approval_failed"
         or "git_state_changed" or "git_push_no_remote" or "git_push_no_head" or "git_push_branch"
-        or "git_push_transport" or "git_push_multiple_urls" or "git_push_preview_incomplete";
+        or "git_push_transport" or "git_push_multiple_urls" or "git_push_preview_incomplete"
+        or "git_push_non_ff";
 }

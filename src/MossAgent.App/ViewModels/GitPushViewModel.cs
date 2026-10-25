@@ -230,6 +230,7 @@ public sealed class GitPushViewModel : ObservableObject, IDisposable, IAsyncDisp
         "git_push_branch" => "GitPushBranchRequired",
         "git_push_transport" => "GitPushTransportUnsupported",
         "git_push_multiple_urls" => "GitPushMultipleUrls",
+        "git_push_non_ff" => "GitPushNonFastForward",
         "approval_denied" or "capability_denied" => "DiffIndexDenied",
         "path_denied" or "workspace_denied" => "DiffIndexPathDenied",
         "tool_cancelled" or "tool_timeout" => "GitPushInterrupted",

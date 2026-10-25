@@ -76,7 +76,7 @@ public sealed class GitPushWorkflowTests
         await fixture.SourceGitAsync("push", fixture.Remote, divergent + ":refs/heads/setup-divergent");
         await fixture.RemoteGitAsync("update-ref", "refs/heads/" + preview.TargetBranch, divergent);
         preview = await fixture.PreviewAsync();
-        Assert.Equal("git_push_failed", (await fixture.PushAsync(preview)).ErrorCode);
+        Assert.Equal("git_push_non_ff", (await fixture.PushAsync(preview)).ErrorCode);
         Assert.Equal(divergent, (await fixture.RemoteGitAsync("rev-parse", "refs/heads/" + preview.TargetBranch)).Trim());
     }
 
