@@ -1,4 +1,5 @@
 using MossAgent.Domain;
+using MossAgent.Tools.BuiltIn.Git;
 using Xunit;
 
 namespace MossAgent.Tools.Tests;
@@ -26,6 +27,8 @@ public sealed class GitHunksExecutionTests
         +B11
         """;
 
+    private static readonly string PlaceholderHash = new('0', 64);
+
     [Theory]
     [InlineData("git.stage_hunks", false)]
     [InlineData("git.unstage_hunks", true)]
@@ -36,7 +39,8 @@ public sealed class GitHunksExecutionTests
         var writer = new RecordingTextWriter();
         fixture.Enqueue(TwoHunkDiff);
         fixture.Enqueue(input: writer);
-        var result = await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = new[] { 1 } }, token);
+        var result = await fixture.ExecuteAsync(tool,
+            new { path = "f.txt", hunks = new[] { 1 }, expectedDiff = GitDiffBinding.Hash(TwoHunkDiff) }, token);
         Assert.True(result.IsSuccess, result.Summary);
         Assert.Equal(2, fixture.Launcher.Requests.Count);
         var diff = fixture.Launcher.Requests[0];
@@ -60,13 +64,29 @@ public sealed class GitHunksExecutionTests
     [Theory]
     [InlineData("git.stage_hunks")]
     [InlineData("git.unstage_hunks")]
+    public async Task DriftedExpectedDiffNeverReachesGitApply(string tool)
+    {
+        using var fixture = new GitHunksStubFixture();
+        var token = TestContext.Current.CancellationToken;
+        fixture.Enqueue(TwoHunkDiff);
+        var result = await fixture.ExecuteAsync(tool,
+            new { path = "f.txt", hunks = new[] { 1 }, expectedDiff = PlaceholderHash }, token);
+        Assert.Equal("git_diff_changed", result.ErrorCode);
+        Assert.Single(fixture.Launcher.Requests);
+        Assert.Equal(1, fixture.ApprovalRequests);
+    }
+
+    [Theory]
+    [InlineData("git.stage_hunks")]
+    [InlineData("git.unstage_hunks")]
     public async Task ApplyFailureSurfacesGitFailedWithoutHanging(string tool)
     {
         using var fixture = new GitHunksStubFixture();
         var token = TestContext.Current.CancellationToken;
         fixture.Enqueue(TwoHunkDiff);
         fixture.Enqueue(exitCode: 1, standardError: "error: corrupt patch at line 3\n", input: new RecordingTextWriter());
-        var result = await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = new[] { 0 } }, token);
+        var result = await fixture.ExecuteAsync(tool,
+            new { path = "f.txt", hunks = new[] { 0 }, expectedDiff = GitDiffBinding.Hash(TwoHunkDiff) }, token);
         Assert.Equal("git_failed", result.ErrorCode);
         Assert.Contains("corrupt patch", result.Summary);
     }
@@ -79,7 +99,8 @@ public sealed class GitHunksExecutionTests
         using var fixture = new GitHunksStubFixture();
         var token = TestContext.Current.CancellationToken;
         fixture.Enqueue(TwoHunkDiff);
-        var result = await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = new[] { 2 } }, token);
+        var result = await fixture.ExecuteAsync(tool,
+            new { path = "f.txt", hunks = new[] { 2 }, expectedDiff = GitDiffBinding.Hash(TwoHunkDiff) }, token);
         Assert.Equal("git_hunks_out_of_range", result.ErrorCode);
         Assert.Single(fixture.Launcher.Requests);
     }
@@ -92,7 +113,8 @@ public sealed class GitHunksExecutionTests
         using var fixture = new GitHunksStubFixture();
         var token = TestContext.Current.CancellationToken;
         fixture.Enqueue();
-        var result = await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = new[] { 0 } }, token);
+        var result = await fixture.ExecuteAsync(tool,
+            new { path = "f.txt", hunks = new[] { 0 }, expectedDiff = GitDiffBinding.Hash(string.Empty) }, token);
         Assert.Equal("git_hunks_none", result.ErrorCode);
         Assert.Single(fixture.Launcher.Requests);
     }
@@ -104,8 +126,10 @@ public sealed class GitHunksExecutionTests
     {
         using var fixture = new GitHunksStubFixture();
         var token = TestContext.Current.CancellationToken;
-        fixture.Enqueue("warning: unexpected output\n");
-        var result = await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = new[] { 0 } }, token);
+        const string malformed = "warning: unexpected output\n";
+        fixture.Enqueue(malformed);
+        var result = await fixture.ExecuteAsync(tool,
+            new { path = "f.txt", hunks = new[] { 0 }, expectedDiff = GitDiffBinding.Hash(malformed) }, token);
         Assert.Equal("git_hunks_unsupported", result.ErrorCode);
         Assert.Single(fixture.Launcher.Requests);
     }
@@ -118,7 +142,8 @@ public sealed class GitHunksExecutionTests
     {
         using var fixture = new GitHunksStubFixture();
         var token = TestContext.Current.CancellationToken;
-        var result = await fixture.ExecuteAsync(tool, new { path, hunks = new[] { 0 } }, token);
+        var result = await fixture.ExecuteAsync(tool,
+            new { path, hunks = new[] { 0 }, expectedDiff = PlaceholderHash }, token);
         Assert.Equal("path_denied", result.ErrorCode);
         Assert.Equal(0, fixture.ApprovalRequests);
         Assert.Empty(fixture.Launcher.Requests);
@@ -132,7 +157,8 @@ public sealed class GitHunksExecutionTests
         using var fixture = new GitHunksStubFixture();
         var token = TestContext.Current.CancellationToken;
         fixture.Repository.Authorize = (_, _) => throw new TimeoutException("secret-token");
-        var result = await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = new[] { 0 } }, token);
+        var result = await fixture.ExecuteAsync(tool,
+            new { path = "f.txt", hunks = new[] { 0 }, expectedDiff = PlaceholderHash }, token);
         Assert.Equal("tool_timeout", result.ErrorCode);
         Assert.DoesNotContain("secret-token", result.Summary);
         Assert.Empty(fixture.Launcher.Requests);
@@ -145,17 +171,37 @@ public sealed class GitHunksExecutionTests
     {
         using var fixture = new GitHunksStubFixture();
         var token = TestContext.Current.CancellationToken;
-        var denied = await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = new[] { 0 } }, token,
+        var denied = await fixture.ExecuteAsync(tool,
+            new { path = "f.txt", hunks = new[] { 0 }, expectedDiff = PlaceholderHash }, token,
             fixture.Context with { ApprovalPolicy = ApprovalPolicy.ReadOnly });
         Assert.Equal("capability_denied", denied.ErrorCode);
         Assert.Equal("invalid_arguments",
-            (await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = Array.Empty<int>() }, token)).ErrorCode);
+            (await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = Array.Empty<int>(), expectedDiff = PlaceholderHash }, token)).ErrorCode);
         Assert.Equal("invalid_arguments",
-            (await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = new[] { 0, 1000 } }, token)).ErrorCode);
+            (await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = new[] { 0, 1000 }, expectedDiff = PlaceholderHash }, token)).ErrorCode);
         Assert.Equal("invalid_arguments",
-            (await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = new[] { "0" } }, token)).ErrorCode);
+            (await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = new[] { "0" }, expectedDiff = PlaceholderHash }, token)).ErrorCode);
         Assert.Equal("invalid_arguments",
-            (await fixture.ExecuteAsync(tool, new { path = "f.txt" }, token)).ErrorCode);
+            (await fixture.ExecuteAsync(tool, new { path = "f.txt", expectedDiff = PlaceholderHash }, token)).ErrorCode);
+        Assert.Equal(0, fixture.ApprovalRequests);
+        Assert.Empty(fixture.Launcher.Requests);
+    }
+
+    [Theory]
+    [InlineData("git.stage_hunks")]
+    [InlineData("git.unstage_hunks")]
+    public async Task ExpectedDiffIsRequiredAndMustBeALowercaseSha256(string tool)
+    {
+        using var fixture = new GitHunksStubFixture();
+        var token = TestContext.Current.CancellationToken;
+        Assert.Equal("invalid_arguments",
+            (await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = new[] { 0 } }, token)).ErrorCode);
+        Assert.Equal("invalid_arguments",
+            (await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = new[] { 0 }, expectedDiff = PlaceholderHash[..63] }, token)).ErrorCode);
+        Assert.Equal("invalid_arguments",
+            (await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = new[] { 0 }, expectedDiff = new string('A', 64) }, token)).ErrorCode);
+        Assert.Equal("invalid_arguments",
+            (await fixture.ExecuteAsync(tool, new { path = "f.txt", hunks = new[] { 0 }, expectedDiff = new string('g', 64) }, token)).ErrorCode);
         Assert.Equal(0, fixture.ApprovalRequests);
         Assert.Empty(fixture.Launcher.Requests);
     }

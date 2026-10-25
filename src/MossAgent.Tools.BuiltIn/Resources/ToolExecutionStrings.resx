@@ -26,8 +26,10 @@
   <data name="GitStagePathsDescription" xml:space="preserve"><value>将一组明确指定的文件路径在单次命令中原子暂存（任一元素越界即整组拒绝），不隐式暂存全部改动、不提交或推送；仓库过滤器可能执行外部程序。</value></data>
   <data name="GitUnstagePathsDescription" xml:space="preserve"><value>将一组明确指定的文件路径在单次命令中原子取消暂存（任一元素越界即整组拒绝），不提交或推送；Git 操作本身不改写工作文件，但仓库钩子可能执行外部程序。</value></data>
   <data name="GitIndexPathDenied" xml:space="preserve"><value>只能操作授权仓库内的明确文件；不允许目录、Git 元数据、链接或路径别名。</value></data>
-  <data name="GitStageHunksDescription" xml:space="preserve"><value>仅暂存单个已修改跟踪文件的选定区块，区块按 0 起始编号，与 git.diff 未暂存输出的区块顺序一致；不支持重命名/复制、二进制、新增、删除、仅模式变更或冲突差异，整文件请用 git.stage_file。不提交或推送；仓库过滤器可能执行外部程序。</value></data>
-  <data name="GitUnstageHunksDescription" xml:space="preserve"><value>仅取消单个已暂存文件选定区块的暂存，区块按 0 起始编号，与 git.diff 已暂存输出的区块顺序一致；不改写工作文件，不支持重命名/复制、二进制、新增、删除、仅模式变更或冲突差异，整文件请用 git.unstage_file；仓库钩子可能执行外部程序。</value></data>
+  <data name="GitDiffDescription" xml:space="preserve"><value>查看未暂存或已暂存的 Git Diff。输出尾部附 --- mossagent --- 绑定块：diff-sha256 为完整差异输出哈希，每行 file-sha256 为对应文件差异段落哈希；git.stage_hunks/git.unstage_hunks 的 expectedDiff 必须使用该文件对应路径的 file-sha256（单文件 diff 时与 diff-sha256 相同）。</value></data>
+  <data name="GitStageHunksDescription" xml:space="preserve"><value>仅暂存单个已修改跟踪文件的选定区块，区块按 0 起始编号，与 git.diff 未暂存输出的区块顺序一致；expectedDiff 必须填写最近一次 git.diff 输出尾部绑定块中该文件对应路径的 file-sha256，差异漂移将被拒绝。不支持重命名/复制、二进制、新增、删除、仅模式变更或冲突差异，整文件请用 git.stage_file。不提交或推送；仓库过滤器可能执行外部程序。</value></data>
+  <data name="GitUnstageHunksDescription" xml:space="preserve"><value>仅取消单个已暂存文件选定区块的暂存，区块按 0 起始编号，与 git.diff 已暂存输出的区块顺序一致；expectedDiff 必须填写最近一次 git.diff 已暂存输出尾部绑定块中该文件对应路径的 file-sha256，差异漂移将被拒绝。不改写工作文件，不支持重命名/复制、二进制、新增、删除、仅模式变更或冲突差异，整文件请用 git.unstage_file；仓库钩子可能执行外部程序。</value></data>
+  <data name="GitHunksDiffChanged" xml:space="preserve"><value>差异已变化，请重新运行 git.diff 查看当前区块后再选择。</value></data>
   <data name="GitHunksNone" xml:space="preserve"><value>该文件在此方向上没有可选择的区块。</value></data>
   <data name="GitHunksOutOfRange" xml:space="preserve"><value>区块编号超出范围：有效编号为 0 到 {0}（共 {1} 个区块）。请先用 git.diff 查看该文件的区块顺序。</value></data>
   <data name="GitHunksBinary" xml:space="preserve"><value>该文件是二进制差异，不支持按区块操作；请改用 git.stage_file 或 git.unstage_file 整文件处理。</value></data>

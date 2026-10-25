@@ -13,6 +13,7 @@ public sealed class GitHunkApplier(GitIndexPaths paths, IGitRepositoryAuthorizat
     {
         paths.Validate(request, context);
         GitHunkOrdinals.Read(request.Arguments);
+        GitDiffBinding.ReadExpectedDiff(request.Arguments);
     }
 
     public async Task<ToolResult> ExecuteAsync(bool unstage, ToolRequest request, ToolExecutionContext context,
@@ -27,9 +28,15 @@ public sealed class GitHunkApplier(GitIndexPaths paths, IGitRepositoryAuthorizat
             var diff = await git.RunAsync(repository.Root, repository.Command(DiffArguments(unstage, relative)),
                 context, cancellationToken, standardOutput: capture);
             if (!diff.IsSuccess) return diff;
+            var output = capture.ToString();
+            if (!GitDiffBinding.Hash(output).Equals(
+                    GitDiffBinding.ReadExpectedDiff(request.Arguments), StringComparison.Ordinal))
+            {
+                return ToolResult.Failure(ToolExecutionText.Get("GitHunksDiffChanged"), "git_diff_changed");
+            }
+
             if (capture.IsTruncated)
                 return ToolResult.Failure(ToolExecutionText.Get("GitHunksTruncated"), "git_hunks_unsupported");
-            var output = capture.ToString();
             if (string.IsNullOrWhiteSpace(output))
                 return ToolResult.Failure(ToolExecutionText.Get("GitHunksNone"), "git_hunks_none");
             var patch = GitHunkPatchBuilder.Build(output, GitHunkOrdinals.Read(request.Arguments));

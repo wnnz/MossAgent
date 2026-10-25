@@ -1,5 +1,7 @@
 using MossAgent.Tools.Abstractions;
 using MossAgent.Tools.BuiltIn.Files;
+using MossAgent.Tools.BuiltIn.Processes;
+using MossAgent.Tools.BuiltIn.Resources;
 
 namespace MossAgent.Tools.BuiltIn.Git;
 
@@ -8,7 +10,7 @@ public sealed class GitDiffTool(
     GitCommandRunner git) : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
-        "git.diff", "查看未暂存或已暂存的 Git Diff。",
+        "git.diff", ToolExecutionText.Get("GitDiffDescription"),
         """{"type":"object","properties":{"repository":{"type":"string"},"staged":{"type":"boolean"},"untracked":{"type":"boolean"},"path":{"type":["string","null"]}}}""",
         ToolRiskLevel.ReadOnly, ToolCapability.FileRead | ToolCapability.Process);
 
@@ -26,7 +28,7 @@ public sealed class GitDiffTool(
         }
     }
 
-    public Task<ToolResult> ExecuteAsync(
+    public async Task<ToolResult> ExecuteAsync(
         ToolRequest request,
         ToolExecutionContext context,
         CancellationToken cancellationToken)
@@ -56,7 +58,10 @@ public sealed class GitDiffTool(
             arguments.Add(path);
         }
 
-        return git.RunAsync(repository, arguments, context, cancellationToken, acceptExitCodeOne: untracked);
+        var captured = new BoundedTextBuffer(context.MaximumOutputCharacters);
+        var result = await git.RunAsync(repository, arguments, context, cancellationToken,
+            acceptExitCodeOne: untracked, standardOutput: captured);
+        return GitDiffBinding.Bind(result, captured);
     }
 
     private static void ValidateMode(ToolRequest request, string? path)
