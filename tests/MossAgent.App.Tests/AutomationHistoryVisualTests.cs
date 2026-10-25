@@ -104,7 +104,7 @@ public sealed class AutomationHistoryVisualTests : IAsyncLifetime
                 var button = Assert.Single(row.GetVisualDescendants().OfType<AppButton>());
                 Assert.Same(history.OpenCommand, button.Command);
                 Assert.Same(model, button.CommandParameter);
-                Assert.True(button.IsEffectivelyEnabled);
+                Assert.Equal(model.Run.Status is not AutomationRunStatus.Blocked, button.IsEffectivelyEnabled);
                 Assert.True(row.Bounds.Width <= width - 12);
             }
         }

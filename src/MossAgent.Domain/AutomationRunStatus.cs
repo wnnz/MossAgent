@@ -7,5 +7,6 @@ public enum AutomationRunStatus
     Failed,
     Cancelled,
     TimedOut,
-    Interrupted
+    Interrupted,
+    Blocked
 }

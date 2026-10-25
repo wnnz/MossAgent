@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using MossAgent.Application.Automations;
 using MossAgent.Application.Persistence;
 using MossAgent.App.Resources;
+using MossAgent.Domain;
 
 namespace MossAgent.App.ViewModels;
 
@@ -103,7 +104,8 @@ public sealed class AutomationHistoryViewModel : ObservableObject, IDisposable
     }
 
     private bool CanOpen(AutomationRunViewModel? item) => !_disposed && IsVisible && !IsBlocked && !IsLoading && !IsOpening
-        && !_catalog.IsLocked && item is not null && Runs.Contains(item) && item.Run.ScheduleId == _selection?.Schedule.Id;
+        && !_catalog.IsLocked && item is not null && Runs.Contains(item) && item.Run.ScheduleId == _selection?.Schedule.Id
+        && item.Run.Status != AutomationRunStatus.Blocked;
 
     private async Task OpenAsync(AutomationRunViewModel? item)
     {

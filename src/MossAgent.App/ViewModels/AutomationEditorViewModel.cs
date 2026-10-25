@@ -24,6 +24,7 @@ public sealed class AutomationEditorViewModel : ObservableObject
     private bool _isInitializing;
     private readonly TimeProvider _clock;
     private string _schedulePreview = AutomationText.Get("PreviewIncomplete");
+    private string _snapshotSummary = AutomationText.Get("SnapshotIncomplete");
     public long ContextVersion { get; private set; }
     public long DraftRevision { get; private set; }
 
@@ -49,6 +50,7 @@ public sealed class AutomationEditorViewModel : ObservableObject
     public string Prompt { get => _prompt; set => SetProperty(ref _prompt, value ?? string.Empty); }
     public string Time { get => _time; set => SetProperty(ref _time, value ?? string.Empty); }
     public string SchedulePreview { get => _schedulePreview; private set => SetProperty(ref _schedulePreview, value); }
+    public string SnapshotSummary { get => _snapshotSummary; private set => SetProperty(ref _snapshotSummary, value); }
     public decimal IntervalHours { get => _interval; set => SetProperty(ref _interval, value); }
     public decimal TimeoutMinutes { get => _timeout; set => SetProperty(ref _timeout, value); }
     public ProjectProfile? SelectedProject { get => _project; set => SetProperty(ref _project, value); }
@@ -107,6 +109,7 @@ public sealed class AutomationEditorViewModel : ObservableObject
         if (!IsOpen || ContextVersion != context) return false;
         Original = saved;
         OnPropertyChanged(nameof(Original));
+        UpdateSnapshotSummary();
         if (!close || ContextVersion != context || !IsOpen || DraftRevision != revision) return false;
         IsOpen = false;
         return true;
@@ -117,6 +120,7 @@ public sealed class AutomationEditorViewModel : ObservableObject
         if (!IsOpen || ContextVersion != context) return;
         Original = saved;
         OnPropertyChanged(nameof(Original));
+        UpdateSnapshotSummary();
     }
 
     public AutomationSchedule Build(DateTimeOffset now)
@@ -154,5 +158,31 @@ public sealed class AutomationEditorViewModel : ObservableObject
         }
         catch (Exception exception) when (exception is ArgumentException or TimeZoneNotFoundException or InvalidTimeZoneException or OverflowException)
         { SchedulePreview = AutomationText.Get("PreviewIncomplete"); }
+        UpdateSnapshotSummary();
+    }
+
+    private void UpdateSnapshotSummary()
+    {
+        var snapshot = Original?.AuthorizationSnapshot;
+        if (snapshot is not null)
+        {
+            SnapshotSummary = AutomationText.Format("SnapshotCurrent",
+                $"{snapshot.ModelName} · {snapshot.ProviderName}", ApprovalPolicyText.Label(snapshot.ApprovalPolicy),
+                snapshot.AuthorizedDirectories.Count, snapshot.Generation);
+        }
+        else if (Original is not null)
+        {
+            SnapshotSummary = AutomationText.Get("SnapshotMissingHint");
+        }
+        else if (SelectedProject is not null && SelectedModel is not null && SelectedPolicy is not null)
+        {
+            SnapshotSummary = AutomationText.Format("SnapshotPending",
+                $"{SelectedModel.DisplayName} · {SelectedModel.Provider.Name}",
+                ApprovalPolicyText.Label(SelectedPolicy.Value), SelectedProject.AuthorizedDirectories.Count);
+        }
+        else
+        {
+            SnapshotSummary = AutomationText.Get("SnapshotIncomplete");
+        }
     }
 }

@@ -109,6 +109,37 @@ public sealed class SqliteAutomationRepositoryTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AuthorizationSnapshot_RoundTripsAcrossGenerationsAndClears()
+    {
+        var snapshot = new AutomationAuthorizationSnapshot(1, Guid.NewGuid(), 2, ["/root", "/extra"],
+            Guid.NewGuid(), "provider", Guid.NewGuid(), "model", ApprovalPolicy.FullAccess, "固定提示词",
+            DateTimeOffset.UtcNow);
+        await _repository.SaveAsync(Schedule() with { AuthorizationSnapshot = snapshot }, Token);
+        var loaded = Assert.Single(await _repository.GetAllAsync(Token));
+        Assert.Equal(snapshot, loaded.AuthorizationSnapshot);
+        var generation = new AutomationAuthorizationSnapshot(2, snapshot.ProjectId,
+            snapshot.ProjectAuthorizationRevision, snapshot.AuthorizedDirectories, snapshot.ProviderId,
+            snapshot.ProviderName, snapshot.ModelId, snapshot.ModelName, snapshot.ApprovalPolicy,
+            snapshot.Prompt, snapshot.CreatedAt);
+        Assert.True(await _repository.SaveAsync(loaded with { AuthorizationSnapshot = generation }, Token));
+        Assert.Equal(generation, Assert.Single(await _repository.GetAllAsync(Token)).AuthorizationSnapshot);
+        var stored = Assert.Single(await _repository.GetAllAsync(Token));
+        Assert.True(await _repository.SaveAsync(stored with { AuthorizationSnapshot = null }, Token));
+        Assert.Null(Assert.Single(await _repository.GetAllAsync(Token)).AuthorizationSnapshot);
+    }
+
+    [Fact]
+    public async Task OversizedSnapshot_IsRejectedBeforeAnyWrite()
+    {
+        var snapshot = new AutomationAuthorizationSnapshot(1, Guid.NewGuid(), 1, ["/root"],
+            Guid.NewGuid(), "provider", Guid.NewGuid(), "model", ApprovalPolicy.ReadOnly,
+            new string('x', 300_000), DateTimeOffset.UtcNow);
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _repository.SaveAsync(Schedule() with { AuthorizationSnapshot = snapshot }, Token));
+        Assert.Empty(await _repository.GetAllAsync(Token));
+    }
+
+    [Fact]
     public async Task Lease_IsExclusiveAndReleasedOnDispose()
     {
         using var first = new AutomationSchedulerLease(new AppDataPaths(_root));

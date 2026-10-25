@@ -286,6 +286,7 @@ internal static class AppComposition
         services.AddSingleton<McpSettingsViewModel>();
         services.AddSingleton<WorkspaceViewModel>();
         services.AddSingleton<IAutomationTaskRunner, WorkspaceAutomationRunner>();
+        services.AddSingleton<IAutomationAuthorizationGate, AutomationAuthorizationGate>();
         services.AddSingleton<AutomationScheduler>();
         services.AddSingleton<AutomationViewModel>();
         services.AddSingleton<IAppearancePreferenceStore, JsonAppearancePreferenceStore>();

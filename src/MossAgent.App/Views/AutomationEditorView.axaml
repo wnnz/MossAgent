@@ -58,6 +58,12 @@
     <ui:AppBorder Classes="automation-schedule-preview">
       <ui:AppText Text="{Binding SchedulePreview}" Classes="type-12 muted line-18" TextWrapping="Wrap" />
     </ui:AppBorder>
+    <ui:AppBorder Classes="automation-schedule-preview">
+      <StackPanel Spacing="4">
+        <ui:AppText Text="{Binding SnapshotSummary}" Classes="type-12 muted line-18" TextWrapping="Wrap" />
+        <ui:AppText Text="{x:Static text:AutomationText.SnapshotHint}" Classes="type-11 subtle line-18" TextWrapping="Wrap" />
+      </StackPanel>
+    </ui:AppBorder>
     <Grid ColumnDefinitions="*,*" ColumnSpacing="14">
       <StackPanel Spacing="6">
         <ui:AppText Text="{x:Static text:AutomationText.Policy}" Classes="type-12 weight-semibold" />

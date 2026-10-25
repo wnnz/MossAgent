@@ -98,4 +98,19 @@
   <data name="TaskUnavailable" xml:space="preserve"><value>这次运行尚未创建对话，或对话已归档。请检查项目与模型配置。</value></data>
   <data name="PreviewIncomplete" xml:space="preserve"><value>完善项目、模型和时间设置后显示预计运行时间。</value></data>
   <data name="SchedulePreview" xml:space="preserve"><value>预计下次：{0:yyyy/MM/dd HH:mm} · {1}（保存时重新计算）</value></data>
+  <data name="Blocked" xml:space="preserve"><value>已阻止</value></data>
+  <data name="NeedsReauthorization" xml:space="preserve"><value>需重新授权</value></data>
+  <data name="SnapshotHint" xml:space="preserve"><value>保存会捕获新的授权快照（新世代）。项目授权、提供商或目录范围变更后，按旧快照的运行会被阻止。</value></data>
+  <data name="SnapshotCurrent" xml:space="preserve"><value>已固定授权快照（第 {3} 代）：{0} · {1} · {2} 个授权目录</value></data>
+  <data name="SnapshotPending" xml:space="preserve"><value>保存时将固定授权快照：{0} · {1} · {2} 个授权目录</value></data>
+  <data name="SnapshotMissingHint" xml:space="preserve"><value>此计划缺少授权快照，运行将被阻止；保存将捕获快照并重新授权。</value></data>
+  <data name="SnapshotIncomplete" xml:space="preserve"><value>选择项目、模型和工具权限后显示授权快照摘要。</value></data>
+  <data name="RunBlockedSnapshotMissing" xml:space="preserve"><value>该计划没有授权快照，已阻止运行。请打开计划并保存以重新授权。</value></data>
+  <data name="RunBlockedSnapshotMismatch" xml:space="preserve"><value>计划参数与授权快照不一致，已阻止运行。请重新保存计划以重新授权。</value></data>
+  <data name="RunBlockedProjectMissing" xml:space="preserve"><value>快照中的项目已不存在，已阻止运行。请检查计划设置。</value></data>
+  <data name="RunBlockedReauthorization" xml:space="preserve"><value>项目授权已变更，旧快照不能继续使用，已阻止运行。请重新保存计划以重新授权。</value></data>
+  <data name="RunBlockedDirectoriesReduced" xml:space="preserve"><value>快照中的授权目录已不在项目授权范围内，已阻止运行。请重新保存计划以重新授权。</value></data>
+  <data name="RunBlockedProviderMissing" xml:space="preserve"><value>快照中的提供商已删除或停用，已阻止运行。请编辑计划重新选择并授权。</value></data>
+  <data name="RunBlockedModelMissing" xml:space="preserve"><value>快照中的模型已删除或停用，已阻止运行。请编辑计划重新选择并授权。</value></data>
+  <data name="RunBlockedGeneric" xml:space="preserve"><value>授权校验未通过，已阻止运行。请重新保存计划以重新授权。</value></data>
 </root>

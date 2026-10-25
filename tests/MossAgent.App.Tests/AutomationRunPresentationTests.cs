@@ -14,6 +14,7 @@ public sealed class AutomationRunPresentationTests
     [InlineData(AutomationRunStatus.TimedOut, false, true, false)]
     [InlineData(AutomationRunStatus.Cancelled, false, false, true)]
     [InlineData(AutomationRunStatus.Interrupted, false, false, true)]
+    [InlineData(AutomationRunStatus.Blocked, false, false, true)]
     public void StatusDetails_AreLocalizedAndNeverEchoUntrustedErrorCodes(AutomationRunStatus status, bool completed, bool failure, bool attention)
     {
         var start = new DateTimeOffset(2026, 10, 8, 10, 0, 0, TimeSpan.Zero);
@@ -35,6 +36,28 @@ public sealed class AutomationRunPresentationTests
         var run = new AutomationRun(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow,
             AutomationRunStatus.Failed, false, ErrorCode: "execution-unavailable");
         Assert.Equal(AutomationText.Get("ExecutionUnavailable"), new AutomationRunViewModel(run).Detail);
+    }
+
+    [Theory]
+    [InlineData("authorization-revision-changed", "RunBlockedReauthorization")]
+    [InlineData("authorization-directories-reduced", "RunBlockedDirectoriesReduced")]
+    [InlineData("provider-unavailable", "RunBlockedProviderMissing")]
+    [InlineData("model-unavailable", "RunBlockedModelMissing")]
+    [InlineData("project-unavailable", "RunBlockedProjectMissing")]
+    [InlineData("snapshot-mismatch", "RunBlockedSnapshotMismatch")]
+    [InlineData("snapshot-missing", "RunBlockedSnapshotMissing")]
+    [InlineData("unexpected-code", "RunBlockedGeneric")]
+    [InlineData(null, "RunBlockedGeneric")]
+    public void BlockedRun_MapsReasonCodeToLocalizedHint(string? code, string key)
+    {
+        var run = new AutomationRun(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow,
+            AutomationRunStatus.Blocked, false, DateTimeOffset.UtcNow, code);
+        var model = new AutomationRunViewModel(run);
+        Assert.Equal(AutomationText.Get("Blocked"), model.StatusLabel);
+        Assert.Equal(AutomationText.Get(key), model.Detail);
+        Assert.True(model.NeedsAttention);
+        Assert.False(model.IsCompleted);
+        Assert.False(model.IsFailure);
     }
 
     [Theory]

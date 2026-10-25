@@ -23,7 +23,7 @@ public sealed class ModelContextFailureMigrationTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(33, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(34, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var reopened = new SqliteWorkspaceRepository(fixture.Connections);
         Assert.Equal(failed with { IsPinned = true }, Assert.Single(await reopened.GetTasksAsync(failed.ProjectId, fixture.Token)));
         Assert.Equal(archived, Assert.Single(await reopened.GetArchivedTasksAsync(archived.ProjectId, fixture.Token)));
@@ -60,7 +60,7 @@ public sealed class ModelContextFailureMigrationTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Repository.SaveTaskAsync(failed with { FailureReason = TaskFailureReason.ModelContextCapacity }, fixture.Token);
 
-        Assert.Equal(33, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(34, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(16, await fixture.CountAsync("SELECT reason FROM agent_task_failures;"));
     }
 

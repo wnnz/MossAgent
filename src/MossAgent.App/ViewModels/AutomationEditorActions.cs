@@ -41,10 +41,16 @@ internal sealed class AutomationEditorActions(IAutomationRepository repository, 
             cancellation.ThrowIfCancellationRequested();
             var availableModels = await models.ReadAsync(cancellation);
             cancellation.ThrowIfCancellationRequested();
-            if (!availableProjects.Any(project => project.Id == schedule.ProjectId)
-                || !availableModels.Any(model => model.Provider.Id == schedule.ProviderId && model.Model.Id == schedule.ModelId))
+            var owner = availableProjects.FirstOrDefault(project => project.Id == schedule.ProjectId);
+            var choice = availableModels.FirstOrDefault(model =>
+                model.Provider.Id == schedule.ProviderId && model.Model.Id == schedule.ModelId);
+            if (owner is null || choice is null)
                 throw new ArgumentException("Automation selection is unavailable.");
             if (!IsCurrent(context)) return;
+            var snapshot = AutomationAuthorizationSnapshot.Capture(owner, choice.Provider, choice.Model,
+                schedule.Prompt, schedule.ApprovalPolicy,
+                (editor.Original?.AuthorizationSnapshot?.Generation ?? 0) + 1, clock.GetUtcNow());
+            schedule = schedule with { AuthorizationSnapshot = snapshot };
             var saved = await repository.SaveAsync(schedule, cancellation);
             if (!operation.IsAlive) return;
             if (saved)

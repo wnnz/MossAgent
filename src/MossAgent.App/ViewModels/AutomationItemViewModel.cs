@@ -3,7 +3,8 @@ using MossAgent.Domain;
 
 namespace MossAgent.App.ViewModels;
 
-public sealed class AutomationItemViewModel(AutomationSchedule schedule, string projectLabel, string modelLabel, bool running)
+public sealed class AutomationItemViewModel(AutomationSchedule schedule, string projectLabel,
+    string modelLabel, bool running, bool needsReauthorization = false)
 {
     public AutomationSchedule Schedule { get; } = schedule;
     public string Name => Schedule.Name;
@@ -11,7 +12,9 @@ public sealed class AutomationItemViewModel(AutomationSchedule schedule, string 
     public string ProjectLabel { get; } = projectLabel;
     public string ModelLabel { get; } = modelLabel;
     public bool IsRunning { get; } = running;
-    public string StateLabel => AutomationText.Get(IsRunning ? "Running" : Schedule.IsEnabled ? "Scheduled" : "Paused");
+    public bool NeedsReauthorization { get; } = needsReauthorization;
+    public string StateLabel => AutomationText.Get(IsRunning ? "Running" : NeedsReauthorization ? "NeedsReauthorization"
+        : Schedule.IsEnabled ? "Scheduled" : "Paused");
     public string ToggleLabel => AutomationText.Get(Schedule.IsEnabled ? "Pause" : "Enable");
     public string NextLabel => Schedule.IsEnabled
         ? AutomationText.Format("Next", TimeZoneInfo.ConvertTime(Schedule.NextRunAt,

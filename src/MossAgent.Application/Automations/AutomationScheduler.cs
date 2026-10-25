@@ -7,7 +7,8 @@ public sealed class AutomationScheduler(
     IAutomationRepository repository,
     IAutomationTaskRunner runner,
     IAutomationLease lease,
-    TimeProvider clock) : IAsyncDisposable
+    TimeProvider clock,
+    IAutomationAuthorizationGate authorization) : IAsyncDisposable
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly AutomationSchedulerLifetime _lifetime = new();
@@ -134,7 +135,19 @@ public sealed class AutomationScheduler(
         try
         {
             execution.Token.ThrowIfCancellationRequested();
-            status = await runner.RunAsync(schedule, run.TaskId, execution.Token).ConfigureAwait(false);
+            var decision = await authorization.EvaluateAsync(schedule, execution.Token).ConfigureAwait(false);
+            execution.Token.ThrowIfCancellationRequested();
+            if (decision.Context is null)
+            {
+                status = AutomationRunStatus.Blocked;
+                error = decision.ErrorCode ?? "snapshot-missing";
+            }
+            else
+            {
+                var outcome = await runner.RunAsync(decision.Context, run.TaskId, execution.Token).ConfigureAwait(false);
+                status = outcome.Status;
+                error = outcome.ErrorCode;
+            }
             if (status == AutomationRunStatus.Running) { status = AutomationRunStatus.Failed; error = "invalid-run-result"; }
             if (status == AutomationRunStatus.Cancelled && execution.IsTimedOut) status = AutomationRunStatus.TimedOut;
         }

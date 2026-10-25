@@ -1,5 +1,6 @@
 using Avalonia.Headless;
 using MossAgent.App.Services;
+using MossAgent.Application.Automations;
 using MossAgent.App.ViewModels;
 using MossAgent.Domain;
 using Xunit;
@@ -71,9 +72,13 @@ public sealed class AutomationAppFlowTests : IAsyncLifetime
         workspace.ModelPicker.SelectedReasoning = "高";
         fixture.Main.Diff.Show("current-pane-content");
         var reserved = Guid.NewGuid();
-        var runner = new WorkspaceAutomationRunner(fixture.Tasks, fixture.Configurations, workspace);
-        var result = await runner.RunAsync(Schedule(fixture, fixture.AlternativeModel), reserved, fixture.Token);
-        Assert.Equal(AutomationRunStatus.Completed, result);
+        var runner = new WorkspaceAutomationRunner(workspace);
+        var alternative = Assert.Single(await fixture.Configurations.GetProvidersAsync(fixture.Token),
+            item => item.Id == fixture.AlternativeModel.ProviderId);
+        var context = new AutomationRunContext(Schedule(fixture, fixture.AlternativeModel),
+            workspace.Catalog.SelectedProject!, alternative, fixture.AlternativeModel);
+        var result = await runner.RunAsync(context, reserved, fixture.Token);
+        Assert.Equal(AutomationRunStatus.Completed, result.Status);
         Assert.Same(model, workspace.SelectedModel);
         Assert.Same(provider, workspace.SelectedProvider);
         Assert.Equal(draft, workspace.ComposerText);
@@ -91,26 +96,49 @@ public sealed class AutomationAppFlowTests : IAsyncLifetime
     }, TestContext.Current.CancellationToken);
 
     [Theory]
-    [InlineData("project")]
-    [InlineData("provider")]
-    [InlineData("model")]
-    [InlineData("startup")]
-    [InlineData("shutdown")]
-    public Task UnavailableSelectionAndLifecycle_DoNotFallBackOrCreateTask(string reason) => _session.DispatchAsync(async () =>
+    [InlineData("project", "project-unavailable")]
+    [InlineData("provider", "provider-unavailable")]
+    [InlineData("model", "model-unavailable")]
+    public Task UnavailableSelection_BlocksAtAuthorizationGateWithoutCreatingTask(string reason, string code) => _session.DispatchAsync(async () =>
     {
         await using var fixture = await WorkspaceModelSelectionFixture.CreateAsync();
-        var schedule = Schedule(fixture);
-        schedule = reason switch
+        var project = fixture.Workspace.Catalog.SelectedProject!;
+        var snapshot = AutomationAuthorizationSnapshot.Capture(project, fixture.SelectedProvider,
+            fixture.SelectedModel, "只读检查项目。", ApprovalPolicy.ReadOnly, 1, DateTimeOffset.UtcNow);
+        var ghost = Guid.NewGuid();
+        var schedule = reason switch
         {
-            "project" => schedule with { ProjectId = Guid.NewGuid() },
-            "provider" => schedule with { ProviderId = Guid.NewGuid() },
-            "model" => schedule with { ModelId = Guid.NewGuid() },
-            _ => schedule
+            "project" => Schedule(fixture) with { ProjectId = ghost, AuthorizationSnapshot = Rekey(snapshot, projectId: ghost) },
+            "provider" => Schedule(fixture) with { ProviderId = ghost, AuthorizationSnapshot = Rekey(snapshot, providerId: ghost) },
+            _ => Schedule(fixture) with { ModelId = ghost, AuthorizationSnapshot = Rekey(snapshot, modelId: ghost) }
         };
+        var gate = new AutomationAuthorizationGate(fixture.Tasks, fixture.Configurations);
+        var decision = await gate.EvaluateAsync(schedule, fixture.Token);
+        Assert.Null(decision.Context);
+        Assert.Equal(code, decision.ErrorCode);
+        Assert.Empty(fixture.Server.Requests);
+        Assert.Empty(await fixture.Tasks.GetTasksAsync(fixture.Workspace.Catalog.SelectedProject!.Id, fixture.Token));
+    }, TestContext.Current.CancellationToken);
+
+    private static AutomationAuthorizationSnapshot Rekey(AutomationAuthorizationSnapshot snapshot,
+        Guid? projectId = null, Guid? providerId = null, Guid? modelId = null) =>
+        new(snapshot.Generation, projectId ?? snapshot.ProjectId, snapshot.ProjectAuthorizationRevision,
+            snapshot.AuthorizedDirectories, providerId ?? snapshot.ProviderId, snapshot.ProviderName,
+            modelId ?? snapshot.ModelId, snapshot.ModelName, snapshot.ApprovalPolicy,
+            snapshot.Prompt, snapshot.CreatedAt);
+
+    [Theory]
+    [InlineData("startup")]
+    [InlineData("shutdown")]
+    public Task UnavailableLifecycle_DoesNotFallBackOrCreateTask(string reason) => _session.DispatchAsync(async () =>
+    {
+        await using var fixture = await WorkspaceModelSelectionFixture.CreateAsync();
         if (reason == "startup") fixture.Workspace.Startup.Begin();
         if (reason == "shutdown") await fixture.Workspace.ShutdownAsync();
-        var runner = new WorkspaceAutomationRunner(fixture.Tasks, fixture.Configurations, fixture.Workspace);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(schedule, Guid.NewGuid(), fixture.Token));
+        var context = new AutomationRunContext(Schedule(fixture), fixture.Workspace.Catalog.SelectedProject!,
+            fixture.SelectedProvider, fixture.SelectedModel);
+        var runner = new WorkspaceAutomationRunner(fixture.Workspace);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(context, Guid.NewGuid(), fixture.Token));
         Assert.Empty(fixture.Server.Requests);
         Assert.Empty(await fixture.Tasks.GetTasksAsync(fixture.Workspace.Catalog.SelectedProject!.Id, fixture.Token));
     }, TestContext.Current.CancellationToken);
@@ -121,11 +149,13 @@ public sealed class AutomationAppFlowTests : IAsyncLifetime
         await using var fixture = await WorkspaceModelSelectionFixture.CreateAsync(pauseResponse: true);
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(fixture.Token);
         var taskId = Guid.NewGuid();
-        var runner = new WorkspaceAutomationRunner(fixture.Tasks, fixture.Configurations, fixture.Workspace);
-        var execution = runner.RunAsync(Schedule(fixture), taskId, cancellation.Token);
+        var runner = new WorkspaceAutomationRunner(fixture.Workspace);
+        var context = new AutomationRunContext(Schedule(fixture), fixture.Workspace.Catalog.SelectedProject!,
+            fixture.SelectedProvider, fixture.SelectedModel);
+        var execution = runner.RunAsync(context, taskId, cancellation.Token);
         await fixture.WaitUntilAsync(() => fixture.Server.Requests.Count == 1);
         await cancellation.CancelAsync();
-        Assert.Equal(AutomationRunStatus.Cancelled, await execution);
+        Assert.Equal(AutomationRunStatus.Cancelled, (await execution).Status);
         Assert.False(fixture.Runs.IsRunning(taskId));
         Assert.Null(fixture.Workspace.Catalog.SelectedTask);
         var task = Assert.Single(await fixture.Tasks.GetTasksAsync(fixture.Workspace.Catalog.SelectedProject!.Id, fixture.Token));

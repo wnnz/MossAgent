@@ -13,12 +13,17 @@ public sealed class SqliteAutomationRepository(SqliteConnectionFactory connectio
         await using var connection = connections.Create();
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT payload,revision,next_run_at FROM automation_schedules WHERE archived=0 ORDER BY rowid;";
+        command.CommandText = """
+            SELECT s.payload,s.revision,s.next_run_at,snap.payload
+            FROM automation_schedules s LEFT JOIN automation_snapshots snap ON snap.schedule_id=s.id
+            WHERE s.archived=0 ORDER BY s.rowid;
+            """;
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var schedules = new List<AutomationSchedule>();
         while (await reader.ReadAsync(cancellationToken))
             schedules.Add(JsonSerializer.Deserialize<AutomationSchedule>(reader.GetString(0))! with
-            { Revision = reader.GetInt64(1), NextRunAt = ParseTime(reader.GetString(2)) });
+            { Revision = reader.GetInt64(1), NextRunAt = ParseTime(reader.GetString(2)),
+                AuthorizationSnapshot = ReadSnapshot(reader, 3) });
         return schedules;
     }
 
@@ -27,7 +32,9 @@ public sealed class SqliteAutomationRepository(SqliteConnectionFactory connectio
         AutomationTiming.Validate(schedule);
         await using var connection = connections.Create();
         await connection.OpenAsync(cancellationToken);
+        await using var transaction = connection.BeginTransaction();
         await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = schedule.Revision == 0 ? """
             INSERT OR IGNORE INTO automation_schedules(id,payload,revision,enabled,next_run_at)
             VALUES($id,$payload,1,$enabled,$next);
@@ -40,7 +47,18 @@ public sealed class SqliteAutomationRepository(SqliteConnectionFactory connectio
         command.Parameters.AddWithValue("$enabled", schedule.IsEnabled);
         command.Parameters.AddWithValue("$next", FormatTime(schedule.NextRunAt));
         command.Parameters.AddWithValue("$revision", schedule.Revision);
-        return await command.ExecuteNonQueryAsync(cancellationToken) == 1;
+        if (await command.ExecuteNonQueryAsync(cancellationToken) != 1) return false;
+        await using var snapshot = connection.CreateCommand();
+        snapshot.Transaction = transaction;
+        snapshot.CommandText = schedule.AuthorizationSnapshot is null
+            ? "DELETE FROM automation_snapshots WHERE schedule_id=$id;"
+            : "INSERT OR REPLACE INTO automation_snapshots(schedule_id,payload) VALUES($id,$snapshot);";
+        snapshot.Parameters.AddWithValue("$id", schedule.Id.ToString());
+        if (schedule.AuthorizationSnapshot is not null)
+            snapshot.Parameters.AddWithValue("$snapshot", SerializeSnapshot(schedule.AuthorizationSnapshot));
+        await snapshot.ExecuteNonQueryAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return true;
     }
 
     public async Task<bool> ArchiveAsync(Guid id, long revision, CancellationToken cancellationToken)
@@ -146,6 +164,21 @@ public sealed class SqliteAutomationRepository(SqliteConnectionFactory connectio
         command.Parameters.AddWithValue("$status", (int)AutomationRunStatus.Interrupted);
         command.Parameters.AddWithValue("$now", FormatTime(now));
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static string SerializeSnapshot(AutomationAuthorizationSnapshot snapshot)
+    {
+        var payload = JsonSerializer.Serialize(snapshot);
+        return payload.Length is > 262144 or < 2
+            ? throw new ArgumentException("The automation authorization snapshot is out of bounds.")
+            : payload;
+    }
+
+    private static AutomationAuthorizationSnapshot? ReadSnapshot(SqliteDataReader reader, int ordinal)
+    {
+        if (reader.IsDBNull(ordinal)) return null;
+        try { return JsonSerializer.Deserialize<AutomationAuthorizationSnapshot>(reader.GetString(ordinal)); }
+        catch (Exception exception) when (exception is JsonException or ArgumentException or NotSupportedException) { return null; }
     }
 
     private static string FormatTime(DateTimeOffset value) => value.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);

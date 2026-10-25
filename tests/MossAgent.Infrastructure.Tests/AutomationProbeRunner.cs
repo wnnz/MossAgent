@@ -12,11 +12,11 @@ internal sealed class AutomationProbeRunner : IAutomationTaskRunner
     public bool Block { get; set; }
     public bool Throw { get; set; }
 
-    public async Task<AutomationRunStatus> RunAsync(AutomationSchedule schedule, Guid taskId, CancellationToken cancellationToken)
+    public async Task<AutomationRunOutcome> RunAsync(AutomationRunContext context, Guid taskId, CancellationToken cancellationToken)
     {
-        Requests.Enqueue((schedule, taskId));
+        Requests.Enqueue((context.Schedule, taskId));
         Started.TrySetResult();
         if (Throw) throw new InvalidOperationException("synthetic-api-key-must-not-leak");
-        return Block ? await Finish.Task.WaitAsync(cancellationToken) : AutomationRunStatus.Completed;
+        return new(Block ? await Finish.Task.WaitAsync(cancellationToken) : AutomationRunStatus.Completed);
     }
 }

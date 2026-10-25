@@ -107,10 +107,13 @@ public sealed class AutomationPlanListViewModel(IAutomationRepository repository
         for (var index = 0; index < schedules.Count; index++)
         {
             var schedule = schedules[index];
+            var choice = modelsById.GetValueOrDefault((schedule.ProviderId, schedule.ModelId));
+            var blocked = AutomationSnapshotReview.Evaluate(schedule,
+                projectsById.GetValueOrDefault(schedule.ProjectId), choice?.Provider, choice?.Model) is not null;
             snapshot[index] = new AutomationItemViewModel(schedule,
                 projectsById.GetValueOrDefault(schedule.ProjectId)?.Name ?? unavailable,
-                modelsById.GetValueOrDefault((schedule.ProviderId, schedule.ModelId))?.AccessibleName ?? unavailable,
-                scheduler.IsRunning(schedule.Id));
+                choice?.AccessibleName ?? unavailable,
+                scheduler.IsRunning(schedule.Id), blocked);
         }
         return snapshot;
     }

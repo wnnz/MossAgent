@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace MossAgent.Domain;
 
 public sealed record AutomationSchedule(
@@ -17,4 +19,10 @@ public sealed record AutomationSchedule(
     int TimeoutMinutes,
     bool IsEnabled,
     DateTimeOffset NextRunAt,
-    long Revision = 0);
+    long Revision = 0)
+{
+    /// <summary>Pinned authorization captured at creation/edit time. Persisted in a dedicated
+    /// store next to the schedule payload, never inside the serialized payload itself.</summary>
+    [JsonIgnore]
+    public AutomationAuthorizationSnapshot? AuthorizationSnapshot { get; init; }
+}

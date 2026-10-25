@@ -12,12 +12,12 @@ internal sealed class AutomationShutdownProbeRunner : IAutomationTaskRunner
     public TaskCompletionSource Cancelled { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     public TaskCompletionSource Released { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    public async Task<AutomationRunStatus> RunAsync(AutomationSchedule schedule, Guid taskId, CancellationToken cancellationToken)
+    public async Task<AutomationRunOutcome> RunAsync(AutomationRunContext context, Guid taskId, CancellationToken cancellationToken)
     {
         Requests.Enqueue(taskId);
         using var registration = cancellationToken.Register(() => Cancelled.TrySetResult());
         Started.TrySetResult();
         if (Block) await Released.Task;
-        return AutomationRunStatus.Completed;
+        return new(AutomationRunStatus.Completed);
     }
 }

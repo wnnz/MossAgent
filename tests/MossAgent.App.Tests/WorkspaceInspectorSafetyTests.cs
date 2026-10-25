@@ -102,7 +102,7 @@ public sealed class WorkspaceInspectorSafetyTests : IAsyncLifetime
         var schedule = new AutomationSchedule(Guid.NewGuid(), "isolated-background", "Synthetic read-only request.", Assert.IsType<Guid>(task.ProjectId),
             model.ProviderId, model.Id, AutomationFrequency.Daily, 1, 9, 0, DayOfWeek.Monday,
             TimeZoneInfo.Local.Id, ApprovalPolicy.ReadOnly, 30, false, DateTimeOffset.UtcNow.AddDays(1));
-        Assert.True(await fixture.Automations.SaveAsync(schedule, fixture.Token));
+        Assert.True(await fixture.Automations.SaveAsync(await fixture.AuthorizedAsync(schedule), fixture.Token));
         await fixture.Scheduler.StartAsync(fixture.Token);
         Assert.True(await fixture.Scheduler.RunNowAsync(schedule.Id, fixture.Token));
         await fixture.WaitUntilAsync(() => fixture.Server.Requests.Count == 1);

@@ -11,6 +11,7 @@ public sealed class AutomationSchedulerTests : IAsyncLifetime
     private readonly string _root = Path.Combine(Path.GetTempPath(), "MossAgent.Tests", Guid.NewGuid().ToString("N"));
     private readonly AutomationTestClock _clock = new();
     private readonly AutomationProbeRunner _runner = new();
+    private readonly AutomationProbeGate _gate = new();
     private AutomationScheduler _scheduler = null!;
     private SqliteAutomationRepository _repository = null!;
     private SqliteConnectionFactory _connections = null!;
@@ -25,7 +26,7 @@ public sealed class AutomationSchedulerTests : IAsyncLifetime
         _connections = new SqliteConnectionFactory(paths);
         await new SqliteDatabaseInitializer(paths, _connections).InitializeAsync(Token);
         _repository = new SqliteAutomationRepository(_connections);
-        _scheduler = new AutomationScheduler(_repository, _runner, new AutomationSchedulerLease(paths), _clock);
+        _scheduler = new AutomationScheduler(_repository, _runner, new AutomationSchedulerLease(paths), _clock, _gate);
         await _scheduler.StartAsync(Token);
     }
 
@@ -125,7 +126,7 @@ public sealed class AutomationSchedulerTests : IAsyncLifetime
         await _repository.SaveAsync(plan, Token);
         await _scheduler.RunNowAsync(plan.Id, Token);
         await using var secondary = new AutomationScheduler(_repository, new AutomationProbeRunner(),
-            new AutomationSchedulerLease(new AppDataPaths(_root)), _clock);
+            new AutomationSchedulerLease(new AppDataPaths(_root)), _clock, new AutomationProbeGate());
         await secondary.StartAsync(Token);
         Assert.False(secondary.IsAvailable);
         Assert.Equal("another-instance", secondary.ErrorCode);
@@ -149,6 +150,20 @@ public sealed class AutomationSchedulerTests : IAsyncLifetime
         Assert.Equal(AutomationRunStatus.Cancelled, Assert.Single(await _repository.GetRunsAsync(plan.Id, 50, Token)).Status);
         using var nextOwner = new AutomationSchedulerLease(new AppDataPaths(_root));
         Assert.True(nextOwner.TryAcquire());
+    }
+
+    [Fact]
+    public async Task BlockedAuthorization_RecordsReasonCodeWithoutInvokingRunner()
+    {
+        _gate.BlockCode = "authorization-revision-changed";
+        var plan = Schedule();
+        await _repository.SaveAsync(plan, Token);
+        Assert.True(await _scheduler.RunNowAsync(plan.Id, Token));
+        await WaitFinishedAsync(plan.Id);
+        Assert.Empty(_runner.Requests);
+        var run = Assert.Single(await _repository.GetRunsAsync(plan.Id, 50, Token));
+        Assert.Equal(AutomationRunStatus.Blocked, run.Status);
+        Assert.Equal("authorization-revision-changed", run.ErrorCode);
     }
 
     [Fact]

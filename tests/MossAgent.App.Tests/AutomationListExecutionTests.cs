@@ -37,7 +37,8 @@ public sealed class AutomationListExecutionTests : IAsyncLifetime
         await using var fixture = await WorkspaceModelSelectionFixture.CreateAsync(pauseResponse: true);
         var repository = new AutomationListProbeRepository(fixture.Automations);
         using var page = new AutomationViewModel(repository, fixture.Scheduler, fixture.Configurations, fixture.Tasks, fixture.Workspace.Catalog);
-        await fixture.Automations.SaveAsync(AutomationListOwnershipTests.Schedule(fixture), fixture.Token);
+        await fixture.Automations.SaveAsync(
+            await fixture.AuthorizedAsync(AutomationListOwnershipTests.Schedule(fixture)), fixture.Token);
         await fixture.Scheduler.StartAsync(fixture.Token);
         await page.ReloadAsync();
         await page.RunNowCommand.ExecuteAsync(Assert.Single(page.Items));

@@ -9,7 +9,7 @@ internal sealed class AutomationShutdownFixture : IAsyncDisposable
     public AutomationShutdownFixture(string? phase = null, bool cooperative = true)
     {
         Repository = new AutomationShutdownProbeRepository { BlockAt = phase, IsCooperative = cooperative };
-        Scheduler = new AutomationScheduler(Repository, Runner, Lease, TimeProvider.System);
+        Scheduler = new AutomationScheduler(Repository, Runner, Lease, TimeProvider.System, new AutomationProbeGate());
     }
     public AutomationShutdownProbeRepository Repository { get; }
     public AutomationShutdownProbeRunner Runner { get; } = new();

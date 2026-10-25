@@ -153,6 +153,15 @@ internal sealed class WorkspaceModelSelectionFixture : IAsyncDisposable
         return Assert.Single(await Configurations.GetModelsAsync(provider.Id, Token));
     }
 
+    public async Task<AutomationSchedule> AuthorizedAsync(AutomationSchedule schedule, long generation = 1)
+    {
+        var project = Assert.Single(await Tasks.GetProjectsAsync(Token), item => item.Id == schedule.ProjectId);
+        var provider = Assert.Single(await Configurations.GetProvidersAsync(Token), item => item.Id == schedule.ProviderId);
+        var model = Assert.Single(await Configurations.GetModelsAsync(provider.Id, Token), item => item.Id == schedule.ModelId);
+        return schedule with { AuthorizationSnapshot = AutomationAuthorizationSnapshot.Capture(
+            project, provider, model, schedule.Prompt, schedule.ApprovalPolicy, generation, DateTimeOffset.UtcNow) };
+    }
+
     public async Task SetSelectedModelEnabledAsync(bool enabled)
     {
         Main.Models.EditProviderModelCommand.Execute(SelectedModel);

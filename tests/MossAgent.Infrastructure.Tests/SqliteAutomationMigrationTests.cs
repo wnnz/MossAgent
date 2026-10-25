@@ -10,6 +10,7 @@ public sealed class SqliteAutomationMigrationTests
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
         await fixture.ExecuteAsync("""
+            DROP TABLE automation_snapshots;
             DROP TABLE automation_runs;
             DROP TABLE automation_schedules;
             DROP TABLE conversation_model_preferences;
@@ -28,8 +29,8 @@ public sealed class SqliteAutomationMigrationTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(33, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
-        Assert.Equal(2, await fixture.CountAsync("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name LIKE 'automation_%';"));
+        Assert.Equal(34, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(3, await fixture.CountAsync("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name LIKE 'automation_%';"));
         Assert.Equal(fixture.Task, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)));
     }
 }
