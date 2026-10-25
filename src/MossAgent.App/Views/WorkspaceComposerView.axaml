@@ -136,6 +136,7 @@
     </StackPanel>
       <StackPanel Grid.Row="3">
         <views:WorkspaceWorktreeRecoveryView Margin="0,6,0,0" DataContext="{Binding WorktreeRecovery}" />
+        <views:WorkspaceArtifactRecoveryView Margin="0,6,0,0" DataContext="{Binding ArtifactRecovery}" />
         <views:WorkspaceWorktreeAuthorizationView DataContext="{Binding Catalog.WorktreeAuthorization}" />
         <views:WorkspaceFollowupQueueView Margin="0,6,0,0" DataContext="{Binding Queue}" IsVisible="{Binding IsVisible}" />
         <views:WorkspaceSteeringView Margin="0,6,0,0" DataContext="{Binding Steering}" IsVisible="{Binding IsVisible}" />

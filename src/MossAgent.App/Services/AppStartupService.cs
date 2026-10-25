@@ -3,6 +3,7 @@ using MossAgent.App.ViewModels;
 using MossAgent.Application.Attachments;
 using MossAgent.Application.Git;
 using MossAgent.Mcp;
+using MossAgent.Tools.Abstractions.Files;
 
 namespace MossAgent.App.Services;
 
@@ -13,19 +14,22 @@ public sealed class AppStartupService : IAsyncDisposable
     private readonly Action<Action> _publish;
     private readonly IWorktreeCreationIntents? _creationIntents;
     private readonly IAttachmentSnapshotReaper? _reaper;
+    private readonly IArtifactSessionJournal? _artifactJournal;
     private readonly CancellationTokenSource _shutdown = new();
     private readonly object _gate = new();
     private Task? _loading;
     private bool _disposed;
 
     public AppStartupService(IMcpManager mcp, AppStartupViewModel state, Action<Action>? publish = null,
-        IWorktreeCreationIntents? creationIntents = null, IAttachmentSnapshotReaper? reaper = null)
+        IWorktreeCreationIntents? creationIntents = null, IAttachmentSnapshotReaper? reaper = null,
+        IArtifactSessionJournal? artifactJournal = null)
     {
         _mcp = mcp;
         _state = state;
         _publish = publish ?? (callback => Dispatcher.UIThread.Post(callback));
         _creationIntents = creationIntents;
         _reaper = reaper;
+        _artifactJournal = artifactJournal;
     }
 
     public Task StartAsync()
@@ -61,6 +65,12 @@ public sealed class AppStartupService : IAsyncDisposable
         if (_reaper is not null)
         {
             try { storageWarning = (await _reaper.ReclaimAsync(_shutdown.Token).ConfigureAwait(false)).HasFailures; }
+            catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { return; }
+            catch (Exception) { storageWarning = true; }
+        }
+        if (_artifactJournal is not null)
+        {
+            try { await _artifactJournal.ReconcileAsync(_shutdown.Token).ConfigureAwait(false); }
             catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { return; }
             catch (Exception) { storageWarning = true; }
         }

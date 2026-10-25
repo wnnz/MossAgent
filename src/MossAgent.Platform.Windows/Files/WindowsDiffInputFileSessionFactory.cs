@@ -4,7 +4,8 @@ using MossAgent.Tools.Abstractions.Files;
 
 namespace MossAgent.Platform.Windows.Files;
 
-public sealed class WindowsDiffInputFileSessionFactory(IAuthorizedDirectoryCreator directories) : IDiffInputFileSessionFactory
+public sealed class WindowsDiffInputFileSessionFactory(IAuthorizedDirectoryCreator directories,
+    IArtifactSessionJournal? journal = null) : IDiffInputFileSessionFactory
 {
     public Task<IDiffInputFileSession> CreateAsync(ToolExecutionContext context, ReadOnlyMemory<byte> content,
         CancellationToken cancellationToken) => Task.Run(() => CreateCoreAsync(context, content, cancellationToken), cancellationToken);
@@ -33,7 +34,10 @@ public sealed class WindowsDiffInputFileSessionFactory(IAuthorizedDirectoryCreat
                 FileShare.Read, 2, false, deleteOnClose: true)!;
             try { stream = new FileStream(handle, FileAccess.ReadWrite, 81920, isAsync: false); }
             catch { handle.Dispose(); throw; }
-            session = new WindowsDiffInputFileSession(path, stream, lease);
+            // Journal before content is written so a crash leaves a recoverable record.
+            var record = journal is null ? (long?)null : await journal.RecordAsync(context.TaskId,
+                Path.GetFileName(path), path, ArtifactSessionKind.DiffInput, content.Length, token).ConfigureAwait(false);
+            session = new WindowsDiffInputFileSession(path, stream, lease, journal, record);
             new WindowsFileReadHandleValidator().Validate(stream, [root]);
             await stream.WriteAsync(content, token).ConfigureAwait(false);
             await stream.FlushAsync(token).ConfigureAwait(false);

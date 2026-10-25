@@ -312,4 +312,15 @@
 <data name="AttachmentDocumentUnsupported" xml:space="preserve"><value>暂不支持此文档类型，请选择 PDF 文件。</value></data>
 <data name="AttachmentDocumentSizeLimit" xml:space="preserve"><value>PDF 超出限制：单个最多 10 MiB、合计 25 MiB。请移除部分 PDF 后重试。</value></data>
 <data name="AttachmentDocumentExtractorUnavailable" xml:space="preserve"><value>PDF 文本提取组件不可用，请检查应用安装后重试。</value></data>
+<data name="ArtifactRecoveryTitle" xml:space="preserve"><value>产物文件待核实（{0}）</value></data>
+<data name="ArtifactRecoveryHint" xml:space="preserve"><value>以下文件是中断或异常的写入会话留下的产物。请在任务产物目录中手动检查后再处理；“标记已核实”只关闭此提示，不会删除文件、不会重新写入，也不会继续任何任务。</value></data>
+<data name="ArtifactRecoveryStageStaged" xml:space="preserve"><value>暂存残留</value></data>
+<data name="ArtifactRecoveryStageCompleted" xml:space="preserve"><value>已提交未保留</value></data>
+<data name="ArtifactRecoveryStageCleanupUnknown" xml:space="preserve"><value>清理未确认</value></data>
+<data name="ArtifactRecoveryStageUnverified" xml:space="preserve"><value>路径复核未通过</value></data>
+<data name="ArtifactRecoveryStageUnknown" xml:space="preserve"><value>尚未复核</value></data>
+<data name="ArtifactRecoveryKindArtifact" xml:space="preserve"><value>任务产物</value></data>
+<data name="ArtifactRecoveryKindDiffInput" xml:space="preserve"><value>差异输入</value></data>
+<data name="ArtifactRecoveryDetail" xml:space="preserve"><value>任务 {0} · 记录于 {1}</value></data>
+<data name="ArtifactRecoveryLoadFailed" xml:space="preserve"><value>无法读取产物会话记录，请刷新重试。</value></data>
 </root>

@@ -5,7 +5,7 @@ using MossAgent.Tools.Abstractions.Files;
 namespace MossAgent.Platform.Windows.Files;
 
 public sealed class WindowsArtifactFileSessionFactory(IAtomicFileWriteSessionFactory writes,
-    IAuthorizedDirectoryCreator directories) : IArtifactFileSessionFactory
+    IAuthorizedDirectoryCreator directories, IArtifactSessionJournal? journal = null) : IArtifactFileSessionFactory
 {
     public Task<IArtifactFileSession> CreateAsync(ToolExecutionContext context, string prefix,
         string extension, CancellationToken cancellationToken) =>
@@ -29,7 +29,13 @@ public sealed class WindowsArtifactFileSessionFactory(IAtomicFileWriteSessionFac
         token.ThrowIfCancellationRequested();
         var path = Path.Combine(root, $"{prefix}-{Guid.NewGuid():N}{extension}");
         var session = writes.Create(path, [root], token);
-        try { return new WindowsArtifactFileSession(path, session, context); }
+        try
+        {
+            // Journal first so a crash leaves a recoverable record; a journal failure fails the create.
+            var record = journal is null ? (long?)null : await journal.RecordAsync(context.TaskId,
+                Path.GetFileName(path), path, ArtifactSessionKind.Artifact, null, token).ConfigureAwait(false);
+            return new WindowsArtifactFileSession(path, session, context, journal, record);
+        }
         catch { session.Dispose(); throw; }
     }
 }

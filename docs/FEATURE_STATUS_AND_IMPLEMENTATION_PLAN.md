@@ -55,7 +55,7 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 | C10 | 本地常规 NTFS 原子文本写入：固定父目录链、独占暂存、相对句柄提交、外部修改检查及失败清理；不支持的元数据保守拒绝 | [原子写入](archive/SECURITY.md#write-handle-path-safety-acceptance)；最终名称条件替换尚缺，见 R02 |
 | C11 | 普通/递归删除、撤销新建文件按受控句柄执行；删除前有界预检，部分完成和取消结果可查看 | [删除与撤销](archive/SECURITY.md#delete-handle-path-safety-acceptance)；不是树事务或崩溃回滚，见 R02 |
 | C12 | 文件/目录树复制和显式目录创建：源树句柄预检、目标父目录租约、逐文件原子提交；同卷移动/重命名绑定源对象，跨卷明确拒绝 | [复制](archive/SECURITY.md#copy-handle-path-safety-acceptance)、[移动](archive/SECURITY.md#move-handle-path-safety-acceptance)；元数据完整克隆、跨卷安全方案及最终竞争仍见 R02 |
-| C13 | 任务产物读取、预览、编辑前后快照和最终补丁使用共享会话；完成与调用方保留分离，失败按原句柄清理，复制后校验 hash | [产物读取](archive/SECURITY.md#artifact-handle-path-safety-acceptance)、[共享产物会话](archive/SECURITY.md#owned-artifact-session-acceptance)；崩溃清理/引用回收见 R02/R05 |
+| C13 | 任务产物读取、预览、编辑前后快照和最终补丁使用共享会话；完成与调用方保留分离，失败按原句柄清理，复制后校验 hash | [产物读取](archive/SECURITY.md#artifact-handle-path-safety-acceptance)、[共享产物会话](archive/SECURITY.md#owned-artifact-session-acceptance)；会话阶段期刊已由 schema 37 覆盖，引用回收见 R05 |
 | C14 | Git 状态、已暂存/未暂存差异、任务快照统计、补丁审阅及确认撤销；Git diff/numstat 临时输入持续固定、只共享读取并按句柄清理 | [差异审阅](archive/GIT_WORKTREES.md#diff-review-acceptance)、[撤销](archive/GIT_WORKTREES.md#file-change-undo-acceptance)、[Git 临时输入](archive/GIT_WORKTREES.md#git-diff-input-session-acceptance)；不是 Git 进程隔离，见 R01/R11 |
 | C15 | 文件级暂存/取消暂存、已暂存内容预览确认提交、捕获 commit 的单分支预览确认推送；审批后复核 HEAD/索引/远端，不自动 stage-all 或强推 | [暂存](archive/GIT_WORKTREES.md#git-staging-acceptance)、[提交](archive/GIT_WORKTREES.md#git-commit-acceptance)、[推送](archive/GIT_WORKTREES.md#git-push-acceptance)；区块、远端配置和真实认证见 R11 |
 | C16 | 独立工作树创建、手工选择分支/标签/提交并固定基准 commit、有界本地分支/标签搜索分页及 commit 预览、连续对话、重开、工具守卫和确认清理；失败目录保留供核实 | [基准选择](archive/GIT_WORKTREES.md#worktree-base-reference-acceptance)、[工作树路径](archive/GIT_WORKTREES.md#worktree-path-safety-acceptance)；远端获取、创建/清理竞态及崩溃见 R04 |
@@ -72,7 +72,7 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 | C22 | 统一工具查找/schema/能力与路径/风险/审批/取消与超时/输出限制/产物/审计；主/子代理工具 allowlist，UI 展示等待、审批、执行和结果 | [工具 schema](archive/TERMINAL_TOOLS.md#tool-schema-acceptance)、[工具范围](archive/TERMINAL_TOOLS.md#tool-scope-acceptance)、[审批展示](archive/TERMINAL_TOOLS.md#global-approval-presentation-acceptance)；入口全面审计及 OS 边界见 R01/R02 |
 | C23 | schema 24 启动恢复遗留进行中工具审计为结果未知，保留人工核实提示；不显示为成功、不自动重做 | [中断审计](archive/TERMINAL_TOOLS.md#audit-interruption-recovery-acceptance)；全副作用时序仍见 R02/R03/R07 |
 | C24 | 内嵌 WebView2、受管外部 Chrome/Edge、显式 CDP 和任务标签页；DOM 操作/截图/下载与接管栏；取消/超时后旧会话失效并清理实际 SDK 资源 | [浏览器取消](archive/BROWSER_MCP.md#browser-operation-cancellation-acceptance)、[Queue 浏览器链路](archive/BROWSER_MCP.md#queue-browser-runtime-acceptance)、[已提交副作用恢复](archive/BROWSER_MCP.md#browser-committed-effect-recovery-acceptance)；模式切换/接管完整矩阵见 R07 |
-| C25 | 浏览器截图/下载进入任务所属产物会话，审批后创建、有界导出、hash、SDK 暂存清理及最终复核；清理未知不伪装成功 | [浏览器产物](archive/BROWSER_MCP.md#browser-artifact-session-acceptance)；网络/缓存配额、未知状态持久化和崩溃回收见 R02/R07 |
+| C25 | 浏览器截图/下载进入任务所属产物会话，审批后创建、有界导出、hash、SDK 暂存清理及最终复核；清理未知不伪装成功 | [浏览器产物](archive/BROWSER_MCP.md#browser-artifact-session-acceptance)；产物会话未知状态持久化已由 schema 37 覆盖，网络/缓存配额与 SDK 暂存清理仍缺，见 R02/R07 |
 | C26 | MCP stdio/Streamable HTTP 配置、headers/代理、发现、动态注册和标准管线执行；故障提示、显式重连、重载及迟到结果抑制 | [MCP 执行](archive/BROWSER_MCP.md#mcp-execution-acceptance)、[UI 恢复](archive/BROWSER_MCP.md#mcp-ui-recovery-acceptance)；认证、配置代际和传输中断见 R08 |
 | C27 | 自定义子代理名称、触发指导、提示词、模型、强度和上下文共享；`subagent.run` 选定子模型执行，子工具继承并收窄权限，父对话展示过程和结果，禁止递归委托 | [设置到运行](archive/AGENTS_AUTOMATIONS.md#subagent-settings-to-runtime-acceptance)、[生命周期](archive/AGENTS_AUTOMATIONS.md#subagent-lifecycle-native-acceptance)；触发依赖主模型选择，非确定规则引擎；完整状态矩阵及图片共享见 R09/R05 |
 
@@ -119,7 +119,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | 编号 | 当前状态 | 未完成的功能或边界 | 优先级/依赖 |
 | --- | --- | --- | --- |
 | R01 | 部分完成；安全阻断 | 命令/PTY/Git hooks/helpers/stdio MCP 等代码执行的真实文件系统隔离 | P0；原生 MXC 独立环境尚未就绪 |
-| R02 | 部分完成、部分未验证 | 最终路径竞争、严格撤权排空、完整入口审计、产物/缓存崩溃回收与配额 | P0；复用已有句柄端口和 schema 26–28 |
+| R02 | 部分完成、部分未验证 | 产物/diff 输入会话恢复期刊已落地（schema 37：创建即登记、阶段分级、启动对账、恢复面板人工核实）；最终路径竞争、严格撤权排空、完整入口审计、下载网络/缓存配额、SDK 暂存清理与引用回收仍缺 | P0；复用已有句柄端口和 schema 26–28 |
 | R03 | 附件 Steer/发送偏好未实现；其他矩阵未验证 | 附件引导、默认发送配置、Queue/Steer 竞争及事务/副作用中崩溃 | P1；R02/R05 |
 | R04 | 部分完成 | 创建/清理 intent 生命周期、恢复面板、重试移除与 Windows 句柄级删除守卫已落地；清理前 drain、注册槽清理、替换对象重新授权、非 Windows 守卫及完整崩溃生命周期仍缺 | P1；R01/R02 |
 | R05 | 部分完成 | PDF/其他文件、全图查看、子代理图像共享、未引用快照安全回收 | P1；模型协议与产物会话 |
@@ -194,6 +194,16 @@ Windows 验收环境尚未就绪；本机已有诊断只获得较弱 DACL 层，
 迟到的旧读取/注册不能重新激活旧授权。根身份句柄、工作树环境租约及 ConPTY 清理成功后
 才释放项目租约；清理失败保留本机准入阻断。该机制不是跨进程排空协议，也不证明所有
 浏览器/MCP/产物资源已纳入登记；崩溃后的持久化未知状态及 OS 文件系统隔离仍未完成。
+
+当前开发分支增量：schema 37 `artifact_session_records` 期刊已落地——任务产物会话与
+Git diff 临时输入会话在创建即登记（记录失败则拒绝创建并回滚文件），完成/保留/丢弃/
+清理未知分级推进；清理失败先记 CleanupUnknown 再抛出原有错误码。启动对账只处理陈旧
+非终态记录（默认宽限 5 分钟），按任务产物目录与文件名复核归属：文件缺失归 Discarded、
+存在归 Orphaned 并按原阶段记 staged/completed/cleanup_unknown 子码，路径复核未通过
+记 unverified；对账从不删除文件、不自动确认。编辑器区新增产物恢复面板（与 worktree
+恢复面板同构），按当前项目列出 Orphaned 记录并提供条件化“标记已核实”（并发变化给出
+stale 提示并刷新）。浏览器下载网络/缓存配额、Playwright SDK 暂存目录清理、引用回收
+（依赖 R05）与跨进程排空仍未覆盖，R02 保持部分完成。
 
 1. Application 建立 task/run/授权代际的资源登记与状态：可接收新操作、撤销中、资源已排空、
    清理未知。撤权先关闭新入口，再取消 Agent/工具/PTY/Git/Browser/MCP，限时等待实际资源退出；
