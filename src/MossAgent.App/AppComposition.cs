@@ -98,6 +98,7 @@ internal static class AppComposition
         services.AddSingleton<ProjectAuthorizationMonitor>();
         services.AddSingleton<IConversationPreferenceRepository, SqliteConversationPreferenceRepository>();
         services.AddSingleton<IConversationDraftRepository, SqliteConversationDraftRepository>();
+        services.AddSingleton<IGitCommitDraftRepository, SqliteGitCommitDraftRepository>();
         services.AddSingleton<IConversationFollowupRepository, SqliteConversationFollowupRepository>();
         services.AddSingleton<IConversationSteeringRepository, SqliteConversationSteeringRepository>();
         services.AddSingleton<ConversationFollowupPreparer>();

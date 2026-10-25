@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.App.Resources;
+using MossAgent.Application.Persistence;
 using MossAgent.Tools.Abstractions;
 
 namespace MossAgent.App.ViewModels;
@@ -26,11 +27,11 @@ public sealed class DiffPaneViewModel : ObservableObject, IDisposable, IAsyncDis
     private int _generation;
     private int _diffVersion;
 
-    public DiffPaneViewModel(IToolExecutor tools)
+    public DiffPaneViewModel(IToolExecutor tools, IGitCommitDraftRepository? commitDrafts = null)
     {
         _tools = tools;
         IndexActions = new(tools, RefreshAsync);
-        Commit = new(tools, RefreshAsync);
+        Commit = new(tools, RefreshAsync, commitDrafts);
         Push = new(tools, RefreshAsync);
         RefreshCommand = new AsyncRelayCommand(RefreshAsync, () => HasTask && !IsLoading);
     }

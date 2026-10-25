@@ -58,6 +58,7 @@ public sealed class SqliteDatabaseInitializer(
         await ApplyVersionAsync(connection, 37, ArtifactSessionJournalDatabaseSchema.VersionThirtySeven, cancellationToken);
         await ApplyVersionAsync(connection, 38, ArtifactSessionJournalDatabaseSchema.VersionThirtyEight, cancellationToken);
         await ApplyVersionAsync(connection, 39, SteeringAttachmentDatabaseSchema.VersionThirtyNine, cancellationToken);
+        await ApplyVersionAsync(connection, 40, GitCommitDraftDatabaseSchema.VersionForty, cancellationToken);
         await SqliteInterruptedWorkRecovery.RecoverAsync(connection, cancellationToken);
     }
 

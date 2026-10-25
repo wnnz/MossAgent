@@ -204,6 +204,9 @@
   <data name="GitCommitCancelling" xml:space="preserve"><value>已请求停止，正在等待实际操作和清理结束。</value></data>
   <data name="GitCommitInterrupted" xml:space="preserve"><value>操作已取消或超时；提交可能已经产生。请先检查 Git 历史，再刷新预览，勿直接重复提交。</value></data>
   <data name="GitCommitFailed" xml:space="preserve"><value>提交未能确认完成。请检查 Git 身份、索引锁、钩子、签名和提交历史，再刷新预览；提交说明已保留。</value></data>
+  <data name="GitCommitProbablyLanded" xml:space="preserve"><value>提交可能已完成（已核对仓库状态：HEAD 已前进且暂存区为空）。请检查 Git 历史确认；提交说明草稿已消费。</value></data>
+  <data name="GitCommitExternallyChanged" xml:space="preserve"><value>仓库状态已变化：HEAD 已前进但暂存区仍有内容，可能混入了外部变更。请核对提交历史；提交说明草稿已保留。</value></data>
+  <data name="GitCommitOutcomeUnknown" xml:space="preserve"><value>无法确认提交结果（核对仓库状态失败），提交说明草稿已保留。请检查 Git 历史后再决定是否重新提交。</value></data>
   <data name="GitPushTitle" xml:space="preserve"><value>推送已提交内容</value></data>
   <data name="GitPushOpen" xml:space="preserve"><value>推送分支…</value></data>
   <data name="GitPushRemote" xml:space="preserve"><value>已配置的远端名称</value></data>

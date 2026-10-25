@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.App.Browser;
 using MossAgent.App.Resources;
+using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 using MossAgent.Tools.Abstractions;
 using MossAgent.Tools.Abstractions.Git;
@@ -13,23 +14,27 @@ public sealed class GitCommitViewModel : ObservableObject, IDisposable, IAsyncDi
 {
     private readonly IToolExecutor _tools;
     private readonly Func<CancellationToken, Task> _refresh;
-    private readonly Dictionary<Guid, string> _drafts = [];
+    private readonly GitCommitDraftBookkeeping _bookkeeping;
     private readonly CancellationTokenSource _shutdown = new();
     private CancellationTokenSource _selection = new();
     private CancellationTokenSource? _operation;
     private ToolExecutionContext? _context;
     private GitCommitPreview? _preview;
+    private Task _draftLoad = Task.CompletedTask;
     private string _message = string.Empty;
     private string _status = string.Empty;
     private bool _open;
     private bool _busy;
     private bool _disposed;
+    private bool _draftTrackingSuppressed;
     private int _generation;
 
-    public GitCommitViewModel(IToolExecutor tools, Func<CancellationToken, Task> refresh)
+    public GitCommitViewModel(IToolExecutor tools, Func<CancellationToken, Task> refresh,
+        IGitCommitDraftRepository? drafts = null, TimeSpan? saveDelay = null)
     {
         _tools = tools;
         _refresh = refresh;
+        _bookkeeping = new(drafts, saveDelay);
         OpenCommand = new(OpenAsync, () => CanStart && !IsOpen);
         RefreshPreviewCommand = new(token => RunAsync(false, token), () => CanStart && IsOpen);
         CommitCommand = new(token => RunAsync(true, token), () => CanCommit);
@@ -53,7 +58,20 @@ public sealed class GitCommitViewModel : ObservableObject, IDisposable, IAsyncDi
     public bool CanCommit => CanStart && IsOpen && _preview is { StagedFiles: > 0 }
         && !string.IsNullOrWhiteSpace(Message) && Message.Length <= 8192
         && !Message.Any(character => char.IsControl(character) && character is not ('\r' or '\n' or '\t'));
-    public string Message { get => _message; set { if (SetProperty(ref _message, value)) { OnPropertyChanged(nameof(CanCommit)); CommitCommand.NotifyCanExecuteChanged(); } } }
+    public string Message
+    {
+        get => _message;
+        set
+        {
+            if (!SetProperty(ref _message, value)) return;
+            OnPropertyChanged(nameof(CanCommit));
+            CommitCommand.NotifyCanExecuteChanged();
+            if (!_draftTrackingSuppressed && !_disposed && _context is { } context)
+                _bookkeeping.NoteEdited(context.TaskId, value ?? string.Empty);
+        }
+    }
+    internal Task DraftLoad => _draftLoad;
+    internal Task FlushDraftsAsync() => _bookkeeping.FlushAsync();
     public string Status { get => _status; private set { if (SetProperty(ref _status, value)) OnPropertyChanged(nameof(HasStatus)); } }
     public string PreviewSummary => _preview is { } preview ? InspectorText.Format("GitCommitPreviewCount", preview.StagedFiles) : string.Empty;
     public string BranchSummary => _preview is { } preview ? InspectorText.Format("GitCommitBranch",
@@ -63,17 +81,37 @@ public sealed class GitCommitViewModel : ObservableObject, IDisposable, IAsyncDi
     public void Attach(ToolExecutionContext? context)
     {
         if (_disposed) return;
-        if (_context is { } previous) _drafts[previous.TaskId] = Message;
+        if (_context is { } previous) _bookkeeping.NoteSet(previous.TaskId, Message);
         _generation++;
         _selection.Cancel();
         _selection.Dispose();
         _selection = new();
         _context = context;
         _preview = null;
-        Message = context is null ? string.Empty : _drafts.GetValueOrDefault(context.TaskId, string.Empty);
+        SetMessageSilently(context is null ? string.Empty : _bookkeeping.TextOf(context.TaskId));
+        if (context is { } next && !_bookkeeping.IsLoaded(next.TaskId))
+            _draftLoad = LoadDraftAsync(next.TaskId, _generation, _selection.Token);
         IsOpen = false;
         Status = string.Empty;
         NotifyState();
+    }
+
+    private async Task LoadDraftAsync(Guid taskId, int generation, CancellationToken token)
+    {
+        var restored = await _bookkeeping.LoadAsync(taskId, token).ConfigureAwait(false);
+        if (restored is null) return;
+        await PublishAsync(() =>
+        {
+            if (!IsCurrent(generation) || _context?.TaskId != taskId) return;
+            SetMessageSilently(restored);
+        }).ConfigureAwait(false);
+    }
+
+    private void SetMessageSilently(string value)
+    {
+        _draftTrackingSuppressed = true;
+        try { Message = value; }
+        finally { _draftTrackingSuppressed = false; }
     }
 
     private async Task OpenAsync(CancellationToken token)
@@ -91,6 +129,7 @@ public sealed class GitCommitViewModel : ObservableObject, IDisposable, IAsyncDi
         var generation = _generation;
         var message = Message;
         var expected = _preview?.State;
+        var expectedHead = _preview?.Head;
         var closeAfterCompletion = false;
         using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(5));
         using var operation = CancellationTokenSource.CreateLinkedTokenSource(caller, deadline.Token, _selection.Token, _shutdown.Token);
@@ -102,6 +141,13 @@ public sealed class GitCommitViewModel : ObservableObject, IDisposable, IAsyncDi
         {
             var arguments = commit ? JsonSerializer.SerializeToElement(new { message, expectedState = expected }) : JsonSerializer.SerializeToElement(new { });
             var result = await _tools.ExecuteAsync(new(Guid.NewGuid().ToString("N"), commit ? "git.commit" : "git.commit_preview", arguments), context, operation.Token).ConfigureAwait(false);
+            // After a non-deterministic failure the commit may have landed anyway; check the real
+            // HEAD before deciding whether the draft is consumed or kept. Reuses the same
+            // operation token so the check shares the operation budget instead of a new deadline.
+            var verification = GitCommitVerification.None;
+            if (commit && !result.IsSuccess && !operation.IsCancellationRequested
+                && !GitCommitOutcomeClassifier.IsDeterministic(result.ErrorCode))
+                verification = await VerifyCommitAsync(context, expectedHead, operation.Token).ConfigureAwait(false);
             var preview = !commit && result.IsSuccess && !operation.IsCancellationRequested ? ParsePreview(result.Content) : null;
             if (commit && result.IsSuccess && IsCurrent(generation) && !operation.IsCancellationRequested)
                 await RefreshAsync(generation, operation.Token).ConfigureAwait(false);
@@ -109,13 +155,13 @@ public sealed class GitCommitViewModel : ObservableObject, IDisposable, IAsyncDi
             {
                 if (!IsCurrent(generation)) return;
                 _preview = !operation.IsCancellationRequested && result.IsSuccess ? preview : null;
-                Status = InspectorText.Get(operation.IsCancellationRequested ? "GitCommitInterrupted"
-                    : !result.IsSuccess ? FailureKey(result.ErrorCode) : commit ? "GitCommitSucceeded"
-                    : preview!.StagedFiles == 0 ? "GitCommitNothingStaged" : "GitCommitReviewHint");
-                if (commit && result.IsSuccess && !operation.IsCancellationRequested)
+                Status = InspectorText.Get(StatusKey(commit, result, verification, preview, operation.IsCancellationRequested));
+                if (commit && !operation.IsCancellationRequested
+                    && (result.IsSuccess || verification == GitCommitVerification.Landed))
                 {
-                    if (Message == message) Message = string.Empty;
-                    closeAfterCompletion = true;
+                    _bookkeeping.NoteSet(context.TaskId, string.Empty);
+                    if (Message == message) SetMessageSilently(string.Empty);
+                    closeAfterCompletion = result.IsSuccess;
                 }
             }).ConfigureAwait(false);
         }
@@ -151,8 +197,36 @@ public sealed class GitCommitViewModel : ObservableObject, IDisposable, IAsyncDi
         if (work is not null) await work.ConfigureAwait(false);
     }
 
+    private async Task<GitCommitVerification> VerifyCommitAsync(ToolExecutionContext context, string? expectedHead,
+        CancellationToken token)
+    {
+        try
+        {
+            var arguments = JsonSerializer.SerializeToElement(new { });
+            var result = await _tools.ExecuteAsync(new(Guid.NewGuid().ToString("N"), "git.commit_preview", arguments),
+                context, token).ConfigureAwait(false);
+            if (!result.IsSuccess) return GitCommitVerification.Unknown;
+            var preview = ParsePreview(result.Content);
+            if (string.Equals(preview.Head, expectedHead, StringComparison.OrdinalIgnoreCase))
+                return GitCommitVerification.Unchanged;
+            return preview.StagedFiles == 0 ? GitCommitVerification.Landed : GitCommitVerification.Mixed;
+        }
+        catch (Exception) { return GitCommitVerification.Unknown; }
+    }
+
     private Task PublishFailureAsync(int generation, string key) => PublishAsync(() =>
     { if (IsCurrent(generation)) { _preview = null; Status = InspectorText.Get(key); } });
+
+    private static string StatusKey(bool commit, ToolResult result, GitCommitVerification verification,
+        GitCommitPreview? preview, bool cancelled)
+    {
+        if (verification == GitCommitVerification.Landed) return "GitCommitProbablyLanded";
+        if (verification == GitCommitVerification.Mixed) return "GitCommitExternallyChanged";
+        if (verification == GitCommitVerification.Unknown) return "GitCommitOutcomeUnknown";
+        if (cancelled) return "GitCommitInterrupted";
+        if (!result.IsSuccess) return FailureKey(result.ErrorCode);
+        return commit ? "GitCommitSucceeded" : preview!.StagedFiles == 0 ? "GitCommitNothingStaged" : "GitCommitReviewHint";
+    }
 
     private static string FailureKey(string? error) => error switch
     {
@@ -202,7 +276,6 @@ public sealed class GitCommitViewModel : ObservableObject, IDisposable, IAsyncDi
         OpenCommand.Dispose();
         RefreshPreviewCommand.Dispose();
         CommitCommand.Dispose();
-        _drafts.Clear();
         NotifyState();
     }
 
@@ -210,6 +283,9 @@ public sealed class GitCommitViewModel : ObservableObject, IDisposable, IAsyncDi
     {
         Dispose();
         await Task.WhenAll(new[] { OpenCommand.ExecutionTask, RefreshPreviewCommand.ExecutionTask, CommitCommand.ExecutionTask }.OfType<Task>()).ConfigureAwait(false);
+        try { await _draftLoad.ConfigureAwait(false); }
+        catch (Exception) { }
+        await _bookkeeping.DisposeAsync().ConfigureAwait(false);
         _shutdown.Dispose();
         _selection.Dispose();
     }
