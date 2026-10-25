@@ -16,6 +16,7 @@ public sealed class ProviderHttpClientFactory(IConfigurationRepository configura
         {
             ConnectTimeout = TimeSpan.FromSeconds(20),
             PooledConnectionLifetime = TimeSpan.FromMinutes(10),
+            AllowAutoRedirect = false,
             UseProxy = false
         };
 
