@@ -75,6 +75,12 @@
   <data name="GitRemoteTransportUnsupported" xml:space="preserve"><value>新 URL 不是受支持的标准 Git 传输；请使用 HTTP(S)、SSH、git 或明确授权的本地仓库路径，不使用自定义远端助手。</value></data>
   <data name="GitRemoteSelectionInvalid" xml:space="preserve"><value>远端名称或新 URL 无效，请检查格式后重试。</value></data>
   <data name="GitRemoteExpectationMissing" xml:space="preserve"><value>写入某一侧 URL 必须同时声明该侧的期望值；请先用 git.remotes 读取当前状态。</value></data>
+  <data name="GitLsRemoteDescription" xml:space="preserve"><value>只读探测已配置远端：按 fetch URL 分类传输（不支持的传输与自定义远端助手拒绝；本地目标须为明确授权的 Git 仓库），以非交互方式执行 git ls-remote --heads --tags，最多返回 64 个 refs/ 引用及脱敏端点；可选 ref 过滤（短分支名按 refs/heads/ 规范化）。原始输出可能含凭据，失败时一律不回显。</value></data>
+  <data name="GitLsRemoteSucceeded" xml:space="preserve"><value>远端引用探测完成，最多返回前 64 条；truncated 为 true 表示远端还有更多引用未列出。</value></data>
+  <data name="GitLsRemoteSelectionInvalid" xml:space="preserve"><value>远端名称或 ref 过滤无效：ref 须为 refs/ 全名、HEAD 或短分支名，不含空白或控制字符。</value></data>
+  <data name="GitRemoteProbeFailed" xml:space="preserve"><value>远端探测失败：远端拒绝、网络错误或凭据失败。请核对凭据与网络后手动重试，不要直接重复操作。原始输出可能含凭据，未显示。</value></data>
+  <data name="GitRemoteProbeTransport" xml:space="preserve"><value>该远端的 fetch URL 不是受支持的标准 Git 传输；请使用 HTTP(S)、SSH、git 或明确授权的本地仓库路径，不使用自定义远端助手。</value></data>
+  <data name="GitRemoteProbeIncomplete" xml:space="preserve"><value>远端探测输出不完整或格式异常，已拒绝采信。请重试或用 git.remotes 核对远端配置。原始输出可能含凭据，未显示。</value></data>
   <data name="GitBranchUpstreamDescription" xml:space="preserve"><value>设置本地分支的上游（branch.&lt;branch&gt;.remote 与 branch.&lt;branch&gt;.merge）；branch 缺省时使用当前 HEAD 分支，游离 HEAD 必须显式指定存在的分支；expectedRemote/expectedMergeRef 为可空条件期望值（null 表示期望该键不存在，缺省不校验），不符即拒绝且不写入。remote 必须已配置，mergeRef 必须是 refs/heads/ 下的分支。</value></data>
   <data name="GitUpstreamSucceeded" xml:space="preserve"><value>分支 {0} 的上游已更新。</value></data>
   <data name="GitUpstreamDetached" xml:space="preserve"><value>HEAD 处于游离状态且未指定 branch，无法确定要设置上游的分支；请显式填写存在的分支名。</value></data>

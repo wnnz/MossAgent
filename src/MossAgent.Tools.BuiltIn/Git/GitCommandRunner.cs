@@ -13,12 +13,18 @@ public sealed class GitCommandRunner(ITaskProcessLauncher processes)
         CancellationToken cancellationToken,
         bool acceptExitCodeOne = false,
         string? standardInput = null,
-        BoundedTextBuffer? standardOutput = null)
+        BoundedTextBuffer? standardOutput = null,
+        IReadOnlyDictionary<string, string?>? environment = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var output = new BoundedTextBuffer(context.MaximumOutputCharacters);
+        // When the caller supplies variables the ambient GIT_* isolation is kept by explicitly
+        // nulling every ambient GIT_* name instead of the launcher prefix removal, so the
+        // tool-provided values (e.g. GIT_TERMINAL_PROMPT) survive while ambient ones cannot.
+        var overrides = environment is null ? null : IsolateGitEnvironment(environment);
         await using var process = processes.Start(new TaskProcessStartRequest("git", repository, arguments,
-            RedirectStandardInput: standardInput is not null, RemovedEnvironmentPrefixes: ["GIT_"]), cancellationToken);
+            RedirectStandardInput: standardInput is not null, Environment: overrides,
+            RemovedEnvironmentPrefixes: overrides is null ? ["GIT_"] : null), cancellationToken);
         if (standardInput is not null && process.StandardInput is null)
             throw new InvalidOperationException("Process launcher did not provide a standard input stream.");
         var stdout = PumpAsync(process.StandardOutput, output, cancellationToken, standardOutput);
@@ -41,6 +47,21 @@ public sealed class GitCommandRunner(ITaskProcessLauncher processes)
         return process.ExitCode == 0 || acceptExitCodeOne && process.ExitCode == 1 && !stderr.Result
             ? ToolResult.Success("Git 命令执行完成。", content)
             : ToolResult.Failure($"Git 命令失败，退出码 {process.ExitCode}。\n{content}", "git_failed");
+    }
+
+    private static Dictionary<string, string?> IsolateGitEnvironment(IReadOnlyDictionary<string, string?> environment)
+    {
+        var merged = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in Environment.GetEnvironmentVariables().Keys.Cast<string>())
+        {
+            if (name.StartsWith("GIT_", StringComparison.OrdinalIgnoreCase))
+            {
+                merged[name] = null;
+            }
+        }
+
+        foreach (var entry in environment) merged[entry.Key] = entry.Value;
+        return merged;
     }
 
     private static async Task WriteStandardInputAsync(TextWriter writer, string input, CancellationToken cancellationToken)

@@ -221,6 +221,7 @@ internal static class AppComposition
         services.AddSingleton<IAgentTool, GitPushTool>();
         services.AddSingleton<IAgentTool, GitRemotesTool>();
         services.AddSingleton<IAgentTool, GitRemoteSetUrlTool>();
+        services.AddSingleton<IAgentTool, GitLsRemoteTool>();
         services.AddSingleton<IAgentTool, GitBranchUpstreamTool>();
         services.AddSingleton<IAgentTool, GitLogTool>();
         services.AddSingleton<IAgentTool, GitCreateWorktreeTool>();

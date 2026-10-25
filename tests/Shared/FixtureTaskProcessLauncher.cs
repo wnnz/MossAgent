@@ -6,9 +6,12 @@ namespace MossAgent.Testing;
 
 internal sealed class FixtureTaskProcessLauncher : ITaskProcessLauncher
 {
+    public List<TaskProcessStartRequest> Requests { get; } = [];
+
     public ITaskProcess Start(TaskProcessStartRequest request, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        Requests.Add(request);
         var start = new ProcessStartInfo(request.FileName)
         {
             WorkingDirectory = request.WorkingDirectory,
