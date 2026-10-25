@@ -6,7 +6,7 @@ internal sealed class StubTaskProcess : ITaskProcess
 {
     public int Id => 42;
     public int ExitCode { get; set; }
-    public TextWriter? StandardInput => null;
+    public TextWriter? StandardInput { get; set; }
     public TextReader StandardOutput { get; set; } = new StringReader(string.Empty);
     public TextReader StandardError { get; set; } = new StringReader(string.Empty);
     public Func<CancellationToken, Task> Wait { get; set; } = _ => Task.CompletedTask;

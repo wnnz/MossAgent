@@ -29,6 +29,14 @@ public sealed class McpToolAdapter(
         {
             return ToolResult.Failure("MCP 服务器正在重新连接，请稍后重试。", "mcp_reconnecting");
         }
+        catch (McpSessionInvalidException)
+        {
+            return ToolResult.Failure("MCP 会话已失效，请重新连接 MCP 服务器后重试。", "mcp_session_invalid");
+        }
+        catch (McpAuthenticationException)
+        {
+            return ToolResult.Failure("MCP 服务认证失败，请检查服务器凭据配置。", "mcp_authentication_failed");
+        }
 
         return result.IsError
             ? ToolResult.Failure("MCP 工具执行失败，请检查 MCP 服务状态或参数。", "mcp_tool_error")

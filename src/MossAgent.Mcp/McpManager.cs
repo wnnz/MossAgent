@@ -136,6 +136,13 @@ public sealed class McpManager(
 
     private static string DescribeError(Exception exception) => exception switch
     {
+        McpAuthenticationException { ChallengeScheme: { } scheme } authentication =>
+            $"服务要求 {scheme} 认证（{(int)authentication.StatusCode}）：请在服务器 headers 中配置有效凭据后重载。",
+        McpAuthenticationException authentication =>
+            $"认证或权限失败（{(int)authentication.StatusCode}）：凭据缺失或权限不足，请检查 headers/凭据与账号权限。",
+        McpSessionInvalidException => "MCP 会话已失效（404）：请重新加载或检查服务端会话支持。",
+        McpStdioExitException exit =>
+            $"MCP 进程已退出（退出码 {exit.ExitCode?.ToString() ?? "未知"}）：请检查启动命令、工作目录和环境变量。",
         HttpRequestException => "连接失败，请检查 MCP 服务地址、网络和代理设置。",
         InvalidDataException => "服务返回的数据或工具身份无效，请检查 MCP 服务。",
         IOException => "连接已断开，请检查 MCP 服务进程或网络。",

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -119,12 +120,29 @@ public sealed class StreamableHttpMcpClient(
         using var response = await client.SendAsync(
             request, HttpCompletionOption.ResponseHeadersRead, linked.Token).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
-            throw new HttpRequestException($"MCP HTTP 服务请求失败（{(int)response.StatusCode}）。", null, response.StatusCode);
+            throw CreateFailureException(response);
         if (acceptSessionId && response.Headers.TryGetValues("Mcp-Session-Id", out var values))
             _sessionId = values.FirstOrDefault();
         return expectedId is { } id
             ? await McpHttpResponseReader.ReadAsync(response.Content, id, linked.Token).ConfigureAwait(false)
             : default;
+    }
+
+    private Exception CreateFailureException(HttpResponseMessage response)
+    {
+        var statusCode = response.StatusCode;
+        if (statusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            return new McpAuthenticationException(statusCode, ReadChallengeScheme(response));
+        if (statusCode == HttpStatusCode.NotFound && _sessionId is not null)
+            return new McpSessionInvalidException();
+        return new HttpRequestException($"MCP HTTP 服务请求失败（{(int)statusCode}）。", null, statusCode);
+    }
+
+    private static string? ReadChallengeScheme(HttpResponseMessage response)
+    {
+        var scheme = response.Headers.WwwAuthenticate.FirstOrDefault()?.Scheme;
+        if (string.IsNullOrWhiteSpace(scheme)) return null;
+        return scheme.Length <= 32 ? scheme : scheme[..32];
     }
 
     private HttpRequestMessage CreateRequest(object payload)

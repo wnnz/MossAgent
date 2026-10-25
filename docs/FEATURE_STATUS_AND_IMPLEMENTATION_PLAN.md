@@ -73,7 +73,7 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 | C23 | schema 24 启动恢复遗留进行中工具审计为结果未知，保留人工核实提示；不显示为成功、不自动重做 | [中断审计](archive/TERMINAL_TOOLS.md#audit-interruption-recovery-acceptance)；全副作用时序仍见 R02/R03/R07 |
 | C24 | 内嵌 WebView2、受管外部 Chrome/Edge、显式 CDP 和任务标签页；DOM 操作/截图/下载与接管栏；取消/超时后旧会话失效并清理实际 SDK 资源 | [浏览器取消](archive/BROWSER_MCP.md#browser-operation-cancellation-acceptance)、[Queue 浏览器链路](archive/BROWSER_MCP.md#queue-browser-runtime-acceptance)、[已提交副作用恢复](archive/BROWSER_MCP.md#browser-committed-effect-recovery-acceptance)；模式切换/接管完整矩阵见 R07 |
 | C25 | 浏览器截图/下载进入任务所属产物会话，审批后创建、有界导出、hash、SDK 暂存清理及最终复核；清理未知不伪装成功 | [浏览器产物](archive/BROWSER_MCP.md#browser-artifact-session-acceptance)；产物会话未知状态持久化已由 schema 37 覆盖，网络/缓存配额与 SDK 暂存清理仍缺，见 R02/R07 |
-| C26 | MCP stdio/Streamable HTTP 配置、headers/代理、发现、动态注册和标准管线执行；故障提示、显式重连、重载及迟到结果抑制 | [MCP 执行](archive/BROWSER_MCP.md#mcp-execution-acceptance)、[UI 恢复](archive/BROWSER_MCP.md#mcp-ui-recovery-acceptance)；认证、配置代际和传输中断见 R08 |
+| C26 | MCP stdio/Streamable HTTP 配置、headers/代理、发现、动态注册和标准管线执行；故障提示、显式重连、重载及迟到结果抑制 | [MCP 执行](archive/BROWSER_MCP.md#mcp-execution-acceptance)、[UI 恢复](archive/BROWSER_MCP.md#mcp-ui-recovery-acceptance)；认证挑战流程、配置代际和传输中断见 R08（认证/会话/进程退出分类提示已落地） |
 | C27 | 自定义子代理名称、触发指导、提示词、模型、强度和上下文共享；`subagent.run` 选定子模型执行，子工具继承并收窄权限，父对话展示过程和结果，禁止递归委托 | [设置到运行](archive/AGENTS_AUTOMATIONS.md#subagent-settings-to-runtime-acceptance)、[生命周期](archive/AGENTS_AUTOMATIONS.md#subagent-lifecycle-native-acceptance)；触发依赖主模型选择，非确定规则引擎；完整状态矩阵及图片共享见 R09/R05 |
 
 ### 2.4 定时任务、PR 和桌面基础
@@ -125,7 +125,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | R05 | 部分完成 | PDF/其他文件、全图查看、子代理图像共享、未引用快照安全回收 | P1；模型协议与产物会话 |
 | R06 | 部分完成、部分未验证 | 流终态夹具与能力门控已落地并修复六个真实缺陷；剩代理配置快照、显式重试边界与真实账号验证 | P1；获准真实服务账号 |
 | R07 | 部分完成、部分未验证 | 人工接管排他门已落地；内外/CDP 模式切换时序、可恢复会话标识、未知结果持久化与其他创建/副作用崩溃组合仍缺 | P1；R01/R02 |
-| R08 | 部分完成 | MCP 认证恢复、配置 CAS/代际、断流/进程退出/并发取消的完整闭环 | P1；R01/R02 |
+| R08 | 部分完成 | MCP 认证/会话失效/stdio 进程退出的失败分类与可操作建议已落地（开发分支）；认证恢复/OAuth 挑战、配置 CAS/代际、断流/并发取消的完整闭环仍缺 | P1；R01/R02 |
 | R09 | 部分完成、部分未验证 | 子代理当前版本全触发/审批/失败/取消/共享/并发/恢复矩阵 | P1；R05/R06 |
 | R10 | 部分完成；计划级授权快照尚缺，其他组合待验 | 定时计划授权/参数版本、关闭/中断/并发/多实例、时区与 DST，以及关闭后的行为实机验收 | P1；R02/R06 |
 | R11 | 部分完成 | Git 区块/整组操作、远端/凭据管理、提交消息草稿重开及原生验收 | P2；R01/R02 |
@@ -406,7 +406,11 @@ host/browser 崩溃和多任务；另一会话与草稿不受影响。独立原�
    类型化冲突并保留草稿；日志不含 headers/凭据。
 2. 已落地：工具注册绑定单一客户端代际，重连期间先摘除工具再排干——在途调用在其
    准入代际上完成，排干后到达的调用返回显式「重新连接中」结果，绝不重定向到新 schema。
-   待补：401/403、认证挑战、stdio 退出、HTTP session 失效的分类型修复引导。
+   当前开发分支增量：401/403（含 WWW-Authenticate scheme）、已分配会话的 404 及 stdio
+   进程退出按类型映射为可操作建议（设置页 Errors 与工具结果 mcp_authentication_failed/
+   mcp_session_invalid），均为分类提示，不自动重试或续传。
+   待补：OAuth 挑战流程未实现；会话失效后自动恢复；断流/并发取消闭环；stdio 启动
+   所有权仍属 R01。
 3. 明确共享服务进程与每任务调用的取消归属；stdio 启动服从 R01。单任务取消不能杀掉另一任务的
    共享服务，传输/进程无法确认结束时保留未知状态，关闭时抑制迟到注册与 UI 结果。
 4. 所有发现工具保留来源、代际和信任范围，沿既有 adapter 进入统一执行管线；

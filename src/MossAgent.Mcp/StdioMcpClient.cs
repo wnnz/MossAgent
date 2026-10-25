@@ -16,6 +16,8 @@ public sealed class StdioMcpClient(McpServerProfile profile, ITaskProcessLaunche
     private Task? _readLoop;
     private Task? _errorLoop;
     private Task? _exitLoop;
+    private volatile Task? _exitObserved;
+    private volatile Exception? _closeFault;
     private long _nextId;
     private int _disposed;
     private bool _initialized;
@@ -163,7 +165,7 @@ public sealed class StdioMcpClient(McpServerProfile profile, ITaskProcessLaunche
                 await write.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
             }
             if (exception is OperationCanceledException && !cancellationToken.IsCancellationRequested)
-                throw new IOException("MCP server 连接已关闭。");
+                throw _closeFault ?? new IOException("MCP server 连接已关闭。");
             throw;
         }
         finally { _writeGate.Release(); }
@@ -203,9 +205,10 @@ public sealed class StdioMcpClient(McpServerProfile profile, ITaskProcessLaunche
 
     private async Task ObserveExitAsync(ITaskProcess process)
     {
-        try { await process.WaitForExitAsync(_shutdown.Token).ConfigureAwait(false); }
+        var wait = _exitObserved = process.WaitForExitAsync(_shutdown.Token);
+        try { await wait.ConfigureAwait(false); }
         catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { return; }
-        await CloseConnectionAsync().ConfigureAwait(false);
+        await CloseConnectionAsync(new McpStdioExitException(ReadExitCode(process))).ConfigureAwait(false);
     }
 
     private static async Task DrainErrorAsync(TextReader reader, CancellationToken cancellationToken)
@@ -215,14 +218,21 @@ public sealed class StdioMcpClient(McpServerProfile profile, ITaskProcessLaunche
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
     }
 
-    private async Task CloseConnectionAsync()
+    private async Task CloseConnectionAsync(Exception? fault = null)
     {
+        _closeFault ??= fault ?? DetectExitFault();
         _shutdown.Cancel();
-        foreach (var completion in _pending.Values)
-            completion.TrySetException(new IOException("MCP server 连接已关闭或响应无效。"));
+        var close = _closeFault ?? new IOException("MCP server 连接已关闭或响应无效。");
+        foreach (var completion in _pending.Values) completion.TrySetException(close);
         _pending.Clear();
         if (_process is not null) await _process.TerminateAsync().ConfigureAwait(false);
     }
+
+    private Exception? DetectExitFault() => _exitObserved?.IsCompletedSuccessfully == true
+        && _process is { } process ? new McpStdioExitException(ReadExitCode(process)) : null;
+
+    private static int? ReadExitCode(ITaskProcess process)
+    { try { return process.ExitCode; } catch (Exception) { return null; } }
 
     private async Task WaitForGateAsync(SemaphoreSlim gate, CancellationToken cancellationToken)
     {
@@ -230,7 +240,7 @@ public sealed class StdioMcpClient(McpServerProfile profile, ITaskProcessLaunche
         try { await gate.WaitAsync(linked.Token).ConfigureAwait(false); }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            throw new IOException("MCP server 连接已关闭。");
+            throw _closeFault ?? new IOException("MCP server 连接已关闭。");
         }
     }
 }

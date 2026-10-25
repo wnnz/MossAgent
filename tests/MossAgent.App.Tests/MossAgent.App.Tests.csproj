@@ -26,6 +26,8 @@
     <Compile Include="../Shared/SqliteTestPool.cs" Link="Testing/SqliteTestPool.cs" />
     <Compile Include="../Shared/ManualToolTimeProvider.cs" Link="Testing/ManualToolTimeProvider.cs" />
     <Compile Include="../Shared/OneShotToolTestTimer.cs" Link="Testing/OneShotToolTestTimer.cs" />
+    <Compile Include="../Shared/StubTaskProcess.cs" Link="Testing/StubTaskProcess.cs" />
+    <Compile Include="../Shared/RecordingTaskProcessLauncher.cs" Link="Testing/RecordingTaskProcessLauncher.cs" />
     <Compile Include="../Shared/Socks5TestHandshake.cs" Link="Testing/Socks5TestHandshake.cs" />
     <Compile Include="../Shared/AuthenticatedProxyTestServer.cs" Link="Testing/AuthenticatedProxyTestServer.cs" />
     <Compile Include="../Shared/ProxyTestRequestReader.cs" Link="Testing/ProxyTestRequestReader.cs" />

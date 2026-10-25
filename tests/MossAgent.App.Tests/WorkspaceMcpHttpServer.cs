@@ -44,6 +44,9 @@ internal sealed class WorkspaceMcpHttpServer : IAsyncDisposable
     public bool SessionHeaderObserved { get; private set; }
     public bool DeleteObserved { get; private set; }
     public bool Offline { get => Volatile.Read(ref _offline) != 0; set => Volatile.Write(ref _offline, value ? 1 : 0); }
+    public int? RejectionStatus { get; set; }
+    public string? RejectionChallenge { get; set; }
+    public bool RejectionRequiresSession { get; set; }
     public int Calls => Volatile.Read(ref _calls);
     public int Initializations => Volatile.Read(ref _initializations);
     public bool HoldInitialization { get => Volatile.Read(ref _holdInitialization) != 0; set => Volatile.Write(ref _holdInitialization, value ? 1 : 0); }
@@ -81,6 +84,14 @@ internal sealed class WorkspaceMcpHttpServer : IAsyncDisposable
             {
                 DeleteObserved = true;
                 context.Response.StatusCode = 204;
+                return;
+            }
+            if (RejectionStatus is { } rejection
+                && (!RejectionRequiresSession || context.Request.Headers["Mcp-Session-Id"] is not null))
+            {
+                context.Response.StatusCode = rejection;
+                if (RejectionChallenge is { } challenge)
+                    context.Response.AddHeader("WWW-Authenticate", challenge);
                 return;
             }
             using var document = await JsonDocument.ParseAsync(context.Request.InputStream, cancellationToken: _shutdown.Token).ConfigureAwait(false);
