@@ -114,6 +114,9 @@ public sealed class BrowserPaneActionsViewModel : ObservableObject, IDisposable
             "tool_timeout" => "BrowserActionTimedOut",
             "browser_devtools_unsupported" => "BrowserDevToolsUnsupported",
             "browser_tabs_refresh_failed" => "BrowserTabsRefreshFailed",
+            "browser_takeover_active" => "BrowserTakeoverActive",
+            "browser_session_disconnected" => "BrowserSessionDisconnected",
+            "browser_profile_denied" => "BrowserProfileDenied",
             _ => "BrowserActionFailed"
         };
     }

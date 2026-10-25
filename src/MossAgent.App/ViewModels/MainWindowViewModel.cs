@@ -39,6 +39,8 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         AuditPaneViewModel audit,
         EmbeddedBrowserWorkspaceViewModel embeddedBrowsers,
         ApprovalViewModel approval,
+        BrowserTakeoverViewModel browserTakeover,
+        BrowserProfileApprovalViewModel browserProfileApproval,
         IThemeService themeService,
         ThemePaletteSettingsViewModel palette,
         AutomationViewModel? automations = null,
@@ -65,6 +67,8 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         Audit = audit;
         EmbeddedBrowsers = embeddedBrowsers;
         Approval = approval;
+        BrowserTakeover = browserTakeover;
+        BrowserProfileApproval = browserProfileApproval;
         ApprovalTaskControl = new ApprovalTaskControlViewModel(approval, workspace);
         approval.PropertyChanged += HandleApprovalChanged;
         workspace.PropertyChanged += HandleApprovalChanged;
@@ -174,6 +178,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         Terminal.Dispose();
         Approval.PropertyChanged -= HandleApprovalChanged;
         ApprovalTaskControl.Dispose();
+        BrowserTakeover.Dispose();
         Workspace.PropertyChanged -= HandleApprovalChanged;
         Workspace.FilePreview.Opened -= HandlePreviewOpened;
         Workspace.FileChanges.ReviewRequested -= HandleFileChangesReview;
@@ -212,6 +217,8 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     /// </summary>
     public ApprovalViewModel Approval { get; }
     public ApprovalTaskControlViewModel ApprovalTaskControl { get; }
+    public BrowserTakeoverViewModel BrowserTakeover { get; }
+    public BrowserProfileApprovalViewModel BrowserProfileApproval { get; }
 
     /// <summary>
     /// 是否处于暗黑模式。

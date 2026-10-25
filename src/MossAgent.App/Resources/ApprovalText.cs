@@ -17,6 +17,7 @@ public static class ApprovalText
     public static string PrivacyHint => Get("PrivacyHint");
     public static string PreviousContent => Get("PreviousContent");
     public static string NextContent => Get("NextContent");
+    public static string BrowserProfileTitle => Get("BrowserProfileTitle");
 
     internal static string Get(string key) => Labels.GetString(key, CultureInfo.CurrentUICulture)
         ?? throw new InvalidOperationException($"Missing approval resource: {key}");

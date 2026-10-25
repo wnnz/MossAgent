@@ -13,6 +13,7 @@ public sealed class LazyBrowserSession(Func<CancellationToken, Task<IBrowserSess
     public string Id { get; } = Guid.NewGuid().ToString("N");
     public Uri? CurrentUri => _inner?.CurrentUri;
     public bool SupportsDeveloperTools => _inner?.SupportsDeveloperTools == true;
+    internal IBrowserSession? CreatedSession => Volatile.Read(ref _inner);
 
     public async Task<IReadOnlyList<BrowserTabInfo>> ListTabsAsync(
         CancellationToken cancellationToken) =>

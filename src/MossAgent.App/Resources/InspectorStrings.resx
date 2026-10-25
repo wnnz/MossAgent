@@ -24,6 +24,8 @@
   <data name="TerminalIdle" xml:space="preserve"><value>终端尚未启动</value></data>
   <data name="NoBrowser" xml:space="preserve"><value>当前对话没有内置浏览器</value></data>
   <data name="NoBrowserHint" xml:space="preserve"><value>运行浏览器工具后会显示任务专属浏览器。外部浏览器不会嵌入此面板。</value></data>
+  <data name="BrowserHandToUser" xml:space="preserve"><value>交给用户</value></data>
+  <data name="BrowserReturnControl" xml:space="preserve"><value>交回控制</value></data>
   <data name="Loading" xml:space="preserve"><value>正在读取…</value></data>
   <data name="RefreshDiff" xml:space="preserve"><value>点击刷新读取当前对话工作目录中的 Git 变更。</value></data>
   <data name="DiffFailed" xml:space="preserve"><value>无法读取 Git 变更。请确认项目是 Git 仓库，并检查工具权限后重试。</value></data>

@@ -170,7 +170,15 @@ internal static class AppComposition
         services.AddSingleton<IBrowserSessionFactory, PlaywrightBrowserSessionFactory>();
         services.AddSingleton<EmbeddedBrowserWorkspaceViewModel>();
         services.AddSingleton<IEmbeddedBrowserSessionFactory, EmbeddedBrowserSessionFactory>();
-        services.AddSingleton<ITaskBrowserSessionManager, TaskBrowserSessionManager>();
+        services.AddSingleton<BrowserProfileApprovalViewModel>();
+        services.AddSingleton<IBrowserProfileAccessApproval>(
+            static provider => provider.GetRequiredService<BrowserProfileApprovalViewModel>());
+        services.AddSingleton<TaskBrowserSessionManager>();
+        services.AddSingleton<ITaskBrowserSessionManager>(
+            static provider => provider.GetRequiredService<TaskBrowserSessionManager>());
+        services.AddSingleton<IBrowserTakeoverController>(
+            static provider => provider.GetRequiredService<TaskBrowserSessionManager>());
+        services.AddSingleton<BrowserTakeoverViewModel>();
         services.AddSingleton<ITerminalSessionManager, PtyTerminalSessionManager>();
         services.AddSingleton<ITaskProcessLauncher, WindowsTaskProcessLauncher>();
         services.AddSingleton<IAgentTool, FileReadTool>();

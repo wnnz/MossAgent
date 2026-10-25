@@ -118,5 +118,6 @@ public sealed class TaskBrowserSessionManagerTests
                 new BrowserConfiguration(
                     browser, BrowserProfilePreference.Managed, null, null, null)),
             new StubConfigurationRepository(),
-            new StubBrowserProfilePaths());
+            new StubBrowserProfilePaths(),
+            new StubBrowserProfileAccessApproval());
 }

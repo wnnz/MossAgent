@@ -40,4 +40,7 @@
   <data name="CommandLength" xml:space="preserve"><value>命令正文：{0} 个字符（已隐藏）</value></data>
   <data name="InputLength" xml:space="preserve"><value>输入文本：{0} 个字符（已隐藏）</value></data>
   <data name="ArgumentsHidden" xml:space="preserve"><value>其他参数已隐藏，以免显示凭据或私密内容。</value></data>
+  <data name="BrowserProfileTitle" xml:space="preserve"><value>浏览器配置文件访问确认</value></data>
+  <data name="BrowserProfileDaily" xml:space="preserve"><value>任务请求使用日常浏览器配置文件启动浏览器。该配置文件包含你的登录状态、Cookie 与浏览数据，仅在信任此任务时批准。</value></data>
+  <data name="BrowserProfileCdp" xml:space="preserve"><value>任务请求连接正在运行的浏览器实例（CDP）。代理将能查看和操作该浏览器中的页面，仅在信任此任务时批准。</value></data>
 </root>

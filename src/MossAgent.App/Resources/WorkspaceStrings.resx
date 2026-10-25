@@ -49,6 +49,14 @@
   <data name="BrowserActionCompleted" xml:space="preserve"><value>浏览器操作已完成。</value></data>
   <data name="BrowserActionDenied" xml:space="preserve"><value>当前策略或用户拒绝了浏览器操作。</value></data>
   <data name="BrowserDevToolsUnsupported" xml:space="preserve"><value>当前浏览器会话不支持打开开发工具。</value></data>
+  <data name="BrowserTakeoverActive" xml:space="preserve"><value>浏览器已由用户手动接管，自动化操作未执行。</value></data>
+  <data name="BrowserSessionDisconnected" xml:space="preserve"><value>浏览器会话已断开，请检查浏览器状态后重试。</value></data>
+  <data name="BrowserProfileDenied" xml:space="preserve"><value>浏览器配置文件访问被拒绝，操作未执行。</value></data>
+  <data name="BrowserControlAutomated" xml:space="preserve"><value>代理自动控制中</value></data>
+  <data name="BrowserControlHandedToUser" xml:space="preserve"><value>已交给用户手动控制</value></data>
+  <data name="BrowserControlReturningToAutomated" xml:space="preserve"><value>正在交回代理控制…</value></data>
+  <data name="BrowserControlDisconnected" xml:space="preserve"><value>浏览器会话已断开</value></data>
+  <data name="BrowserReturnFailed" xml:space="preserve"><value>交回控制未完成，浏览器仍由用户控制。请检查浏览器状态后重试。</value></data>
   <data name="BrowserCancelActionLabel" xml:space="preserve"><value>取消浏览器操作</value></data>
   <data name="BrowserNotStarted" xml:space="preserve"><value>浏览器将在代理首次使用浏览器工具时启动。</value></data>
   <data name="BrowserReady" xml:space="preserve"><value>内置 WebView2 已就绪，可随时接管操作。</value></data>

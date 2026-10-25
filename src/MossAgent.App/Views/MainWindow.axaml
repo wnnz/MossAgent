@@ -231,6 +231,17 @@
       <views:ToolApprovalView DataContext="{Binding Approval}" />
     </ui:AppBorder>
 
+    <ui:AppBorder Grid.Row="1">
+      <ui:AppBorder.IsVisible>
+        <MultiBinding Converter="{x:Static BoolConverters.And}">
+          <Binding Path="BrowserProfileApproval.IsPending" />
+          <Binding Path="!#WorkspaceNavigation.IsOverlayOpen" />
+          <Binding Path="!#SettingsView.Navigation.IsOverlayOpen" />
+        </MultiBinding>
+      </ui:AppBorder.IsVisible>
+      <views:BrowserProfileApprovalView DataContext="{Binding BrowserProfileApproval}" />
+    </ui:AppBorder>
+
     <Grid x:Name="ResizeGrips" Grid.Row="0" Grid.RowSpan="2" IsVisible="False">
       <ui:AppBorder VerticalAlignment="Top" Classes="transparent-hit-target resize-north-south"
               Tag="North"

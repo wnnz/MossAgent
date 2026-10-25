@@ -1,0 +1,25 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:resources="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Views.BrowserProfileApprovalView"
+                   x:CompileBindings="False">
+  <ui:AppCard Classes="card card-inset-roomy tool-approval-card">
+    <Grid RowDefinitions="*,Auto">
+      <StackPanel Spacing="10">
+        <ui:AppIconLabel IconData="{StaticResource UiIconShield}"
+                         Label="{x:Static resources:ApprovalText.BrowserProfileTitle}"
+                         Classes="approval-title" />
+        <ui:AppText Text="{Binding Description}" Classes="muted type-12" TextWrapping="Wrap" />
+        <ui:AppText Text="{Binding TaskLabel}" Classes="subtle type-11 code-font" TextWrapping="Wrap" />
+        <ui:AppText Text="{Binding QueueLabel}" Classes="muted type-11" IsVisible="{Binding HasQueuedRequests}" />
+      </StackPanel>
+      <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,10,0,0">
+        <ui:AppApprovalButton Content="{x:Static resources:ApprovalText.Deny}" Classes="ghost"
+                              Command="{Binding DenyCommand}" HorizontalAlignment="Stretch" />
+        <ui:AppApprovalButton Grid.Column="1" Content="{x:Static resources:ApprovalText.Approve}" Classes="primary"
+                              Command="{Binding ApproveCommand}" HorizontalAlignment="Stretch" />
+      </Grid>
+    </Grid>
+  </ui:AppCard>
+</ui:AppUserControl>

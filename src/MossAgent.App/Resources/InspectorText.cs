@@ -51,6 +51,8 @@ public static class InspectorText
     public static string TerminalClipboardCancel => Get("TerminalClipboardCancel");
     public static string NoBrowser => Get("NoBrowser");
     public static string NoBrowserHint => Get("NoBrowserHint");
+    public static string BrowserHandToUser => Get("BrowserHandToUser");
+    public static string BrowserReturnControl => Get("BrowserReturnControl");
     public static string PreviewRefresh => Get("PreviewRefresh");
     public static string PreviewMoreActions => Get("PreviewMoreActions");
     public static string PreviewClose => Get("PreviewClose");

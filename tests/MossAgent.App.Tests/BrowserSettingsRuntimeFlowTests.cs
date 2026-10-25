@@ -38,7 +38,8 @@ public sealed class BrowserSettingsRuntimeFlowTests
                 external, embedded,
                 services.GetRequiredService<IBrowserConfigurationRepository>(),
                 services.GetRequiredService<IConfigurationRepository>(),
-                services.GetRequiredService<IBrowserProfilePaths>());
+                services.GetRequiredService<IBrowserProfilePaths>(),
+                new AllowingBrowserProfileAccessApproval());
             var session = manager.GetLazySession(Guid.NewGuid());
 
             await Assert.ThrowsAsync<InvalidOperationException>(() =>

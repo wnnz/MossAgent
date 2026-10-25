@@ -228,6 +228,14 @@ public sealed class ToolExecutor(
                     completedSummary: exception.HasSideEffects ? exception.Message : null)
                 : ToolResult.Failure(exception.Message, exception.ErrorCode);
         }
+        catch (MossAgent.Tools.Abstractions.Browser.BrowserTakeoverException exception)
+        {
+            return ToolResult.Failure(exception.Message, exception.ErrorCode);
+        }
+        catch (MossAgent.Tools.Abstractions.Browser.BrowserProfileAccessDeniedException exception)
+        {
+            return ToolResult.Failure(exception.Message, exception.ErrorCode);
+        }
         catch (Exception)
         {
             return ToolResult.Failure("工具执行失败，请检查工具配置和运行环境。", "tool_failed");

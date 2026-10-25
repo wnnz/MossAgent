@@ -170,11 +170,15 @@
       <ui:AppTerminalPane DataContext="{Binding Terminal}" IsVisible="{Binding $parent[views:InspectorPane].DataContext.IsInspectorTerminal}" />
 
       <!-- 5. 浏览器详情视图 -->
-      <Grid Margin="4" IsVisible="{Binding IsInspectorBrowser}">
-        <ui:AppEmptyState Title="{x:Static text:InspectorText.NoBrowser}" Description="{x:Static text:InspectorText.NoBrowserHint}"
-                          IconData="{StaticResource UiIconBrowser}" IsVisible="{Binding !EmbeddedBrowsers.CurrentPane.HasBrowser, FallbackValue=True}" />
-        <views:EmbeddedBrowserPane DataContext="{Binding EmbeddedBrowsers.CurrentPane}"
-                                   IsVisible="{Binding HasBrowser, FallbackValue=False}" />
+      <Grid Margin="4" RowDefinitions="Auto,*" IsVisible="{Binding IsInspectorBrowser}">
+        <views:BrowserTakeoverPane DataContext="{Binding BrowserTakeover}"
+                                   IsVisible="{Binding BrowserTakeover.HasControlState, FallbackValue=False}" />
+        <Grid Grid.Row="1">
+          <ui:AppEmptyState Title="{x:Static text:InspectorText.NoBrowser}" Description="{x:Static text:InspectorText.NoBrowserHint}"
+                            IconData="{StaticResource UiIconBrowser}" IsVisible="{Binding !EmbeddedBrowsers.CurrentPane.HasBrowser, FallbackValue=True}" />
+          <views:EmbeddedBrowserPane DataContext="{Binding EmbeddedBrowsers.CurrentPane}"
+                                     IsVisible="{Binding HasBrowser, FallbackValue=False}" />
+        </Grid>
       </Grid>
 
       <!-- 6. 审计与产物详情视图 -->

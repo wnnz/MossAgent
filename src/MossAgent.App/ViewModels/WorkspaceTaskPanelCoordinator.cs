@@ -13,6 +13,7 @@ public sealed class WorkspaceTaskPanelCoordinator(
     DiffPaneViewModel diff,
     AuditPaneViewModel audit,
     EmbeddedBrowserWorkspaceViewModel embeddedBrowsers,
+    BrowserTakeoverViewModel browserTakeover,
     FilePreviewPaneViewModel previews)
 {
     public FilePreviewPaneViewModel Previews => previews;
@@ -26,6 +27,7 @@ public sealed class WorkspaceTaskPanelCoordinator(
             return context;
         }
         embeddedBrowsers.SelectTask(task.Id, context);
+        browserTakeover.AttachTask(task.Id);
         terminal.AttachTask(task.Id, context.WorkingDirectory, context);
         diff.Attach(context);
         previews.Attach(context);
@@ -57,6 +59,7 @@ public sealed class WorkspaceTaskPanelCoordinator(
     public void ClearSelection()
     {
         embeddedBrowsers.SelectTask(null);
+        browserTakeover.AttachTask(null);
         terminal.AttachTask(null, null);
         diff.Attach(null);
         previews.Attach(null);

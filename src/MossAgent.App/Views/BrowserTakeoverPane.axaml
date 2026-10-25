@@ -1,0 +1,22 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   xmlns:text="clr-namespace:MossAgent.App.Resources"
+                   x:Class="MossAgent.App.Views.BrowserTakeoverPane"
+                   x:CompileBindings="False">
+  <ui:AppBorder Classes="inspector-list-surface" Padding="8,6" Margin="0,0,0,8">
+    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+      <StackPanel VerticalAlignment="Center">
+        <ui:AppText Text="{Binding StateLabel}" Classes="type-12 weight-semibold" />
+        <ui:AppText Text="{Binding Status}" Classes="subtle type-10" TextWrapping="Wrap"
+                    IsVisible="{Binding HasStatus}" />
+      </StackPanel>
+      <ui:AppButton Grid.Column="1" Classes="ghost" VerticalAlignment="Center"
+                    Content="{x:Static text:InspectorText.BrowserHandToUser}"
+                    Command="{Binding HandToUserCommand}" />
+      <ui:AppButton Grid.Column="2" Classes="ghost" VerticalAlignment="Center"
+                    Content="{x:Static text:InspectorText.BrowserReturnControl}"
+                    Command="{Binding ReturnControlCommand}" />
+    </Grid>
+  </ui:AppBorder>
+</ui:AppUserControl>

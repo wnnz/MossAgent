@@ -17,4 +17,7 @@
   <data name="DownloadFailed" xml:space="preserve"><value>浏览器下载未能完成，请检查页面和网络后手动重试。</value></data>
   <data name="DownloadCleanupFailed" xml:space="preserve"><value>浏览器下载暂存清理未获确认。请核实任务浏览器临时数据，不会自动重试下载。</value></data>
   <data name="SessionCleanupFailed" xml:space="preserve"><value>任务浏览器关闭未获确认。请核实任务浏览器状态，不会自动重试操作。</value></data>
+  <data name="BrowserTakeoverActive" xml:space="preserve"><value>浏览器已交给用户手动控制，代理暂时不能执行浏览器操作。</value></data>
+  <data name="BrowserSessionDisconnected" xml:space="preserve"><value>浏览器会话已断开，代理无法继续操作。请检查浏览器状态后重试。</value></data>
+  <data name="BrowserProfileAccessDenied" xml:space="preserve"><value>浏览器配置文件访问被拒绝，未启动任务浏览器。</value></data>
 </root>
