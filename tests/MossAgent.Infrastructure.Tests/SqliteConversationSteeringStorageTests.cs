@@ -60,6 +60,39 @@ public sealed class SqliteConversationSteeringStorageTests
         Assert.Equal(new("retain me", 1), await drafts.GetAsync(scope, fixture.Token));
     }
 
+    [Theory]
+    [InlineData("conflict")]
+    [InlineData("attachment-write-failure")]
+    public async Task FailedAttachmentAcceptanceRollsBackTheReceiptAndPreservesTheDraft(string kind)
+    {
+        await using var fixture = await ConversationSteeringTestFixture.CreateAsync();
+        var repository = new SqliteConversationSteeringRepository(fixture.Connections,
+            paths: new AppDataPaths(fixture.Project.PrimaryDirectory));
+        var drafts = Repository(fixture.Inner);
+        var scope = new ConversationDraftScope(fixture.Project.Id, fixture.Task.Id);
+        var kept = Attachment(fixture.Inner, "kept draft bytes");
+        Assert.True(await drafts.SaveAsync([new(scope, "guidance", 0, [kept])], fixture.Token));
+        var run = await fixture.OpenAsync();
+        if (kind == "attachment-write-failure")
+            await fixture.ExecuteAsync("CREATE TRIGGER reject_steering_attachment BEFORE INSERT ON conversation_steering_input_attachments BEGIN SELECT RAISE(ABORT,'synthetic attachment failure'); END;");
+        var rolledBack = Attachment(fixture.Inner, "rolled-back snapshot bytes");
+        var inputId = Guid.NewGuid();
+        var operation = () => repository.AcceptAsync(run.TaskId, run.Id, inputId, "guidance",
+            new ConversationDraftUpdate(scope, string.Empty, kind == "conflict" ? 0 : 1, [rolledBack]), fixture.Token);
+        if (kind == "conflict") await Assert.ThrowsAsync<ConversationDraftConflictException>(operation);
+        else await Assert.ThrowsAsync<SqliteException>(operation);
+        Assert.Empty((await fixture.InputsAsync()).Items);
+        Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_steering_input_attachments;"));
+        Assert.Equal(run, await fixture.ReloadAsync(run));
+        var draft = Assert.IsType<ConversationDraft>(await drafts.GetAsync(scope, fixture.Token));
+        Assert.Equal("guidance", draft.Text);
+        Assert.Equal(1, draft.Revision);
+        Assert.Equal(kept, Assert.Single(draft.AttachmentItems));
+        Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_draft_attachments;"));
+        Assert.True(File.Exists(Snapshot(fixture.Inner, kept)));
+        Assert.True(File.Exists(Snapshot(fixture.Inner, rolledBack)));
+    }
+
     [Fact]
     public async Task PreservesTheNextDraftAndPagesHistoryWithoutCrossTaskResults()
     {

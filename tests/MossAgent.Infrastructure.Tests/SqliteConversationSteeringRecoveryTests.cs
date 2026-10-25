@@ -1,11 +1,90 @@
 using Microsoft.Data.Sqlite;
 using MossAgent.Domain;
+using MossAgent.Infrastructure.Persistence;
 using Xunit;
+using static MossAgent.Infrastructure.Tests.ConversationDraftAttachmentTestData;
 
 namespace MossAgent.Infrastructure.Tests;
 
 public sealed class SqliteConversationSteeringRecoveryTests
 {
+    [Fact]
+    public async Task RestartInterruptsPendingAttachmentInputWithoutReplayingIt()
+    {
+        await using var fixture = await ConversationSteeringTestFixture.CreateAsync();
+        var repository = new SqliteConversationSteeringRepository(fixture.Connections,
+            paths: new AppDataPaths(fixture.Project.PrimaryDirectory));
+        var drafts = Repository(fixture.Inner);
+        var scope = new ConversationDraftScope(fixture.Project.Id, fixture.Task.Id);
+        var attachment = Attachment(fixture.Inner, "interrupted snapshot bytes");
+        Assert.True(await drafts.SaveAsync([new(scope, "guidance", 0, [attachment])], fixture.Token));
+        var run = await fixture.OpenAsync();
+        var inputId = Guid.NewGuid();
+        var ack = Assert.IsType<ConversationSteeringAcceptance>(await repository.AcceptAsync(run.TaskId, run.Id, inputId,
+            "guidance", new ConversationDraftUpdate(scope, string.Empty, 1, [attachment]), fixture.Token));
+        await fixture.Initializer.InitializeAsync(fixture.Token);
+        Assert.False((await fixture.ReloadAsync(run)).IsOpen);
+        Assert.Equal(1, await fixture.CountAsync(
+            $"SELECT COUNT(*) FROM conversation_steering_input_attachments WHERE input_id='{inputId:D}';"));
+        var recovered = Assert.Single((await fixture.InputsAsync()).Items);
+        Assert.Equal(ConversationSteeringInputState.Interrupted, recovered.State);
+        Assert.NotNull(recovered.InterruptedAt);
+        Assert.Null(recovered.AppliedAt);
+        Assert.Equal(ack.Input.AttachmentItems, recovered.AttachmentItems);
+        var restored = Assert.Single(recovered.AttachmentItems);
+        Assert.Equal(attachment.Id, restored.Id);
+        Assert.Equal(inputId, restored.MessageId);
+        Assert.Equal(run.TaskId, restored.TaskId);
+        Assert.Equal(64, restored.Sha256.Length);
+        var pending = Assert.IsType<ConversationSteeringPending>(
+            await repository.GetPendingAsync(run.TaskId, run.Id, fixture.Token));
+        Assert.Empty(pending.Inputs);
+        Assert.Empty(await fixture.Workspaces.GetMessagesAsync(run.TaskId, fixture.Token));
+        Assert.Null(await repository.AcceptAsync(run.TaskId, run.Id, Guid.NewGuid(), "late", null, fixture.Token));
+        await fixture.Initializer.InitializeAsync(fixture.Token);
+        Assert.Equal(ConversationSteeringInputState.Interrupted,
+            Assert.Single((await fixture.InputsAsync()).Items).State);
+        Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_steering_input_attachments;"));
+    }
+
+    [Fact]
+    public async Task UnappliedAttachmentInputReadsIdenticallyAcrossRepositoryInstances()
+    {
+        await using var fixture = await ConversationSteeringTestFixture.CreateAsync();
+        var repository = new SqliteConversationSteeringRepository(fixture.Connections,
+            paths: new AppDataPaths(fixture.Project.PrimaryDirectory));
+        var drafts = Repository(fixture.Inner);
+        var scope = new ConversationDraftScope(fixture.Project.Id, fixture.Task.Id);
+        var first = Attachment(fixture.Inner, "first snapshot bytes");
+        var second = Attachment(fixture.Inner, "second snapshot bytes");
+        Assert.True(await drafts.SaveAsync([new(scope, "guidance", 0, [first, second])], fixture.Token));
+        var run = await fixture.OpenAsync();
+        var inputId = Guid.NewGuid();
+        var ack = Assert.IsType<ConversationSteeringAcceptance>(await repository.AcceptAsync(run.TaskId, run.Id, inputId,
+            "guidance", new ConversationDraftUpdate(scope, string.Empty, 1, [first, second]), fixture.Token));
+        Assert.Equal(new[] { first.Id, second.Id }, ack.Input.AttachmentItems.Select(item => item.Id));
+        var reopened = new SqliteConversationSteeringRepository(fixture.Connections,
+            paths: new AppDataPaths(fixture.Project.PrimaryDirectory));
+        var pending = Assert.IsType<ConversationSteeringPending>(
+            await reopened.GetPendingAsync(run.TaskId, run.Id, fixture.Token));
+        var pendingInput = Assert.Single(pending.Inputs);
+        Assert.Equal(ConversationSteeringInputState.Pending, pendingInput.State);
+        Assert.Equal(ack.Input.AttachmentItems, pendingInput.AttachmentItems);
+        var history = Assert.Single((await reopened.GetInputsAsync(run.TaskId, long.MaxValue, 64, fixture.Token)).Items);
+        Assert.Equal(pendingInput.AttachmentItems, history.AttachmentItems);
+        var sources = new[] { first, second };
+        for (var index = 0; index < sources.Length; index++)
+        {
+            Assert.Equal(sources[index].Id, history.AttachmentItems[index].Id);
+            Assert.Equal(sources[index].DisplayPath, history.AttachmentItems[index].DisplayPath);
+            Assert.Equal(sources[index].ByteCount, history.AttachmentItems[index].ByteCount);
+            Assert.Equal("text/plain", history.AttachmentItems[index].MediaType);
+            Assert.Equal(inputId, history.AttachmentItems[index].MessageId);
+            Assert.Equal(run.TaskId, history.AttachmentItems[index].TaskId);
+        }
+        Assert.Empty(await fixture.Workspaces.GetMessagesAsync(run.TaskId, fixture.Token));
+    }
+
     [Fact]
     public async Task ReapplyingAMissingVersionMarkerPreservesExistingReceiptsAndMessages()
     {

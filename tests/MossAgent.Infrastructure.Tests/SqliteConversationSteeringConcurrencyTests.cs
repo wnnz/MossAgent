@@ -1,11 +1,60 @@
+using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 using MossAgent.Infrastructure.Persistence;
 using Xunit;
+using static MossAgent.Infrastructure.Tests.ConversationDraftAttachmentTestData;
 
 namespace MossAgent.Infrastructure.Tests;
 
 public sealed class SqliteConversationSteeringConcurrencyTests
 {
+    [Fact]
+    public async Task SteeringAcceptanceAndFollowupEnqueueConsumeTheSameDraftScopeOnce()
+    {
+        await using var fixture = await ConversationSteeringTestFixture.CreateAsync();
+        var repository = new SqliteConversationSteeringRepository(fixture.Connections,
+            paths: new AppDataPaths(fixture.Project.PrimaryDirectory));
+        var drafts = Repository(fixture.Inner);
+        var scope = new ConversationDraftScope(fixture.Project.Id, fixture.Task.Id);
+        var attachment = Attachment(fixture.Inner, "contended snapshot bytes");
+        Assert.True(await drafts.SaveAsync([new(scope, "guidance", 0, [attachment])], fixture.Token));
+        var run = await fixture.OpenAsync();
+        var followups = new SqliteConversationFollowupRepository(fixture.Connections);
+        var item = ConversationFollowupTestData.Create(fixture.Task, "queued instead");
+        var accept = repository.AcceptAsync(run.TaskId, run.Id, Guid.NewGuid(), "guidance",
+            new ConversationDraftUpdate(scope, string.Empty, 1, [attachment]), fixture.Token);
+        var enqueue = followups.SaveAsync(new(fixture.Task.Id, 0, [item]),
+            [new ConversationDraftUpdate(scope, "queued draft", 1)], fixture.Token);
+        ConversationSteeringAcceptance? ack = null;
+        try { ack = Assert.IsType<ConversationSteeringAcceptance>(await accept); }
+        catch (ConversationDraftConflictException) { }
+        var queued = await enqueue;
+        Assert.NotEqual(ack is not null, queued);
+        var draft = Assert.IsType<ConversationDraft>(await drafts.GetAsync(scope, fixture.Token));
+        Assert.Equal(2, draft.Revision);
+        Assert.Empty(draft.AttachmentItems);
+        Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_draft_attachments;"));
+        if (ack is not null)
+        {
+            Assert.False(queued);
+            Assert.Equal(string.Empty, draft.Text);
+            Assert.Equal(attachment.Id, Assert.Single(ack.Input.AttachmentItems).Id);
+            Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_steering_inputs;"));
+            Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_steering_input_attachments;"));
+            Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_followups;"));
+            Assert.Empty((await followups.GetAsync(fixture.Task.Id, fixture.Token)).Items);
+        }
+        else
+        {
+            Assert.True(queued);
+            Assert.Equal("queued draft", draft.Text);
+            Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_steering_inputs;"));
+            Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_steering_input_attachments;"));
+            Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_followups;"));
+            Assert.Equal(item.Id, Assert.Single((await followups.GetAsync(fixture.Task.Id, fixture.Token)).Items).Id);
+        }
+    }
+
     [Fact]
     public async Task CompetingRegistrationAndExactRetriesCreateOneRunAndOneReceipt()
     {

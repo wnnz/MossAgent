@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using MossAgent.Application.Attachments;
+using MossAgent.Application.Persistence;
 using MossAgent.Domain;
 using MossAgent.Infrastructure.Attachments;
 using MossAgent.Infrastructure.Persistence;
@@ -208,6 +209,34 @@ public sealed class AttachmentReclaimTests
         var reclaimed = await Reaper(fixture.Inner).ReclaimAsync(fixture.Token);
         Assert.False(File.Exists(file));
         Assert.Equal(1, reclaimed.Reclaimed);
+    }
+
+    [Fact]
+    public async Task RolledBackSteeringAcceptanceLeavesAnOrphanedSnapshotEligibleForReclaim()
+    {
+        await using var fixture = await ConversationSteeringTestFixture.CreateAsync();
+        var paths = Paths(fixture.Inner);
+        var repository = new SqliteConversationSteeringRepository(fixture.Connections, paths: paths);
+        var drafts = ConversationDraftAttachmentTestData.Repository(fixture.Inner);
+        var scope = new ConversationDraftScope(fixture.Project.Id, fixture.Task.Id);
+        var kept = ConversationDraftAttachmentTestData.Attachment(fixture.Inner, "retained draft bytes");
+        Assert.True(await drafts.SaveAsync([new(scope, "text", 0, [kept])], fixture.Token));
+        var keptFile = ConversationDraftAttachmentTestData.Snapshot(fixture.Inner, kept);
+        var run = await fixture.OpenAsync();
+        var rolledBack = ConversationDraftAttachmentTestData.Attachment(fixture.Inner, "rolled-back steering bytes");
+        await Assert.ThrowsAsync<ConversationDraftConflictException>(() => repository.AcceptAsync(run.TaskId, run.Id,
+            Guid.NewGuid(), "text", new ConversationDraftUpdate(scope, string.Empty, 0, [rolledBack]), fixture.Token));
+        Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM conversation_steering_input_attachments;"));
+        var orphaned = ConversationDraftAttachmentTestData.Snapshot(fixture.Inner, rolledBack);
+        Age(keptFile);
+        Age(orphaned);
+
+        var summary = await Reaper(fixture.Inner).ReclaimAsync(fixture.Token);
+
+        Assert.True(File.Exists(keptFile));
+        Assert.False(File.Exists(orphaned));
+        Assert.Equal(1, summary.Reclaimed);
+        Assert.Equal(0, summary.Failed);
     }
 
     [Fact]
