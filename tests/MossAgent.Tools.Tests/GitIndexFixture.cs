@@ -27,6 +27,7 @@ internal sealed class GitIndexFixture : IDisposable
         var authorization = new GitRepositoryAuthorization(new GitProcessRunner(new FixtureTaskProcessLauncher()));
         var states = new GitCommitStateReader(new AuthorizedPathResolver(), authorization, _git.Runner);
         var tools = new ToolRegistry([new GitStageFileTool(paths, authorization, _git.Runner), new GitUnstageFileTool(paths, authorization, _git.Runner),
+            new GitStagePathsTool(paths, authorization, _git.Runner), new GitUnstagePathsTool(paths, authorization, _git.Runner),
             new GitCommitPreviewTool(states), new GitCommitTool(states, _git.Runner)]);
         Audit.Release.SetResult();
         Executor = new(tools, new PolicyApprovalService(async (_, _, _) =>

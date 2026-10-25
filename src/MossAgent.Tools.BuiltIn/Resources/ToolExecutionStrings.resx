@@ -23,6 +23,8 @@
   <data name="WorkspaceAccessDenied" xml:space="preserve"><value>工作树授权校验未通过。请检查任务对应的工作树、项目授权目录及 Git 元数据，确认路径未被移动或替换后重试。</value></data>
   <data name="GitStageDescription" xml:space="preserve"><value>仅暂存指定文件及其重命名来源，不提交或推送；仓库过滤器可能执行外部程序。</value></data>
   <data name="GitUnstageDescription" xml:space="preserve"><value>仅取消指定文件及其重命名来源的暂存，不提交或推送；Git 操作本身不改写工作文件，但仓库钩子可能执行外部程序。</value></data>
+  <data name="GitStagePathsDescription" xml:space="preserve"><value>将一组明确指定的文件路径在单次命令中原子暂存（任一元素越界即整组拒绝），不隐式暂存全部改动、不提交或推送；仓库过滤器可能执行外部程序。</value></data>
+  <data name="GitUnstagePathsDescription" xml:space="preserve"><value>将一组明确指定的文件路径在单次命令中原子取消暂存（任一元素越界即整组拒绝），不提交或推送；Git 操作本身不改写工作文件，但仓库钩子可能执行外部程序。</value></data>
   <data name="GitIndexPathDenied" xml:space="preserve"><value>只能操作授权仓库内的明确文件；不允许目录、Git 元数据、链接或路径别名。</value></data>
   <data name="GitStageHunksDescription" xml:space="preserve"><value>仅暂存单个已修改跟踪文件的选定区块，区块按 0 起始编号，与 git.diff 未暂存输出的区块顺序一致；不支持重命名/复制、二进制、新增、删除、仅模式变更或冲突差异，整文件请用 git.stage_file。不提交或推送；仓库过滤器可能执行外部程序。</value></data>
   <data name="GitUnstageHunksDescription" xml:space="preserve"><value>仅取消单个已暂存文件选定区块的暂存，区块按 0 起始编号，与 git.diff 已暂存输出的区块顺序一致；不改写工作文件，不支持重命名/复制、二进制、新增、删除、仅模式变更或冲突差异，整文件请用 git.unstage_file；仓库钩子可能执行外部程序。</value></data>

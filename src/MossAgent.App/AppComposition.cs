@@ -207,6 +207,8 @@ internal static class AppComposition
         services.AddSingleton<IAgentTool, GitDiffTool>();
         services.AddSingleton<IAgentTool, GitStageFileTool>();
         services.AddSingleton<IAgentTool, GitUnstageFileTool>();
+        services.AddSingleton<IAgentTool, GitStagePathsTool>();
+        services.AddSingleton<IAgentTool, GitUnstagePathsTool>();
         services.AddSingleton<IAgentTool, GitStageHunksTool>();
         services.AddSingleton<IAgentTool, GitUnstageHunksTool>();
         services.AddSingleton<IAgentTool, GitCommitPreviewTool>();

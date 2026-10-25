@@ -1,3 +1,4 @@
+using System.Text.Json;
 using MossAgent.Tools.Abstractions;
 using MossAgent.Tools.BuiltIn.Files;
 using MossAgent.Tools.BuiltIn.Resources;
@@ -6,11 +7,19 @@ namespace MossAgent.Tools.BuiltIn.Git;
 
 public sealed class GitIndexPaths(AuthorizedPathResolver paths)
 {
+    private const int MaximumPathCount = 64;
+
     public void Validate(ToolRequest request, ToolExecutionContext context)
     {
         var directory = Directory(request, context);
         Resolve(request.Arguments.GetRequiredString("path"), directory, context);
         if (request.Arguments.GetOptionalString("originalPath") is { } original) Resolve(original, directory, context);
+    }
+
+    public void ValidatePaths(ToolRequest request, ToolExecutionContext context)
+    {
+        var directory = Directory(request, context);
+        foreach (var file in ReadPaths(request.Arguments)) Resolve(file, directory, context);
     }
 
     public string Directory(ToolRequest request, ToolExecutionContext context) =>
@@ -26,6 +35,38 @@ public sealed class GitIndexPaths(AuthorizedPathResolver paths)
             if (!AuthorizedPathResolver.IsSameOrDescendant(resolved, root)) Deny();
             return Path.GetRelativePath(root, resolved);
         }).Distinct(StringComparer.Ordinal).ToArray();
+    }
+
+    public string[] ResolveFileList(ToolRequest request, ToolExecutionContext context, string root)
+    {
+        var directory = Directory(request, context);
+        return ReadPaths(request.Arguments).Select(file =>
+        {
+            var resolved = Resolve(file, directory, context);
+            if (!AuthorizedPathResolver.IsSameOrDescendant(resolved, root)) Deny();
+            return Path.GetRelativePath(root, resolved);
+        }).Distinct(StringComparer.Ordinal).ToArray();
+    }
+
+    private static string[] ReadPaths(JsonElement arguments)
+    {
+        if (!arguments.TryGetProperty("paths", out var element)
+            || element.ValueKind != JsonValueKind.Array
+            || element.GetArrayLength() is 0 or > MaximumPathCount)
+        {
+            throw new ArgumentException();
+        }
+        var files = new string[element.GetArrayLength()];
+        var index = 0;
+        foreach (var item in element.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(item.GetString()))
+            {
+                throw new ArgumentException();
+            }
+            files[index++] = item.GetString()!;
+        }
+        return files;
     }
 
     private string Resolve(string path, string directory, ToolExecutionContext context)

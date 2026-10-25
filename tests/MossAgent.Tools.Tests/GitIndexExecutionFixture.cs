@@ -29,7 +29,8 @@ internal sealed class GitIndexExecutionFixture : IDisposable
         var runner = new GitCommandRunner(Launcher);
         var paths = new GitIndexPaths(new AuthorizedPathResolver());
         Audit.Release.SetResult();
-        Executor = new(new([new GitStageFileTool(paths, Repository, runner), new GitUnstageFileTool(paths, Repository, runner)]),
+        Executor = new(new([new GitStageFileTool(paths, Repository, runner), new GitUnstageFileTool(paths, Repository, runner),
+            new GitStagePathsTool(paths, Repository, runner), new GitUnstagePathsTool(paths, Repository, runner)]),
             new PolicyApprovalService((_, _, _) => { Approvals++; OnApproval?.Invoke(); return ValueTask.FromResult(true); }), Audit, Clock);
     }
 
