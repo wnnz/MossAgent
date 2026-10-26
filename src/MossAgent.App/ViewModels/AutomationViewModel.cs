@@ -32,8 +32,8 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
         Operation = new AutomationOperationViewModel(clock);
         Editor = new AutomationEditorViewModel(clock);
         List = new AutomationPlanListViewModel(repository, projects, models, scheduler);
-        _editorActions = new AutomationEditorActions(repository, projects, models, List, Editor, Operation, clock,
-            error => { if (!_disposed) Error = error; }, notice => { if (!_disposed) Notice = notice; });
+        _editorActions = new AutomationEditorActions(repository, projects, models, List, Editor, Operation, scheduler,
+            clock, error => { if (!_disposed) Error = error; }, notice => { if (!_disposed) Notice = notice; });
         History = new AutomationHistoryViewModel(repository, projects, catalog);
         History.TaskOpened += HandleTaskOpened;
         RefreshCommand = new AsyncRelayCommand(ReloadAsync, () => !IsBusy && !List.IsLoading && !_disposed);

@@ -31,7 +31,7 @@ public sealed class ToolInterruptionMigrationTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_twenty_four;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(41, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(42, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var restored = Assert.Single(await new SqliteToolExecutionAuditReader(fixture.Connections).GetRecentAsync(fixture.Task.Id, 10, fixture.Token));
         Assert.Equal(id, restored.Id);
         Assert.Equal("legacy-call", restored.CallId);

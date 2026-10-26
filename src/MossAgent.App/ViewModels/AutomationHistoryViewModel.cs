@@ -87,10 +87,11 @@ public sealed class AutomationHistoryViewModel : ObservableObject, IDisposable
             if (!IsCurrent(version)) return;
             cancellation.Token.ThrowIfCancellationRequested();
             var published = 0;
+            var currentGeneration = item.Schedule.AuthorizationSnapshot?.Generation;
             foreach (var run in runs)
             {
                 if (run.ScheduleId != item.Schedule.Id) continue;
-                Runs.Add(new AutomationRunViewModel(run));
+                Runs.Add(new AutomationRunViewModel(run, currentGeneration));
                 if (++published == 50) break;
             }
         }

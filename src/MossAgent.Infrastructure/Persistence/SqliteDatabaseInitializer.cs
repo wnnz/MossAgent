@@ -60,6 +60,7 @@ public sealed class SqliteDatabaseInitializer(
         await ApplyVersionAsync(connection, 39, SteeringAttachmentDatabaseSchema.VersionThirtyNine, cancellationToken);
         await ApplyVersionAsync(connection, 40, GitCommitDraftDatabaseSchema.VersionForty, cancellationToken);
         await ApplyVersionAsync(connection, 41, SubagentRunDatabaseSchema.VersionFortyOne, cancellationToken);
+        await AutomationRunGenerationMigration.ApplyAsync(connection, cancellationToken);
         await SqliteInterruptedWorkRecovery.RecoverAsync(connection, cancellationToken);
     }
 

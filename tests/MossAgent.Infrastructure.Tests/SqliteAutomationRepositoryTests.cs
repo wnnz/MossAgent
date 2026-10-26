@@ -129,6 +129,47 @@ public sealed class SqliteAutomationRepositoryTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ClaimedRuns_PinTheSnapshotGenerationTheyWereClaimedUnder()
+    {
+        var first = new AutomationAuthorizationSnapshot(1, Guid.NewGuid(), 1, ["/root"],
+            Guid.NewGuid(), "provider", Guid.NewGuid(), "model", ApprovalPolicy.ReadOnly, "固定提示词",
+            DateTimeOffset.UtcNow);
+        await _repository.SaveAsync(Schedule() with { AuthorizationSnapshot = first }, Token);
+        var plan = Assert.Single(await _repository.GetAllAsync(Token));
+        var now = DateTimeOffset.UtcNow;
+        var claimed = await _repository.TryClaimAsync(plan, now, now.AddDays(1), true, Token);
+        Assert.Equal(1, claimed!.SnapshotGeneration);
+        await _repository.FinishAsync(claimed with { Status = AutomationRunStatus.Completed, FinishedAt = now }, Token);
+
+        var second = new AutomationAuthorizationSnapshot(2, first.ProjectId, first.ProjectAuthorizationRevision,
+            first.AuthorizedDirectories, first.ProviderId, first.ProviderName, first.ModelId, first.ModelName,
+            first.ApprovalPolicy, first.Prompt, first.CreatedAt);
+        var current = Assert.Single(await _repository.GetAllAsync(Token));
+        Assert.True(await _repository.SaveAsync(current with { AuthorizationSnapshot = second }, Token));
+        var reclaimed = await _repository.TryClaimAsync(Assert.Single(await _repository.GetAllAsync(Token)),
+            now.AddMinutes(1), now.AddDays(1), true, Token);
+        Assert.Equal(2, reclaimed!.SnapshotGeneration);
+
+        var runs = await _repository.GetRunsAsync(plan.Id, 50, Token);
+        Assert.Equal(2, runs.Count);
+        Assert.Equal(2, runs[0].SnapshotGeneration);
+        Assert.Equal(1, runs[1].SnapshotGeneration);
+    }
+
+    [Fact]
+    public async Task ClaimWithoutSnapshot_LeavesRunGenerationUnknown()
+    {
+        await _repository.SaveAsync(Schedule(), Token);
+        var plan = Assert.Single(await _repository.GetAllAsync(Token));
+        var now = DateTimeOffset.UtcNow;
+        var claimed = await _repository.TryClaimAsync(plan, now, now.AddDays(1), true, Token);
+        Assert.Null(claimed!.SnapshotGeneration);
+        var stored = Assert.Single(await _repository.GetRunsAsync(plan.Id, 50, Token));
+        Assert.Null(stored.SnapshotGeneration);
+        Assert.Equal(claimed, stored);
+    }
+
+    [Fact]
     public async Task OversizedSnapshot_IsRejectedBeforeAnyWrite()
     {
         var snapshot = new AutomationAuthorizationSnapshot(1, Guid.NewGuid(), 1, ["/root"],

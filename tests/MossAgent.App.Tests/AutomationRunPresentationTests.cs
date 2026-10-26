@@ -60,6 +60,40 @@ public sealed class AutomationRunPresentationTests
         Assert.False(model.IsFailure);
     }
 
+    [Fact]
+    public void ClaimedGeneration_LabelsTheSnapshotVersionAndFlagsEarlierGenerations()
+    {
+        var start = DateTimeOffset.UtcNow;
+        var run = new AutomationRun(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), start,
+            AutomationRunStatus.Completed, true, start.AddSeconds(5), SnapshotGeneration: 1);
+        var stale = new AutomationRunViewModel(run, currentGeneration: 2);
+        Assert.Equal(AutomationText.Format("RunGeneration", 1), stale.GenerationLabel);
+        Assert.True(stale.IsStaleGeneration);
+        Assert.True(stale.NeedsAttention);
+        Assert.Equal(AutomationText.Get("RunStaleGenerationHint"), stale.Detail);
+        var current = new AutomationRunViewModel(run, currentGeneration: 1);
+        Assert.False(current.IsStaleGeneration);
+        Assert.False(current.NeedsAttention);
+        Assert.False(current.HasDetail);
+        var unknown = new AutomationRunViewModel(run with { SnapshotGeneration = null }, currentGeneration: 2);
+        Assert.Equal(AutomationText.Get("RunGenerationUnknown"), unknown.GenerationLabel);
+        Assert.False(unknown.IsStaleGeneration);
+        Assert.False(unknown.NeedsAttention);
+        Assert.False(unknown.HasDetail);
+    }
+
+    [Fact]
+    public void StaleGeneration_AppendsTheHintToAnExistingStatusDetail()
+    {
+        var start = DateTimeOffset.UtcNow;
+        var run = new AutomationRun(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), start,
+            AutomationRunStatus.Cancelled, true, start.AddSeconds(5), SnapshotGeneration: 1);
+        var model = new AutomationRunViewModel(run, currentGeneration: 2);
+        Assert.True(model.NeedsAttention);
+        Assert.Contains(AutomationText.Get("RunCancelledHint"), model.Detail);
+        Assert.Contains(AutomationText.Get("RunStaleGenerationHint"), model.Detail);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData(-1)]

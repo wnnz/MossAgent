@@ -97,18 +97,19 @@ public sealed class SqliteAutomationRepository(SqliteConnectionFactory connectio
         claim.Parameters.AddWithValue("$manual", manual);
         if (await claim.ExecuteNonQueryAsync(cancellationToken) == 0) return null;
         var run = new AutomationRun(Guid.NewGuid(), expected.Id, Guid.NewGuid(), now,
-            AutomationRunStatus.Running, manual);
+            AutomationRunStatus.Running, manual, SnapshotGeneration: expected.AuthorizationSnapshot?.Generation);
         await using var insert = connection.CreateCommand();
         insert.Transaction = transaction;
         insert.CommandText = """
-            INSERT INTO automation_runs(id,schedule_id,task_id,started_at,status,manual)
-            VALUES($id,$schedule,$task,$started,0,$manual);
+            INSERT INTO automation_runs(id,schedule_id,task_id,started_at,status,manual,snapshot_generation)
+            VALUES($id,$schedule,$task,$started,0,$manual,$generation);
             """;
         insert.Parameters.AddWithValue("$id", run.Id.ToString());
         insert.Parameters.AddWithValue("$schedule", run.ScheduleId.ToString());
         insert.Parameters.AddWithValue("$task", run.TaskId.ToString());
         insert.Parameters.AddWithValue("$started", FormatTime(now));
         insert.Parameters.AddWithValue("$manual", manual);
+        insert.Parameters.AddWithValue("$generation", (object?)run.SnapshotGeneration ?? DBNull.Value);
         await insert.ExecuteNonQueryAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return run;
@@ -121,7 +122,7 @@ public sealed class SqliteAutomationRepository(SqliteConnectionFactory connectio
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id,task_id,started_at,status,manual,finished_at,error_code
+            SELECT id,task_id,started_at,status,manual,finished_at,error_code,snapshot_generation
             FROM automation_runs WHERE schedule_id=$id ORDER BY started_at DESC,rowid DESC LIMIT $limit;
             """;
         command.Parameters.AddWithValue("$id", scheduleId.ToString());
@@ -131,7 +132,8 @@ public sealed class SqliteAutomationRepository(SqliteConnectionFactory connectio
         while (await reader.ReadAsync(cancellationToken))
             runs.Add(new AutomationRun(Guid.Parse(reader.GetString(0)), scheduleId, Guid.Parse(reader.GetString(1)),
                 ParseTime(reader.GetString(2)), (AutomationRunStatus)reader.GetInt32(3), reader.GetBoolean(4),
-                reader.IsDBNull(5) ? null : ParseTime(reader.GetString(5)), reader.IsDBNull(6) ? null : reader.GetString(6)));
+                reader.IsDBNull(5) ? null : ParseTime(reader.GetString(5)), reader.IsDBNull(6) ? null : reader.GetString(6),
+                reader.IsDBNull(7) ? null : reader.GetInt64(7)));
         return runs;
     }
 

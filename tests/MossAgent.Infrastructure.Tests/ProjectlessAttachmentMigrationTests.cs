@@ -31,7 +31,7 @@ public sealed class ProjectlessAttachmentMigrationTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_seventeen;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(41, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(42, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.True(await repository.SaveAsync([new(plainScope, "explicit attachment", 0, [selected])], fixture.Token));
         Assert.Equal(selected, Assert.Single((await repository.GetAsync(plainScope, fixture.Token))!.AttachmentItems));
         Assert.Equal(original, Assert.Single((await repository.GetAsync(projectScope, fixture.Token))!.AttachmentItems));

@@ -36,6 +36,7 @@
                   </Grid>
                   <ui:AppText Text="{Binding StartedAt, StringFormat={}{0:yyyy/MM/dd HH:mm:ss}}" Classes="type-11 subtle" />
                   <ui:AppText Text="{Binding DurationLabel}" Classes="type-11 subtle" />
+                  <ui:AppText Text="{Binding GenerationLabel}" Classes="type-11 subtle" />
                   <ui:AppText Text="{Binding Detail}" IsVisible="{Binding HasDetail}" Classes="type-12 muted line-18" TextWrapping="Wrap" />
                   <ui:AppButton Content="{x:Static text:AutomationText.OpenConversation}" Classes="ghost button-xs align-leading"
                                 HorizontalAlignment="Left" Command="{Binding $parent[ui:AppItemsControl].DataContext.OpenCommand}" CommandParameter="{Binding}" />

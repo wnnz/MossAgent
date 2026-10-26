@@ -113,4 +113,8 @@
   <data name="RunBlockedProviderMissing" xml:space="preserve"><value>快照中的提供商已删除或停用，已阻止运行。请编辑计划重新选择并授权。</value></data>
   <data name="RunBlockedModelMissing" xml:space="preserve"><value>快照中的模型已删除或停用，已阻止运行。请编辑计划重新选择并授权。</value></data>
   <data name="RunBlockedGeneric" xml:space="preserve"><value>授权校验未通过，已阻止运行。请重新保存计划以重新授权。</value></data>
+  <data name="RunGeneration" xml:space="preserve"><value>授权快照 v{0}</value></data>
+  <data name="RunGenerationUnknown" xml:space="preserve"><value>授权版本未知</value></data>
+  <data name="RunStaleGenerationHint" xml:space="preserve"><value>此次运行在保存前的旧授权快照下进行；最新授权快照从下次运行生效。</value></data>
+  <data name="SavedWhileRunning" xml:space="preserve"><value>该计划正在运行：本次运行沿用其启动时认领的授权快照，本次保存的变更从下次运行生效。</value></data>
 </root>

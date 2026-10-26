@@ -172,6 +172,38 @@ public sealed class AutomationHistoryTests : IAsyncLifetime
         Assert.Empty(fixture.Server.Requests);
     }, TestContext.Current.CancellationToken);
 
+    [Fact]
+    public Task Rows_LabelTheClaimedGenerationAndFlagEarlierSnapshotGenerations() => _session.DispatchAsync(async () =>
+    {
+        await using var fixture = await WorkspaceModelSelectionFixture.CreateAsync();
+        var item = Item(fixture);
+        var authorized = await fixture.AuthorizedAsync(item.Schedule, generation: 2);
+        var selected = new AutomationItemViewModel(authorized, item.ProjectLabel, item.ModelLabel, false);
+        var stale = Run(item) with { SnapshotGeneration = 1 };
+        var current = Run(item) with { SnapshotGeneration = 2 };
+        var legacy = Run(item);
+        var repository = new AutomationHistoryProbeRepository
+        {
+            Read = (_, _) => Task.FromResult<IReadOnlyList<AutomationRun>>([stale, current, legacy])
+        };
+        using var history = new AutomationHistoryViewModel(repository, fixture.Tasks, fixture.Workspace.Catalog);
+
+        await history.SelectAsync(selected);
+
+        Assert.Equal(3, history.Runs.Count);
+        Assert.Equal(AutomationText.Format("RunGeneration", 1), history.Runs[0].GenerationLabel);
+        Assert.True(history.Runs[0].IsStaleGeneration);
+        Assert.True(history.Runs[0].NeedsAttention);
+        Assert.Equal(AutomationText.Get("RunStaleGenerationHint"), history.Runs[0].Detail);
+        Assert.Equal(AutomationText.Format("RunGeneration", 2), history.Runs[1].GenerationLabel);
+        Assert.False(history.Runs[1].IsStaleGeneration);
+        Assert.False(history.Runs[1].NeedsAttention);
+        Assert.False(history.Runs[1].HasDetail);
+        Assert.Equal(AutomationText.Get("RunGenerationUnknown"), history.Runs[2].GenerationLabel);
+        Assert.False(history.Runs[2].IsStaleGeneration);
+        Assert.Empty(fixture.Server.Requests);
+    }, TestContext.Current.CancellationToken);
+
     internal static AutomationItemViewModel Item(WorkspaceModelSelectionFixture fixture) => new(new AutomationSchedule(
         Guid.NewGuid(), "合成计划", "只读检查项目", fixture.Workspace.Catalog.SelectedProject!.Id,
         fixture.SelectedProvider.Id, fixture.SelectedModel.Id, AutomationFrequency.Daily, 1, 9, 0, DayOfWeek.Monday,

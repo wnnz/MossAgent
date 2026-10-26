@@ -7,7 +7,8 @@ namespace MossAgent.App.ViewModels;
 
 internal sealed class AutomationEditorActions(IAutomationRepository repository, IWorkspaceRepository projects,
     EnabledModelCatalog models, AutomationPlanListViewModel list, AutomationEditorViewModel editor,
-    AutomationOperationViewModel operation, TimeProvider clock, Action<string?> setError, Action<string?> setNotice)
+    AutomationOperationViewModel operation, AutomationScheduler scheduler, TimeProvider clock,
+    Action<string?> setError, Action<string?> setNotice)
 {
     private AutomationSavedDraft? _pendingSave;
 
@@ -31,6 +32,7 @@ internal sealed class AutomationEditorActions(IAutomationRepository repository, 
     public async Task SaveAsync(CancellationToken token)
     {
         var context = editor.ContextVersion;
+        var savedWhileRunning = false;
         await operation.RunAsync(async cancellation =>
         {
             setError(null); setNotice(null);
@@ -57,12 +59,17 @@ internal sealed class AutomationEditorActions(IAutomationRepository repository, 
             {
                 _pendingSave = new AutomationSavedDraft(schedule, context, revision, cancellation);
                 editor.RecordSaved(schedule with { Revision = schedule.Revision + 1 }, context);
+                // The in-flight run keeps the authorization snapshot it claimed; the
+                // save only takes effect from the next run. Never cancel it here.
+                savedWhileRunning = scheduler.IsRunning(schedule.Id);
             }
             else if (IsCurrent(context)) setError(AutomationText.Get("Conflict"));
         }, token, "SavingPlan", error => { if (IsCurrent(context)) setError(error); },
             () => list.ReloadAsync(requireFresh: true), ClassifySaveFailure);
         if (_pendingSave is { } pending && IsCurrent(pending.ContextVersion) && list.HasLoadError)
             setNotice(AutomationText.Get("SavedRefreshPending"));
+        else if (savedWhileRunning && operation.IsAlive && !editor.IsOpen)
+            setNotice(AutomationText.Get("SavedWhileRunning"));
     }
 
     public void HandleSnapshotChanged()
