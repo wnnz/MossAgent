@@ -21,7 +21,8 @@ internal sealed class WorkspaceBackgroundRunCoordinator(
     Action<Guid, ConversationModelPreference?> rememberPreference)
 {
     public async Task<AgentTask> RunAsync(ProjectProfile project, AiProvider provider,
-        ModelProfile model, AutomationSchedule schedule, Guid taskId, CancellationToken cancellationToken)
+        ModelProfile model, AutomationSchedule schedule, Guid taskId,
+        IReadOnlyList<string>? pinnedRoots, CancellationToken cancellationToken)
     {
         await AvaloniaUiThread.RunAsync(() =>
         {
@@ -37,7 +38,8 @@ internal sealed class WorkspaceBackgroundRunCoordinator(
                 if (!isReady()) throw new OperationCanceledException(cancellationToken);
                 var assistant = new ChatMessageViewModel("MossAgent", string.Empty);
                 var messages = new ObservableCollection<ChatMessageViewModel> { new(UiText.T("你"), schedule.Prompt), assistant };
-                var state = new WorkspaceRunState(task, project, provider, model, messages, assistant, string.Empty);
+                var state = new WorkspaceRunState(task, project, provider, model, messages, assistant,
+                    string.Empty, pinnedRoots: pinnedRoots);
                 runs.Add(state);
                 rememberPreference(task.Id, new(provider.Id, model.Id, ModelReasoningPolicy.Normalize(model.ReasoningEffort)));
                 catalog.UpsertTask(task, select: false);

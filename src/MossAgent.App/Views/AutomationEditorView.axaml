@@ -76,6 +76,10 @@
                              AutomationProperties.Name="{x:Static text:AutomationText.Timeout}" />
       </StackPanel>
     </Grid>
+    <StackPanel Spacing="4">
+      <ui:AppCheckBox Content="{x:Static text:AutomationText.FollowAuthorization}" IsChecked="{Binding FollowAuthorization, Mode=TwoWay}" />
+      <ui:AppText Text="{x:Static text:AutomationText.FollowAuthorizationHint}" Classes="type-11 subtle line-18" TextWrapping="Wrap" />
+    </StackPanel>
     <ui:AppText Text="{x:Static text:AutomationText.PausedDefault}" Classes="type-11 subtle line-18" TextWrapping="Wrap" />
   </StackPanel>
 </ui:AppUserControl>

@@ -22,8 +22,12 @@ public sealed class AutomationAuthorizationGate(IWorkspaceRepository projects,
             : (await configurations.GetModelsAsync(provider.Id, cancellationToken).ConfigureAwait(false))
                 .FirstOrDefault(item => item.Id == snapshot.ModelId && item.ProviderId == provider.Id && item.IsEnabled);
         var code = AutomationSnapshotReview.Evaluate(schedule, project, provider, model);
+        // Pinned mode (default): the run executes with the snapshot's directory set, which the
+        // review already proved to be a subset of the project's live authorization. Follow mode
+        // is the explicit plan opt-in that keeps using the project's current roots instead.
         return code is not null ? new(null, code) : new(new AutomationRunContext(
             schedule with { ApprovalPolicy = snapshot.ApprovalPolicy, Prompt = snapshot.Prompt },
-            project!, provider!, model!), null);
+            project!, provider!, model!,
+            schedule.FollowAuthorizationChanges ? null : snapshot.AuthorizedDirectories), null);
     }
 }

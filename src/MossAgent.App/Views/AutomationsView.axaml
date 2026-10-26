@@ -47,6 +47,8 @@
                 <ui:AppText Text="{Binding ModelLabel}" Classes="type-11 subtle" TextTrimming="CharacterEllipsis" />
                 <ui:AppIconLabel Label="{Binding TimingLabel}" IconData="{StaticResource UiIconClock}" Classes="automation-metadata" />
                 <ui:AppText Text="{Binding NextLabel}" Classes="type-11 subtle" TextWrapping="Wrap" />
+                <ui:AppText Text="{x:Static text:AutomationText.FollowsAuthorization}" Classes="type-11 subtle"
+                            IsVisible="{Binding FollowsAuthorization}" />
                 <WrapPanel>
                   <ui:AppButton Content="{x:Static text:AutomationText.RunNow}" Classes="ghost button-xs"
                                 Command="{Binding $parent[ui:AppListBox].DataContext.RunNowCommand}" CommandParameter="{Binding}" IsVisible="{Binding !IsRunning}" />

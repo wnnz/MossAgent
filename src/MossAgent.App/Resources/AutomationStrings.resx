@@ -49,6 +49,9 @@
   <data name="DeleteTitle" xml:space="preserve"><value>移除定时任务？</value></data>
   <data name="DeleteHint" xml:space="preserve"><value>计划将被移除，已有对话和运行记录仍会保留。正在运行的任务需先停止。</value></data>
   <data name="PausedDefault" xml:space="preserve"><value>新计划默认暂停。保存后需明确启用；立即运行仍可能产生模型费用。工具操作遵循所选权限。</value></data>
+  <data name="FollowAuthorization" xml:space="preserve"><value>跟随项目授权变更</value></data>
+  <data name="FollowAuthorizationHint" xml:space="preserve"><value>开启后项目目录授权变更不阻止该计划，运行时沿用项目当前授权根；关闭（默认）则任何授权变更都会阻止运行并要求重新保存确认。</value></data>
+  <data name="FollowsAuthorization" xml:space="preserve"><value>跟随授权</value></data>
   <data name="Paused" xml:space="preserve"><value>已暂停</value></data>
   <data name="Enable" xml:space="preserve"><value>启用计划</value></data>
   <data name="Pause" xml:space="preserve"><value>暂停计划</value></data>

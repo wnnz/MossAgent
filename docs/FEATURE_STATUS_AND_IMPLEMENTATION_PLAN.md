@@ -80,7 +80,7 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 
 | 编号 | 已完成的能力及实际链路 | 证据与剩余范围 |
 | --- | --- | --- |
-| C28 | 定时任务创建/编辑、启用/暂停、手动运行/停止、历史/打开结果；调度认领 → 保存的模型选择/提示词/审批策略 → 独立后台 task，不消费前台草稿；启动跳过过期触发并标记中断 | [定时 UI](archive/AGENTS_AUTOMATIONS.md#automation-ui-workflow-acceptance)、[计划修改](archive/AGENTS_AUTOMATIONS.md#automation-mutation-acceptance)；目录范围取执行时项目授权，尚非计划级固定授权快照；关闭/DST/并发恢复见 R10 |
+| C28 | 定时任务创建/编辑、启用/暂停、手动运行/停止、历史/打开结果；调度认领 → 保存的模型选择/提示词/审批策略 → 独立后台 task，不消费前台草稿；启动跳过过期触发并标记中断 | [定时 UI](archive/AGENTS_AUTOMATIONS.md#automation-ui-workflow-acceptance)、[计划修改](archive/AGENTS_AUTOMATIONS.md#automation-mutation-acceptance)；运行授权根默认钉住保存时快照目录集，计划可显式开启跟随项目授权变更；关闭/DST/并发恢复见 R10 |
 | C29 | 独立 GitHub 来源账号/token/代理和仓库只读授权；开放 PR、URL 直达、描述/分页文件补丁/评论/checks；当前提交有效行内评论定位；固定快照及按需只读查询对话 | [来源账号](archive/GIT_WORKTREES.md#source-account-connection-acceptance)、[行内评论](archive/GIT_WORKTREES.md#source-pr-inline-comments-acceptance)、[查询对话](archive/GIT_WORKTREES.md#source-pr-on-demand-reading-acceptance)、[URL](archive/GIT_WORKTREES.md#source-pr-url-acceptance)；不是完整 PR 写工作流，见 R12 |
 | C30 | Windows 优先的 Avalonia/.NET 10 模块化桌面；共享包装控件、集中明暗主题、本地化、键盘与紧凑布局基础；编译/测试约束组件与依赖方向 | [架构](ARCHITECTURE.md)、[共享组件](UI_COMPONENTS.md)；当前原生/DPI/焦点全覆盖及已知 restore 裁切见 R23 |
 | C31 | SQLite 向前迁移、结构化任务状态及文件型大产物；JIT 构建和 Windows x64 自包含单文件配置，明确关闭 AOT/裁剪 | [迁移及架构](ARCHITECTURE.md)、[发布配置](../src/MossAgent.App/Properties/PublishProfiles/WindowsX64.pubxml)；当前正式包验收见 R24 |
@@ -479,9 +479,11 @@ host/browser 崩溃和多任务；另一会话与草稿不受影响。独立原�
 
 **现状：** 创建/编辑/启停/手动运行/停止/结果已通；应用关闭后不是持续后台执行服务。
 启动会跳过过期触发并标记遗留中断，原生关闭及全部时间组合尚未完成验收。
-当前 `AutomationSchedule` 保存项目/提供商/模型 ID、提示词和审批策略，
-`WorkspaceAutomationRunner` 在执行时读取启用的提供商/模型和项目当前目录授权，交给
-`WorkspaceBackgroundRunCoordinator`。这不是保存时固定目录 grant 和所有模型参数的计划级快照。
+当前 `AutomationSchedule` 保存项目/提供商/模型 ID、提示词和审批策略，并在保存时捕获
+`AutomationAuthorizationSnapshot`，固定项目授权 revision、目录授权集合、提供商/模型
+标识与显示名、审批策略和提示词；`AutomationAuthorizationGate` 在每次认领时对照 live
+状态评审后才交给 `WorkspaceAutomationRunner`/`WorkspaceBackgroundRunCoordinator` 执行。
+思考强度等模型运行参数仍取模型当前配置，不属于快照固定范围。
 
 1. Application 的调度器和 Infrastructure 仓库继续使用事务认领及实例租约，明确计划 revision、
    触发时间/时区、错过时间策略和单次 run 所有权；活动运行固定启动快照，编辑仅影响后续触发。
@@ -492,6 +494,13 @@ host/browser 崩溃和多任务；另一会话与草稿不受影响。独立原�
 2. 增加计划级授权/参数版本记录：保存项目授权 revision、根 grant 集合、审批策略及明确的模型
    参数采用策略。默认授权变化阻止旧计划运行并提示重新确认；如支持跟随项目变更，应由计划级
    显式选项授予，不能隐式扩权。认领时事务复核，运行中变更继续撤销旧租约。
+   已落地：计划 payload 新增序列化字段 `FollowAuthorizationChanges`（默认 false；旧载荷
+   反序列化即钉住语义，无需 schema 迁移；编辑器提供显式勾选，列表行标注"跟随授权"）。
+   关闭（默认）时认领评审照旧，通过后 gate 把快照目录集作为 `AutomationRunContext.
+   AuthorizedRoots` 沿执行链钉入 `ToolExecutionContext`——收窄按构造成立，而非仅靠评审；
+   开启时评审跳过 revision 与目录两项检查、运行沿用项目当前授权根，但快照缺失/不匹配、
+   项目/提供商/模型缺失仍阻止。运行中的授权变更仍由 `ProjectAuthorizationMonitor`
+   按旧租约撤销（扩缩一致处理）。实机验收仍缺。
 3. 暂停仅影响未来计划，停止仅取消本次运行，分别展示；关闭先禁止新认领，再取消并等待已有
    runner 和工具资源，之后释放调度租约。未知副作用显示中断记录，不自动补跑。
 4. 覆盖定时与“立即运行”碰撞、重复 tick、多实例、运行中编辑/删除、时钟前后跳和 DST。

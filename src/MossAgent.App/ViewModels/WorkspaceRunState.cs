@@ -13,7 +13,8 @@ public sealed class WorkspaceRunState(
     ObservableCollection<ChatMessageViewModel> messages,
     ChatMessageViewModel assistant,
     string? attachmentContext = null,
-    string? agentInstructions = null) : IDisposable
+    string? agentInstructions = null,
+    IReadOnlyList<string>? pinnedRoots = null) : IDisposable
 {
     private readonly Lock _cancellationLock = new();
     private CancellationTokenSource? _cancellation = new();
@@ -36,6 +37,9 @@ public sealed class WorkspaceRunState(
     }
     public string? AttachmentContext { get; } = attachmentContext;
     public string? AgentInstructions { get; } = agentInstructions;
+    /// <summary>Automation-pinned authorized roots; null means the run resolves the
+    /// project's current authorized directories when its context is created.</summary>
+    public IReadOnlyList<string>? PinnedRoots { get; } = pinnedRoots;
     public ConversationSteeringSession? Steering { get; internal set; }
     public bool AuthorizationChanged { get; internal set; }
     public CancellationToken CancellationToken

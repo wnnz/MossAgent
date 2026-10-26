@@ -13,6 +13,9 @@ public sealed class AutomationItemViewModel(AutomationSchedule schedule, string 
     public string ModelLabel { get; } = modelLabel;
     public bool IsRunning { get; } = running;
     public bool NeedsReauthorization { get; } = needsReauthorization;
+    /// <summary>True when the plan explicitly opted to follow project authorization changes
+    /// instead of pinning the save-time snapshot directory set.</summary>
+    public bool FollowsAuthorization => Schedule.FollowAuthorizationChanges;
     public string StateLabel => AutomationText.Get(IsRunning ? "Running" : NeedsReauthorization ? "NeedsReauthorization"
         : Schedule.IsEnabled ? "Scheduled" : "Paused");
     public string ToggleLabel => AutomationText.Get(Schedule.IsEnabled ? "Pause" : "Enable");

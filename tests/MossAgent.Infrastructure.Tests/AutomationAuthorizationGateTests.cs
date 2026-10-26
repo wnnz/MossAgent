@@ -108,6 +108,70 @@ public sealed class AutomationAuthorizationGateTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task PinnedPlan_PassesSnapshotDirectoriesAsRunRoots()
+    {
+        // Snapshot holds a strict subset of the live authorization at the same revision.
+        var expanded = Path.Combine(_root, "expanded-scope");
+        await _workspace.SaveProjectAsync(_project with { AuthorizedDirectories = [_root, expanded] }, Token);
+        var live = Assert.Single(await _workspace.GetProjectsAsync(Token));
+        var snapshot = new AutomationAuthorizationSnapshot(1, live.Id, live.AuthorizationRevision, [_root],
+            _provider.Id, _provider.Name, _model.Id, "Gated", ApprovalPolicy.ReadOnly, "read only", _clock.GetUtcNow());
+        var plan = Plan(snapshot);
+        Assert.True(await _repository.SaveAsync(plan, Token));
+        var run = await FireAsync(plan);
+        Assert.Equal(AutomationRunStatus.Completed, run.Status);
+        var roots = Assert.Single(_runner.RootSets);
+        Assert.NotNull(roots);
+        Assert.Equal(_root, Assert.Single(roots));
+    }
+
+    [Fact]
+    public async Task FollowPlan_PassesNoRootsSoExecutionResolvesLiveDirectories()
+    {
+        var decision = await new AutomationAuthorizationGate(_workspace, _configurations)
+            .EvaluateAsync(Plan(Snapshot()) with { FollowAuthorizationChanges = true }, Token);
+        Assert.NotNull(decision.Context);
+        Assert.Null(decision.Context!.AuthorizedRoots);
+    }
+
+    [Fact]
+    public async Task FollowPlan_RunsAfterAuthorizationExpansion()
+    {
+        var plan = Plan(Snapshot()) with { FollowAuthorizationChanges = true };
+        Assert.True(await _repository.SaveAsync(plan, Token));
+        await _workspace.SaveProjectAsync(_project with
+        { AuthorizedDirectories = [_root, Path.Combine(_root, "follow-scope")] }, Token);
+        var run = await FireAsync(plan);
+        Assert.Equal(AutomationRunStatus.Completed, run.Status);
+        Assert.Null(run.ErrorCode);
+        Assert.Null(Assert.Single(_runner.RootSets));
+    }
+
+    [Fact]
+    public async Task FollowPlan_RunsAfterDirectoryRemoval()
+    {
+        var plan = Plan(Snapshot(directories: [_root, Path.Combine(_root, "removed-scope")]))
+            with { FollowAuthorizationChanges = true };
+        Assert.True(await _repository.SaveAsync(plan, Token));
+        var run = await FireAsync(plan);
+        Assert.Equal(AutomationRunStatus.Completed, run.Status);
+        Assert.Null(run.ErrorCode);
+        Assert.Null(Assert.Single(_runner.RootSets));
+    }
+
+    [Fact]
+    public async Task FollowPlan_StillBlocksOnDisabledProvider()
+    {
+        var plan = Plan(Snapshot()) with { FollowAuthorizationChanges = true };
+        Assert.True(await _repository.SaveAsync(plan, Token));
+        await _configurations.SaveProviderAsync(_provider with { IsEnabled = false }, Token);
+        var run = await FireAsync(plan);
+        Assert.Equal(AutomationRunStatus.Blocked, run.Status);
+        Assert.Equal("provider-unavailable", run.ErrorCode);
+        Assert.Empty(_runner.Requests);
+    }
+
+    [Fact]
     public async Task DisabledProvider_BlocksWithoutRunning()
     {
         var plan = Plan(Snapshot());

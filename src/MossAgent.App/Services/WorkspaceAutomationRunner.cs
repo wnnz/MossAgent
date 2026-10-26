@@ -11,7 +11,7 @@ public sealed class WorkspaceAutomationRunner(WorkspaceViewModel workspace) : IA
     {
         AutomationTiming.Validate(context.Schedule);
         var task = await workspace.RunBackgroundAsync(context.Project, context.Provider,
-            context.Model, context.Schedule, taskId, cancellationToken);
+            context.Model, context.Schedule, taskId, context.AuthorizedRoots, cancellationToken);
         return new(task.Status switch
         {
             AgentTaskStatus.Completed => AutomationRunStatus.Completed,

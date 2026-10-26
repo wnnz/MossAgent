@@ -250,8 +250,9 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     }
 
     public Task<AgentTask> RunBackgroundAsync(ProjectProfile project, AiProvider provider,
-        ModelProfile model, AutomationSchedule schedule, Guid taskId, CancellationToken cancellationToken) =>
-        _backgroundRuns.RunAsync(project, provider, model, schedule, taskId, cancellationToken);
+        ModelProfile model, AutomationSchedule schedule, Guid taskId,
+        IReadOnlyList<string>? pinnedRoots = null, CancellationToken cancellationToken = default) =>
+        _backgroundRuns.RunAsync(project, provider, model, schedule, taskId, pinnedRoots, cancellationToken);
 
     private void HandleModelSelected(AiProvider? provider, ModelProfile? model)
     {

@@ -23,7 +23,7 @@ public sealed class WorkspaceRunController(
         var released = false;
         try
         {
-            var context = panels.CreateContext(state.Task, state.Project);
+            var context = panels.CreateContext(state.Task, state.Project, state.PinnedRoots);
             state.Task = await executor.ExecuteAsync(
                 state,
                 context,

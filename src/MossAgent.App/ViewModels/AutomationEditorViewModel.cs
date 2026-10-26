@@ -22,6 +22,7 @@ public sealed class AutomationEditorViewModel : ObservableObject
     private decimal _timeout = 30;
     private bool _isOpen;
     private bool _isInitializing;
+    private bool _followAuthorization;
     private readonly TimeProvider _clock;
     private string _schedulePreview = AutomationText.Get("PreviewIncomplete");
     private string _snapshotSummary = AutomationText.Get("SnapshotIncomplete");
@@ -53,6 +54,10 @@ public sealed class AutomationEditorViewModel : ObservableObject
     public string SnapshotSummary { get => _snapshotSummary; private set => SetProperty(ref _snapshotSummary, value); }
     public decimal IntervalHours { get => _interval; set => SetProperty(ref _interval, value); }
     public decimal TimeoutMinutes { get => _timeout; set => SetProperty(ref _timeout, value); }
+    /// <summary>Explicit plan-level opt-in: when set, project authorization changes do not
+    /// block this plan and runs use the project's current authorized roots. When unset
+    /// (default) runs execute against the save-time pinned snapshot directory set.</summary>
+    public bool FollowAuthorization { get => _followAuthorization; set => SetProperty(ref _followAuthorization, value); }
     public ProjectProfile? SelectedProject { get => _project; set => SetProperty(ref _project, value); }
     public ModelPickerItemViewModel? SelectedModel { get => _model; set => SetProperty(ref _model, value); }
     public TimeZoneInfo? SelectedTimeZone { get => _zone; set => SetProperty(ref _zone, value); }
@@ -95,6 +100,7 @@ public sealed class AutomationEditorViewModel : ObservableObject
             Time = schedule is null ? "09:00" : $"{schedule.Hour:00}:{schedule.Minute:00}";
             IntervalHours = schedule?.IntervalHours ?? 1;
             TimeoutMinutes = schedule?.TimeoutMinutes ?? 30;
+            FollowAuthorization = schedule?.FollowAuthorizationChanges ?? false;
         }
         finally
         {
@@ -134,7 +140,8 @@ public sealed class AutomationEditorViewModel : ObservableObject
         var schedule = new AutomationSchedule(Original?.Id ?? Guid.NewGuid(), Name.Trim(), Prompt.Trim(),
             SelectedProject.Id, SelectedModel.Provider.Id, SelectedModel.Model.Id, SelectedFrequency.Value,
             checked((int)IntervalHours), time.Hour, time.Minute, SelectedWeekday.Value, SelectedTimeZone.Id,
-            SelectedPolicy.Value, checked((int)TimeoutMinutes), Original?.IsEnabled ?? false, now, Original?.Revision ?? 0);
+            SelectedPolicy.Value, checked((int)TimeoutMinutes), Original?.IsEnabled ?? false, now, Original?.Revision ?? 0,
+            FollowAuthorization);
         return schedule with { NextRunAt = AutomationTiming.Next(schedule, now) };
     }
 
@@ -142,7 +149,7 @@ public sealed class AutomationEditorViewModel : ObservableObject
     {
         var changed = args.PropertyName is nameof(Name) or nameof(Prompt) or nameof(Time) or nameof(SelectedProject)
             or nameof(SelectedModel) or nameof(SelectedTimeZone) or nameof(SelectedFrequency) or nameof(SelectedWeekday)
-            or nameof(SelectedPolicy) or nameof(IntervalHours) or nameof(TimeoutMinutes);
+            or nameof(SelectedPolicy) or nameof(IntervalHours) or nameof(TimeoutMinutes) or nameof(FollowAuthorization);
         if (changed) DraftRevision++;
         base.OnPropertyChanged(args);
         if (changed && !_isInitializing) UpdateSchedulePreview();

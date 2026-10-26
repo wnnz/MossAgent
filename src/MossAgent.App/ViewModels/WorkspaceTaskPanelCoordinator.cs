@@ -35,13 +35,17 @@ public sealed class WorkspaceTaskPanelCoordinator(
         return context;
     }
 
-    public ToolExecutionContext CreateContext(AgentTask task, ProjectProfile? project)
+    /// <param name="pinnedRoots">Automation-pinned root set claimed at run time. It is used
+    /// verbatim — narrowing against the live project is the authorization gate's job, not
+    /// this coordinator's. Null resolves the task's current authorized roots.</param>
+    public ToolExecutionContext CreateContext(AgentTask task, ProjectProfile? project,
+        IReadOnlyList<string>? pinnedRoots = null)
     {
         if (task.ProjectId != project?.Id || (project is null && task.WorktreePath is not null))
             throw new InvalidOperationException("Task project does not match the selected context.");
         if (project is null)
             return new(task.Id, string.Empty, [], ApprovalPolicy.ReadOnly) { ToolsEnabled = false };
-        var roots = taskFactory.GetAuthorizedRoots(project, task);
+        var roots = pinnedRoots ?? taskFactory.GetAuthorizedRoots(project, task);
         return new(
             task.Id,
             task.WorktreePath ?? project.PrimaryDirectory,
