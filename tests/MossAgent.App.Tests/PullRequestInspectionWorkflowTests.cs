@@ -1,5 +1,6 @@
 using System.Net;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
@@ -69,7 +70,8 @@ public sealed class PullRequestInspectionWorkflowTests : IAsyncLifetime
             Assert.All(records, record => { Assert.True(record.IsSuccess); Assert.NotNull(record.CompletedAt); });
             Assert.Equal(23, fixture.Source.Transport.RequestCount);
             inspection.SelectedSection = inspection.Sections[0]; window.UpdateLayout();
-            var selector = Assert.Single(view.GetVisualDescendants().OfType<AppComboBox>());
+            var selector = Assert.Single(view.GetVisualDescendants().OfType<AppComboBox>(),
+                box => AutomationProperties.GetName(box) == PullRequestText.Inspection);
             Assert.True(selector.Focus(NavigationMethod.Tab));
             var origin = selector.TranslatePoint(default, window)!.Value;
             Assert.True(new Rect(window.ClientSize).Contains(new Rect(origin, selector.Bounds.Size)));

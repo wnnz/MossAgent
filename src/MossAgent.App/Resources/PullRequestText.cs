@@ -71,8 +71,19 @@ public static class PullRequestText
     public static string CommentLanded => Get(nameof(CommentLanded));
     public static string CommentCancelled => Get(nameof(CommentCancelled));
     public static string CommentReadOnlyHint => Get(nameof(CommentReadOnlyHint));
+    public static string ReviewDecision => Get(nameof(ReviewDecision));
+    public static string ReviewBody => Get(nameof(ReviewBody));
+    public static string ReviewSubmit => Get(nameof(ReviewSubmit));
+    public static string ReviewConfirm => Get(nameof(ReviewConfirm));
+    public static string ReviewConfirmHint => Get(nameof(ReviewConfirmHint));
+    public static string ReviewSubmitHint => Get(nameof(ReviewSubmitHint));
+    public static string ReviewSubmitting => Get(nameof(ReviewSubmitting));
+    public static string ReviewSubmitted => Get(nameof(ReviewSubmitted));
+    public static string ReviewLanded => Get(nameof(ReviewLanded));
+    public static string ReviewCancelled => Get(nameof(ReviewCancelled));
+    public static string ReviewReadOnlyHint => Get(nameof(ReviewReadOnlyHint));
 
-    public static string Failure(string code) => Get(code switch
+    public static string Failure(string code, bool review = false) => Get(code switch
     {
         "source_scope_denied" => "ScopeDenied",
         "source_invalid_pr_url" => "InvalidPrUrl",
@@ -84,9 +95,9 @@ public static class PullRequestText
         "source_forbidden" => "Forbidden",
         "source_rate_limited" => "RateLimited",
         "source_not_found" => "NotFound",
-        "source_write_rejected" => "WriteRejected",
-        "source_write_unconfirmed" => "WriteUnconfirmed",
-        "source_write_unknown" => "WriteUnknown",
+        "source_write_rejected" => review ? "ReviewWriteRejected" : "WriteRejected",
+        "source_write_unconfirmed" => review ? "ReviewWriteUnconfirmed" : "WriteUnconfirmed",
+        "source_write_unknown" => review ? "ReviewWriteUnknown" : "WriteUnknown",
         "source_invalid_response" or "source_redirect_denied" => "InvalidResponse",
         "tool_cancelled" or "tool_timeout" or "source_timeout" => "Cancelled",
         _ => "Failed"

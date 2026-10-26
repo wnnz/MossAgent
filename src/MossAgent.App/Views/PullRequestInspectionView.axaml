@@ -98,23 +98,48 @@
         </DataTemplate>
       </ItemsControl.ItemTemplate>
     </ui:AppItemsControl>
-    <ui:AppItemsControl ItemsSource="{Binding Reviews.Items}" IsVisible="{Binding IsReviews}">
-      <ItemsControl.ItemTemplate>
-        <DataTemplate>
-          <ui:AppCard Classes="card card-inset-compact">
-            <StackPanel Spacing="4">
-              <WrapPanel>
-                <ui:AppText Text="{Binding Author}" Classes="type-12 weight-semibold" TextWrapping="Wrap" />
-                <ui:AppText Text="{Binding State}" Classes="type-12 muted" />
-              </WrapPanel>
-              <ui:AppSelectableText Text="{Binding Body}" TextWrapping="Wrap" />
-              <ui:AppSelectableText Text="{Binding CommitRevision}" TextWrapping="Wrap" />
-              <ui:AppText Text="{Binding SubmittedAt}" Classes="type-12 muted" />
-            </StackPanel>
-          </ui:AppCard>
-        </DataTemplate>
-      </ItemsControl.ItemTemplate>
-    </ui:AppItemsControl>
+    <StackPanel IsVisible="{Binding IsReviews}" Spacing="8">
+      <ui:AppItemsControl ItemsSource="{Binding Reviews.Items}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <ui:AppCard Classes="card card-inset-compact">
+              <StackPanel Spacing="4">
+                <WrapPanel>
+                  <ui:AppText Text="{Binding Author}" Classes="type-12 weight-semibold" TextWrapping="Wrap" />
+                  <ui:AppText Text="{Binding State}" Classes="type-12 muted" />
+                </WrapPanel>
+                <ui:AppSelectableText Text="{Binding Body}" TextWrapping="Wrap" />
+                <ui:AppSelectableText Text="{Binding CommitRevision}" TextWrapping="Wrap" />
+                <ui:AppText Text="{Binding SubmittedAt}" Classes="type-12 muted" />
+              </StackPanel>
+            </ui:AppCard>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ui:AppItemsControl>
+      <StackPanel IsVisible="{Binding ReviewComposer.IsActive}" Spacing="8" DataContext="{Binding ReviewComposer}">
+        <ui:AppText Text="{x:Static text:PullRequestText.ReviewDecision}" Classes="type-12 muted" IsVisible="{Binding CanWrite}" />
+        <ui:AppComboBox ItemsSource="{Binding Decisions}" SelectedItem="{Binding SelectedDecision, Mode=TwoWay}"
+                        HorizontalAlignment="Stretch" IsVisible="{Binding CanWrite}"
+                        AutomationProperties.Name="{x:Static text:PullRequestText.ReviewDecision}">
+          <ComboBox.ItemTemplate><DataTemplate><ui:AppText Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate>
+        </ui:AppComboBox>
+        <ui:AppText Text="{x:Static text:PullRequestText.ReviewBody}" Classes="type-12 muted" IsVisible="{Binding CanWrite}" />
+        <ui:AppInput Text="{Binding Text, Mode=TwoWay}" AcceptsReturn="True" Classes="field-multiline"
+                   MaxLength="4096" IsEnabled="{Binding !IsBusy}" IsVisible="{Binding CanWrite}"
+                   AutomationProperties.Name="{x:Static text:PullRequestText.ReviewBody}" />
+        <WrapPanel IsVisible="{Binding CanWrite}">
+          <ui:AppButton Content="{Binding PublishLabel}" Command="{Binding PublishCommand}" Classes="primary button-sm"
+                        AutomationProperties.Name="{x:Static text:PullRequestText.ReviewSubmit}" />
+          <ui:AppButton Content="{x:Static text:PullRequestText.Cancel}" Command="{Binding CancelCommand}" Classes="ghost button-sm"
+                        IsVisible="{Binding IsBusy}" />
+        </WrapPanel>
+        <ui:AppText Text="{x:Static text:PullRequestText.ReviewReadOnlyHint}" Classes="type-12 muted" TextWrapping="Wrap"
+                    IsVisible="{Binding !CanWrite}" />
+        <ui:AppText Text="{x:Static text:PullRequestText.ReviewSubmitHint}" Classes="type-11 subtle" TextWrapping="Wrap"
+                    IsVisible="{Binding CanWrite}" />
+        <ui:AppText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />
+      </StackPanel>
+    </StackPanel>
     <ui:AppItemsControl ItemsSource="{Binding Activity.Items}" IsVisible="{Binding IsActivity}">
       <ItemsControl.ItemTemplate>
         <DataTemplate>

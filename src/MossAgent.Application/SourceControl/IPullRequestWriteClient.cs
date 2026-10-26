@@ -8,4 +8,8 @@ public interface IPullRequestWriteClient
         string body, CancellationToken cancellationToken);
     Task<long?> FindCommentAsync(SourceAccount account, SourceRepositoryScope scope, int number,
         string body, CancellationToken cancellationToken);
+    Task<long> SubmitReviewAsync(SourceAccount account, SourceRepositoryScope scope, PullRequestRevision revision,
+        PullRequestReviewDecision decision, string? body, CancellationToken cancellationToken);
+    Task<long?> FindReviewAsync(SourceAccount account, SourceRepositoryScope scope, PullRequestRevision revision,
+        PullRequestReviewDecision decision, string? body, CancellationToken cancellationToken);
 }

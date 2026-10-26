@@ -13,6 +13,12 @@
   <data name="SourceWriteRejected" xml:space="preserve"><value>服务端拒绝了评论发布请求，未写入评论。</value></data>
   <data name="SourceWriteUnconfirmed" xml:space="preserve"><value>评论发布结果未确认：核实查询未找到该评论，评论可能稍后出现在服务端。请先在源代码平台核实，不要自动重试。</value></data>
   <data name="SourceWriteUnknown" xml:space="preserve"><value>评论发布结果未知且核实查询失败；评论可能已发布也可能未发布，请在源代码平台核实后再决定是否手动重试。</value></data>
+  <data name="SourceReviewSubmitDescription" xml:space="preserve"><value>在已授予写权限的仓库 PR 上提交一次评审（approve/request_changes/comment 结论加可选正文）；提交前复核授权与最新提交版本并固定来源提交，结果未知时查询核实，绝不自动重试。</value></data>
+  <data name="SourceReviewSubmitted" xml:space="preserve"><value>评审已提交。</value></data>
+  <data name="SourceReviewLanded" xml:space="preserve"><value>评审提交结果一度未知，经重新查询确认评审已落地；未自动重试，请勿重复提交。</value></data>
+  <data name="SourceReviewWriteRejected" xml:space="preserve"><value>服务端拒绝了评审提交请求，未写入评审。</value></data>
+  <data name="SourceReviewWriteUnconfirmed" xml:space="preserve"><value>评审提交结果未确认：核实查询未找到该评审，评审可能稍后出现在服务端。请先在源代码平台核实，不要自动重试。</value></data>
+  <data name="SourceReviewWriteUnknown" xml:space="preserve"><value>评审提交结果未知且核实查询失败；评审可能已提交也可能未提交，请在源代码平台核实后再决定是否手动重试。</value></data>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>

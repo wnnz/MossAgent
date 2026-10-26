@@ -30,6 +30,7 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
         Statuses = new((page, token) => ReadAsync<PullRequestCheck>("source.pr_checks", "statuses", page, token), Fail);
         Annotations = new(Files, Inline, () => SelectedSection = Sections[0]);
         Composer = new(tools, () => Conversation.LoadCommand.ExecuteAsync(null));
+        ReviewComposer = new(tools, () => Reviews.LoadCommand.ExecuteAsync(null));
         Files.PropertyChanged += FileChanged;
     }
 
@@ -43,6 +44,7 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
     public PullRequestInspectionPageViewModel<PullRequestCheck> Statuses { get; }
     public PullRequestAnnotationsViewModel Annotations { get; }
     public PullRequestCommentComposerViewModel Composer { get; }
+    public PullRequestReviewComposerViewModel ReviewComposer { get; }
     public string Status { get => _status; private set { SetProperty(ref _status, value); OnPropertyChanged(nameof(HasStatus)); } }
     public bool HasStatus => Status.Length > 0;
     public bool IsActive => _revision is not null;
@@ -91,6 +93,7 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
         Clear(); _context = context; _revision = revision;
         Annotations.Attach(revision);
         Composer.Attach(context, revision);
+        ReviewComposer.Attach(context, revision);
         Files.Activate(); Conversation.Activate(); Inline.Activate(); Reviews.Activate(); Activity.Activate(); Runs.Activate(); Statuses.Activate();
         OnPropertyChanged(nameof(IsActive));
     }
@@ -100,6 +103,7 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
         _context = null; _revision = null; Status = string.Empty;
         Annotations.Clear();
         Composer.Clear();
+        ReviewComposer.Clear();
         Files.Clear(); Conversation.Clear(); Inline.Clear(); Reviews.Clear(); Activity.Clear(); Runs.Clear(); Statuses.Clear();
         OnPropertyChanged(nameof(IsActive));
     }
@@ -125,12 +129,14 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
     { if (args.PropertyName == nameof(Files.SelectedItem)) OnPropertyChanged(nameof(PatchHint)); }
 
     public async Task DrainAsync() => await Task.WhenAll(Files.DrainAsync(), Conversation.DrainAsync(), Inline.DrainAsync(),
-        Reviews.DrainAsync(), Activity.DrainAsync(), Runs.DrainAsync(), Statuses.DrainAsync(), Composer.DrainAsync()).ConfigureAwait(false);
+        Reviews.DrainAsync(), Activity.DrainAsync(), Runs.DrainAsync(), Statuses.DrainAsync(), Composer.DrainAsync(),
+        ReviewComposer.DrainAsync()).ConfigureAwait(false);
     public void Dispose()
     {
         Files.PropertyChanged -= FileChanged;
         Annotations.Dispose();
         Composer.Dispose();
+        ReviewComposer.Dispose();
         Clear(); Files.Dispose(); Conversation.Dispose(); Inline.Dispose(); Reviews.Dispose(); Activity.Dispose(); Runs.Dispose(); Statuses.Dispose();
     }
     public async ValueTask DisposeAsync() { Dispose(); await DrainAsync().ConfigureAwait(false); }

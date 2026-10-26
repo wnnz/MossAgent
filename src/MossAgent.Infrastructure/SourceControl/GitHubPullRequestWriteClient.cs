@@ -56,6 +56,94 @@ public sealed class GitHubPullRequestWriteClient(ISourceAccountHttpClientFactory
         catch (Exception) { throw new SourceReviewException("source_invalid_response"); }
     }
 
+    // commit_id pins the review to the captured head revision so the server rejects the write
+    // when the pull request head moved, instead of silently reviewing a newer commit.
+    public async Task<long> SubmitReviewAsync(SourceAccount account, SourceRepositoryScope scope,
+        PullRequestRevision revision, PullRequestReviewDecision decision, string? body, CancellationToken cancellationToken)
+    {
+        revision.Validate();
+        Validate(account, scope);
+        if (body is { Length: > MaximumBodyLength }) throw new SourceReviewException("invalid_arguments");
+        var payload = new Dictionary<string, string>
+        { ["commit_id"] = revision.HeadRevision, ["event"] = EventName(decision) };
+        if (!string.IsNullOrEmpty(body)) payload["body"] = body;
+        var response = await _transport.PostAsync(account,
+            $"repos/{scope.Owner}/{scope.Repository}/pulls/{revision.Number}/reviews",
+            JsonSerializer.SerializeToUtf8Bytes(payload), cancellationToken);
+        try
+        {
+            using var document = JsonDocument.Parse(response, new JsonDocumentOptions { MaxDepth = 24 });
+            var item = document.RootElement;
+            if (item.ValueKind != JsonValueKind.Object) throw GitHubInspectionJson.Invalid();
+            var expected = new Uri(account.ApiEndpoint, $"repos/{scope.Owner}/{scope.Repository}/pulls/{revision.Number}");
+            GitHubInspectionJson.CheckOwner(item, "pull_request_url", expected, account.AccessToken);
+            return GitHubInspectionJson.Id(item);
+        }
+        catch (SourceReviewException) { throw; }
+        catch (Exception) { throw new SourceReviewException("source_invalid_response"); }
+    }
+
+    // Reconcile compares state, head commit and body. An absent body is sent as no body field,
+    // and the server echoes it as null or "", so both sides normalize to "" before matching.
+    // The reviews endpoint returns chronologically ascending pages with no sort option, so
+    // the just-submitted review sits on the last page: walk bounded pages until a short page.
+    public async Task<long?> FindReviewAsync(SourceAccount account, SourceRepositoryScope scope,
+        PullRequestRevision revision, PullRequestReviewDecision decision, string? body, CancellationToken cancellationToken)
+    {
+        revision.Validate();
+        Validate(account, scope);
+        if (body is { Length: > MaximumBodyLength }) throw new SourceReviewException("invalid_arguments");
+        var expectedState = StateName(decision);
+        var expectedBody = body ?? string.Empty;
+        var expected = new Uri(account.ApiEndpoint, $"repos/{scope.Owner}/{scope.Repository}/pulls/{revision.Number}");
+        for (var page = 1; page <= 10; page++)
+        {
+            var response = await _transport.GetAsync(account,
+                $"repos/{scope.Owner}/{scope.Repository}/pulls/{revision.Number}/reviews?per_page=20&page={page}", cancellationToken);
+            long? found;
+            int count;
+            try { (found, count) = Scan(response, expected, expectedState, revision.HeadRevision, expectedBody, account.AccessToken); }
+            catch (SourceReviewException) { throw; }
+            catch (Exception) { throw new SourceReviewException("source_invalid_response"); }
+            if (found is not null || count < 20) return found;
+        }
+        return null;
+    }
+
+    private static (long? Found, int Count) Scan(byte[] response, Uri expected, string expectedState,
+        string expectedCommit, string expectedBody, string token)
+    {
+        using var document = JsonDocument.Parse(response, new JsonDocumentOptions { MaxDepth = 24 });
+        var items = GitHubInspectionJson.Items(document.RootElement);
+        foreach (var item in items)
+        {
+            GitHubInspectionJson.CheckOwner(item, "pull_request_url", expected, token);
+            if (GitHubInspectionJson.OptionalText(item, "state", 32, token) != expectedState) continue;
+            var commit = GitHubInspectionJson.OptionalText(item, "commit_id", 64, token);
+            if (commit is null || !commit.Equals(expectedCommit, StringComparison.OrdinalIgnoreCase)) continue;
+            var found = GitHubInspectionJson.OptionalText(item, "body", 16384, token, allowEmpty: true);
+            if ((found ?? string.Empty) != expectedBody) continue;
+            return (GitHubInspectionJson.Id(item), items.Length);
+        }
+        return (null, items.Length);
+    }
+
+    private static string EventName(PullRequestReviewDecision decision) => decision switch
+    {
+        PullRequestReviewDecision.Approve => "APPROVE",
+        PullRequestReviewDecision.RequestChanges => "REQUEST_CHANGES",
+        PullRequestReviewDecision.Comment => "COMMENT",
+        _ => throw new SourceReviewException("invalid_arguments")
+    };
+
+    private static string StateName(PullRequestReviewDecision decision) => decision switch
+    {
+        PullRequestReviewDecision.Approve => "APPROVED",
+        PullRequestReviewDecision.RequestChanges => "CHANGES_REQUESTED",
+        PullRequestReviewDecision.Comment => "COMMENTED",
+        _ => throw new SourceReviewException("invalid_arguments")
+    };
+
     private static void Validate(SourceAccount account, SourceRepositoryScope scope)
     {
         if (!account.IsEnabled || !scope.CanWrite || account.Id != scope.AccountId || account.Revision != scope.AccountRevision)

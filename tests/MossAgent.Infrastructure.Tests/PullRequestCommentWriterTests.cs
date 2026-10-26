@@ -34,7 +34,7 @@ public sealed class PullRequestCommentWriterTests
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
         var (grants, scope, account, log) = await SetupAsync(fixture, false);
-        var writer = new PullRequestCommentWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
+        var writer = new PullRequestWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
             new GitHubPullRequestClient(Probe(log, (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)))),
             new GitHubPullRequestWriteClient(Probe(log, (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)))));
         Assert.Equal("source_scope_denied", (await Assert.ThrowsAsync<SourceReviewException>(() =>
@@ -53,7 +53,7 @@ public sealed class PullRequestCommentWriterTests
         var (grants, scope, account, log) = await SetupAsync(fixture, true);
         var probe = Probe(log, (request, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
         { Content = new StringContent(PullRequestTestData.Item().Replace(new string('b', 40), new string('c', 40), StringComparison.Ordinal)) }));
-        var writer = new PullRequestCommentWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
+        var writer = new PullRequestWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
             new GitHubPullRequestClient(probe), new GitHubPullRequestWriteClient(probe));
         var failure = await Assert.ThrowsAsync<SourceReviewException>(() => writer.CommentAsync(scope, Revision, "ship it", fixture.Token));
         Assert.Equal("source_revision_changed", failure.ErrorCode);
@@ -71,7 +71,7 @@ public sealed class PullRequestCommentWriterTests
             await grants.RevokeAsync(scope.GrantId, token);
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(PullRequestTestData.Item()) };
         });
-        var writer = new PullRequestCommentWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
+        var writer = new PullRequestWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
             new GitHubPullRequestClient(probe), new GitHubPullRequestWriteClient(probe));
         var failure = await Assert.ThrowsAsync<SourceReviewException>(() => writer.CommentAsync(scope, Revision, "ship it", fixture.Token));
         Assert.Equal("source_scope_denied", failure.ErrorCode);
@@ -86,7 +86,7 @@ public sealed class PullRequestCommentWriterTests
         var probe = Probe(log, (request, _) => Task.FromResult(request.Method == HttpMethod.Post
             ? new HttpResponseMessage(HttpStatusCode.Created) { Content = new StringContent(Comment(account)) }
             : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(PullRequestTestData.Item()) }));
-        var writer = new PullRequestCommentWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
+        var writer = new PullRequestWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
             new GitHubPullRequestClient(probe), new GitHubPullRequestWriteClient(probe));
         var receipt = await writer.CommentAsync(scope, Revision, "ship it", fixture.Token);
         Assert.Equal(new PullRequestCommentReceipt(11, false), receipt);
@@ -104,7 +104,7 @@ public sealed class PullRequestCommentWriterTests
             : request.RequestUri!.AbsolutePath.EndsWith("/comments", StringComparison.Ordinal)
                 ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent($"[{Comment(account)}]") }
                 : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(PullRequestTestData.Item()) }));
-        var writer = new PullRequestCommentWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
+        var writer = new PullRequestWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
             new GitHubPullRequestClient(probe), new GitHubPullRequestWriteClient(probe));
         var receipt = await writer.CommentAsync(scope, Revision, "ship it", fixture.Token);
         Assert.Equal(new PullRequestCommentReceipt(11, true), receipt);
@@ -124,7 +124,7 @@ public sealed class PullRequestCommentWriterTests
             : request.RequestUri!.AbsolutePath.EndsWith("/comments", StringComparison.Ordinal)
                 ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(reconcileBody) }
                 : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(PullRequestTestData.Item()) }));
-        var writer = new PullRequestCommentWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
+        var writer = new PullRequestWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
             new GitHubPullRequestClient(probe), new GitHubPullRequestWriteClient(probe));
         var failure = await Assert.ThrowsAsync<SourceReviewException>(() => writer.CommentAsync(scope, Revision, "ship it", fixture.Token));
         Assert.Equal(expected, failure.ErrorCode);
@@ -141,7 +141,7 @@ public sealed class PullRequestCommentWriterTests
             : Task.FromResult(request.RequestUri!.AbsolutePath.EndsWith("/comments", StringComparison.Ordinal)
                 ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("[]") }
                 : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(PullRequestTestData.Item()) }));
-        var writer = new PullRequestCommentWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
+        var writer = new PullRequestWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
             new GitHubPullRequestClient(probe), new GitHubPullRequestWriteClient(probe));
         var failure = await Assert.ThrowsAsync<SourceReviewException>(() => writer.CommentAsync(scope, Revision, "ship it", fixture.Token));
         Assert.Equal("source_write_unconfirmed", failure.ErrorCode);
@@ -156,7 +156,7 @@ public sealed class PullRequestCommentWriterTests
         var probe = Probe(log, (request, _) => Task.FromResult(request.Method == HttpMethod.Post
             ? new HttpResponseMessage(HttpStatusCode.UnprocessableEntity)
             : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(PullRequestTestData.Item()) }));
-        var writer = new PullRequestCommentWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
+        var writer = new PullRequestWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
             new GitHubPullRequestClient(probe), new GitHubPullRequestWriteClient(probe));
         var failure = await Assert.ThrowsAsync<SourceReviewException>(() => writer.CommentAsync(scope, Revision, "ship it", fixture.Token));
         Assert.Equal("source_write_rejected", failure.ErrorCode);
@@ -179,7 +179,7 @@ public sealed class PullRequestCommentWriterTests
             await Task.Delay(Timeout.Infinite, token);
             return new HttpResponseMessage(HttpStatusCode.OK);
         });
-        var writer = new PullRequestCommentWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
+        var writer = new PullRequestWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
             new GitHubPullRequestClient(probe), new GitHubPullRequestWriteClient(probe));
         var work = writer.CommentAsync(scope, Revision, "ship it", cancel.Token);
         await entered.Task;
@@ -197,7 +197,7 @@ public sealed class PullRequestCommentWriterTests
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
         var (grants, scope, _, log) = await SetupAsync(fixture, true);
         var probe = Probe(log, (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
-        var writer = new PullRequestCommentWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
+        var writer = new PullRequestWriter(new(grants, new SqliteSourceAccountRepository(fixture.Connections)),
             new GitHubPullRequestClient(probe), new GitHubPullRequestWriteClient(probe));
         var failure = await Assert.ThrowsAsync<SourceReviewException>(() =>
             writer.CommentAsync(scope, Revision, new string('x', length), fixture.Token));
