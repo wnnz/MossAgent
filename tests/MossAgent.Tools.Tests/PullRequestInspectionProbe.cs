@@ -24,4 +24,6 @@ internal sealed class PullRequestInspectionProbe : ISourcePullRequestInspection
     public Task<PullRequestInspectionPage<PullRequestFile>> FilesAsync(SourceRepositoryScope scope, PullRequestRevision revision, int page, CancellationToken cancellationToken) => PageAsync<PullRequestFile>(revision, page, cancellationToken);
     public Task<PullRequestInspectionPage<PullRequestComment>> CommentsAsync(SourceRepositoryScope scope, PullRequestRevision revision, string kind, int page, CancellationToken cancellationToken) => PageAsync<PullRequestComment>(revision, page, cancellationToken);
     public Task<PullRequestInspectionPage<PullRequestCheck>> ChecksAsync(SourceRepositoryScope scope, PullRequestRevision revision, string kind, int page, CancellationToken cancellationToken) => PageAsync<PullRequestCheck>(revision, page, cancellationToken);
+    public Task<PullRequestInspectionPage<PullRequestReview>> ReviewsAsync(SourceRepositoryScope scope, PullRequestRevision revision, int page, CancellationToken cancellationToken) => PageAsync<PullRequestReview>(revision, page, cancellationToken);
+    public Task<PullRequestInspectionPage<PullRequestActivity>> ActivityAsync(SourceRepositoryScope scope, PullRequestRevision revision, int page, CancellationToken cancellationToken) => PageAsync<PullRequestActivity>(revision, page, cancellationToken);
 }

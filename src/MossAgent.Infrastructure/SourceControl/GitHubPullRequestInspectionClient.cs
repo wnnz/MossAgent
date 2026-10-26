@@ -31,6 +31,16 @@ public sealed class GitHubPullRequestInspectionClient(ISourceAccountHttpClientFa
             body => GitHubPullRequestCheckParser.Parse(body, revision, kind, page, account.AccessToken), cancellationToken);
     }
 
+    public Task<PullRequestInspectionPage<PullRequestReview>> ReviewsAsync(SourceAccount account, SourceRepositoryScope scope,
+        PullRequestRevision revision, int page, CancellationToken cancellationToken)
+        => ReadAsync(account, scope, revision, page, $"pulls/{revision.Number}/reviews",
+            body => GitHubPullRequestReviewParser.Parse(body, account, scope, revision, page), cancellationToken);
+
+    public Task<PullRequestInspectionPage<PullRequestActivity>> ActivityAsync(SourceAccount account, SourceRepositoryScope scope,
+        PullRequestRevision revision, int page, CancellationToken cancellationToken)
+        => ReadAsync(account, scope, revision, page, $"issues/{revision.Number}/events",
+            body => GitHubPullRequestActivityParser.Parse(body, account, scope, revision, page), cancellationToken);
+
     private async Task<PullRequestInspectionPage<T>> ReadAsync<T>(SourceAccount account, SourceRepositoryScope scope,
         PullRequestRevision revision, int page, string endpoint, Func<byte[], PullRequestInspectionPage<T>> parse,
         CancellationToken cancellationToken)

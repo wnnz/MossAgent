@@ -36,7 +36,7 @@
   <data name="RateLimited" xml:space="preserve"><value>服务端限制了请求频率，请稍后手动重试。</value></data>
   <data name="NotFound" xml:space="preserve"><value>仓库或 PR 不存在，或当前令牌无权查看。</value></data>
   <data name="InvalidResponse" xml:space="preserve"><value>服务端响应无效、过大或发生重定向，已停止读取。</value></data>
-  <data name="Remaining" xml:space="preserve"><value>支持授权仓库的 PR 列表、链接打开、文件补丁、讨论、行内评论、检查读取、固定快照审阅和独立只读查询对话；个人收件箱、审阅活动和远程写操作仍待实现。</value></data>
+  <data name="Remaining" xml:space="preserve"><value>支持授权仓库的 PR 列表、链接打开、文件补丁、讨论、行内评论、评审意见、活动事件、检查读取、固定快照审阅和独立只读查询对话；个人收件箱、已读标记和远程写操作仍待实现。</value></data>
   <data name="OpenLink" xml:space="preserve"><value>从 PR 链接打开</value></data>
   <data name="LinkUrl" xml:space="preserve"><value>PR 链接（HTTPS）</value></data>
   <data name="LinkStatus" xml:space="preserve"><value>PR 链接打开结果</value></data>
@@ -55,6 +55,8 @@
   <data name="Section_files" xml:space="preserve"><value>变更文件与补丁</value></data>
   <data name="Section_conversation" xml:space="preserve"><value>PR 讨论</value></data>
   <data name="Section_inline" xml:space="preserve"><value>行内评论</value></data>
+  <data name="Section_reviews" xml:space="preserve"><value>评审意见</value></data>
+  <data name="Section_activity" xml:space="preserve"><value>活动事件</value></data>
   <data name="Section_runs" xml:space="preserve"><value>检查运行</value></data>
   <data name="Section_statuses" xml:space="preserve"><value>传统提交状态</value></data>
   <data name="SectionEmpty" xml:space="preserve"><value>此页没有结果，可切换类别或重新获取。</value></data>

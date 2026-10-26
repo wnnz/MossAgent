@@ -41,6 +41,8 @@ internal sealed class PullRequestInspectionUiFixture(SourceAccountUiFixture sour
         var path = request.RequestUri.AbsolutePath;
         var body = path.EndsWith("/files", StringComparison.Ordinal) ? $"[{PullRequestTestData.File()}]"
             : path.EndsWith("/comments", StringComparison.Ordinal) ? $"[{PullRequestTestData.Comment()}]"
+            : path.EndsWith("/reviews", StringComparison.Ordinal) ? $"[{PullRequestTestData.Review()}]"
+            : path.EndsWith("/events", StringComparison.Ordinal) ? $"[{PullRequestTestData.Event()}]"
             : path.EndsWith("/check-runs", StringComparison.Ordinal) ? PullRequestTestData.Checks()
             : path.EndsWith("/status", StringComparison.Ordinal) ? PullRequestTestData.Checks(false)
             : request.RequestUri.Query.Length > 0 ? $"[{PullRequestTestData.Item()}]" : PullRequestTestData.Item();

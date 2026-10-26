@@ -18,12 +18,14 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
     public PullRequestInspectionViewModel(IToolExecutor tools)
     {
         _tools = tools;
-        Sections = new[] { "files", "conversation", "inline", "runs", "statuses" }
+        Sections = new[] { "files", "conversation", "inline", "reviews", "activity", "runs", "statuses" }
             .Select(key => new PullRequestInspectionSection(key, PullRequestText.Get("Section_" + key))).ToArray();
         _selectedSection = Sections[0];
         Files = new((page, token) => ReadAsync<PullRequestFile>("source.pr_files", null, page, token), Fail);
         Conversation = new((page, token) => ReadAsync<PullRequestComment>("source.pr_comments", "conversation", page, token), Fail);
         Inline = new((page, token) => ReadAsync<PullRequestComment>("source.pr_comments", "inline", page, token), Fail);
+        Reviews = new((page, token) => ReadAsync<PullRequestReview>("source.pr_reviews", null, page, token), Fail);
+        Activity = new((page, token) => ReadAsync<PullRequestActivity>("source.pr_activity", null, page, token), Fail);
         Runs = new((page, token) => ReadAsync<PullRequestCheck>("source.pr_checks", "runs", page, token), Fail);
         Statuses = new((page, token) => ReadAsync<PullRequestCheck>("source.pr_checks", "statuses", page, token), Fail);
         Annotations = new(Files, Inline, () => SelectedSection = Sections[0]);
@@ -34,6 +36,8 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
     public PullRequestInspectionPageViewModel<PullRequestFile> Files { get; }
     public PullRequestInspectionPageViewModel<PullRequestComment> Conversation { get; }
     public PullRequestInspectionPageViewModel<PullRequestComment> Inline { get; }
+    public PullRequestInspectionPageViewModel<PullRequestReview> Reviews { get; }
+    public PullRequestInspectionPageViewModel<PullRequestActivity> Activity { get; }
     public PullRequestInspectionPageViewModel<PullRequestCheck> Runs { get; }
     public PullRequestInspectionPageViewModel<PullRequestCheck> Statuses { get; }
     public PullRequestAnnotationsViewModel Annotations { get; }
@@ -48,6 +52,7 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
             if (value is null || !Sections.Contains(value) || !SetProperty(ref _selectedSection, value)) return;
             OnPropertyChanged(nameof(IsFiles)); OnPropertyChanged(nameof(IsComments)); OnPropertyChanged(nameof(IsChecks));
             OnPropertyChanged(nameof(IsInline)); OnPropertyChanged(nameof(IsDiscussion));
+            OnPropertyChanged(nameof(IsReviews)); OnPropertyChanged(nameof(IsActivity));
             OnPropertyChanged(nameof(CurrentPage)); OnPropertyChanged(nameof(CurrentComments)); OnPropertyChanged(nameof(CurrentChecks));
         }
     }
@@ -56,7 +61,18 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
     public bool IsInline => SelectedSection.Key == "inline";
     public bool IsDiscussion => SelectedSection.Key == "conversation";
     public bool IsChecks => SelectedSection.Key is "runs" or "statuses";
-    public object CurrentPage => IsFiles ? Files : IsComments ? CurrentComments : CurrentChecks;
+    public bool IsReviews => SelectedSection.Key == "reviews";
+    public bool IsActivity => SelectedSection.Key == "activity";
+    public object CurrentPage => SelectedSection.Key switch
+    {
+        "files" => Files,
+        "conversation" => Conversation,
+        "inline" => Inline,
+        "reviews" => Reviews,
+        "activity" => Activity,
+        "statuses" => Statuses,
+        _ => Runs
+    };
     public PullRequestInspectionPageViewModel<PullRequestComment> CurrentComments => SelectedSection.Key == "inline" ? Inline : Conversation;
     public PullRequestInspectionPageViewModel<PullRequestCheck> CurrentChecks => SelectedSection.Key == "statuses" ? Statuses : Runs;
     public string PatchHint => PullRequestText.Get(Files.SelectedItem?.PatchState switch
@@ -72,7 +88,7 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
     {
         Clear(); _context = context; _revision = revision;
         Annotations.Attach(revision);
-        Files.Activate(); Conversation.Activate(); Inline.Activate(); Runs.Activate(); Statuses.Activate();
+        Files.Activate(); Conversation.Activate(); Inline.Activate(); Reviews.Activate(); Activity.Activate(); Runs.Activate(); Statuses.Activate();
         OnPropertyChanged(nameof(IsActive));
     }
 
@@ -80,7 +96,7 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
     {
         _context = null; _revision = null; Status = string.Empty;
         Annotations.Clear();
-        Files.Clear(); Conversation.Clear(); Inline.Clear(); Runs.Clear(); Statuses.Clear();
+        Files.Clear(); Conversation.Clear(); Inline.Clear(); Reviews.Clear(); Activity.Clear(); Runs.Clear(); Statuses.Clear();
         OnPropertyChanged(nameof(IsActive));
     }
 
@@ -104,12 +120,13 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
     private void FileChanged(object? sender, PropertyChangedEventArgs args)
     { if (args.PropertyName == nameof(Files.SelectedItem)) OnPropertyChanged(nameof(PatchHint)); }
 
-    public async Task DrainAsync() => await Task.WhenAll(Files.DrainAsync(), Conversation.DrainAsync(), Inline.DrainAsync(), Runs.DrainAsync(), Statuses.DrainAsync()).ConfigureAwait(false);
+    public async Task DrainAsync() => await Task.WhenAll(Files.DrainAsync(), Conversation.DrainAsync(), Inline.DrainAsync(),
+        Reviews.DrainAsync(), Activity.DrainAsync(), Runs.DrainAsync(), Statuses.DrainAsync()).ConfigureAwait(false);
     public void Dispose()
     {
         Files.PropertyChanged -= FileChanged;
         Annotations.Dispose();
-        Clear(); Files.Dispose(); Conversation.Dispose(); Inline.Dispose(); Runs.Dispose(); Statuses.Dispose();
+        Clear(); Files.Dispose(); Conversation.Dispose(); Inline.Dispose(); Reviews.Dispose(); Activity.Dispose(); Runs.Dispose(); Statuses.Dispose();
     }
     public async ValueTask DisposeAsync() { Dispose(); await DrainAsync().ConfigureAwait(false); }
 }

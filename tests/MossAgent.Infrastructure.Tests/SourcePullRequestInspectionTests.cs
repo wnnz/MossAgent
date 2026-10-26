@@ -67,7 +67,46 @@ public sealed class SourcePullRequestInspectionTests
         await grants.RevokeAsync(scope.GrantId, fixture.Token);
         await Assert.ThrowsAsync<SourceReviewException>(() => inspection.CommentsAsync(scope, Revision, "inline", 1, fixture.Token));
         await Assert.ThrowsAsync<SourceReviewException>(() => inspection.ChecksAsync(scope, Revision, "runs", 1, fixture.Token));
+        await Assert.ThrowsAsync<SourceReviewException>(() => inspection.ReviewsAsync(scope, Revision, 1, fixture.Token));
+        await Assert.ThrowsAsync<SourceReviewException>(() => inspection.ActivityAsync(scope, Revision, 1, fixture.Token));
         Assert.Equal(0, probe.RequestCount);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ReviewAndActivityReadsAlsoDiscardThePageWhenHeadChanges(bool reviews)
+    {
+        await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
+        var accounts = new SqliteSourceAccountRepository(fixture.Connections);
+        var account = await accounts.SaveAsync(SourceAccountValidationTests.Create(), fixture.Token);
+        var grants = new SqliteSourceRepositoryGrants(fixture.Connections);
+        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo");
+        await grants.AddAsync(scope, fixture.Token);
+        var summaries = 0;
+        var suffix = reviews ? "/reviews" : "/events";
+        var probe = new SourceAccountHttpProbe { RespondAsync = (request, token) =>
+        {
+            if (!request.RequestUri!.AbsolutePath.EndsWith(suffix, StringComparison.Ordinal))
+            {
+                var item = PullRequestTestData.Item();
+                if (++summaries == 2) item = item.Replace(new string('b', 40), new string('c', 40), StringComparison.Ordinal);
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(item) });
+            }
+            var body = reviews ? $"[{PullRequestTestData.Review()}]" : $"[{PullRequestTestData.Event()}]";
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            { Content = new StringContent(body.Replace("https://api.github.com/", "https://enterprise.example.test/api/v3/", StringComparison.Ordinal)) });
+        } };
+        var inspection = new SourcePullRequestInspection(new(grants, accounts), new GitHubPullRequestClient(probe), new GitHubPullRequestInspectionClient(probe));
+
+        var failure = await Assert.ThrowsAsync<SourceReviewException>(() => reviews
+            ? inspection.ReviewsAsync(scope, Revision, 1, fixture.Token)
+            : inspection.ActivityAsync(scope, Revision, 1, fixture.Token));
+
+        Assert.Equal("source_revision_changed", failure.ErrorCode);
+        Assert.Equal(2, summaries);
+        Assert.Equal(3, probe.RequestCount);
+        Assert.Equal(3, probe.DisposedHandlers);
     }
 
     [Fact]

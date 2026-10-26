@@ -47,16 +47,27 @@ public sealed class PullRequestInspectionWorkflowTests : IAsyncLifetime
             foreach (var section in inspection.Sections.Skip(1))
             {
                 inspection.SelectedSection = section;
-                var command = inspection.IsComments ? inspection.CurrentComments.LoadCommand : inspection.CurrentChecks.LoadCommand;
+                var command = section.Key switch
+                {
+                    "conversation" or "inline" => inspection.CurrentComments.LoadCommand,
+                    "reviews" => inspection.Reviews.LoadCommand,
+                    "activity" => inspection.Activity.LoadCommand,
+                    _ => inspection.CurrentChecks.LoadCommand
+                };
                 window.UpdateLayout(); Press(view, command); await command.ExecutionTask!;
-                if (inspection.IsComments) Assert.Equal("Untrusted comment", Assert.Single(inspection.CurrentComments.Items).Body);
-                else Assert.Single(inspection.CurrentChecks.Items);
+                switch (section.Key)
+                {
+                    case "conversation" or "inline": Assert.Equal("Untrusted comment", Assert.Single(inspection.CurrentComments.Items).Body); break;
+                    case "reviews": Assert.Equal("Untrusted review", Assert.Single(inspection.Reviews.Items).Body); break;
+                    case "activity": Assert.Equal("labeled", Assert.Single(inspection.Activity.Items).Event); break;
+                    default: Assert.Single(inspection.CurrentChecks.Items); break;
+                }
             }
             var auditId = await fixture.Source.ReviewSessions.GetOrCreateAsync(fixture.Model.SelectedRepository!.Scope, fixture.Token);
             var records = await fixture.Source.Audit.GetRecentAsync(auditId, 20, fixture.Token);
-            Assert.Equal(7, records.Count);
+            Assert.Equal(9, records.Count);
             Assert.All(records, record => { Assert.True(record.IsSuccess); Assert.NotNull(record.CompletedAt); });
-            Assert.Equal(17, fixture.Source.Transport.RequestCount);
+            Assert.Equal(23, fixture.Source.Transport.RequestCount);
             inspection.SelectedSection = inspection.Sections[0]; window.UpdateLayout();
             var selector = Assert.Single(view.GetVisualDescendants().OfType<AppComboBox>());
             Assert.True(selector.Focus(NavigationMethod.Tab));

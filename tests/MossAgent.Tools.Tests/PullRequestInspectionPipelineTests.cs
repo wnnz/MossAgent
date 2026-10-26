@@ -14,15 +14,18 @@ public sealed class PullRequestInspectionPipelineTests
     private static ToolRequest Request(string name)
     {
         var arguments = new Dictionary<string, object> { ["number"] = 7, ["base_revision"] = new string('a', 40), ["head_revision"] = new string('b', 40), ["page"] = 1 };
-        if (name != "source.pr_files") arguments["kind"] = name == "source.pr_comments" ? "inline" : "runs";
+        if (name is "source.pr_comments" or "source.pr_checks") arguments["kind"] = name == "source.pr_comments" ? "inline" : "runs";
         return new("inspection", name, JsonSerializer.SerializeToElement(arguments));
     }
-    private static IAgentTool[] Tools(PullRequestInspectionProbe probe) => [new PullRequestFilesTool(probe), new PullRequestCommentsTool(probe), new PullRequestChecksTool(probe)];
+    private static IAgentTool[] Tools(PullRequestInspectionProbe probe) => [new PullRequestFilesTool(probe), new PullRequestCommentsTool(probe),
+        new PullRequestChecksTool(probe), new PullRequestReviewsTool(probe), new PullRequestActivityTool(probe)];
 
     [Theory]
     [InlineData("source.pr_files")]
     [InlineData("source.pr_comments")]
     [InlineData("source.pr_checks")]
+    [InlineData("source.pr_reviews")]
+    [InlineData("source.pr_activity")]
     public async Task EachReadRequiresApprovalAndRevalidatesTheScope(string name)
     {
         var probe = new PullRequestInspectionProbe();
@@ -44,6 +47,8 @@ public sealed class PullRequestInspectionPipelineTests
     [InlineData("source.pr_files")]
     [InlineData("source.pr_comments")]
     [InlineData("source.pr_checks")]
+    [InlineData("source.pr_reviews")]
+    [InlineData("source.pr_activity")]
     public async Task SchemaScopeOutputAndDeadlineAreEnforced(string name)
     {
         var probe = new PullRequestInspectionProbe();

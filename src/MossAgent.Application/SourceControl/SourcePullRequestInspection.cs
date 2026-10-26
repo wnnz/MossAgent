@@ -24,6 +24,14 @@ public sealed class SourcePullRequestInspection(SourceRepositoryAccess access, I
         string kind, int page, CancellationToken cancellationToken) => ReadAsync(scope, revision, page,
             account => inspection.ChecksAsync(account, scope, revision, kind, page, cancellationToken), cancellationToken);
 
+    public Task<PullRequestInspectionPage<PullRequestReview>> ReviewsAsync(SourceRepositoryScope scope, PullRequestRevision revision,
+        int page, CancellationToken cancellationToken) => ReadAsync(scope, revision, page,
+            account => inspection.ReviewsAsync(account, scope, revision, page, cancellationToken), cancellationToken);
+
+    public Task<PullRequestInspectionPage<PullRequestActivity>> ActivityAsync(SourceRepositoryScope scope, PullRequestRevision revision,
+        int page, CancellationToken cancellationToken) => ReadAsync(scope, revision, page,
+            account => inspection.ActivityAsync(account, scope, revision, page, cancellationToken), cancellationToken);
+
     private async Task<PullRequestInspectionPage<T>> ReadAsync<T>(SourceRepositoryScope scope, PullRequestRevision revision,
         int page, Func<SourceAccount, Task<PullRequestInspectionPage<T>>> read, CancellationToken cancellationToken)
     {

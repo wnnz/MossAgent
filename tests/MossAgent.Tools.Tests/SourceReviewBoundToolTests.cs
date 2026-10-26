@@ -14,7 +14,8 @@ public sealed class SourceReviewBoundToolTests
 
     private static IAgentTool[] Tools(PullRequestInspectionProbe inspection, SourceReviewReaderProbe summaries) =>
         [new PullRequestGetTool(summaries), new PullRequestListTool(summaries), new PullRequestFilesTool(inspection),
-         new PullRequestCommentsTool(inspection), new PullRequestChecksTool(inspection)];
+         new PullRequestCommentsTool(inspection), new PullRequestChecksTool(inspection),
+         new PullRequestReviewsTool(inspection), new PullRequestActivityTool(inspection)];
 
     private static ToolRequest Request(string name, int number = 7, char head = 'b')
     {
@@ -22,7 +23,7 @@ public sealed class SourceReviewBoundToolTests
         if (name != "source.pr_get")
         {
             arguments["base_revision"] = new string('a', 40); arguments["head_revision"] = new string(head, 40); arguments["page"] = 1;
-            if (name != "source.pr_files") arguments["kind"] = name == "source.pr_comments" ? "inline" : "runs";
+            if (name is "source.pr_comments" or "source.pr_checks") arguments["kind"] = name == "source.pr_comments" ? "inline" : "runs";
         }
         return new("bound-call", name, JsonSerializer.SerializeToElement(arguments));
     }
@@ -85,6 +86,8 @@ public sealed class SourceReviewBoundToolTests
 
     [Theory]
     [InlineData("source.pr_list")]
+    [InlineData("source.pr_reviews")]
+    [InlineData("source.pr_activity")]
     [InlineData("source.pr_write")]
     [InlineData("filesystem.read_file")]
     [InlineData("shell.run")]

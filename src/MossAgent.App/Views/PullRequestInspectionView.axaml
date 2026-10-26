@@ -81,6 +81,40 @@
         </DataTemplate>
       </ItemsControl.ItemTemplate>
     </ui:AppItemsControl>
+    <ui:AppItemsControl ItemsSource="{Binding Reviews.Items}" IsVisible="{Binding IsReviews}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <ui:AppCard Classes="card card-inset-compact">
+            <StackPanel Spacing="4">
+              <WrapPanel>
+                <ui:AppText Text="{Binding Author}" Classes="type-12 weight-semibold" TextWrapping="Wrap" />
+                <ui:AppText Text="{Binding State}" Classes="type-12 muted" />
+              </WrapPanel>
+              <ui:AppSelectableText Text="{Binding Body}" TextWrapping="Wrap" />
+              <ui:AppSelectableText Text="{Binding CommitRevision}" TextWrapping="Wrap" />
+              <ui:AppText Text="{Binding SubmittedAt}" Classes="type-12 muted" />
+            </StackPanel>
+          </ui:AppCard>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ui:AppItemsControl>
+    <ui:AppItemsControl ItemsSource="{Binding Activity.Items}" IsVisible="{Binding IsActivity}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <ui:AppCard Classes="card card-inset-compact">
+            <StackPanel Spacing="4">
+              <WrapPanel>
+                <ui:AppText Text="{Binding Actor}" Classes="type-12 weight-semibold" TextWrapping="Wrap" />
+                <ui:AppText Text="{Binding Event}" Classes="type-12 muted" />
+              </WrapPanel>
+              <ui:AppText Text="{Binding Detail}" Classes="type-12 muted" TextWrapping="Wrap" />
+              <ui:AppSelectableText Text="{Binding CommitRevision}" TextWrapping="Wrap" />
+              <ui:AppText Text="{Binding CreatedAt}" Classes="type-12 muted" />
+            </StackPanel>
+          </ui:AppCard>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ui:AppItemsControl>
     <ui:AppText Text="{x:Static text:PullRequestText.VersionHint}" Classes="type-11 subtle" TextWrapping="Wrap" />
   </StackPanel>
 </ui:AppUserControl>

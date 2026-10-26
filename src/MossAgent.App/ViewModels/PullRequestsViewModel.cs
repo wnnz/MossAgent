@@ -256,7 +256,8 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
     private async Task<ToolExecutionContext> ContextAsync(SourceRepositoryScope scope, CancellationToken token) =>
         new(await Task.Run(() => _sessions.GetOrCreateAsync(scope, token), token).ConfigureAwait(false), string.Empty, [], ApprovalPolicy.ReadOnly,
             MaximumOutputCharacters: 1024 * 1024, Timeout: TimeSpan.FromSeconds(30))
-        { SourceScope = scope, AllowedToolNames = new HashSet<string> { "source.pr_list", "source.pr_get", "source.pr_files", "source.pr_comments", "source.pr_checks" } };
+        { SourceScope = scope, AllowedToolNames = new HashSet<string> { "source.pr_list", "source.pr_get", "source.pr_files",
+            "source.pr_comments", "source.pr_checks", "source.pr_reviews", "source.pr_activity" } };
 
     private async Task RunAsync(Func<CancellationToken, Task> action, CancellationToken caller)
     {

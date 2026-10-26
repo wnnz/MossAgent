@@ -233,6 +233,8 @@ internal static class AppComposition
         services.AddSingleton<IAgentTool, PullRequestFilesTool>();
         services.AddSingleton<IAgentTool, PullRequestCommentsTool>();
         services.AddSingleton<IAgentTool, PullRequestChecksTool>();
+        services.AddSingleton<IAgentTool, PullRequestReviewsTool>();
+        services.AddSingleton<IAgentTool, PullRequestActivityTool>();
     }
 
     private static void RegisterBrowserAndDesktopTools(IServiceCollection services)

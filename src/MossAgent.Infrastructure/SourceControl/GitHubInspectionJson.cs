@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using MossAgent.Domain;
 
@@ -20,6 +21,23 @@ internal static class GitHubInspectionJson
     public static string? OptionalText(JsonElement item, string name, int limit, string token, bool allowEmpty = false) =>
         !item.TryGetProperty(name, out var value) || value.ValueKind == JsonValueKind.Null
             ? null : Text(item, name, limit, token, allowEmpty);
+
+    public static string? OptionalNestedText(JsonElement item, string parent, string name, int limit, string token)
+    {
+        if (!item.TryGetProperty(parent, out var nested) || nested.ValueKind == JsonValueKind.Null) return null;
+        if (nested.ValueKind != JsonValueKind.Object) throw Invalid();
+        return OptionalText(nested, name, limit, token);
+    }
+
+    public static DateTimeOffset? OptionalTimestamp(JsonElement item, string name, string token)
+    {
+        var value = OptionalText(item, name, 64, token);
+        if (value is null) return null;
+        if (!DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture,
+            DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeUniversal, out var parsed))
+            throw Invalid();
+        return parsed;
+    }
 
     public static int Count(JsonElement item, string name)
     {

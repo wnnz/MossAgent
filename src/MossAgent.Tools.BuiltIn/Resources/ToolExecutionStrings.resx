@@ -96,6 +96,8 @@
   <data name="SourceFilesDescription" xml:space="preserve"><value>只读获取明确授权 PR 在已展示提交版本下的变更文件和有界补丁，缺失或不完整补丁明确标记。</value></data>
   <data name="SourceCommentsDescription" xml:space="preserve"><value>只读获取已展示版本 PR 的讨论或行内评论，不跟随外部链接、不发布评论。</value></data>
   <data name="SourceChecksDescription" xml:space="preserve"><value>只读获取 PR 来源提交的检查运行或传统提交状态，不读取第三方日志。</value></data>
+  <data name="SourceReviewsDescription" xml:space="preserve"><value>只读获取已展示版本 PR 的评审提交（结论与有界正文），不跟随外部链接、不发布评审。</value></data>
+  <data name="SourceActivityDescription" xml:space="preserve"><value>只读获取已展示版本 PR 的时间线事件（标记、指派、改名等），不跟随外部链接。</value></data>
   <data name="AuthorizedRootsChanged" xml:space="preserve"><value>工具调用期间授权目录发生变化，已拒绝继续执行。请检查授权后重新发起操作。</value></data>
   <data name="DeleteDescription" xml:space="preserve"><value>删除授权目录内的文件或目录；递归删除必须显式启用。删除不可自动恢复。</value></data>
   <data name="DeleteNotFound" xml:space="preserve"><value>目标路径不存在。</value></data>
