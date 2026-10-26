@@ -10,10 +10,13 @@ namespace MossAgent.Agent;
 public sealed class SubagentTool(
     ISubagentConfigurationRepository subagents,
     IConfigurationRepository configurations,
-    IModelProviderRegistry providers) : IAgentTool
+    IModelProviderRegistry providers,
+    ISubagentRunJournal journal) : IAgentTool
 {
     public const string ToolName = "subagent.run";
     private const int MaximumTaskCharacters = 12_000;
+    private const int MaximumErrorCodeLength = 128;
+    private static readonly TimeSpan JournalCompletionBudget = TimeSpan.FromSeconds(5);
 
     public ToolDescriptor Descriptor { get; } = new(
         ToolName,
@@ -62,9 +65,61 @@ public sealed class SubagentTool(
             return ToolResult.Failure(SubagentText.Get("ReasoningUnavailable"), "subagent_reasoning_unavailable");
         }
 
-        return await new SubagentRunExecutor(providers).RunAsync(
-            profile, provider, model, task, context, request.CallId, cancellationToken);
+        return await RunJournaledAsync(profile, provider, model, task, request, context, cancellationToken);
     }
+
+    // The journal records the resolved run before any child model call. A missing task row
+    // merely skips journaling; a storage failure is fail-closed so no run goes unaccounted
+    // when the record cannot even be attempted.
+    private async Task<ToolResult> RunJournaledAsync(
+        SubagentProfile profile, AiProvider provider, ModelProfile model, string task,
+        ToolRequest request, ToolExecutionContext context, CancellationToken cancellationToken)
+    {
+        var runId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var record = new SubagentRunRecord(runId, context.TaskId, request.CallId,
+            SubagentRunSnapshot.ProfileLabel(profile),
+            SubagentRunSnapshot.Create(profile, provider, model, task, context),
+            SubagentRunStatus.Running, null, now, now);
+        bool journaled;
+        try
+        {
+            journaled = await journal.BeginAsync(record, cancellationToken);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception)
+        {
+            return ToolResult.Failure(SubagentText.Get("JournalUnavailable"), "subagent_journal_unavailable");
+        }
+
+        try
+        {
+            var result = await new SubagentRunExecutor(providers).RunAsync(
+                profile, provider, model, task, context, request.CallId, cancellationToken);
+            await CompleteBestEffortAsync(journaled, runId,
+                result.IsSuccess ? SubagentRunStatus.Completed : SubagentRunStatus.Failed,
+                result.IsSuccess ? null : BoundedErrorCode(result.ErrorCode));
+            return result;
+        }
+        catch (OperationCanceledException)
+        {
+            await CompleteBestEffortAsync(journaled, runId, SubagentRunStatus.Cancelled, null);
+            throw;
+        }
+    }
+
+    private async Task CompleteBestEffortAsync(bool journaled, Guid runId,
+        SubagentRunStatus status, string? errorCode)
+    {
+        if (!journaled) return;
+        using var deadline = new CancellationTokenSource(JournalCompletionBudget);
+        try { await journal.CompleteAsync(runId, status, errorCode, deadline.Token); }
+        catch (Exception) { /* Best-effort: a terminal mark must never mask a finished run. */ }
+    }
+
+    private static string? BoundedErrorCode(string? errorCode) =>
+        string.IsNullOrEmpty(errorCode) ? null
+            : errorCode.Length <= MaximumErrorCodeLength ? errorCode : errorCode[..MaximumErrorCodeLength];
 
     private async Task<SubagentProfile?> FindProfileAsync(
         string name,

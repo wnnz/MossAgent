@@ -266,7 +266,8 @@ public sealed class SubagentToolTests
         var tool = new SubagentTool(
             new InMemorySubagentConfigurationRepository([profile]),
             new InMemoryConfigurationRepository(provider, model),
-            registry);
+            registry,
+            new RecordingSubagentRunJournal());
         return (tool, modelProvider);
     }
 

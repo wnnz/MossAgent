@@ -61,7 +61,7 @@ public sealed class SubagentFileChangeTests
             "off", null, null, false, false, true, true, "{}");
         var profile = new SubagentProfile(Guid.NewGuid(), "write", "编辑", "执行文件写入。", provider.Id, model.Id, "off", false, true);
         var registry = new StubModelProviderRegistry(new FileChangeSubagentModelProvider(Path.Combine(root, "child.txt"), ending, cancellation.Cancel));
-        var tool = new SubagentTool(new InMemorySubagentConfigurationRepository([profile]), new InMemoryConfigurationRepository(provider, model), registry);
+        var tool = new SubagentTool(new InMemorySubagentConfigurationRepository([profile]), new InMemoryConfigurationRepository(provider, model), registry, new RecordingSubagentRunJournal());
         var childCatalog = new ToolRegistry([new FileWriteTool(new AuthorizedPathResolver())]);
         var childExecutor = new ToolExecutor(childCatalog, new FixedToolApprovalService(approveChild));
         var context = new ToolExecutionContext(Guid.NewGuid(), root, [root], ApprovalPolicy.FullAccess,

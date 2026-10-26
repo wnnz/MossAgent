@@ -121,6 +121,7 @@ internal static class AppComposition
             static provider => provider.GetRequiredService<AttachmentSnapshotReaper>());
         services.AddSingleton<ITaskArtifactPaths, TaskArtifactPaths>();
         services.AddSingleton<IArtifactSessionJournal, SqliteArtifactSessionJournal>();
+        services.AddSingleton<ISubagentRunJournal, SqliteSubagentRunJournal>();
         services.AddSingleton<ITaskArtifactContentReader, TaskArtifactContentReader>();
         services.AddSingleton<IBrowserProfilePaths, BrowserProfilePaths>();
         services.AddSingleton<GitProcessRunner>();

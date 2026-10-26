@@ -20,7 +20,8 @@ internal static class SubagentStreamingFixture
             provider.Id, child.Id, "high", true, true);
         var subagents = new InMemorySubagentConfigurationRepository([profile]);
         var models = new StubModelProviderRegistry(modelProvider);
-        var tool = new SubagentTool(subagents, new InMemoryConfigurationRepository(provider, child), models);
+        var tool = new SubagentTool(subagents, new InMemoryConfigurationRepository(provider, child), models,
+            new RecordingSubagentRunJournal());
         var registry = new ToolRegistry([tool]);
         var runner = new AgentRunner(models, registry,
             new ToolExecutor(registry, new FixedToolApprovalService(true), audit), subagents);

@@ -19,7 +19,7 @@ public sealed class ModelCapabilityFailureMigrationTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(40, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(41, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM sqlite_master WHERE name='agent_task_failures_v35';"));
         var reopened = new SqliteWorkspaceRepository(fixture.Connections);
         Assert.Equal(failed, Assert.Single(await reopened.GetTasksAsync(failed.ProjectId, fixture.Token)));
@@ -57,7 +57,7 @@ public sealed class ModelCapabilityFailureMigrationTests
 
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(40, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(41, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         await fixture.Repository.SaveTaskAsync(failed with { FailureReason = TaskFailureReason.UnsupportedImageInput }, fixture.Token);
         Assert.Equal(18, await fixture.CountAsync("SELECT reason FROM agent_task_failures;"));
     }

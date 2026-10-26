@@ -79,7 +79,8 @@ public sealed class SubagentConfigurationBoundaryTests
             provider.Id, model.Id, effort, false, true);
         var implementation = new StubModelProvider(protocol, [new TextDelta("完成")]);
         var tool = new SubagentTool(new InMemorySubagentConfigurationRepository([profile]),
-            new InMemoryConfigurationRepository(provider, model), new StubModelProviderRegistry(implementation));
+            new InMemoryConfigurationRepository(provider, model), new StubModelProviderRegistry(implementation),
+            new RecordingSubagentRunJournal());
         return (tool, implementation);
     }
 

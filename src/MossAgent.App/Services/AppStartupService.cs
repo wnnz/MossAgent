@@ -2,6 +2,7 @@ using Avalonia.Threading;
 using MossAgent.App.ViewModels;
 using MossAgent.Application.Attachments;
 using MossAgent.Application.Git;
+using MossAgent.Application.Persistence;
 using MossAgent.Mcp;
 using MossAgent.Tools.Abstractions.Files;
 
@@ -15,6 +16,7 @@ public sealed class AppStartupService : IAsyncDisposable
     private readonly IWorktreeCreationIntents? _creationIntents;
     private readonly IAttachmentSnapshotReaper? _reaper;
     private readonly IArtifactSessionJournal? _artifactJournal;
+    private readonly ISubagentRunJournal? _runJournal;
     private readonly CancellationTokenSource _shutdown = new();
     private readonly object _gate = new();
     private Task? _loading;
@@ -22,7 +24,7 @@ public sealed class AppStartupService : IAsyncDisposable
 
     public AppStartupService(IMcpManager mcp, AppStartupViewModel state, Action<Action>? publish = null,
         IWorktreeCreationIntents? creationIntents = null, IAttachmentSnapshotReaper? reaper = null,
-        IArtifactSessionJournal? artifactJournal = null)
+        IArtifactSessionJournal? artifactJournal = null, ISubagentRunJournal? runJournal = null)
     {
         _mcp = mcp;
         _state = state;
@@ -30,6 +32,7 @@ public sealed class AppStartupService : IAsyncDisposable
         _creationIntents = creationIntents;
         _reaper = reaper;
         _artifactJournal = artifactJournal;
+        _runJournal = runJournal;
     }
 
     public Task StartAsync()
@@ -71,6 +74,13 @@ public sealed class AppStartupService : IAsyncDisposable
         if (_artifactJournal is not null)
         {
             try { await _artifactJournal.ReconcileAsync(_shutdown.Token).ConfigureAwait(false); }
+            catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { return; }
+            catch (Exception) { storageWarning = true; }
+        }
+        // Marks leftover running subagent rows interrupted only; never replays a run.
+        if (_runJournal is not null)
+        {
+            try { await _runJournal.MarkInterruptedRunningAsync(_shutdown.Token).ConfigureAwait(false); }
             catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { return; }
             catch (Exception) { storageWarning = true; }
         }

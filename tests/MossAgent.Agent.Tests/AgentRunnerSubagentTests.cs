@@ -107,7 +107,7 @@ public sealed class AgentRunnerSubagentTests
         var configurations = new InMemoryConfigurationRepository(provider, childModel);
         var subagents = new InMemorySubagentConfigurationRepository([profile]);
         var tool = new SubagentTool(subagents, configurations,
-            new StubModelProviderRegistry(modelProvider));
+            new StubModelProviderRegistry(modelProvider), new RecordingSubagentRunJournal());
         var registry = new ToolRegistry([tool]);
         var runner = new AgentRunner(new StubModelProviderRegistry(modelProvider), registry,
             new ToolExecutor(registry, new FixedToolApprovalService(true)), subagents);
@@ -140,7 +140,8 @@ public sealed class AgentRunnerSubagentTests
         var tool = new SubagentTool(
             new InMemorySubagentConfigurationRepository([subagentProfile]),
             configurationRepository,
-            new StubModelProviderRegistry(modelProvider));
+            new StubModelProviderRegistry(modelProvider),
+            new RecordingSubagentRunJournal());
         var registry = new ToolRegistry([tool]);
         var runner = new AgentRunner(
             new StubModelProviderRegistry(modelProvider), registry,

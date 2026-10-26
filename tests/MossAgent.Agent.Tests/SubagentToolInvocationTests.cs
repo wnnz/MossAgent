@@ -244,7 +244,8 @@ public sealed class SubagentToolInvocationTests
         var modelRegistry = new StubModelProviderRegistry(modelProvider);
         var subagents = new InMemorySubagentConfigurationRepository([profile]);
         var subagentTool = new SubagentTool(subagents,
-            new InMemoryConfigurationRepository(provider, childModel), modelRegistry);
+            new InMemoryConfigurationRepository(provider, childModel), modelRegistry,
+            new RecordingSubagentRunJournal());
         var childTool = new CountingAgentTool();
         var registry = new ToolRegistry([subagentTool, childTool]);
         var executor = new ToolExecutor(registry,
