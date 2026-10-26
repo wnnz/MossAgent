@@ -48,6 +48,13 @@ public static class PullRequestText
     public static string LinkHint => Get(nameof(LinkHint));
     public static string LinkGrantHint => Get(nameof(LinkGrantHint));
     public static string LinkStatus => Get(nameof(LinkStatus));
+    public static string InboxSection => Get(nameof(InboxSection));
+    public static string InboxFilter => Get(nameof(InboxFilter));
+    public static string InboxLoad => Get(nameof(InboxLoad));
+    public static string InboxEmpty => Get(nameof(InboxEmpty));
+    public static string InboxIncomplete => Get(nameof(InboxIncomplete));
+    public static string InboxDraft => Get(nameof(InboxDraft));
+    public static string InboxHint => Get(nameof(InboxHint));
 
     public static string Failure(string code) => Get(code switch
     {

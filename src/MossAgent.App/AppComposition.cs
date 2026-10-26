@@ -90,6 +90,8 @@ internal static class AppComposition
         services.AddSingleton<SourceReviewChatAccess>();
         services.AddSingleton<IPullRequestInspectionClient, GitHubPullRequestInspectionClient>();
         services.AddSingleton<ISourcePullRequestInspection, SourcePullRequestInspection>();
+        services.AddSingleton<IPullRequestInboxClient, GitHubPullRequestInboxClient>();
+        services.AddSingleton<SourceInboxReader>();
         services.AddSingleton<IWorkspaceRepository, SqliteWorkspaceRepository>();
         services.AddSingleton<IProjectAuthorizationChanges, ProjectAuthorizationChanges>();
         services.AddSingleton<IProjectAuthorizationReader>(static provider =>

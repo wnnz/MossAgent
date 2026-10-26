@@ -129,7 +129,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | R09 | 部分完成、部分未验证 | 父子 run 期刊已落地（subagent_runs v41 快照/五态投影/启动核对 interrupted，绝不重放）；UI 历史投影已落地（审计面板五态子代理运行列表+快照详情，畸形快照回退 profile+状态）；可控模型触发验证、禁用模型失败验收、权限继承收窄矩阵与其余触发/审批/共享/并发/恢复验收仍待 | P1；R05/R06 |
 | R10 | 部分完成；其他组合待验 | 定时计划授权/参数版本、关闭/中断/并发/多实例、时区与 DST，以及关闭后的行为实机验收。授权快照已落地且认领时固定（run 行记录 snapshot_generation v42、历史按代际标注、保存时在途运行如实提示沿用旧快照）；编辑后自动停止在途运行仍非默认行为，实机验收仍缺 | P1；R02/R06 |
 | R11 | 部分完成 | 单文件区块暂存/取消暂存已落地（rename/copy/二进制/新增/删除/仅模式/冲突明确拒绝）；整组暂存/取消暂存已落地（git.stage_paths/unstage_paths，1–64 路径单命令原子、越界/链接/目录逐项拒绝）；提交消息草稿独立版本持久化（git_commit_drafts v40，编辑去抖 CAS 写入、重启恢复）与提交未知结果核对（复核 HEAD/暂存数后消费或保留草稿）已落地；推送非确定性失败后以远端跟踪引用核对实际结果（已推送→明示，未证实→保留原错误，核对失败→明示未知）；预览绑定已落地（git.diff 输出尾部绑定 diff-sha256 与各文件 file-sha256，hunk 工具 required expectedDiff 执行期哈希复核、漂移即拒绝）；远端/上游配置读取与凭据方式展示已落地（git.remotes 只读工具：脱敏 scheme://host 端点、local/ssh/https/embedded/unsupported 凭据方式分类、credential.helper 值链、当前分支上游；推送对话框凭据行揭示 URL 内嵌凭据并警示）；远端/上游条件变更端口已落地（git.remote_set_url 按脱敏端点+凭据方式做语义级 CAS、本地目的地复用推送授权端口、永不回显内嵌凭据，git.branch_upstream 按原文 CAS 写 branch.*.remote/merge 并如实报告部分应用）；推送非快进拒绝分类引导已落地（合并诊断分类为确定性 git_push_non_ff、提示先合并/变基远端更新再刷新预览、原始输出不回显）；真实远端核对部分落地：git.ls_remote 已落地（只读、脱敏端点、有界 64 条、非交互、凭据永不回显），供模型主动核对远端 refs；推送失败后自动核对仍走本地远端跟踪引用（离线、不触网络）；原生验收仍缺 | P2；R01/R02 |
-| R12 | 部分完成 | GitHub reviews/activity 只读已端到端落地（审阅面板分区 + 版本绑定工具）；PR 收件箱、已读/版本标记、确认写入、OAuth/GitLab/云审阅仍缺 | P2；独立写授权与公开接口 |
+| R12 | 部分完成 | GitHub reviews/activity 只读已端到端落地（审阅面板分区 + 版本绑定工具）；按账号个人 PR 收件箱只读已落地（search/issues 固定端点、角色筛选、分页、incomplete 标记，双解析 revision 看守，不升级 grant、无写入）；已读/版本标记持久化、确认写入、OAuth/GitLab/云审阅仍缺 | P2；独立写授权与公开接口 |
 | R13 | 未实现完整链路 | 插件/技能/扩展目录、安装、启停、执行、升级和卸载 | P2；R01/R08及目录/账号接口 |
 | R14 | 部分基础，完整操作未实现 | 目标窗口绑定的桌面指针、键盘、接管和恢复 | P2；Windows 原生输入与 R02 |
 | R15 | 未实现专用链路 | Web 搜索、来源正文获取及答案引用 | P3；搜索服务/模型原生能力 |
@@ -578,7 +578,10 @@ required expectedDiff 携带模型所见哈希，应用前对实时捕获的差�
 ### R12：完整 Pull Request 工作流
 
 **现状：** GitHub 只读 PR 页面、行内定位、评审意见/活动事件分区（source.pr_reviews、
-source.pr_activity，同一版本看守与有界解析）及审阅对话已有实现；个人收件箱、已读/版本标记、
+source.pr_activity，同一版本看守与有界解析）及审阅对话已有实现；按账号个人收件箱已落地
+（GitHub search/issues 只读端点，involves/author/assignee/review-requested/mentions 角色筛选、
+20 项分页、incomplete_results 标记、repository_url 端点与单段 owner/repo 校验、id 去重、
+读取前后 account revision 双核对；仅 VM 经 Application 端口调用，不暴露模型工具）；已读/版本标记、
 远端确认写入尚缺，OAuth/GitLab/云审阅有外部接口与账号依赖。
 
 1. Application 来源控制端口与 Infrastructure 客户端增加个人收件箱、筛选/分页、

@@ -35,10 +35,12 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
     private int _generation;
 
     public PullRequestsViewModel(ISourceAccountRepository accounts, ISourceRepositoryGrants grants,
-        ISourceReviewSessions sessions, IToolExecutor tools, SourceReviewChatCreator? reviewChats = null)
+        ISourceReviewSessions sessions, IToolExecutor tools, SourceInboxReader inbox,
+        SourceReviewChatCreator? reviewChats = null)
     {
         _accounts = accounts; _grants = grants; _sessions = sessions; _tools = tools;
         Inspection = new(tools);
+        Inbox = new(inbox);
         Link = new(new SourcePullRequestLinkResolver(accounts, grants), Accounts, LoadLinkedAsync,
             () => !_disposed && !_busy && !IsEditorOpen);
         Link.PropertyChanged += LinkChanged;
@@ -66,6 +68,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
     public ObservableCollection<SourceRepositoryItemViewModel> Repositories { get; } = [];
     public ObservableCollection<PullRequestSummary> Items { get; } = [];
     public PullRequestInspectionViewModel Inspection { get; }
+    public PullRequestInboxViewModel Inbox { get; }
     public PullRequestLinkViewModel Link { get; }
     public PullRequestChatLaunchViewModel? Chat { get; }
     public bool HasChat => Chat is not null;
@@ -87,7 +90,11 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
     public string Owner { get => _owner; set => SetProperty(ref _owner, value); }
     public string Repository { get => _repository; set => SetProperty(ref _repository, value); }
     public bool IsEditorOpen { get => _isEditorOpen; set { SetProperty(ref _isEditorOpen, value); NotifyCommands(); } }
-    public SourceAccountItemViewModel? SelectedAccount { get => _selectedAccount; set { SetProperty(ref _selectedAccount, value); NotifyCommands(); } }
+    public SourceAccountItemViewModel? SelectedAccount
+    {
+        get => _selectedAccount;
+        set { SetProperty(ref _selectedAccount, value); Inbox.SetAccount(value); NotifyCommands(); }
+    }
     public PullRequestSummary? SelectedItem
     {
         get => _selectedItem;
@@ -114,7 +121,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
     public Task OpenAsync() => RefreshCommand.ExecuteAsync(null);
     public void Leave() { Link.Close(); Invalidate(); Detail = null; Items.Clear(); SelectedItem = null; OnPropertyChanged(nameof(IsEmpty)); }
     private bool CanRead() => !_disposed && !IsBusy && !Link.IsOpen && SelectedRepository is not null;
-    private void Invalidate() { if (_updating) return; _generation++; _operation?.Cancel(); Link.Cancel(); Chat?.Invalidate(); Inspection.Clear(); }
+    private void Invalidate() { if (_updating) return; _generation++; _operation?.Cancel(); Link.Cancel(); Chat?.Invalidate(); Inspection.Clear(); Inbox.Clear(); }
     private void LinkChanged(object? sender, PropertyChangedEventArgs args)
     { if (args.PropertyName is nameof(Link.IsBusy) or nameof(Link.IsOpen)) NotifyCommands(); }
 
@@ -309,6 +316,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
         Inspection.Runs.Items.CollectionChanged -= ReviewItemsChanged; Inspection.Statuses.Items.CollectionChanged -= ReviewItemsChanged;
         foreach (var command in Commands()) command.Dispose();
         Inspection.Dispose();
+        Inbox.Dispose();
     }
 
     public async ValueTask DisposeAsync()
@@ -316,6 +324,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
         Dispose();
         foreach (var command in Commands()) if (command.ExecutionTask is { } work) await work.ConfigureAwait(false);
         await Inspection.DisposeAsync().ConfigureAwait(false);
+        await Inbox.DisposeAsync().ConfigureAwait(false);
         await Link.DisposeAsync().ConfigureAwait(false);
         if (Chat is not null) await Chat.DisposeAsync().ConfigureAwait(false);
         _shutdown.Dispose();

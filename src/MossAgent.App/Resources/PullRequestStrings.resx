@@ -36,7 +36,7 @@
   <data name="RateLimited" xml:space="preserve"><value>服务端限制了请求频率，请稍后手动重试。</value></data>
   <data name="NotFound" xml:space="preserve"><value>仓库或 PR 不存在，或当前令牌无权查看。</value></data>
   <data name="InvalidResponse" xml:space="preserve"><value>服务端响应无效、过大或发生重定向，已停止读取。</value></data>
-  <data name="Remaining" xml:space="preserve"><value>支持授权仓库的 PR 列表、链接打开、文件补丁、讨论、行内评论、评审意见、活动事件、检查读取、固定快照审阅和独立只读查询对话；个人收件箱、已读标记和远程写操作仍待实现。</value></data>
+  <data name="Remaining" xml:space="preserve"><value>支持授权仓库的 PR 列表、链接打开、文件补丁、讨论、行内评论、评审意见、活动事件、检查读取、固定快照审阅、独立只读查询对话和个人收件箱；已读标记和远程写操作仍待实现。</value></data>
   <data name="OpenLink" xml:space="preserve"><value>从 PR 链接打开</value></data>
   <data name="LinkUrl" xml:space="preserve"><value>PR 链接（HTTPS）</value></data>
   <data name="LinkStatus" xml:space="preserve"><value>PR 链接打开结果</value></data>
@@ -92,4 +92,16 @@
   <data name="ChatOpened" xml:space="preserve"><value>审阅对话已就绪，尚未发送消息。</value></data>
   <data name="ChatDraftPreserved" xml:space="preserve"><value>审阅对话已有草稿或附件，已保留原内容，未填入调查摘要。</value></data>
   <data name="InvestigationPrompt" xml:space="preserve"><value>请基于此审阅会话固定的 PR 快照分析以下已加载检查的失败原因，区分已知证据与推测，并列出需要补充的信息。不要获取日志、打开链接、运行命令或发布远程反馈。</value></data>
+  <data name="InboxSection" xml:space="preserve"><value>个人收件箱</value></data>
+  <data name="InboxFilter" xml:space="preserve"><value>收件箱筛选</value></data>
+  <data name="InboxLoad" xml:space="preserve"><value>获取收件箱</value></data>
+  <data name="InboxFilter_Involves" xml:space="preserve"><value>涉及我</value></data>
+  <data name="InboxFilter_Authored" xml:space="preserve"><value>我创建</value></data>
+  <data name="InboxFilter_Assigned" xml:space="preserve"><value>指派给我</value></data>
+  <data name="InboxFilter_ReviewRequested" xml:space="preserve"><value>待我评审</value></data>
+  <data name="InboxFilter_Mentioned" xml:space="preserve"><value>提及我</value></data>
+  <data name="InboxEmpty" xml:space="preserve"><value>此筛选下收件箱暂无结果，可切换筛选或重新获取。</value></data>
+  <data name="InboxIncomplete" xml:space="preserve"><value>服务端返回的结果不完整，仅展示部分结果，可稍后重试。</value></data>
+  <data name="InboxDraft" xml:space="preserve"><value>草稿</value></data>
+  <data name="InboxHint" xml:space="preserve"><value>收件箱按账号列出与当前登录用户相关的开放 PR，不读取仓库内容；详情需先授权仓库后从上方列表打开。筛选切换会重新请求服务端。</value></data>
 </root>

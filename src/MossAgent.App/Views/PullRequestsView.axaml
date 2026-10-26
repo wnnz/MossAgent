@@ -33,6 +33,49 @@
         </WrapPanel>
         <ui:AppText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap" />
         <ui:AppText Text="{x:Static text:PullRequestText.Remaining}" Classes="type-11 subtle" TextWrapping="Wrap" />
+        <StackPanel Spacing="8" DataContext="{Binding Inbox}">
+          <ui:AppText Text="{x:Static text:PullRequestText.InboxSection}" Classes="muted type-12" />
+          <WrapPanel>
+            <ui:AppComboBox ItemsSource="{Binding Filters}" SelectedItem="{Binding SelectedFilter, Mode=TwoWay}"
+                            IsEnabled="{Binding !IsBusy}" MinWidth="160"
+                            AutomationProperties.Name="{x:Static text:PullRequestText.InboxFilter}">
+              <ComboBox.ItemTemplate><DataTemplate><ui:AppText Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate>
+            </ui:AppComboBox>
+            <ui:AppButton Content="{x:Static text:PullRequestText.InboxLoad}" Command="{Binding LoadCommand}" Classes="ghost button-sm" />
+            <ui:AppButton Content="{x:Static text:PullRequestText.Previous}" Command="{Binding PreviousCommand}" Classes="ghost button-sm" />
+            <ui:AppButton Content="{x:Static text:PullRequestText.Next}" Command="{Binding NextCommand}" Classes="ghost button-sm" />
+            <ui:AppButton Content="{x:Static text:PullRequestText.Cancel}" Command="{Binding CancelCommand}" Classes="ghost button-sm" IsVisible="{Binding IsBusy}" />
+          </WrapPanel>
+          <ui:AppText Text="{Binding PageLabel}" Classes="type-12 muted" IsVisible="{Binding IsLoaded}" />
+          <ui:AppText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />
+          <ui:AppText Text="{x:Static text:PullRequestText.InboxEmpty}" Classes="type-12 muted" TextWrapping="Wrap" IsVisible="{Binding IsEmpty}" />
+          <ui:AppScrollViewer MaxHeight="240" Classes="thin-scrollbar" IsVisible="{Binding IsLoaded}">
+            <ui:AppItemsControl ItemsSource="{Binding Items}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <ui:AppCard Classes="card card-inset-compact">
+                    <StackPanel Spacing="4">
+                      <ui:AppText Text="{Binding Title}" Classes="type-12 weight-semibold" TextWrapping="Wrap" />
+                      <WrapPanel>
+                        <ui:AppText Text="{Binding Owner}" Classes="type-12 muted" />
+                        <ui:AppText Text="/" Classes="type-12 muted" />
+                        <ui:AppText Text="{Binding Repository}" Classes="type-12 muted" />
+                        <ui:AppText Text="{Binding Number, StringFormat='# {0}'}" Classes="type-12 muted" />
+                      </WrapPanel>
+                      <WrapPanel>
+                        <ui:AppText Text="{Binding Author}" Classes="type-12 muted" />
+                        <ui:AppText Text="{Binding State}" Classes="type-12 muted" />
+                        <ui:AppText Text="{x:Static text:PullRequestText.InboxDraft}" Classes="type-12 muted" IsVisible="{Binding IsDraft}" />
+                        <ui:AppText Text="{Binding UpdatedAt}" Classes="type-12 muted" />
+                      </WrapPanel>
+                    </StackPanel>
+                  </ui:AppCard>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ui:AppItemsControl>
+          </ui:AppScrollViewer>
+          <ui:AppText Text="{x:Static text:PullRequestText.InboxHint}" Classes="type-11 subtle" TextWrapping="Wrap" />
+        </StackPanel>
       </StackPanel>
       <ui:AppEmptyState Grid.Row="2" IsVisible="{Binding IsEmpty}" IconData="{StaticResource UiIconBranch}"
                         Title="{x:Static text:PullRequestText.Empty}" Description="{x:Static text:PullRequestText.EmptyHint}" />

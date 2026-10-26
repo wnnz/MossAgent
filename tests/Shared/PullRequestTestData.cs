@@ -36,6 +36,26 @@ internal static class PullRequestTestData
             actor = actor ?? new { login = "actor" }, @event = name, commit_id = commit, created_at = created,
             label = label is null ? null : (object?)new { name = label } });
 
+    public static string InboxItem(long id = 51, int number = 7, string repository = "fixture/repo",
+        string title = "Inbox pull request", string? state = "open", object? user = null,
+        object? draft = null, string? updated = "2024-01-02T03:04:05Z", bool pullRequest = true,
+        string? repositoryUrl = null)
+    {
+        var item = new Dictionary<string, object?>
+        {
+            ["id"] = id, ["number"] = number, ["title"] = title, ["state"] = state,
+            ["draft"] = draft ?? false, ["user"] = user ?? new { login = "octocat" },
+            ["repository_url"] = repositoryUrl ?? $"https://api.github.com/repos/{repository}",
+            ["updated_at"] = updated
+        };
+        if (pullRequest) item["pull_request"] = new { url = $"https://api.github.com/repos/{repository}/pulls/{number}" };
+        return JsonSerializer.Serialize(item);
+    }
+
+    public static string InboxPage(int total = 1, bool incomplete = false, params string[] items) =>
+        "{\"total_count\":" + total + ",\"incomplete_results\":" + (incomplete ? "true" : "false")
+            + ",\"items\":[" + string.Join(',', items) + "]}";
+
     public static string Checks(bool runs = true, string? head = null) => runs
         ? JsonSerializer.Serialize(new { total_count = 1, check_runs = new[] { new { id = 21, name = "Build", status = "completed",
             conclusion = "success", head_sha = head ?? new string('b', 40), details_url = "https://attacker.invalid/log" } } })
