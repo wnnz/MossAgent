@@ -33,6 +33,8 @@
           <ui:AppButton Content="{x:Static text:PullRequestText.OpenLink}" Command="{Binding Link.ShowCommand}" Classes="ghost button-sm"
                         AutomationProperties.Name="{x:Static text:PullRequestText.OpenLink}" />
           <ui:AppButton Content="{x:Static text:PullRequestText.Load}" Command="{Binding LoadCommand}" Classes="ghost button-sm" />
+          <ui:AppActionButton Label="{x:Static text:PullRequestText.CreatePullRequest}" IconData="{StaticResource UiIconPlus}"
+                              Command="{Binding CreatePullRequestCommand}" Classes="ghost button-sm" IsVisible="{Binding CanCreatePr}" />
           <ui:AppButton Content="{x:Static text:PullRequestText.Revoke}" Command="{Binding RevokeCommand}" Classes="ghost button-sm" />
           <ui:AppButton Content="{x:Static text:PullRequestText.Previous}" Command="{Binding PreviousCommand}" Classes="ghost button-sm" />
           <ui:AppButton Content="{x:Static text:PullRequestText.Next}" Command="{Binding NextCommand}" Classes="ghost button-sm" />
@@ -183,6 +185,41 @@
                                 AutomationProperties.Name="{x:Static text:PullRequestText.LinkStatus}" />
           <WrapPanel>
             <ui:AppButton Content="{x:Static text:PullRequestText.OpenLink}" Command="{Binding OpenCommand}" Classes="primary" />
+            <ui:AppButton Content="{x:Static text:PullRequestText.Cancel}" Command="{Binding CancelCommand}" Classes="ghost" IsVisible="{Binding IsBusy}" />
+          </WrapPanel>
+        </StackPanel>
+      </ui:AppSettingsDialog.Footer>
+    </ui:AppSettingsDialog>
+    <ui:AppSettingsDialog DataContext="{Binding CreatePr}" IsOpen="{Binding IsOpen}" Title="{x:Static text:PullRequestText.CreatePullRequest}"
+                          CloseLabel="{x:Static text:PullRequestText.Close}" CloseCommand="{Binding CloseCommand}">
+      <StackPanel Spacing="8" IsEnabled="{Binding !IsBusy}">
+        <ui:AppText Text="{x:Static text:PullRequestText.CreatePrBase}" Classes="type-12 muted" />
+        <ui:AppComboBox ItemsSource="{Binding Branches}" SelectedItem="{Binding SelectedBase, Mode=TwoWay}" HorizontalAlignment="Stretch"
+                        AutomationProperties.Name="{x:Static text:PullRequestText.CreatePrBase}">
+          <ComboBox.ItemTemplate><DataTemplate><ui:AppText Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate>
+        </ui:AppComboBox>
+        <ui:AppText Text="{x:Static text:PullRequestText.CreatePrHead}" Classes="type-12 muted" />
+        <ui:AppComboBox ItemsSource="{Binding Branches}" SelectedItem="{Binding SelectedHead, Mode=TwoWay}" HorizontalAlignment="Stretch"
+                        AutomationProperties.Name="{x:Static text:PullRequestText.CreatePrHead}">
+          <ComboBox.ItemTemplate><DataTemplate><ui:AppText Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate>
+        </ui:AppComboBox>
+        <ui:AppText Text="{x:Static text:PullRequestText.CreatePrTitle}" Classes="type-12 muted" />
+        <ui:AppInput Text="{Binding Title, Mode=TwoWay}" MaxLength="256"
+                     AutomationProperties.Name="{x:Static text:PullRequestText.CreatePrTitle}" />
+        <ui:AppText Text="{x:Static text:PullRequestText.CreatePrBody}" Classes="type-12 muted" />
+        <ui:AppInput Text="{Binding Body, Mode=TwoWay}" AcceptsReturn="True" Classes="field-multiline" MaxLength="65536"
+                     AutomationProperties.Name="{x:Static text:PullRequestText.CreatePrBody}" />
+        <ui:AppCheckBox Content="{x:Static text:PullRequestText.CreatePrDraft}" IsChecked="{Binding IsDraft, Mode=TwoWay}"
+                        AutomationProperties.Name="{x:Static text:PullRequestText.CreatePrDraft}" />
+        <ui:AppText Text="{x:Static text:PullRequestText.CreatePrHint}" Classes="type-12 muted" TextWrapping="Wrap" />
+      </StackPanel>
+      <ui:AppSettingsDialog.Footer>
+        <StackPanel Spacing="8">
+          <ui:AppText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap" IsVisible="{Binding HasStatus}"
+                      AutomationProperties.Name="{x:Static text:PullRequestText.CreatePullRequest}" />
+          <WrapPanel>
+            <ui:AppButton Content="{Binding SubmitLabel}" Command="{Binding SubmitCommand}" Classes="primary"
+                          AutomationProperties.Name="{x:Static text:PullRequestText.CreatePullRequest}" />
             <ui:AppButton Content="{x:Static text:PullRequestText.Cancel}" Command="{Binding CancelCommand}" Classes="ghost" IsVisible="{Binding IsBusy}" />
           </WrapPanel>
         </StackPanel>

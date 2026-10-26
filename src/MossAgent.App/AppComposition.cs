@@ -93,6 +93,8 @@ internal static class AppComposition
         services.AddSingleton<ISourcePullRequestInspection, SourcePullRequestInspection>();
         services.AddSingleton<IPullRequestWriteClient, GitHubPullRequestWriteClient>();
         services.AddSingleton<ISourcePullRequestWriter, PullRequestWriter>();
+        services.AddSingleton<IPullRequestBranchClient, GitHubPullRequestBranchClient>();
+        services.AddSingleton<ISourcePullRequestBranches, SourcePullRequestBranches>();
         services.AddSingleton<IPullRequestInboxClient, GitHubPullRequestInboxClient>();
         services.AddSingleton<SourceInboxReader>();
         services.AddSingleton<IWorkspaceRepository, SqliteWorkspaceRepository>();
@@ -244,6 +246,7 @@ internal static class AppComposition
         services.AddSingleton<IAgentTool, PullRequestReviewSubmitTool>();
         services.AddSingleton<IAgentTool, PullRequestCloseTool>();
         services.AddSingleton<IAgentTool, PullRequestMergeTool>();
+        services.AddSingleton<IAgentTool, PullRequestCreateTool>();
     }
 
     private static void RegisterBrowserAndDesktopTools(IServiceCollection services)

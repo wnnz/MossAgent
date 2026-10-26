@@ -5,7 +5,7 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
   <data name="Title" xml:space="preserve"><value>Pull Request</value></data>
-  <data name="Description" xml:space="preserve"><value>查看明确授权的 GitHub 仓库，写授权下可在 PR 讨论中发布评论、提交评审、关闭并合并 PR。不克隆仓库、不授予本地工具权限。</value></data>
+  <data name="Description" xml:space="preserve"><value>查看明确授权的 GitHub 仓库，写授权下可创建 PR、在 PR 讨论中发布评论、提交评审、关闭并合并 PR。不克隆仓库、不授予本地工具权限。</value></data>
   <data name="Refresh" xml:space="preserve"><value>刷新账号与授权</value></data>
   <data name="Create" xml:space="preserve"><value>授权仓库</value></data>
   <data name="Repository" xml:space="preserve"><value>仓库</value></data>
@@ -39,7 +39,7 @@
   <data name="RateLimited" xml:space="preserve"><value>服务端限制了请求频率，请稍后手动重试。</value></data>
   <data name="NotFound" xml:space="preserve"><value>仓库或 PR 不存在，或当前令牌无权查看。</value></data>
   <data name="InvalidResponse" xml:space="preserve"><value>服务端响应无效、过大或发生重定向，已停止读取。</value></data>
-  <data name="Remaining" xml:space="preserve"><value>支持授权仓库的 PR 列表、链接打开、文件补丁、讨论、行内评论、评审意见、活动事件、检查读取、固定快照审阅、独立只读查询对话、个人收件箱、本地已读/版本标记，以及写授权下的讨论评论发布、评审提交、PR 关闭与合并（两步确认、固定来源提交、结果未知时查询核实、绝不自动重试）；PR 创建仍待实现。</value></data>
+  <data name="Remaining" xml:space="preserve"><value>支持授权仓库的 PR 列表、链接打开、文件补丁、讨论、行内评论、评审意见、活动事件、检查读取、固定快照审阅、独立只读查询对话、个人收件箱、本地已读/版本标记，以及写授权下的 PR 创建（显式选择来源/目标分支、两步确认）、讨论评论发布、评审提交、PR 关闭与合并（两步确认、固定来源提交、结果未知时查询核实、绝不自动重试）。</value></data>
   <data name="OpenLink" xml:space="preserve"><value>从 PR 链接打开</value></data>
   <data name="LinkUrl" xml:space="preserve"><value>PR 链接（HTTPS）</value></data>
   <data name="LinkStatus" xml:space="preserve"><value>PR 链接打开结果</value></data>
@@ -167,4 +167,23 @@
   <data name="MergeRejected" xml:space="preserve"><value>服务端拒绝了 PR 合并请求，未执行合并。</value></data>
   <data name="MergeUnconfirmed" xml:space="preserve"><value>PR 合并结果未确认：核实查询未显示已合并状态，合并可能稍后生效。请先在源代码平台核实，不要重复操作。</value></data>
   <data name="MergeUnknown" xml:space="preserve"><value>PR 合并结果未知且核实查询失败；PR 可能已合并也可能未合并，请在源代码平台核实后再决定是否手动操作。</value></data>
+  <data name="CreatePullRequest" xml:space="preserve"><value>新建 PR</value></data>
+  <data name="CreatePrBase" xml:space="preserve"><value>目标分支（base）</value></data>
+  <data name="CreatePrHead" xml:space="preserve"><value>来源分支（head）</value></data>
+  <data name="CreatePrTitle" xml:space="preserve"><value>PR 标题</value></data>
+  <data name="CreatePrBody" xml:space="preserve"><value>PR 正文（可选）</value></data>
+  <data name="CreatePrDraft" xml:space="preserve"><value>以草稿创建</value></data>
+  <data name="CreatePrHint" xml:space="preserve"><value>在已授权写权限的仓库创建 PR，分支列表来自服务端当前状态；创建前会重新核对授权，结果未知时按分支与标题精确核实，绝不自动重试。相同分支已有开放 PR 时服务端会拒绝创建。</value></data>
+  <data name="CreatePrConfirm" xml:space="preserve"><value>确认创建</value></data>
+  <data name="CreatePrConfirmHint" xml:space="preserve"><value>PR 将在服务端公开创建，请再次点击“确认创建”完成写入；绝不自动重试，请勿重复提交。</value></data>
+  <data name="CreatePrSubmitting" xml:space="preserve"><value>正在创建 PR…</value></data>
+  <data name="PrCreated" xml:space="preserve"><value>PR 已创建，已打开详情。</value></data>
+  <data name="PrCreatedReconciled" xml:space="preserve"><value>PR 创建结果一度未知，经查询核实已创建；未自动重试，请勿重复操作。</value></data>
+  <data name="CreatePrLoadFailed" xml:space="preserve"><value>PR 已创建，但读取新 PR 详情失败；请点击“获取开放 PR”刷新列表查看。</value></data>
+  <data name="CreatePrCancelled" xml:space="preserve"><value>创建已取消；如果请求已发出，PR 可能已在服务端创建，请在源代码平台核实后再决定是否手动操作。</value></data>
+  <data name="CreatePrRejected" xml:space="preserve"><value>服务端拒绝了 PR 创建请求，未创建 PR；相同来源/目标分支可能已有开放 PR。</value></data>
+  <data name="CreatePrUnconfirmed" xml:space="preserve"><value>PR 创建结果未确认：核实查询未找到匹配的 PR，PR 可能稍后出现在服务端。请先在源代码平台核实，不要重复提交。</value></data>
+  <data name="CreatePrUnknown" xml:space="preserve"><value>PR 创建结果未知且核实查询失败；PR 可能已创建也可能未创建，请在源代码平台核实后再决定是否手动操作。</value></data>
+  <data name="BranchesLoading" xml:space="preserve"><value>正在读取分支列表…</value></data>
+  <data name="BranchesFailed" xml:space="preserve"><value>分支列表读取失败，请检查账号与网络后关闭并重新打开。</value></data>
 </root>

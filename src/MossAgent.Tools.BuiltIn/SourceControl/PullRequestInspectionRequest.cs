@@ -32,6 +32,12 @@ internal static class PullRequestInspectionRequest
         {"type":"object","properties":{"number":{"type":"integer","minimum":1,"maximum":2147483647},"base_revision":{"type":"string","minLength":40,"maxLength":64},"head_revision":{"type":"string","minLength":40,"maxLength":64},"method":{"type":"string","enum":["merge","squash","rebase"]}},"required":["number","base_revision","head_revision","method"],"additionalProperties":false}
         """;
 
+    // Create has no existing pull request, so the schema carries branch names and the
+    // title instead of number/base_revision/head_revision.
+    public static string CreateSchema() => """
+        {"type":"object","properties":{"title":{"type":"string","minLength":1,"maxLength":256},"head":{"type":"string","minLength":1,"maxLength":255},"base":{"type":"string","minLength":1,"maxLength":255},"body":{"type":"string","maxLength":65536},"draft":{"type":"boolean"}},"required":["title","head","base"],"additionalProperties":false}
+        """;
+
     public static PullRequestRevision Revision(ToolRequest request, ToolExecutionContext context)
     {
         var revision = new PullRequestRevision(request.Arguments.GetProperty("number").GetInt32(),

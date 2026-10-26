@@ -15,18 +15,50 @@ internal sealed class PullRequestWriterProbe : ISourcePullRequestWriter
     public PullRequestReviewReceipt ReviewReceipt { get; set; } = new(31, false);
     public PullRequestCloseReceipt CloseReceipt { get; set; } = new("closed", false);
     public PullRequestMergeReceipt MergeReceipt { get; set; } = new(new string('c', 40), false);
+    public PullRequestCreateReceipt CreateReceipt { get; set; } = new(9, new string('b', 40), new string('a', 40), false);
     public string? FailureCode { get; set; }
     public string? ReviewFailureCode { get; set; }
     public string? CloseFailureCode { get; set; }
     public string? MergeFailureCode { get; set; }
+    public string? CreateFailureCode { get; set; }
     public Func<CancellationToken, Task>? OnWrite { get; set; }
     public Func<CancellationToken, Task>? OnReview { get; set; }
     public Func<CancellationToken, Task>? OnClose { get; set; }
     public Func<CancellationToken, Task>? OnMerge { get; set; }
+    public Func<CancellationToken, Task>? OnCreate { get; set; }
     public PullRequestReviewDecision? LastDecision { get; private set; }
     public PullRequestMergeMethod? LastMethod { get; private set; }
     public string? LastBody { get; private set; }
     public bool BodyWasSent { get; private set; }
+    public int BareValidations { get; private set; }
+    public int Creates { get; private set; }
+    public string? LastTitle { get; private set; }
+    public string? LastHead { get; private set; }
+    public string? LastBase { get; private set; }
+    public string? LastCreateBody { get; private set; }
+    public bool? LastDraft { get; private set; }
+
+    public Task ValidateWriteAsync(SourceRepositoryScope scope, CancellationToken cancellationToken)
+    {
+        BareValidations++;
+        if (!IsValid || !scope.CanWrite) throw new SourceReviewException("source_scope_denied");
+        return Task.CompletedTask;
+    }
+
+    public async Task<PullRequestCreateReceipt> CreateAsync(SourceRepositoryScope scope, string title, string? body,
+        string head, string baseName, bool draft, CancellationToken cancellationToken)
+    {
+        Creates++;
+        LastTitle = title; LastCreateBody = body; LastHead = head; LastBase = baseName; LastDraft = draft;
+        if (!scope.CanWrite) throw new SourceReviewException("source_scope_denied");
+        if (string.IsNullOrEmpty(title) || title.Length > 256 || body is { Length: > 65536 }
+            || !PullRequestBranch.IsValidName(head) || !PullRequestBranch.IsValidName(baseName)
+            || head.Equals(baseName, StringComparison.OrdinalIgnoreCase))
+            throw new SourceReviewException("invalid_arguments");
+        if (OnCreate is not null) await OnCreate(cancellationToken);
+        if (CreateFailureCode is not null) throw new SourceReviewException(CreateFailureCode);
+        return CreateReceipt;
+    }
 
     public Task ValidateWriteAsync(SourceRepositoryScope scope, PullRequestRevision revision, CancellationToken cancellationToken)
     {

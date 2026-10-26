@@ -8,14 +8,18 @@ public interface IPullRequestWriteClient
         string body, CancellationToken cancellationToken);
     Task<long?> FindCommentAsync(SourceAccount account, SourceRepositoryScope scope, int number,
         string body, CancellationToken cancellationToken);
-    Task<long> SubmitReviewAsync(SourceAccount account, SourceRepositoryScope scope, PullRequestRevision revision,
-        PullRequestReviewDecision decision, string? body, CancellationToken cancellationToken);
-    Task<long?> FindReviewAsync(SourceAccount account, SourceRepositoryScope scope, PullRequestRevision revision,
-        PullRequestReviewDecision decision, string? body, CancellationToken cancellationToken);
-    Task<string> CloseAsync(SourceAccount account, SourceRepositoryScope scope, PullRequestRevision revision,
-        CancellationToken cancellationToken);
-    Task<string> MergeAsync(SourceAccount account, SourceRepositoryScope scope, PullRequestRevision revision,
-        PullRequestMergeMethod method, CancellationToken cancellationToken);
+    Task<long> SubmitReviewAsync(SourceAccount account, SourceRepositoryScope scope,
+        PullRequestRevision revision, PullRequestReviewDecision decision, string? body, CancellationToken cancellationToken);
+    Task<long?> FindReviewAsync(SourceAccount account, SourceRepositoryScope scope,
+        PullRequestRevision revision, PullRequestReviewDecision decision, string? body, CancellationToken cancellationToken);
+    Task<string> CloseAsync(SourceAccount account, SourceRepositoryScope scope,
+        PullRequestRevision revision, CancellationToken cancellationToken);
+    Task<string> MergeAsync(SourceAccount account, SourceRepositoryScope scope,
+        PullRequestRevision revision, PullRequestMergeMethod method, CancellationToken cancellationToken);
     Task<string?> MergedAsync(SourceAccount account, SourceRepositoryScope scope, PullRequestRevision revision,
         CancellationToken cancellationToken);
+    Task<PullRequestCreatePayload> CreateAsync(SourceAccount account, SourceRepositoryScope scope, string title,
+        string? body, string head, string baseName, bool draft, CancellationToken cancellationToken);
+    Task<PullRequestCreatePayload?> FindCreatedAsync(SourceAccount account, SourceRepositoryScope scope, string head,
+        string baseName, string title, CancellationToken cancellationToken);
 }

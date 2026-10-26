@@ -100,6 +100,22 @@ public static class PullRequestText
     public static string MergeCancelled => Get(nameof(MergeCancelled));
     public static string MergeReadOnlyHint => Get(nameof(MergeReadOnlyHint));
     public static string MergeDraftHint => Get(nameof(MergeDraftHint));
+    public static string CreatePullRequest => Get(nameof(CreatePullRequest));
+    public static string CreatePrBase => Get(nameof(CreatePrBase));
+    public static string CreatePrHead => Get(nameof(CreatePrHead));
+    public static string CreatePrTitle => Get(nameof(CreatePrTitle));
+    public static string CreatePrBody => Get(nameof(CreatePrBody));
+    public static string CreatePrDraft => Get(nameof(CreatePrDraft));
+    public static string CreatePrHint => Get(nameof(CreatePrHint));
+    public static string CreatePrConfirm => Get(nameof(CreatePrConfirm));
+    public static string CreatePrConfirmHint => Get(nameof(CreatePrConfirmHint));
+    public static string CreatePrSubmitting => Get(nameof(CreatePrSubmitting));
+    public static string PrCreated => Get(nameof(PrCreated));
+    public static string PrCreatedReconciled => Get(nameof(PrCreatedReconciled));
+    public static string CreatePrLoadFailed => Get(nameof(CreatePrLoadFailed));
+    public static string CreatePrCancelled => Get(nameof(CreatePrCancelled));
+    public static string BranchesLoading => Get(nameof(BranchesLoading));
+    public static string BranchesFailed => Get(nameof(BranchesFailed));
 
     public static string Failure(string code, string writeKind = "comment") => Get(code switch
     {
@@ -126,6 +142,7 @@ public static class PullRequestText
         "review" => "ReviewWrite" + outcome,
         "close" => "Close" + outcome,
         "merge" => "Merge" + outcome,
+        "create" => "CreatePr" + outcome,
         _ => "Write" + outcome
     };
 }

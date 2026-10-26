@@ -55,6 +55,22 @@ internal static class PullRequestTestData
             actor = actor ?? new { login = "actor" }, @event = name, commit_id = commit, created_at = created,
             label = label is null ? null : (object?)new { name = label } });
 
+    // Create responses and reconcile list items share this shape: number/url plus
+    // head/base carrying both ref names and commit shas.
+    public static string CreatedItem(int number = 9, string repository = "fixture/repo",
+        string title = "Created pull request", string? headRef = "feature", string? baseRef = "main",
+        string? head = null, string? baseSha = null) =>
+        JsonSerializer.Serialize(new
+        {
+            number, title, state = "open", draft = false,
+            url = $"https://api.github.com/repos/{repository}/pulls/{number}",
+            @base = new { @ref = baseRef, sha = baseSha ?? new string('a', 40), repo = new { full_name = repository } },
+            head = new { @ref = headRef, sha = head ?? new string('b', 40) }
+        });
+
+    public static string Branch(string name = "main", string? sha = null) =>
+        JsonSerializer.Serialize(new { name, commit = new { sha = sha ?? new string('a', 40) } });
+
     public static string InboxItem(long id = 51, int number = 7, string repository = "fixture/repo",
         string title = "Inbox pull request", string? state = "open", object? user = null,
         object? draft = null, string? updated = "2024-01-02T03:04:05Z", bool pullRequest = true,

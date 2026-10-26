@@ -13,6 +13,11 @@ public sealed class PullRequestWriter(SourceRepositoryAccess access, IPullReques
         _ = await access.ResolveWriteAsync(scope, cancellationToken);
     }
 
+    // Create carries no existing revision to pin, so prevalidation is the bare
+    // write-grant resolution.
+    public async Task ValidateWriteAsync(SourceRepositoryScope scope, CancellationToken cancellationToken) =>
+        _ = await access.ResolveWriteAsync(scope, cancellationToken);
+
     // The write grant is resolved before and after the live revision check so a revocation
     // landing between the two lookups still fails closed. The remote write is never retried:
     // when its outcome is unknown a single read reconciles by exact body match.
@@ -110,6 +115,34 @@ public sealed class PullRequestWriter(SourceRepositoryAccess access, IPullReques
         }
     }
 
+    // Create has no captured revision and nothing to pin: the server assigns the
+    // number and rejects a duplicate head/base pair itself (422). Ordering stays
+    // resolve-write → single POST; an unknown outcome reconciles with one bounded
+    // read matched on head/base/title, never a second POST.
+    public async Task<PullRequestCreateReceipt> CreateAsync(SourceRepositoryScope scope, string title, string? body,
+        string head, string baseName, bool draft, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(title) || title.Length > 256 || body is { Length: > 65536 }
+            || !PullRequestBranch.IsValidName(head) || !PullRequestBranch.IsValidName(baseName)
+            || head.Equals(baseName, StringComparison.OrdinalIgnoreCase))
+            throw new SourceReviewException("invalid_arguments");
+        var account = await access.ResolveWriteAsync(scope, cancellationToken);
+        if (ContainsToken(title, account) || ContainsToken(head, account) || ContainsToken(baseName, account))
+            throw new SourceReviewException("invalid_arguments");
+        try
+        {
+            var created = await client.CreateAsync(account, scope, title, body, head, baseName, draft, cancellationToken);
+            return new(created.Number, created.HeadRevision, created.BaseRevision, Reconciled: false);
+        }
+        catch (SourceReviewException exception) when (IsUnknownOutcome(exception))
+        {
+            return await ReconcileCreateAsync(scope, title, head, baseName, cancellationToken);
+        }
+    }
+
+    private static bool ContainsToken(string value, SourceAccount account) =>
+        value.Contains(account.AccessToken, StringComparison.Ordinal);
+
     private static bool IsUnknownOutcome(SourceReviewException exception) =>
         exception.ErrorCode is "source_timeout" or "source_transport_failed" or "source_unavailable";
 
@@ -168,6 +201,21 @@ public sealed class PullRequestWriter(SourceRepositoryAccess access, IPullReques
         catch (OperationCanceledException) { throw; }
         catch (Exception) { throw new SourceReviewException("source_write_unknown"); }
         return sha is not null ? new(sha, Reconciled: true)
+            : throw new SourceReviewException("source_write_unconfirmed");
+    }
+
+    private async Task<PullRequestCreateReceipt> ReconcileCreateAsync(SourceRepositoryScope scope, string title,
+        string head, string baseName, CancellationToken cancellationToken)
+    {
+        PullRequestCreatePayload? found;
+        try
+        {
+            var account = await access.ResolveWriteAsync(scope, cancellationToken);
+            found = await client.FindCreatedAsync(account, scope, head, baseName, title, cancellationToken);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception) { throw new SourceReviewException("source_write_unknown"); }
+        return found is { } created ? new(created.Number, created.HeadRevision, created.BaseRevision, Reconciled: true)
             : throw new SourceReviewException("source_write_unconfirmed");
     }
 }

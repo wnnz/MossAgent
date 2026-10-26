@@ -36,7 +36,7 @@ public sealed class PullRequestRenderingTests : IAsyncLifetime
             model.CreateCommand.Execute(null);
             window.UpdateLayout();
             var dialogs = view.GetVisualDescendants().OfType<AppSettingsDialog>().ToArray();
-            Assert.Equal(2, dialogs.Length);
+            Assert.Equal(3, dialogs.Length);
             var dialog = Assert.Single(dialogs, item => ReferenceEquals(item.DataContext, model));
             Assert.Same(dialog, Assert.Single(dialogs, item => item.IsEffectivelyVisible));
             Assert.Same(model.CloseEditorCommand, dialog.CloseCommand);

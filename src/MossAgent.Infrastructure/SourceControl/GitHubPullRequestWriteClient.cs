@@ -7,6 +7,7 @@ namespace MossAgent.Infrastructure.SourceControl;
 public sealed class GitHubPullRequestWriteClient(ISourceAccountHttpClientFactory clients) : IPullRequestWriteClient
 {
     private const int MaximumBodyLength = 4096;
+    private const int MaximumCreateBodyLength = 65536;
     private readonly GitHubSourceTransport _transport = new(clients);
 
     public async Task<long> CommentAsync(SourceAccount account, SourceRepositoryScope scope, PullRequestRevision revision,
@@ -195,6 +196,87 @@ public sealed class GitHubPullRequestWriteClient(ISourceAccountHttpClientFactory
         }
         catch (SourceReviewException) { throw; }
         catch (Exception) { throw new SourceReviewException("source_invalid_response"); }
+    }
+
+    // A create carries no captured revision: the server assigns the number and rejects
+    // a duplicate head/base pair itself. The response must belong to the exact
+    // repository (url check against pulls/{number}) and return the recorded head/base
+    // commits in the same 40/64-hex shape every revision uses.
+    public async Task<PullRequestCreatePayload> CreateAsync(SourceAccount account, SourceRepositoryScope scope,
+        string title, string? body, string head, string baseName, bool draft, CancellationToken cancellationToken)
+    {
+        Validate(account, scope);
+        if (string.IsNullOrEmpty(title) || title.Length > 256 || body is { Length: > MaximumCreateBodyLength }
+            || !PullRequestBranch.IsValidName(head) || !PullRequestBranch.IsValidName(baseName)
+            || head.Equals(baseName, StringComparison.OrdinalIgnoreCase))
+            throw new SourceReviewException("invalid_arguments");
+        var payload = new Dictionary<string, object>
+        { ["title"] = title, ["head"] = head, ["base"] = baseName, ["draft"] = draft };
+        if (!string.IsNullOrEmpty(body)) payload["body"] = body;
+        var response = await _transport.PostAsync(account,
+            $"repos/{scope.Owner}/{scope.Repository}/pulls",
+            JsonSerializer.SerializeToUtf8Bytes(payload), cancellationToken);
+        try
+        {
+            using var document = JsonDocument.Parse(response, new JsonDocumentOptions { MaxDepth = 24 });
+            var item = document.RootElement;
+            if (item.ValueKind != JsonValueKind.Object) throw GitHubInspectionJson.Invalid();
+            if (!item.GetProperty("number").TryGetInt32(out var number) || number <= 0) throw GitHubInspectionJson.Invalid();
+            var expected = new Uri(account.ApiEndpoint, $"repos/{scope.Owner}/{scope.Repository}/pulls/{number}");
+            GitHubInspectionJson.CheckOwner(item, "url", expected, account.AccessToken);
+            return new(number, Commit(item.GetProperty("head"), account.AccessToken),
+                Commit(item.GetProperty("base"), account.AccessToken));
+        }
+        catch (SourceReviewException) { throw; }
+        catch (Exception) { throw new SourceReviewException("source_invalid_response"); }
+    }
+
+    // Create reconcile is a single bounded read: open pulls filtered server-side to the
+    // exact head branch of this repository. List items carry no fixed expected url, so
+    // each proves ownership by the repos/{owner}/{repo}/pulls/ prefix the inbox parser
+    // established, then must match head.ref/base.ref and the normalized title exactly.
+    public async Task<PullRequestCreatePayload?> FindCreatedAsync(SourceAccount account, SourceRepositoryScope scope,
+        string head, string baseName, string title, CancellationToken cancellationToken)
+    {
+        Validate(account, scope);
+        if (string.IsNullOrEmpty(title) || title.Length > 256 || !PullRequestBranch.IsValidName(head)
+            || !PullRequestBranch.IsValidName(baseName)) throw new SourceReviewException("invalid_arguments");
+        var filter = Uri.EscapeDataString($"{scope.Owner}:{head}");
+        var response = await _transport.GetAsync(account,
+            $"repos/{scope.Owner}/{scope.Repository}/pulls?state=open&head={filter}&per_page=5", cancellationToken);
+        try
+        {
+            using var document = JsonDocument.Parse(response, new JsonDocumentOptions { MaxDepth = 24 });
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() > 5) throw GitHubInspectionJson.Invalid();
+            var prefix = new Uri(account.ApiEndpoint, $"repos/{scope.Owner}/{scope.Repository}/pulls/").AbsoluteUri;
+            foreach (var item in root.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object) throw GitHubInspectionJson.Invalid();
+                var url = GitHubInspectionJson.Text(item, "url", 2048, account.AccessToken);
+                if (!url.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) throw GitHubInspectionJson.Invalid();
+                if (!item.GetProperty("number").TryGetInt32(out var number) || number <= 0) throw GitHubInspectionJson.Invalid();
+                var headElement = item.GetProperty("head");
+                var baseElement = item.GetProperty("base");
+                var headSha = Commit(headElement, account.AccessToken);
+                var baseSha = Commit(baseElement, account.AccessToken);
+                var itemTitle = GitHubInspectionJson.OptionalText(item, "title", 1024, account.AccessToken,
+                    allowEmpty: true) ?? string.Empty;
+                if (!GitHubInspectionJson.Text(headElement, "ref", 255, account.AccessToken).Equals(head, StringComparison.Ordinal)
+                    || !GitHubInspectionJson.Text(baseElement, "ref", 255, account.AccessToken).Equals(baseName, StringComparison.Ordinal)
+                    || itemTitle != title) continue;
+                return new(number, headSha, baseSha);
+            }
+            return null;
+        }
+        catch (SourceReviewException) { throw; }
+        catch (Exception) { throw new SourceReviewException("source_invalid_response"); }
+    }
+
+    private static string Commit(JsonElement element, string token)
+    {
+        var sha = GitHubInspectionJson.Text(element, "sha", 64, token);
+        return PullRequestRevision.IsCommit(sha) ? sha : throw GitHubInspectionJson.Invalid();
     }
 
     private static (long? Found, int Count) Scan(byte[] response, Uri expected, string expectedState,

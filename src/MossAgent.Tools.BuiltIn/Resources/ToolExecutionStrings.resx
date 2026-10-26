@@ -31,6 +31,12 @@
   <data name="SourceMergeRejected" xml:space="preserve"><value>服务端拒绝了 PR 合并请求，未执行合并。</value></data>
   <data name="SourceMergeUnconfirmed" xml:space="preserve"><value>PR 合并结果未确认：核实查询未显示已合并状态，合并可能稍后生效。请先在源代码平台核实，不要自动重试。</value></data>
   <data name="SourceMergeUnknown" xml:space="preserve"><value>PR 合并结果未知且核实查询失败；PR 可能已合并也可能未合并，请在源代码平台核实后再决定是否手动操作。</value></data>
+  <data name="SourceCreateDescription" xml:space="preserve"><value>在已授予写权限的仓库中创建 PR（POST pulls，head/base 分支+标题+可选正文+draft 标记）；创建前复核写授权，结果未知时以一次有界列表查询按 head/base/标题精确核实，绝不自动重试。</value></data>
+  <data name="SourceCreateSubmitted" xml:space="preserve"><value>PR 已创建。</value></data>
+  <data name="SourceCreateLanded" xml:space="preserve"><value>PR 创建请求结果一度未知，经重新查询确认已创建；未自动重试，请勿重复提交。</value></data>
+  <data name="SourceCreateRejected" xml:space="preserve"><value>服务端拒绝了 PR 创建请求，未创建 PR（可能已存在相同分支的开放 PR）。</value></data>
+  <data name="SourceCreateUnconfirmed" xml:space="preserve"><value>PR 创建结果未确认：核实查询未找到匹配的 PR，PR 可能稍后出现在服务端。请先在源代码平台核实，不要自动重试。</value></data>
+  <data name="SourceCreateUnknown" xml:space="preserve"><value>PR 创建结果未知且核实查询失败；PR 可能已创建也可能未创建，请在源代码平台核实后再决定是否手动操作。</value></data>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>

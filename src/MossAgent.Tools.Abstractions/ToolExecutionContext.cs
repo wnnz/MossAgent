@@ -46,7 +46,8 @@ public sealed record ToolExecutionContext(
             || (SourceScope.CanWrite && name.Equals("source.pr_comment_create", StringComparison.OrdinalIgnoreCase))
             || (SourceScope.CanWrite && name.Equals("source.pr_review_submit", StringComparison.OrdinalIgnoreCase))
             || (SourceScope.CanWrite && name.Equals("source.pr_close", StringComparison.OrdinalIgnoreCase))
-            || (SourceScope.CanWrite && name.Equals("source.pr_merge", StringComparison.OrdinalIgnoreCase)));
+            || (SourceScope.CanWrite && name.Equals("source.pr_merge", StringComparison.OrdinalIgnoreCase))
+            || (SourceScope.CanWrite && name.Equals("source.pr_create", StringComparison.OrdinalIgnoreCase)));
 
     public Task ValidateWorkspaceAsync(CancellationToken cancellationToken) =>
         WorkspaceGuard?.ValidateAsync(this, cancellationToken) ?? Task.CompletedTask;

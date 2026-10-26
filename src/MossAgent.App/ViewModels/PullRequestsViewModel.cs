@@ -9,6 +9,7 @@ using MossAgent.Application.Persistence;
 using MossAgent.Application.SourceControl;
 using MossAgent.Domain;
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.SourceControl;
 
 namespace MossAgent.App.ViewModels;
 
@@ -39,21 +40,25 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
 
     public PullRequestsViewModel(ISourceAccountRepository accounts, ISourceRepositoryGrants grants,
         ISourceReviewSessions sessions, IToolExecutor tools, SourceInboxReader inbox,
-        IPullRequestMarks marks, SourceReviewChatCreator? reviewChats = null)
+        IPullRequestMarks marks, ISourcePullRequestBranches branches, SourceReviewChatCreator? reviewChats = null)
     {
         _accounts = accounts; _grants = grants; _sessions = sessions; _tools = tools; _marks = marks;
         Inbox = new(inbox);
         Link = new(new SourcePullRequestLinkResolver(accounts, grants), Accounts, LoadLinkedAsync,
             () => !_disposed && !_busy && !IsEditorOpen);
         Link.PropertyChanged += LinkChanged;
-        RefreshCommand = new(token => RunAsync(ReloadAsync, token), () => !IsBusy && !_disposed && !Link.IsOpen);
+        CreatePr = new(tools, branches, ContextAsync, CreatedAsync);
+        CreatePr.PropertyChanged += CreatePrChanged;
+        RefreshCommand = new(token => RunAsync(ReloadAsync, token), () => !IsBusy && !_disposed && !Link.IsOpen && !IsCreatePrOpen);
         LoadCommand = new(token => RunAsync(cancel => LoadPageAsync(1, cancel), token), CanRead);
         PreviousCommand = new(token => RunAsync(cancel => LoadPageAsync(_page - 1, cancel), token), () => CanRead() && _page > 1);
         NextCommand = new(token => RunAsync(cancel => LoadPageAsync(_page + 1, cancel), token), () => CanRead() && _hasNextPage);
         DetailCommand = new(token => RunAsync(LoadDetailAsync, token), () => CanRead() && SelectedItem is not null);
         SaveGrantCommand = new(token => RunAsync(SaveGrantAsync, token), () => !IsBusy && !_disposed && SelectedAccount is not null && IsEditorOpen);
         RevokeCommand = new(token => RunAsync(RevokeAsync, token), CanRead);
-        CreateCommand = new RelayCommand(() => IsEditorOpen = true, () => !IsBusy && !_disposed && !Link.IsOpen);
+        CreatePullRequestCommand = new(token => CreatePr.OpenAsync(SelectedRepository!.Scope, token),
+            () => CanCreatePr && !IsBusy && !IsCreatePrOpen);
+        CreateCommand = new RelayCommand(() => IsEditorOpen = true, () => !IsBusy && !_disposed && !Link.IsOpen && !IsCreatePrOpen);
         CloseEditorCommand = new RelayCommand(() => { IsEditorOpen = false; Owner = Repository = string.Empty; EditorCanWrite = false; }, () => !_busy);
         CancelCommand = new RelayCommand(() => { _operation?.Cancel(); Link.Cancel(); }, () => IsBusy);
         BackCommand = new RelayCommand(() => { Invalidate(); Detail = null; }, () => !_disposed && !IsBusy && !Link.IsOpen && HasDetail);
@@ -73,8 +78,11 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
     public PullRequestInspectionViewModel Inspection { get; }
     public PullRequestInboxViewModel Inbox { get; }
     public PullRequestLinkViewModel Link { get; }
+    public PullRequestCreateViewModel CreatePr { get; }
     public PullRequestChatLaunchViewModel? Chat { get; }
     public bool HasChat => Chat is not null;
+    public bool IsCreatePrOpen => CreatePr.IsOpen;
+    public bool CanCreatePr => !_disposed && !CreatePr.IsDisposed && SelectedRepository?.Scope.CanWrite == true;
     public GuardedAsyncRelayCommand RefreshCommand { get; }
     public GuardedAsyncRelayCommand LoadCommand { get; }
     public GuardedAsyncRelayCommand PreviousCommand { get; }
@@ -82,6 +90,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
     public GuardedAsyncRelayCommand DetailCommand { get; }
     public GuardedAsyncRelayCommand SaveGrantCommand { get; }
     public GuardedAsyncRelayCommand RevokeCommand { get; }
+    public GuardedAsyncRelayCommand CreatePullRequestCommand { get; }
     public IRelayCommand CreateCommand { get; }
     public IRelayCommand CloseEditorCommand { get; }
     public IRelayCommand CancelCommand { get; }
@@ -124,10 +133,12 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
 
     public Task OpenAsync() => RefreshCommand.ExecuteAsync(null);
     public void Leave() { Link.Close(); Invalidate(); Detail = null; Items.Clear(); SelectedItem = null; OnPropertyChanged(nameof(IsEmpty)); }
-    private bool CanRead() => !_disposed && !IsBusy && !Link.IsOpen && SelectedRepository is not null;
-    private void Invalidate() { if (_updating) return; _generation++; _operation?.Cancel(); Link.Cancel(); Chat?.Invalidate(); Inspection.Clear(); Inbox.Clear(); }
+    private bool CanRead() => !_disposed && !IsBusy && !Link.IsOpen && !IsCreatePrOpen && SelectedRepository is not null;
+    private void Invalidate() { if (_updating) return; _generation++; _operation?.Cancel(); Link.Cancel(); CreatePr.Close(); Chat?.Invalidate(); Inspection.Clear(); Inbox.Clear(); }
     private void LinkChanged(object? sender, PropertyChangedEventArgs args)
     { if (args.PropertyName is nameof(Link.IsBusy) or nameof(Link.IsOpen)) NotifyCommands(); }
+    private void CreatePrChanged(object? sender, PropertyChangedEventArgs args)
+    { if (args.PropertyName == nameof(CreatePr.IsOpen)) { NotifyCommands(); OnPropertyChanged(nameof(IsCreatePrOpen)); } }
 
     private SourceReviewChatBinding? CaptureReview() => Detail is { } detail && SelectedRepository is { } repository && Inspection.IsActive
         ? new(Guid.NewGuid(), repository.Scope, new(detail.Number, detail.BaseRevision, detail.HeadRevision),
@@ -277,6 +288,25 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
         }).ConfigureAwait(false);
     }
 
+    // A confirmed create returns the assigned number; the existing linked-load path then
+    // reads the real PR from the server and selects it, so no local pseudo-item is shown.
+    // When the follow-up read fails the create still succeeded — the status says so.
+    private async Task CreatedAsync(SourceRepositoryScope scope, PullRequestCreateReceipt receipt,
+        CancellationToken token)
+    {
+        try
+        {
+            await LoadLinkedAsync(new(scope, receipt.Number), token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (SourceReviewException)
+        { await PublishAsync(() => Status = PullRequestText.Get("CreatePrLoadFailed")).ConfigureAwait(false); return; }
+        catch (Exception)
+        { await PublishAsync(() => Status = PullRequestText.Get("CreatePrLoadFailed")).ConfigureAwait(false); return; }
+        await PublishAsync(() => Status = PullRequestText.Get(receipt.Reconciled ? "PrCreatedReconciled" : "PrCreated"))
+            .ConfigureAwait(false);
+    }
+
     // Bookkeeping is best effort: persistence failures must not fail detail loading, but
     // cancellation still propagates so the operation reports "Cancelled" honestly.
     private async Task<bool> TryMarkViewedAsync(SourceRepositoryScope scope, int number, string headRevision,
@@ -296,7 +326,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
             MaximumOutputCharacters: 1024 * 1024, Timeout: TimeSpan.FromSeconds(30))
         { SourceScope = scope, AllowedToolNames = new HashSet<string> { "source.pr_list", "source.pr_get", "source.pr_files",
             "source.pr_comments", "source.pr_checks", "source.pr_reviews", "source.pr_activity", "source.pr_comment_create",
-            "source.pr_review_submit", "source.pr_close", "source.pr_merge" } };
+            "source.pr_review_submit", "source.pr_close", "source.pr_merge", "source.pr_create" } };
 
     private async Task RunAsync(Func<CancellationToken, Task> action, CancellationToken caller)
     {
@@ -334,16 +364,19 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
         Chat?.NotifyAvailability();
         Link?.NotifyAvailability();
         OnPropertyChanged(nameof(IsBusy)); OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(CanCreatePr)); OnPropertyChanged(nameof(IsCreatePrOpen));
     }
 
     private GuardedAsyncRelayCommand[] Commands() =>
-        [RefreshCommand, LoadCommand, PreviousCommand, NextCommand, DetailCommand, SaveGrantCommand, RevokeCommand];
+        [RefreshCommand, LoadCommand, PreviousCommand, NextCommand, DetailCommand, SaveGrantCommand, RevokeCommand,
+            CreatePullRequestCommand];
 
     public void Dispose()
     {
         if (_disposed) return;
         _disposed = true; _shutdown.Cancel(); Invalidate();
         Link.PropertyChanged -= LinkChanged; Link.Dispose();
+        CreatePr.PropertyChanged -= CreatePrChanged; CreatePr.Dispose();
         Inspection.PropertyChanged -= ReviewChanged;
         Inspection.Runs.Items.CollectionChanged -= ReviewItemsChanged; Inspection.Statuses.Items.CollectionChanged -= ReviewItemsChanged;
         foreach (var command in Commands()) command.Dispose();
@@ -358,6 +391,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
         await Inspection.DisposeAsync().ConfigureAwait(false);
         await Inbox.DisposeAsync().ConfigureAwait(false);
         await Link.DisposeAsync().ConfigureAwait(false);
+        await CreatePr.DisposeAsync().ConfigureAwait(false);
         if (Chat is not null) await Chat.DisposeAsync().ConfigureAwait(false);
         _shutdown.Dispose();
     }
