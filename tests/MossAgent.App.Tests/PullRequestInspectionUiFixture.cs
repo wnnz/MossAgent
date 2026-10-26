@@ -13,7 +13,8 @@ internal sealed class PullRequestInspectionUiFixture(SourceAccountUiFixture sour
     public PullRequestsViewModel Model => Source.Main.Pages.PullRequests!;
     public CancellationToken Token => Source.Token;
 
-    public static async Task<PullRequestInspectionUiFixture> CreateAsync(Action<IServiceCollection>? configure = null)
+    public static async Task<PullRequestInspectionUiFixture> CreateAsync(Action<IServiceCollection>? configure = null,
+        bool canWrite = false)
     {
         var source = await SourceAccountUiFixture.CreateAsync(configure);
         try
@@ -23,6 +24,7 @@ internal sealed class PullRequestInspectionUiFixture(SourceAccountUiFixture sour
             source.Transport.RespondAsync = RespondAsync;
             await result.Model.OpenAsync();
             result.Model.CreateCommand.Execute(null); result.Model.Owner = "fixture"; result.Model.Repository = "repo";
+            result.Model.EditorCanWrite = canWrite;
             await result.Model.SaveGrantCommand.ExecuteAsync(null);
             await result.Model.LoadCommand.ExecuteAsync(null);
             result.Model.SelectedItem = result.Model.Items[0];

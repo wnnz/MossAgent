@@ -10,6 +10,9 @@ internal static class SourceReadFailure
         "source_revision_changed" => "SourceRevisionChanged",
         "source_scope_denied" => "SourceScopeDenied",
         "source_output_limit" => "SourceOutputLimit",
+        "source_write_rejected" => "SourceWriteRejected",
+        "source_write_unconfirmed" => "SourceWriteUnconfirmed",
+        "source_write_unknown" => "SourceWriteUnknown",
         _ => "SourceReadFailed"
     }), code);
 }

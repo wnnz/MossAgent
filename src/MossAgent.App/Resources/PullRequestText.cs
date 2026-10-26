@@ -61,6 +61,16 @@ public static class PullRequestText
     public static string MarkUnviewed => Get(nameof(MarkUnviewed));
     public static string MarkViewed => Get(nameof(MarkViewed));
     public static string MarkUpdated => Get(nameof(MarkUpdated));
+    public static string CommentBody => Get(nameof(CommentBody));
+    public static string CommentPublish => Get(nameof(CommentPublish));
+    public static string CommentConfirm => Get(nameof(CommentConfirm));
+    public static string CommentConfirmHint => Get(nameof(CommentConfirmHint));
+    public static string CommentPublishHint => Get(nameof(CommentPublishHint));
+    public static string CommentPublishing => Get(nameof(CommentPublishing));
+    public static string CommentPublished => Get(nameof(CommentPublished));
+    public static string CommentLanded => Get(nameof(CommentLanded));
+    public static string CommentCancelled => Get(nameof(CommentCancelled));
+    public static string CommentReadOnlyHint => Get(nameof(CommentReadOnlyHint));
 
     public static string Failure(string code) => Get(code switch
     {
@@ -74,6 +84,9 @@ public static class PullRequestText
         "source_forbidden" => "Forbidden",
         "source_rate_limited" => "RateLimited",
         "source_not_found" => "NotFound",
+        "source_write_rejected" => "WriteRejected",
+        "source_write_unconfirmed" => "WriteUnconfirmed",
+        "source_write_unknown" => "WriteUnknown",
         "source_invalid_response" or "source_redirect_denied" => "InvalidResponse",
         "tool_cancelled" or "tool_timeout" or "source_timeout" => "Cancelled",
         _ => "Failed"

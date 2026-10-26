@@ -64,6 +64,23 @@
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ui:AppItemsControl>
+      <StackPanel IsVisible="{Binding Composer.IsActive}" Spacing="8" DataContext="{Binding Composer}">
+        <ui:AppText Text="{x:Static text:PullRequestText.CommentBody}" Classes="type-12 muted" IsVisible="{Binding CanWrite}" />
+        <ui:AppInput Text="{Binding Text, Mode=TwoWay}" AcceptsReturn="True" Classes="field-multiline"
+                   MaxLength="4096" IsEnabled="{Binding !IsBusy}" IsVisible="{Binding CanWrite}"
+                   AutomationProperties.Name="{x:Static text:PullRequestText.CommentBody}" />
+        <WrapPanel IsVisible="{Binding CanWrite}">
+          <ui:AppButton Content="{Binding PublishLabel}" Command="{Binding PublishCommand}" Classes="primary button-sm"
+                        AutomationProperties.Name="{x:Static text:PullRequestText.CommentPublish}" />
+          <ui:AppButton Content="{x:Static text:PullRequestText.Cancel}" Command="{Binding CancelCommand}" Classes="ghost button-sm"
+                        IsVisible="{Binding IsBusy}" />
+        </WrapPanel>
+        <ui:AppText Text="{x:Static text:PullRequestText.CommentReadOnlyHint}" Classes="type-12 muted" TextWrapping="Wrap"
+                    IsVisible="{Binding !CanWrite}" />
+        <ui:AppText Text="{x:Static text:PullRequestText.CommentPublishHint}" Classes="type-11 subtle" TextWrapping="Wrap"
+                    IsVisible="{Binding CanWrite}" />
+        <ui:AppText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />
+      </StackPanel>
     </StackPanel>
     <StackPanel IsVisible="{Binding IsInline}">
       <views:PullRequestInlineCommentsView DataContext="{Binding Annotations}" />

@@ -5,7 +5,7 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
   <data name="Title" xml:space="preserve"><value>Pull Request</value></data>
-  <data name="Description" xml:space="preserve"><value>只读查看明确授权的 GitHub 仓库。不克隆仓库、不授予本地工具权限、不发布评论。</value></data>
+  <data name="Description" xml:space="preserve"><value>查看明确授权的 GitHub 仓库，写授权下可在 PR 讨论中发布评论。不克隆仓库、不授予本地工具权限。</value></data>
   <data name="Refresh" xml:space="preserve"><value>刷新账号与授权</value></data>
   <data name="Create" xml:space="preserve"><value>授权仓库</value></data>
   <data name="Repository" xml:space="preserve"><value>仓库</value></data>
@@ -39,7 +39,7 @@
   <data name="RateLimited" xml:space="preserve"><value>服务端限制了请求频率，请稍后手动重试。</value></data>
   <data name="NotFound" xml:space="preserve"><value>仓库或 PR 不存在，或当前令牌无权查看。</value></data>
   <data name="InvalidResponse" xml:space="preserve"><value>服务端响应无效、过大或发生重定向，已停止读取。</value></data>
-  <data name="Remaining" xml:space="preserve"><value>支持授权仓库的 PR 列表、链接打开、文件补丁、讨论、行内评论、评审意见、活动事件、检查读取、固定快照审阅、独立只读查询对话、个人收件箱和本地已读/版本标记；远程写操作仍待实现。</value></data>
+  <data name="Remaining" xml:space="preserve"><value>支持授权仓库的 PR 列表、链接打开、文件补丁、讨论、行内评论、评审意见、活动事件、检查读取、固定快照审阅、独立只读查询对话、个人收件箱、本地已读/版本标记，以及写授权下的讨论评论发布（两步确认、结果未知时查询核实、绝不自动重试）；评审提交、创建、关闭与合并仍待实现。</value></data>
   <data name="OpenLink" xml:space="preserve"><value>从 PR 链接打开</value></data>
   <data name="LinkUrl" xml:space="preserve"><value>PR 链接（HTTPS）</value></data>
   <data name="LinkStatus" xml:space="preserve"><value>PR 链接打开结果</value></data>
@@ -110,4 +110,17 @@
   <data name="MarkUnviewed" xml:space="preserve"><value>未读</value></data>
   <data name="MarkViewed" xml:space="preserve"><value>已读</value></data>
   <data name="MarkUpdated" xml:space="preserve"><value>已更新</value></data>
+  <data name="CommentBody" xml:space="preserve"><value>评论内容（发布到当前 PR 讨论）</value></data>
+  <data name="CommentPublish" xml:space="preserve"><value>发布评论</value></data>
+  <data name="CommentConfirm" xml:space="preserve"><value>确认发布</value></data>
+  <data name="CommentConfirmHint" xml:space="preserve"><value>评论将公开发布到服务端，请再次点击“确认发布”完成写入；写入前会重新核对授权与提交版本，绝不自动重试。</value></data>
+  <data name="CommentPublishHint" xml:space="preserve"><value>评论按当前展示的目标与来源提交核对后发布；结果未知时会查询核实，绝不自动重试，请勿重复提交。</value></data>
+  <data name="CommentPublishing" xml:space="preserve"><value>正在发布评论…</value></data>
+  <data name="CommentPublished" xml:space="preserve"><value>评论已发布，已重新获取讨论页。</value></data>
+  <data name="CommentLanded" xml:space="preserve"><value>评论发布结果一度未知，经查询核实已落地；未自动重试，请勿重复提交。</value></data>
+  <data name="CommentCancelled" xml:space="preserve"><value>发布已取消；如果请求已发出，评论可能已出现在服务端，请在源代码平台核实后再决定是否手动重试。</value></data>
+  <data name="CommentReadOnlyHint" xml:space="preserve"><value>此仓库为只读授权，不能发布评论；如需写入请撤销授权后重新授权并勾选写权限。</value></data>
+  <data name="WriteRejected" xml:space="preserve"><value>服务端拒绝了评论发布请求，未写入评论。</value></data>
+  <data name="WriteUnconfirmed" xml:space="preserve"><value>评论发布结果未确认：核实查询未找到该评论，评论可能稍后出现在服务端。请先在源代码平台核实，不要重复提交。</value></data>
+  <data name="WriteUnknown" xml:space="preserve"><value>评论发布结果未知且核实查询失败；评论可能已发布也可能未发布，请在源代码平台核实后再决定是否手动重试。</value></data>
 </root>

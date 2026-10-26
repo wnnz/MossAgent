@@ -7,6 +7,12 @@
   <data name="SourceRevisionChanged" xml:space="preserve"><value>PR 提交版本已变化，本次数据未返回。请刷新 PR 并明确打开对应版本的对话，不要自动重试。</value></data>
   <data name="SourceScopeDenied" xml:space="preserve"><value>此查询超出对话绑定的 PR、提交版本或有效仓库授权，未返回数据。请检查账号和授权后手动继续。</value></data>
   <data name="SourceOutputLimit" xml:space="preserve"><value>本页 PR 数据超出工具输出上限，未返回不完整内容。请调整输出上限后手动继续，不要声称已读取该页。</value></data>
+  <data name="SourceCommentCreateDescription" xml:space="preserve"><value>在已授予写权限的仓库 PR 讨论中发布一条评论；发布前复核授权与最新提交版本，结果未知时查询核实，绝不自动重试。</value></data>
+  <data name="SourceCommentCreated" xml:space="preserve"><value>评论已发布。</value></data>
+  <data name="SourceCommentLanded" xml:space="preserve"><value>评论发布请求结果一度未知，经重新查询确认评论已落地；未自动重试，请勿重复提交。</value></data>
+  <data name="SourceWriteRejected" xml:space="preserve"><value>服务端拒绝了评论发布请求，未写入评论。</value></data>
+  <data name="SourceWriteUnconfirmed" xml:space="preserve"><value>评论发布结果未确认：核实查询未找到该评论，评论可能稍后出现在服务端。请先在源代码平台核实，不要自动重试。</value></data>
+  <data name="SourceWriteUnknown" xml:space="preserve"><value>评论发布结果未知且核实查询失败；评论可能已发布也可能未发布，请在源代码平台核实后再决定是否手动重试。</value></data>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>

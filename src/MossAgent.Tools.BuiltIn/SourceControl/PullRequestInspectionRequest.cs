@@ -16,6 +16,10 @@ internal static class PullRequestInspectionRequest
             """;
     }
 
+    public static string CommentSchema() => """
+        {"type":"object","properties":{"number":{"type":"integer","minimum":1,"maximum":2147483647},"base_revision":{"type":"string","minLength":40,"maxLength":64},"head_revision":{"type":"string","minLength":40,"maxLength":64},"body":{"type":"string","minLength":1,"maxLength":4096}},"required":["number","base_revision","head_revision","body"],"additionalProperties":false}
+        """;
+
     public static PullRequestRevision Revision(ToolRequest request, ToolExecutionContext context)
     {
         var revision = new PullRequestRevision(request.Arguments.GetProperty("number").GetInt32(),

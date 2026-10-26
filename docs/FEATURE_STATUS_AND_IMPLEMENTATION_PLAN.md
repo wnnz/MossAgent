@@ -129,7 +129,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | R09 | 部分完成、部分未验证 | 父子 run 期刊已落地（subagent_runs v41 快照/五态投影/启动核对 interrupted，绝不重放）；UI 历史投影已落地（审计面板五态子代理运行列表+快照详情，畸形快照回退 profile+状态）；可控模型触发验证、禁用模型失败验收、权限继承收窄矩阵与其余触发/审批/共享/并发/恢复验收仍待 | P1；R05/R06 |
 | R10 | 部分完成；其他组合待验 | 定时计划授权/参数版本、关闭/中断/并发/多实例、时区与 DST，以及关闭后的行为实机验收。授权快照已落地且认领时固定（run 行记录 snapshot_generation v42、历史按代际标注、保存时在途运行如实提示沿用旧快照）；编辑后自动停止在途运行仍非默认行为，实机验收仍缺 | P1；R02/R06 |
 | R11 | 部分完成 | 单文件区块暂存/取消暂存已落地（rename/copy/二进制/新增/删除/仅模式/冲突明确拒绝）；整组暂存/取消暂存已落地（git.stage_paths/unstage_paths，1–64 路径单命令原子、越界/链接/目录逐项拒绝）；提交消息草稿独立版本持久化（git_commit_drafts v40，编辑去抖 CAS 写入、重启恢复）与提交未知结果核对（复核 HEAD/暂存数后消费或保留草稿）已落地；推送非确定性失败后以远端跟踪引用核对实际结果（已推送→明示，未证实→保留原错误，核对失败→明示未知）；预览绑定已落地（git.diff 输出尾部绑定 diff-sha256 与各文件 file-sha256，hunk 工具 required expectedDiff 执行期哈希复核、漂移即拒绝）；远端/上游配置读取与凭据方式展示已落地（git.remotes 只读工具：脱敏 scheme://host 端点、local/ssh/https/embedded/unsupported 凭据方式分类、credential.helper 值链、当前分支上游；推送对话框凭据行揭示 URL 内嵌凭据并警示）；远端/上游条件变更端口已落地（git.remote_set_url 按脱敏端点+凭据方式做语义级 CAS、本地目的地复用推送授权端口、永不回显内嵌凭据，git.branch_upstream 按原文 CAS 写 branch.*.remote/merge 并如实报告部分应用）；推送非快进拒绝分类引导已落地（合并诊断分类为确定性 git_push_non_ff、提示先合并/变基远端更新再刷新预览、原始输出不回显）；真实远端核对部分落地：git.ls_remote 已落地（只读、脱敏端点、有界 64 条、非交互、凭据永不回显），供模型主动核对远端 refs；推送失败后自动核对仍走本地远端跟踪引用（离线、不触网络）；原生验收仍缺 | P2；R01/R02 |
-| R12 | 部分完成 | GitHub reviews/activity 只读已端到端落地（审阅面板分区 + 版本绑定工具）；按账号个人 PR 收件箱只读已落地（search/issues 固定端点、角色筛选、分页、incomplete 标记，双解析 revision 看守，不升级 grant、无写入）；已读/版本标记持久化已落地（pull_request_marks v44，按 account/repository/PR 记录查看时 head，列表批量取标记后与条目在同一代际原子发布，head 漂移明示“已更新”，打开详情按当前 head 尽力落账，标记不随账号删除清理）；按 grant 显式写授权模型已落地（v45 can_write，独立写解析端口，存量行只读、无升级通道）；写工具、准备-确认写入流、OAuth/GitLab/云审阅仍缺 | P2；公开接口与后续写工具 |
+| R12 | 部分完成 | GitHub reviews/activity 只读已端到端落地（审阅面板分区 + 版本绑定工具）；按账号个人 PR 收件箱只读已落地（search/issues 固定端点、角色筛选、分页、incomplete 标记，双解析 revision 看守，不升级 grant、无写入）；已读/版本标记持久化已落地（pull_request_marks v44，按 account/repository/PR 记录查看时 head，列表批量取标记后与条目在同一代际原子发布，head 漂移明示“已更新”，打开详情按当前 head 尽力落账，标记不随账号删除清理）；按 grant 显式写授权模型已落地（v45 can_write，独立写解析端口，存量行只读、无升级通道）；首个确认写工具已落地（source.pr_comment_create：写授权+版本核对+两段式面板确认，绝不重试，未知结果经最近评论精确匹配核实）；review 提交/PR 创建关闭合并、OAuth/GitLab/云审阅仍缺 | P2；公开接口与后续写工具 |
 | R13 | 未实现完整链路 | 插件/技能/扩展目录、安装、启停、执行、升级和卸载 | P2；R01/R08及目录/账号接口 |
 | R14 | 部分基础，完整操作未实现 | 目标窗口绑定的桌面指针、键盘、接管和恢复 | P2；Windows 原生输入与 R02 |
 | R15 | 未实现专用链路 | Web 搜索、来源正文获取及答案引用 | P3；搜索服务/模型原生能力 |
@@ -595,8 +595,15 @@ head 与 UTC Unix 秒，不随账号删除清理；列表/URL 直达加载后批
 授权模型已落地（schema 45：source_repository_grants.can_write NOT NULL DEFAULT 0，存量
 行保持只读且不提供改写通道；授权编辑器以本地化勾选框显式选择写权限、列表行标注只读/读写，
 变更权限只能撤销后重新授权；独立 ResolveWriteAsync 端口在读解析双重核查之上再核对 grant 行
-can_write，伪造或陈旧 scope 一律 source_scope_denied 拒绝；尚无写工具消费此端口）；远端
-确认写入尚缺，OAuth/GitLab/云审阅有外部接口与账号依赖。
+can_write，伪造或陈旧 scope 一律 source_scope_denied 拒绝）；首个确认写工具已落地：
+source.pr_comment_create（GitHub issues/{n}/comments 会话评论，模型不可见，仅面板入口）。
+写入链路为写授权 ResolveWriteAsync→GET 摘要核对捕获的 base/head revision（漂移即
+source_revision_changed）→再次 ResolveWriteAsync→单次 POST 校验 id 与 issue_url 归属；
+绝不自动重试，timeout/transport/unavailable 等未知结果只发一次 GET 近 5 条评论按正文精确
+匹配核实——命中返回带“经核实已落地”警示的成功回执，未命中报 source_write_unconfirmed，
+核实失败报 source_write_unknown；面板正文上限 4096、两段式确认按钮（先进入确认态再执行）、
+只读 grant 显示本地化只读提示，成功后回源刷新讨论首页且不插入本地伪评论。review 提交、
+PR 创建/关闭/合并、OAuth/GitLab/云审阅仍缺，有外部接口与账号依赖。
 
 1. Application 来源控制端口与 Infrastructure 客户端继续扩展关联信息、限流反馈等剩余只读
    能力；viewed/标记持久化已落地（见现状），后续读取路径必须保持标记与条目原子发布、
