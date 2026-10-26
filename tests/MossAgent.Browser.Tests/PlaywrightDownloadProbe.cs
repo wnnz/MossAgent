@@ -18,6 +18,7 @@ internal sealed class PlaywrightDownloadProbe : IAsyncDisposable
     public string? TempPath { get; init; }
     public bool PathLookupFails { get; init; }
     public bool HoldSource { get; init; }
+    public Stream? SourceOverride { get; init; }
     public int Clicks { get; private set; }
     public int Deletes { get; private set; }
     public int Cancels { get; private set; }
@@ -65,9 +66,15 @@ internal sealed class PlaywrightDownloadProbe : IAsyncDisposable
         SourceOpens++;
         StreamRequested.TrySetResult();
         if (HoldSource) await _streamGate.Task;
-        return Source;
+        return SourceOverride ?? Source;
     }
-    private Task CancelAsync() { Cancels++; return CancelFails ? Task.FromException(new IOException("private sdk detail")) : Task.CompletedTask; }
+    // Cancelling a download ends the SDK wait as a cancel, like the real failure signal.
+    private Task CancelAsync()
+    {
+        Cancels++;
+        _failureGate.TrySetResult("canceled");
+        return CancelFails ? Task.FromException(new IOException("private sdk detail")) : Task.CompletedTask;
+    }
     private Task DeleteAsync() { Deletes++; return DeleteFails ? Task.FromException(new IOException("private sdk detail")) : Task.CompletedTask; }
     private object? DisposeRuntime() { RuntimeDisposals++; _failureGate.TrySetResult(null); _streamGate.TrySetResult(); return null; }
 

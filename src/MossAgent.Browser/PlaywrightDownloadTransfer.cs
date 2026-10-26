@@ -8,31 +8,55 @@ namespace MossAgent.Browser;
 
 internal static class PlaywrightDownloadTransfer
 {
+    private static readonly TimeSpan QuotaPollInterval = TimeSpan.FromMilliseconds(250);
+
     public static async Task<BrowserDownloadInfo> RunAsync(IPage page, string selector, Stream destination,
         IArtifactSessionJournal? journal, Guid? taskId, CancellationToken token)
     {
+        // RunAndWaitForDownloadAsync resolves when the SDK fires the download event, which
+        // is at download start; FailureAsync/PathAsync/CreateReadStreamAsync all resolve
+        // only at finish. Starting the wait here makes the pending download observable to
+        // the quota watcher while bytes are still arriving.
         var download = await page.RunAndWaitForDownloadAsync(() => page.Locator(selector).ClickAsync(),
             new PageRunAndWaitForDownloadOptions { Timeout = 60_000 });
         long? record = null;
         var complete = false;
+        Task<string?>? wait = null;
+        using var watchCancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
+        var watcher = new DownloadQuotaWatcher(async () => await download.PathAsync().ConfigureAwait(false),
+            TempLength, download.CancelAsync,
+            () => wait?.IsCompleted == true, QuotaPollInterval, BrowserArtifactLimits.MaximumBytes);
+        var watching = watcher.RunAsync(watchCancellation.Token);
         try
         {
             token.ThrowIfCancellationRequested();
-            if (!string.IsNullOrWhiteSpace(await download.FailureAsync()))
-                throw new InvalidOperationException(BrowserToolText.Get("DownloadFailed"));
+            wait = download.FailureAsync();
+            var failure = await wait;
             token.ThrowIfCancellationRequested();
-            if (await ResolveSdkPathAsync(download) is { } path)
+            // A quota cancel surfaces as an ordinary cancel/failure; only our flag tells
+            // it apart, so it is checked first and translated to the size error.
+            if (!watcher.QuotaExceeded && !string.IsNullOrWhiteSpace(failure))
+                throw new InvalidOperationException(BrowserToolText.Get("DownloadFailed"));
+            if ((watcher.ResolvedPath ?? await ResolveSdkPathAsync(download)) is { } path)
             {
                 record = await RecordSdkTempAsync(journal, taskId, path, token);
                 ThrowIfOversized(path);
             }
+            if (watcher.QuotaExceeded) ThrowTooLarge();
             await using var source = await download.CreateReadStreamAsync();
-            await source.CopyToAsync(destination, token);
+            await BoundedBrowserArtifactCopy.CopyAsync(source, destination,
+                BrowserArtifactLimits.MaximumBytes, token);
             token.ThrowIfCancellationRequested();
             complete = true;
             return new(download.SuggestedFilename);
         }
-        finally { await CleanupAsync(download, !complete, journal, record); }
+        finally
+        {
+            watchCancellation.Cancel();
+            try { await watching.ConfigureAwait(false); }
+            catch (Exception) { /* The watcher is best-effort and must never mask the result. */ }
+            await CleanupAsync(download, !complete, journal, record);
+        }
     }
 
     // PathAsync may return null or throw when the SDK cannot expose a temp path;
@@ -54,14 +78,19 @@ internal static class PlaywrightDownloadTransfer
             ArtifactSessionKind.ExternalSdkTemp, null, token).ConfigureAwait(false);
     }
 
+    private static long TempLength(string path) => new FileInfo(path).Length;
+
     // The resolved SDK temp size is the only honest bound: Playwright exposes no
     // mid-flight byte count before CreateReadStreamAsync.
     private static void ThrowIfOversized(string path)
     {
         var temp = new FileInfo(path);
         if (temp.Exists && temp.Length > BrowserArtifactLimits.MaximumBytes)
-            throw new FileMutationSessionException(BrowserToolText.Get("ArtifactTooLarge"), "browser_artifact_too_large");
+            ThrowTooLarge();
     }
+
+    private static void ThrowTooLarge() =>
+        throw new FileMutationSessionException(BrowserToolText.Get("ArtifactTooLarge"), "browser_artifact_too_large");
 
     private static async Task CleanupAsync(IDownload download, bool cancel,
         IArtifactSessionJournal? journal, long? record)

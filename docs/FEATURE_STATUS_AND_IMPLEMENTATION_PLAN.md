@@ -72,7 +72,7 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 | C22 | 统一工具查找/schema/能力与路径/风险/审批/取消与超时/输出限制/产物/审计；主/子代理工具 allowlist，UI 展示等待、审批、执行和结果 | [工具 schema](archive/TERMINAL_TOOLS.md#tool-schema-acceptance)、[工具范围](archive/TERMINAL_TOOLS.md#tool-scope-acceptance)、[审批展示](archive/TERMINAL_TOOLS.md#global-approval-presentation-acceptance)；入口全面审计及 OS 边界见 R01/R02 |
 | C23 | schema 24 启动恢复遗留进行中工具审计为结果未知，保留人工核实提示；不显示为成功、不自动重做 | [中断审计](archive/TERMINAL_TOOLS.md#audit-interruption-recovery-acceptance)；全副作用时序仍见 R02/R03/R07 |
 | C24 | 内嵌 WebView2、受管外部 Chrome/Edge、显式 CDP 和任务标签页；DOM 操作/截图/下载与接管栏；取消/超时后旧会话失效并清理实际 SDK 资源 | [浏览器取消](archive/BROWSER_MCP.md#browser-operation-cancellation-acceptance)、[Queue 浏览器链路](archive/BROWSER_MCP.md#queue-browser-runtime-acceptance)、[已提交副作用恢复](archive/BROWSER_MCP.md#browser-committed-effect-recovery-acceptance)；模式切换/接管完整矩阵见 R07 |
-| C25 | 浏览器截图/下载进入任务所属产物会话，审批后创建、有界导出、hash、SDK 暂存清理及最终复核；清理未知不伪装成功 | [浏览器产物](archive/BROWSER_MCP.md#browser-artifact-session-acceptance)；产物会话未知状态持久化已由 schema 37 覆盖，网络/缓存配额与 SDK 暂存清理仍缺，见 R02/R07 |
+| C25 | 浏览器截图/下载进入任务所属产物会话，审批后创建、有界导出、hash、SDK 暂存清理及最终复核；清理未知不伪装成功 | [浏览器产物](archive/BROWSER_MCP.md#browser-artifact-session-acceptance)；产物会话未知状态持久化已由 schema 37 覆盖，下载暂存尺寸中途轮询与有界流出已落地，真实网络配额仍缺，见 R02/R07 |
 | C26 | MCP stdio/Streamable HTTP 配置、headers/代理、发现、动态注册和标准管线执行；故障提示、显式重连、重载及迟到结果抑制 | [MCP 执行](archive/BROWSER_MCP.md#mcp-execution-acceptance)、[UI 恢复](archive/BROWSER_MCP.md#mcp-ui-recovery-acceptance)；认证挑战流程、配置代际和传输中断见 R08（认证/会话/进程退出分类提示已落地） |
 | C27 | 自定义子代理名称、触发指导、提示词、模型、强度和上下文共享；`subagent.run` 选定子模型执行，子工具继承并收窄权限，父对话展示过程和结果，禁止递归委托 | [设置到运行](archive/AGENTS_AUTOMATIONS.md#subagent-settings-to-runtime-acceptance)、[生命周期](archive/AGENTS_AUTOMATIONS.md#subagent-lifecycle-native-acceptance)；触发依赖主模型选择，非确定规则引擎；完整状态矩阵及图片共享见 R09/R05 |
 
@@ -119,7 +119,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | 编号 | 当前状态 | 未完成的功能或边界 | 优先级/依赖 |
 | --- | --- | --- | --- |
 | R01 | 部分完成；安全阻断 | 命令/PTY/Git hooks/helpers/stdio MCP 等代码执行的真实文件系统隔离 | P0；原生 MXC 独立环境尚未就绪 |
-| R02 | 部分完成、部分未验证 | 产物/diff/SDK 暂存输入会话恢复期刊已落地（schema 37–38：创建即登记、阶段分级、持久化尺寸配额、启动对账、恢复面板人工核实），附件快照引用回收已落地（schema 33）；剩余缺口仅浏览器下载实时网络/缓存配额执行与跨进程撤权排空 | P0；复用已有句柄端口和 schema 26–28 |
+| R02 | 部分完成、部分未验证 | 产物/diff/SDK 暂存输入会话恢复期刊已落地（schema 37–38：创建即登记、阶段分级、持久化尺寸配额、启动对账、恢复面板人工核实），附件快照引用回收已落地（schema 33）；浏览器下载已落地暂存尺寸中途轮询取消与 64 KiB 有界流出复制（字节级网络配额 Playwright 无 API，仍不可能）；剩余缺口为真实网络/缓存配额与跨进程撤权排空 | P0；复用已有句柄端口和 schema 26–28 |
 | R03 | 附件 Steer 与发送偏好已落地；其他矩阵未验证 | schema 39 附件引导已接入（原子 receipt/草稿消费、模型图像能力门控、上下文预算）；附件接收回滚、重启中断与 Steer/入队草稿消费竞争去重已覆盖，完整宿主终止矩阵、队列重排竞争及 IME 验收仍缺 | P1；R02/R05 |
 | R04 | 部分完成 | 创建/清理 intent 生命周期、恢复面板、重试移除、注册槽级元数据清理与 Windows 句柄级删除守卫已落地；清理前 drain、替换对象重新授权、非 Windows 守卫及完整崩溃生命周期仍缺 | P1；R01/R02 |
 | R05 | 部分完成 | 子代理图像共享已落地（ShareContext 开关 + 子模型×协议能力门控，不支持即明确失败）；消息附件全图查看已落地（共享预览面板：图像/PDF/文本只读快照，FilePreviewFormat 头校验 + 8192/8Mpx/2MiB 有界解码，AttachmentImage 摄取校验，AttachmentSnapshotReferences 四类引用核查）；其余原生文件类型预览形态仍缺 | P1；模型协议与产物会话 |
@@ -207,8 +207,13 @@ Discarded、存在归 Orphaned 并按原阶段记 staged/completed/cleanup_unkno
 对账从不删除文件、不自动确认。编辑器区新增产物恢复面板（与 worktree 恢复面板同构），
 按当前项目列出 Orphaned 记录并提供条件化“标记已核实”（并发变化给出 stale 提示并
 刷新）。schema 33 附件快照引用回收已实现，R05 的引用核查经 AttachmentSnapshotReferences
-覆盖草稿/消息/Queue/Steer 四类引用。浏览器下载的网络/缓存实时配额（暂存尺寸只在下载
-完成后核对，无法中途限量）与跨进程排空仍未覆盖，R02 保持部分完成。
+覆盖草稿/消息/Queue/Steer 四类引用。浏览器下载配额已补两层：下载事件于下载开始即
+返回 IDownload，配额观察循环按 250ms 轮询 SDK 暂存路径，尺寸超限即取消并确定性
+转为 browser_artifact_too_large（取消与普通中止不可区分时以观察器标记为准），且
+产物流出改用 64 KiB 分块有界复制，写入严格不超过 32 MiB——后者在 SDK 不提供
+暂存路径时仍是硬上限。Playwright 的 PathAsync 在本版本下载完成后才解析，中途轮询
+仅在 SDK/版本提前暴露路径时生效；字节级实时网络配额 API 仍不存在，跨进程排空也
+未覆盖，R02 保持部分完成。
 
 1. Application 建立 task/run/授权代际的资源登记与状态：可接收新操作、撤销中、资源已排空、
    清理未知。撤权先关闭新入口，再取消 Agent/工具/PTY/Git/Browser/MCP，限时等待实际资源退出；
@@ -219,7 +224,8 @@ Discarded、存在归 Orphaned 并按原阶段记 staged/completed/cleanup_unkno
 3. 按入口清单审计搜索/枚举、后台统计、快照/预览、浏览器产物、Git 元数据和 MCP/子代理辅助路径，
    检查审批前后与执行边界；将不可取消原生调用隔离到受管 worker，迟到资源必须被接收并释放。
 4. 通过向前迁移记录产物 staging/完成/保留/清理未知阶段；启动只识别所属残留并展示恢复。
-   浏览器下载增加实际网络/缓存配额、SDK 清理未知持久状态；Git 临时输入增加崩溃发布/回收记录。
+   浏览器下载的实际字节级网络配额（Playwright 暂无可限速 API，现有暂存轮询/有界复制
+   只是缓存侧约束）仍需等待 SDK 能力或另择执行通道；Git 临时输入增加崩溃发布/回收记录。
    引用回收与 R05 合作，禁止按年龄或目录名直接删除可能仍被使用的文件。
 5. 完善项目删除重建、同路径 ABA、目录 ID 重用/别名及不支持卷的策略。区分已验证的本地普通
    NTFS 与其他组合；无身份工厂的兼容宿主不能当作生产安全保证。用长数据库锁、多实例乱序通知和多任务负载验证开销。
