@@ -20,6 +20,10 @@ internal static class PullRequestInspectionRequest
         {"type":"object","properties":{"number":{"type":"integer","minimum":1,"maximum":2147483647},"base_revision":{"type":"string","minLength":40,"maxLength":64},"head_revision":{"type":"string","minLength":40,"maxLength":64},"body":{"type":"string","minLength":1,"maxLength":4096}},"required":["number","base_revision","head_revision","body"],"additionalProperties":false}
         """;
 
+    public static string CloseSchema() => """
+        {"type":"object","properties":{"number":{"type":"integer","minimum":1,"maximum":2147483647},"base_revision":{"type":"string","minLength":40,"maxLength":64},"head_revision":{"type":"string","minLength":40,"maxLength":64}},"required":["number","base_revision","head_revision"],"additionalProperties":false}
+        """;
+
     public static string ReviewSchema() => """
         {"type":"object","properties":{"number":{"type":"integer","minimum":1,"maximum":2147483647},"base_revision":{"type":"string","minLength":40,"maxLength":64},"head_revision":{"type":"string","minLength":40,"maxLength":64},"decision":{"type":"string","enum":["approve","request_changes","comment"]},"body":{"type":"string","maxLength":4096}},"required":["number","base_revision","head_revision","decision"],"additionalProperties":false}
         """;

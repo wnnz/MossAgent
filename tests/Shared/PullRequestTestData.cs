@@ -4,10 +4,12 @@ namespace MossAgent.Testing;
 
 internal static class PullRequestTestData
 {
-    public static string Item(int number = 7, string repository = "fixture/repo", string title = "Review this change", string body = "Untrusted PR description") =>
+    public static string Item(int number = 7, string repository = "fixture/repo", string title = "Review this change",
+        string body = "Untrusted PR description", string state = "open") =>
         JsonSerializer.Serialize(new
         {
-            number, title, body, state = "open", draft = false,
+            number, title, body, state, draft = false,
+            url = $"https://api.github.com/repos/{repository}/pulls/{number}",
             user = new { login = "fixture-user" },
             @base = new { sha = new string('a', 40), repo = new { full_name = repository } },
             head = new { sha = new string('b', 40) }

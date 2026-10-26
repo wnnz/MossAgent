@@ -60,6 +60,31 @@ public sealed class PullRequestWriter(SourceRepositoryAccess access, IPullReques
         }
     }
 
+    // Close shares the comment/review ordering — resolve grant, verify the live revision,
+    // re-resolve, then a single PATCH. The difference is the reconcile evidence: closing has
+    // no created resource to find, so a single summary read is authoritative on state. An
+    // unknown outcome reconciles on state == "closed" under the same revision; never re-PATCH.
+    public async Task<PullRequestCloseReceipt> CloseAsync(SourceRepositoryScope scope, PullRequestRevision revision,
+        CancellationToken cancellationToken)
+    {
+        revision.Validate();
+        var account = await access.ResolveWriteAsync(scope, cancellationToken);
+        var current = await summaries.GetAsync(account, scope, revision.Number, cancellationToken);
+        if (!revision.Matches(current)) throw new SourceReviewException("source_revision_changed");
+        account = await access.ResolveWriteAsync(scope, cancellationToken);
+        try
+        {
+            var state = await client.CloseAsync(account, scope, revision, cancellationToken);
+            if (!"closed".Equals(state, StringComparison.OrdinalIgnoreCase))
+                throw new SourceReviewException("source_invalid_response");
+            return new("closed", Reconciled: false);
+        }
+        catch (SourceReviewException exception) when (IsUnknownOutcome(exception))
+        {
+            return await ReconcileCloseAsync(scope, revision, cancellationToken);
+        }
+    }
+
     private static bool IsUnknownOutcome(SourceReviewException exception) =>
         exception.ErrorCode is "source_timeout" or "source_transport_failed" or "source_unavailable";
 
@@ -89,5 +114,20 @@ public sealed class PullRequestWriter(SourceRepositoryAccess access, IPullReques
         catch (OperationCanceledException) { throw; }
         catch (Exception) { throw new SourceReviewException("source_write_unknown"); }
         return found is { } id ? new(id, Reconciled: true) : throw new SourceReviewException("source_write_unconfirmed");
+    }
+
+    private async Task<PullRequestCloseReceipt> ReconcileCloseAsync(SourceRepositoryScope scope,
+        PullRequestRevision revision, CancellationToken cancellationToken)
+    {
+        PullRequestSummary current;
+        try
+        {
+            var account = await access.ResolveWriteAsync(scope, cancellationToken);
+            current = await summaries.GetAsync(account, scope, revision.Number, cancellationToken);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception) { throw new SourceReviewException("source_write_unknown"); }
+        return revision.Matches(current) && current.State.Equals("closed", StringComparison.OrdinalIgnoreCase)
+            ? new("closed", Reconciled: true) : throw new SourceReviewException("source_write_unconfirmed");
     }
 }

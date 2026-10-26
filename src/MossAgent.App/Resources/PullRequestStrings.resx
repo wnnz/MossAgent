@@ -5,7 +5,7 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
   <data name="Title" xml:space="preserve"><value>Pull Request</value></data>
-  <data name="Description" xml:space="preserve"><value>查看明确授权的 GitHub 仓库，写授权下可在 PR 讨论中发布评论并提交评审。不克隆仓库、不授予本地工具权限。</value></data>
+  <data name="Description" xml:space="preserve"><value>查看明确授权的 GitHub 仓库，写授权下可在 PR 讨论中发布评论、提交评审并关闭 PR。不克隆仓库、不授予本地工具权限。</value></data>
   <data name="Refresh" xml:space="preserve"><value>刷新账号与授权</value></data>
   <data name="Create" xml:space="preserve"><value>授权仓库</value></data>
   <data name="Repository" xml:space="preserve"><value>仓库</value></data>
@@ -39,7 +39,7 @@
   <data name="RateLimited" xml:space="preserve"><value>服务端限制了请求频率，请稍后手动重试。</value></data>
   <data name="NotFound" xml:space="preserve"><value>仓库或 PR 不存在，或当前令牌无权查看。</value></data>
   <data name="InvalidResponse" xml:space="preserve"><value>服务端响应无效、过大或发生重定向，已停止读取。</value></data>
-  <data name="Remaining" xml:space="preserve"><value>支持授权仓库的 PR 列表、链接打开、文件补丁、讨论、行内评论、评审意见、活动事件、检查读取、固定快照审阅、独立只读查询对话、个人收件箱、本地已读/版本标记，以及写授权下的讨论评论发布与评审提交（两步确认、固定来源提交、结果未知时查询核实、绝不自动重试）；PR 创建、关闭与合并仍待实现。</value></data>
+  <data name="Remaining" xml:space="preserve"><value>支持授权仓库的 PR 列表、链接打开、文件补丁、讨论、行内评论、评审意见、活动事件、检查读取、固定快照审阅、独立只读查询对话、个人收件箱、本地已读/版本标记，以及写授权下的讨论评论发布、评审提交与 PR 关闭（两步确认、固定来源提交、结果未知时查询核实、绝不自动重试）；PR 创建与合并仍待实现。</value></data>
   <data name="OpenLink" xml:space="preserve"><value>从 PR 链接打开</value></data>
   <data name="LinkUrl" xml:space="preserve"><value>PR 链接（HTTPS）</value></data>
   <data name="LinkStatus" xml:space="preserve"><value>PR 链接打开结果</value></data>
@@ -140,4 +140,15 @@
   <data name="ReviewWriteRejected" xml:space="preserve"><value>服务端拒绝了评审提交请求，未写入评审。</value></data>
   <data name="ReviewWriteUnconfirmed" xml:space="preserve"><value>评审提交结果未确认：核实查询未找到该评审，评审可能稍后出现在服务端。请先在源代码平台核实，不要重复提交。</value></data>
   <data name="ReviewWriteUnknown" xml:space="preserve"><value>评审提交结果未知且核实查询失败；评审可能已提交也可能未提交，请在源代码平台核实后再决定是否手动重试。</value></data>
+  <data name="ClosePullRequest" xml:space="preserve"><value>关闭此 PR</value></data>
+  <data name="CloseConfirm" xml:space="preserve"><value>确认关闭</value></data>
+  <data name="CloseConfirmHint" xml:space="preserve"><value>关闭为公开操作且不可在面板内撤销，请再次点击“确认关闭”完成写入；写入前会重新核对授权与提交版本，绝不自动重试。</value></data>
+  <data name="CloseSubmitting" xml:space="preserve"><value>正在关闭 PR…</value></data>
+  <data name="Closed" xml:space="preserve"><value>PR 已关闭，已重新读取详情。</value></data>
+  <data name="ClosedReconciled" xml:space="preserve"><value>PR 关闭结果一度未知，经查询核实已关闭；未自动重试，请勿重复操作。</value></data>
+  <data name="CloseCancelled" xml:space="preserve"><value>关闭已取消；如果请求已发出，PR 可能已在服务端关闭，请在源代码平台核实后再决定是否手动操作。</value></data>
+  <data name="CloseReadOnlyHint" xml:space="preserve"><value>此仓库为只读授权，不能关闭 PR；如需写入请撤销授权后重新授权并勾选写权限。</value></data>
+  <data name="CloseRejected" xml:space="preserve"><value>服务端拒绝了 PR 关闭请求，未执行关闭。</value></data>
+  <data name="CloseUnconfirmed" xml:space="preserve"><value>PR 关闭结果未确认：核实查询未显示已关闭状态，关闭可能稍后生效。请先在源代码平台核实，不要重复操作。</value></data>
+  <data name="CloseUnknown" xml:space="preserve"><value>PR 关闭结果未知且核实查询失败；PR 可能已关闭也可能未关闭，请在源代码平台核实后再决定是否手动操作。</value></data>
 </root>

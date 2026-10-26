@@ -147,7 +147,7 @@ public sealed class PullRequestReviewComposerViewModel : ObservableObject, IAsyn
                 }
                 if (!result.IsSuccess)
                 {
-                    Status = PullRequestText.Failure(result.ErrorCode ?? "source_unavailable", review: true);
+                    Status = PullRequestText.Failure(result.ErrorCode ?? "source_unavailable", "review");
                     return;
                 }
                 Text = string.Empty;

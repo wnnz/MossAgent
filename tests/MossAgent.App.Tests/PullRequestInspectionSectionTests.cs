@@ -22,7 +22,7 @@ public sealed class PullRequestInspectionSectionTests : IAsyncLifetime
     public Task SectionsExposeAllSevenPagesInOrderAndRouteCurrentPage() => _session.DispatchAsync(async () =>
     {
         var executor = new InspectorProbeToolExecutor();
-        await using var inspection = new PullRequestInspectionViewModel(executor);
+        await using var inspection = new PullRequestInspectionViewModel(executor, () => Task.CompletedTask);
         Assert.Equal(new[] { "files", "conversation", "inline", "reviews", "activity", "runs", "statuses" },
             inspection.Sections.Select(section => section.Key).ToArray());
         Assert.All(inspection.Sections, section => Assert.False(string.IsNullOrWhiteSpace(section.Name)));
@@ -50,9 +50,9 @@ public sealed class PullRequestInspectionSectionTests : IAsyncLifetime
                     [new PullRequestActivity(41, "labeled", "actor", "bug", null, null)], 1, false);
             return Task.FromResult(ToolResult.Success("synthetic", JsonSerializer.Serialize(page)));
         } };
-        await using var inspection = new PullRequestInspectionViewModel(executor);
+        await using var inspection = new PullRequestInspectionViewModel(executor, () => Task.CompletedTask);
         Assert.False(inspection.Reviews.LoadCommand.CanExecute(null));
-        inspection.Attach(Context(), Revision);
+        inspection.Attach(Context(), Revision, isOpen: true);
         Assert.True(inspection.Reviews.LoadCommand.CanExecute(null));
         Assert.True(inspection.Activity.LoadCommand.CanExecute(null));
         await inspection.Reviews.LoadCommand.ExecuteAsync(null);
@@ -71,8 +71,8 @@ public sealed class PullRequestInspectionSectionTests : IAsyncLifetime
     {
         var executor = new InspectorProbeToolExecutor { Execute = (request, context, token) =>
             Task.FromResult(ToolResult.Failure("synthetic", "source_revision_changed")) };
-        await using var inspection = new PullRequestInspectionViewModel(executor);
-        inspection.Attach(Context(), Revision);
+        await using var inspection = new PullRequestInspectionViewModel(executor, () => Task.CompletedTask);
+        inspection.Attach(Context(), Revision, isOpen: true);
         await inspection.Reviews.LoadCommand.ExecuteAsync(null);
         Assert.False(inspection.IsActive);
         Assert.Empty(inspection.Reviews.Items);

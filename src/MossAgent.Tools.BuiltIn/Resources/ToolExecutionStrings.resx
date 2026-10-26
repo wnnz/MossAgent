@@ -19,6 +19,12 @@
   <data name="SourceReviewWriteRejected" xml:space="preserve"><value>服务端拒绝了评审提交请求，未写入评审。</value></data>
   <data name="SourceReviewWriteUnconfirmed" xml:space="preserve"><value>评审提交结果未确认：核实查询未找到该评审，评审可能稍后出现在服务端。请先在源代码平台核实，不要自动重试。</value></data>
   <data name="SourceReviewWriteUnknown" xml:space="preserve"><value>评审提交结果未知且核实查询失败；评审可能已提交也可能未提交，请在源代码平台核实后再决定是否手动重试。</value></data>
+  <data name="SourceCloseDescription" xml:space="preserve"><value>在已授予写权限的仓库中关闭指定 PR（PATCH state=closed）；关闭前复核授权与最新提交版本，结果未知时以一次摘要查询核实，绝不自动重试。</value></data>
+  <data name="SourceCloseSubmitted" xml:space="preserve"><value>PR 已关闭。</value></data>
+  <data name="SourceCloseLanded" xml:space="preserve"><value>PR 关闭请求结果一度未知，经重新查询确认已关闭；未自动重试，请勿重复操作。</value></data>
+  <data name="SourceCloseRejected" xml:space="preserve"><value>服务端拒绝了 PR 关闭请求，未执行关闭。</value></data>
+  <data name="SourceCloseUnconfirmed" xml:space="preserve"><value>PR 关闭结果未确认：核实查询未显示已关闭状态，关闭可能稍后生效。请先在源代码平台核实，不要自动重试。</value></data>
+  <data name="SourceCloseUnknown" xml:space="preserve"><value>PR 关闭结果未知且核实查询失败；PR 可能已关闭也可能未关闭，请在源代码平台核实后再决定是否手动操作。</value></data>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>

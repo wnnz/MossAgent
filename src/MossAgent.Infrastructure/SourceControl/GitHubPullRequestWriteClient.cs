@@ -110,6 +110,32 @@ public sealed class GitHubPullRequestWriteClient(ISourceAccountHttpClientFactory
         return null;
     }
 
+    // Close is a single PATCH with a fixed {"state":"closed"} body; the response must
+    // belong to the exact repository and pull request, and the returned state is handed
+    // to the writer which treats anything but "closed" as an invalid response.
+    public async Task<string> CloseAsync(SourceAccount account, SourceRepositoryScope scope,
+        PullRequestRevision revision, CancellationToken cancellationToken)
+    {
+        revision.Validate();
+        Validate(account, scope);
+        var payload = JsonSerializer.SerializeToUtf8Bytes(new { state = "closed" });
+        var response = await _transport.PatchAsync(account,
+            $"repos/{scope.Owner}/{scope.Repository}/pulls/{revision.Number}", payload, cancellationToken);
+        try
+        {
+            using var document = JsonDocument.Parse(response, new JsonDocumentOptions { MaxDepth = 24 });
+            var item = document.RootElement;
+            if (item.ValueKind != JsonValueKind.Object) throw GitHubInspectionJson.Invalid();
+            var expected = new Uri(account.ApiEndpoint, $"repos/{scope.Owner}/{scope.Repository}/pulls/{revision.Number}");
+            GitHubInspectionJson.CheckOwner(item, "url", expected, account.AccessToken);
+            if (!item.GetProperty("number").TryGetInt32(out var number) || number != revision.Number)
+                throw GitHubInspectionJson.Invalid();
+            return GitHubInspectionJson.Text(item, "state", 32, account.AccessToken);
+        }
+        catch (SourceReviewException) { throw; }
+        catch (Exception) { throw new SourceReviewException("source_invalid_response"); }
+    }
+
     private static (long? Found, int Count) Scan(byte[] response, Uri expected, string expectedState,
         string expectedCommit, string expectedBody, string token)
     {

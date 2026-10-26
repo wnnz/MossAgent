@@ -10,6 +10,17 @@
                     HorizontalAlignment="Stretch" AutomationProperties.Name="{x:Static text:PullRequestText.Inspection}">
       <ComboBox.ItemTemplate><DataTemplate><ui:AppText Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate>
     </ui:AppComboBox>
+    <StackPanel DataContext="{Binding Close}" IsVisible="{Binding IsActive}" Spacing="8">
+      <WrapPanel IsVisible="{Binding CanClose}">
+        <ui:AppButton Content="{Binding CloseLabel}" Command="{Binding CloseCommand}" Classes="primary button-sm"
+                      AutomationProperties.Name="{x:Static text:PullRequestText.ClosePullRequest}" />
+        <ui:AppButton Content="{x:Static text:PullRequestText.Cancel}" Command="{Binding CancelCommand}" Classes="ghost button-sm"
+                      IsVisible="{Binding IsBusy}" />
+      </WrapPanel>
+      <ui:AppText Text="{x:Static text:PullRequestText.CloseReadOnlyHint}" Classes="type-12 muted" TextWrapping="Wrap"
+                  IsVisible="{Binding ShowReadOnlyHint}" />
+      <ui:AppText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />
+    </StackPanel>
     <ui:AppText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />
     <StackPanel DataContext="{Binding CurrentPage}" Spacing="8">
       <WrapPanel>

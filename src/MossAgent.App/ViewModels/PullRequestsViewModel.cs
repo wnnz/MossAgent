@@ -42,18 +42,10 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
         IPullRequestMarks marks, SourceReviewChatCreator? reviewChats = null)
     {
         _accounts = accounts; _grants = grants; _sessions = sessions; _tools = tools; _marks = marks;
-        Inspection = new(tools);
         Inbox = new(inbox);
         Link = new(new SourcePullRequestLinkResolver(accounts, grants), Accounts, LoadLinkedAsync,
             () => !_disposed && !_busy && !IsEditorOpen);
         Link.PropertyChanged += LinkChanged;
-        if (reviewChats is not null)
-        {
-            Chat = new(reviewChats, CaptureReview, () => Inspection.Runs.Items.Concat(Inspection.Statuses.Items).ToArray(),
-                () => CanRead() && Detail is not null && Inspection.IsActive);
-            Inspection.PropertyChanged += ReviewChanged;
-            Inspection.Runs.Items.CollectionChanged += ReviewItemsChanged; Inspection.Statuses.Items.CollectionChanged += ReviewItemsChanged;
-        }
         RefreshCommand = new(token => RunAsync(ReloadAsync, token), () => !IsBusy && !_disposed && !Link.IsOpen);
         LoadCommand = new(token => RunAsync(cancel => LoadPageAsync(1, cancel), token), CanRead);
         PreviousCommand = new(token => RunAsync(cancel => LoadPageAsync(_page - 1, cancel), token), () => CanRead() && _page > 1);
@@ -65,6 +57,14 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
         CloseEditorCommand = new RelayCommand(() => { IsEditorOpen = false; Owner = Repository = string.Empty; EditorCanWrite = false; }, () => !_busy);
         CancelCommand = new RelayCommand(() => { _operation?.Cancel(); Link.Cancel(); }, () => IsBusy);
         BackCommand = new RelayCommand(() => { Invalidate(); Detail = null; }, () => !_disposed && !IsBusy && !Link.IsOpen && HasDetail);
+        Inspection = new(tools, () => DetailCommand.ExecuteAsync(null));
+        if (reviewChats is not null)
+        {
+            Chat = new(reviewChats, CaptureReview, () => Inspection.Runs.Items.Concat(Inspection.Statuses.Items).ToArray(),
+                () => CanRead() && Detail is not null && Inspection.IsActive);
+            Inspection.PropertyChanged += ReviewChanged;
+            Inspection.Runs.Items.CollectionChanged += ReviewItemsChanged; Inspection.Statuses.Items.CollectionChanged += ReviewItemsChanged;
+        }
     }
 
     public ObservableCollection<SourceAccountItemViewModel> Accounts { get; } = [];
@@ -233,7 +233,8 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
             {
                 Detail = detail; Status = PullRequestText.Get("Loaded");
                 if (marked) Items.FirstOrDefault(item => item.Summary.Number == detail.Number)?.ApplyMark(detail.HeadRevision);
-                Inspection.Attach(context, new(detail.Number, detail.BaseRevision, detail.HeadRevision));
+                Inspection.Attach(context, new(detail.Number, detail.BaseRevision, detail.HeadRevision),
+                    detail.State.Equals("open", StringComparison.OrdinalIgnoreCase));
             }
         }).ConfigureAwait(false);
     }
@@ -269,7 +270,8 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
                 Items.Clear(); Items.Add(linked); SelectedItem = linked; Detail = detail;
                 _page = 1; _hasNextPage = false; OnPropertyChanged(nameof(Page));
                 Status = PullRequestText.Get("LinkLoaded");
-                Inspection.Attach(context, new(detail.Number, detail.BaseRevision, detail.HeadRevision));
+                Inspection.Attach(context, new(detail.Number, detail.BaseRevision, detail.HeadRevision),
+                    detail.State.Equals("open", StringComparison.OrdinalIgnoreCase));
             }
             finally { _updating = false; }
         }).ConfigureAwait(false);
@@ -294,7 +296,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
             MaximumOutputCharacters: 1024 * 1024, Timeout: TimeSpan.FromSeconds(30))
         { SourceScope = scope, AllowedToolNames = new HashSet<string> { "source.pr_list", "source.pr_get", "source.pr_files",
             "source.pr_comments", "source.pr_checks", "source.pr_reviews", "source.pr_activity", "source.pr_comment_create",
-            "source.pr_review_submit" } };
+            "source.pr_review_submit", "source.pr_close" } };
 
     private async Task RunAsync(Func<CancellationToken, Task> action, CancellationToken caller)
     {

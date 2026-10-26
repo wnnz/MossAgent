@@ -9,12 +9,16 @@ internal sealed class PullRequestWriterProbe : ISourcePullRequestWriter
     public int Validations { get; private set; }
     public int Writes { get; private set; }
     public int Reviews { get; private set; }
+    public int Closes { get; private set; }
     public PullRequestCommentReceipt Receipt { get; set; } = new(11, false);
     public PullRequestReviewReceipt ReviewReceipt { get; set; } = new(31, false);
+    public PullRequestCloseReceipt CloseReceipt { get; set; } = new("closed", false);
     public string? FailureCode { get; set; }
     public string? ReviewFailureCode { get; set; }
+    public string? CloseFailureCode { get; set; }
     public Func<CancellationToken, Task>? OnWrite { get; set; }
     public Func<CancellationToken, Task>? OnReview { get; set; }
+    public Func<CancellationToken, Task>? OnClose { get; set; }
     public PullRequestReviewDecision? LastDecision { get; private set; }
     public string? LastBody { get; private set; }
     public bool BodyWasSent { get; private set; }
@@ -53,5 +57,16 @@ internal sealed class PullRequestWriterProbe : ISourcePullRequestWriter
         if (OnReview is not null) await OnReview(cancellationToken);
         if (ReviewFailureCode is not null) throw new SourceReviewException(ReviewFailureCode);
         return ReviewReceipt;
+    }
+
+    public async Task<PullRequestCloseReceipt> CloseAsync(SourceRepositoryScope scope, PullRequestRevision revision,
+        CancellationToken cancellationToken)
+    {
+        Closes++;
+        revision.Validate();
+        if (!scope.CanWrite) throw new SourceReviewException("source_scope_denied");
+        if (OnClose is not null) await OnClose(cancellationToken);
+        if (CloseFailureCode is not null) throw new SourceReviewException(CloseFailureCode);
+        return CloseReceipt;
     }
 }

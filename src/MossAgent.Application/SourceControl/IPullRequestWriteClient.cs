@@ -12,4 +12,6 @@ public interface IPullRequestWriteClient
         PullRequestReviewDecision decision, string? body, CancellationToken cancellationToken);
     Task<long?> FindReviewAsync(SourceAccount account, SourceRepositoryScope scope, PullRequestRevision revision,
         PullRequestReviewDecision decision, string? body, CancellationToken cancellationToken);
+    Task<string> CloseAsync(SourceAccount account, SourceRepositoryScope scope, PullRequestRevision revision,
+        CancellationToken cancellationToken);
 }

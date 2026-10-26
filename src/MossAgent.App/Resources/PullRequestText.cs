@@ -82,8 +82,16 @@ public static class PullRequestText
     public static string ReviewLanded => Get(nameof(ReviewLanded));
     public static string ReviewCancelled => Get(nameof(ReviewCancelled));
     public static string ReviewReadOnlyHint => Get(nameof(ReviewReadOnlyHint));
+    public static string ClosePullRequest => Get(nameof(ClosePullRequest));
+    public static string CloseConfirm => Get(nameof(CloseConfirm));
+    public static string CloseConfirmHint => Get(nameof(CloseConfirmHint));
+    public static string CloseSubmitting => Get(nameof(CloseSubmitting));
+    public static string Closed => Get(nameof(Closed));
+    public static string ClosedReconciled => Get(nameof(ClosedReconciled));
+    public static string CloseCancelled => Get(nameof(CloseCancelled));
+    public static string CloseReadOnlyHint => Get(nameof(CloseReadOnlyHint));
 
-    public static string Failure(string code, bool review = false) => Get(code switch
+    public static string Failure(string code, string writeKind = "comment") => Get(code switch
     {
         "source_scope_denied" => "ScopeDenied",
         "source_invalid_pr_url" => "InvalidPrUrl",
@@ -95,11 +103,18 @@ public static class PullRequestText
         "source_forbidden" => "Forbidden",
         "source_rate_limited" => "RateLimited",
         "source_not_found" => "NotFound",
-        "source_write_rejected" => review ? "ReviewWriteRejected" : "WriteRejected",
-        "source_write_unconfirmed" => review ? "ReviewWriteUnconfirmed" : "WriteUnconfirmed",
-        "source_write_unknown" => review ? "ReviewWriteUnknown" : "WriteUnknown",
+        "source_write_rejected" => WriteFailureKey(writeKind, "Rejected"),
+        "source_write_unconfirmed" => WriteFailureKey(writeKind, "Unconfirmed"),
+        "source_write_unknown" => WriteFailureKey(writeKind, "Unknown"),
         "source_invalid_response" or "source_redirect_denied" => "InvalidResponse",
         "tool_cancelled" or "tool_timeout" or "source_timeout" => "Cancelled",
         _ => "Failed"
     });
+
+    private static string WriteFailureKey(string writeKind, string outcome) => writeKind switch
+    {
+        "review" => "ReviewWrite" + outcome,
+        "close" => "Close" + outcome,
+        _ => "Write" + outcome
+    };
 }

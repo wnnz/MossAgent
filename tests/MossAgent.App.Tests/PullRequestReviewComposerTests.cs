@@ -144,7 +144,7 @@ public sealed class PullRequestReviewComposerTests : IAsyncLifetime
         Assert.Equal(1, posts);
         Assert.Equal("needs work", composer.Text);
         Assert.NotNull(composer.SelectedDecision);
-        Assert.Equal(PullRequestText.Failure("source_write_rejected", review: true), composer.Status);
+        Assert.Equal(PullRequestText.Failure("source_write_rejected", "review"), composer.Status);
     }, TestContext.Current.CancellationToken);
 
     [Fact]
