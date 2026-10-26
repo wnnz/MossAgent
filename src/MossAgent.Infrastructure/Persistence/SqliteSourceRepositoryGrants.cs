@@ -11,7 +11,7 @@ public sealed class SqliteSourceRepositoryGrants(SqliteConnectionFactory connect
         await using var connection = connections.Create();
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id,account_id,account_revision,owner,repository FROM source_repository_grants ORDER BY owner,repository,id;";
+        command.CommandText = "SELECT id,account_id,account_revision,owner,repository,can_write FROM source_repository_grants ORDER BY owner,repository,id;";
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var results = new List<SourceRepositoryScope>();
         while (await reader.ReadAsync(cancellationToken)) results.Add(Read(reader));
@@ -23,7 +23,7 @@ public sealed class SqliteSourceRepositoryGrants(SqliteConnectionFactory connect
         await using var connection = connections.Create();
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id,account_id,account_revision,owner,repository FROM source_repository_grants WHERE id=$id;";
+        command.CommandText = "SELECT id,account_id,account_revision,owner,repository,can_write FROM source_repository_grants WHERE id=$id;";
         command.Parameters.AddWithValue("$id", id.ToString());
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         return await reader.ReadAsync(cancellationToken) ? Read(reader) : null;
@@ -39,8 +39,8 @@ public sealed class SqliteSourceRepositoryGrants(SqliteConnectionFactory connect
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO source_repository_grants(id,account_id,account_revision,owner,repository)
-            SELECT $id,$account,$revision,$owner,$repository FROM source_accounts
+            INSERT INTO source_repository_grants(id,account_id,account_revision,owner,repository,can_write)
+            SELECT $id,$account,$revision,$owner,$repository,$canWrite FROM source_accounts
             WHERE id=$account AND revision=$revision AND is_enabled=1
               AND NOT EXISTS (SELECT 1 FROM source_repository_revocations WHERE id=$id);
             """;
@@ -49,6 +49,7 @@ public sealed class SqliteSourceRepositoryGrants(SqliteConnectionFactory connect
         command.Parameters.AddWithValue("$revision", scope.AccountRevision);
         command.Parameters.AddWithValue("$owner", scope.Owner);
         command.Parameters.AddWithValue("$repository", scope.Repository);
+        command.Parameters.AddWithValue("$canWrite", scope.CanWrite ? 1 : 0);
         try
         {
             if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
@@ -75,5 +76,5 @@ public sealed class SqliteSourceRepositoryGrants(SqliteConnectionFactory connect
 
     private static SourceRepositoryScope Read(SqliteDataReader reader) => new(
         Guid.Parse(reader.GetString(0)), Guid.Parse(reader.GetString(1)), reader.GetInt64(2),
-        reader.GetString(3), reader.GetString(4));
+        reader.GetString(3), reader.GetString(4), reader.GetInt64(5) != 0);
 }

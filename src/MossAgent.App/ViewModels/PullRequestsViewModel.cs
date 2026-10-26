@@ -31,6 +31,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
     private bool _busy;
     private bool _disposed;
     private bool _isEditorOpen;
+    private bool _editorCanWrite;
     private bool _hasNextPage;
     private bool _updating;
     private int _page = 1;
@@ -61,7 +62,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
         SaveGrantCommand = new(token => RunAsync(SaveGrantAsync, token), () => !IsBusy && !_disposed && SelectedAccount is not null && IsEditorOpen);
         RevokeCommand = new(token => RunAsync(RevokeAsync, token), CanRead);
         CreateCommand = new RelayCommand(() => IsEditorOpen = true, () => !IsBusy && !_disposed && !Link.IsOpen);
-        CloseEditorCommand = new RelayCommand(() => { IsEditorOpen = false; Owner = Repository = string.Empty; }, () => !_busy);
+        CloseEditorCommand = new RelayCommand(() => { IsEditorOpen = false; Owner = Repository = string.Empty; EditorCanWrite = false; }, () => !_busy);
         CancelCommand = new RelayCommand(() => { _operation?.Cancel(); Link.Cancel(); }, () => IsBusy);
         BackCommand = new RelayCommand(() => { Invalidate(); Detail = null; }, () => !_disposed && !IsBusy && !Link.IsOpen && HasDetail);
     }
@@ -92,6 +93,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
     public string Owner { get => _owner; set => SetProperty(ref _owner, value); }
     public string Repository { get => _repository; set => SetProperty(ref _repository, value); }
     public bool IsEditorOpen { get => _isEditorOpen; set { SetProperty(ref _isEditorOpen, value); NotifyCommands(); } }
+    public bool EditorCanWrite { get => _editorCanWrite; set => SetProperty(ref _editorCanWrite, value); }
     public SourceAccountItemViewModel? SelectedAccount
     {
         get => _selectedAccount;
@@ -165,7 +167,8 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
     {
         var account = SelectedAccount!;
         var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision,
-            SourceRepositoryScope.ValidateSegment(Owner.Trim(), true), SourceRepositoryScope.ValidateSegment(Repository.Trim()));
+            SourceRepositoryScope.ValidateSegment(Owner.Trim(), true), SourceRepositoryScope.ValidateSegment(Repository.Trim()),
+            EditorCanWrite);
         await Task.Run(() => _grants.AddAsync(scope, token), token).ConfigureAwait(false);
         await ReloadAsync(token).ConfigureAwait(false);
         await PublishAsync(() =>
@@ -174,7 +177,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
             _updating = true;
             SelectedRepository = Repositories.FirstOrDefault(item => item.Scope.GrantId == scope.GrantId);
             _updating = false;
-            IsEditorOpen = false; Owner = Repository = string.Empty;
+            IsEditorOpen = false; Owner = Repository = string.Empty; EditorCanWrite = false;
             Status = PullRequestText.Get("Granted");
         }).ConfigureAwait(false);
     }

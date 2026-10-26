@@ -20,7 +20,14 @@
         <ui:AppComboBox ItemsSource="{Binding Repositories}" SelectedItem="{Binding SelectedRepository, Mode=TwoWay}"
                         IsEnabled="{Binding !IsBusy}" HorizontalAlignment="Stretch"
                         AutomationProperties.Name="{x:Static text:PullRequestText.Repository}">
-          <ComboBox.ItemTemplate><DataTemplate><ui:AppText Text="{Binding Name}" TextTrimming="CharacterEllipsis" /></DataTemplate></ComboBox.ItemTemplate>
+          <ComboBox.ItemTemplate>
+            <DataTemplate>
+              <WrapPanel>
+                <ui:AppText Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                <ui:AppText Text="{Binding AccessLabel}" Classes="type-11 subtle" />
+              </WrapPanel>
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
         </ui:AppComboBox>
         <WrapPanel>
           <ui:AppButton Content="{x:Static text:PullRequestText.OpenLink}" Command="{Binding Link.ShowCommand}" Classes="ghost button-sm"
@@ -136,6 +143,7 @@
         <ui:AppInput Text="{Binding Owner, Mode=TwoWay}" AutomationProperties.Name="{x:Static text:PullRequestText.Owner}" />
         <ui:AppText Text="{x:Static text:PullRequestText.Name}" Classes="type-12 muted" />
         <ui:AppInput Text="{Binding Repository, Mode=TwoWay}" AutomationProperties.Name="{x:Static text:PullRequestText.Name}" />
+        <ui:AppCheckBox Content="{x:Static text:PullRequestText.GrantWrite}" IsChecked="{Binding EditorCanWrite, Mode=TwoWay}" />
         <ui:AppText Text="{x:Static text:PullRequestText.GrantHint}" Classes="type-12 muted" TextWrapping="Wrap" />
       </StackPanel>
       <ui:AppSettingsDialog.Footer>

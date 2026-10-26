@@ -10,7 +10,7 @@ namespace MossAgent.Tools.Tests;
 public sealed class PullRequestInspectionPipelineTests
 {
     private static ToolExecutionContext Context => new(Guid.NewGuid(), string.Empty, [], ApprovalPolicy.FullAccess)
-    { SourceScope = new(Guid.NewGuid(), Guid.NewGuid(), 1, "fixture", "repo") };
+    { SourceScope = new(Guid.NewGuid(), Guid.NewGuid(), 1, "fixture", "repo", false) };
     private static ToolRequest Request(string name)
     {
         var arguments = new Dictionary<string, object> { ["number"] = 7, ["base_revision"] = new string('a', 40), ["head_revision"] = new string('b', 40), ["page"] = 1 };

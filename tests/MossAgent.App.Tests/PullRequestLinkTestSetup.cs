@@ -10,7 +10,7 @@ internal static class PullRequestLinkTestSetup
         try
         {
             var account = await source.Accounts.SaveAsync(new(Guid.NewGuid(), "Link source", new Uri(endpoint), "synthetic-link-credential", null, true), source.Token);
-            if (grant) await source.Grants.AddAsync(new(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo"), source.Token);
+            if (grant) await source.Grants.AddAsync(new(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false), source.Token);
             source.Transport.RespondAsync = PullRequestInspectionUiFixture.RespondAsync;
             source.Main.Pages.OpenPullRequestsCommand.Execute(null);
             var model = source.Main.Pages.PullRequests!;

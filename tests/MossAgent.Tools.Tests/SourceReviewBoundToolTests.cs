@@ -10,7 +10,7 @@ namespace MossAgent.Tools.Tests;
 public sealed class SourceReviewBoundToolTests
 {
     private static ToolExecutionContext Context => new(Guid.NewGuid(), string.Empty, [], ApprovalPolicy.ReadOnly)
-    { SourceScope = new(Guid.NewGuid(), Guid.NewGuid(), 1, "fixture", "repo"), SourceReviewRevision = new(7, new string('a', 40), new string('b', 40)) };
+    { SourceScope = new(Guid.NewGuid(), Guid.NewGuid(), 1, "fixture", "repo", false), SourceReviewRevision = new(7, new string('a', 40), new string('b', 40)) };
 
     private static IAgentTool[] Tools(PullRequestInspectionProbe inspection, SourceReviewReaderProbe summaries) =>
         [new PullRequestGetTool(summaries), new PullRequestListTool(summaries), new PullRequestFilesTool(inspection),

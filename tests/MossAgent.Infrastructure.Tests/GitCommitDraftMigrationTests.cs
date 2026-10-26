@@ -11,7 +11,7 @@ public sealed class GitCommitDraftMigrationTests
     public async Task FreshDatabaseCreatesCommitDraftsAtVersionForty()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
-        Assert.Equal(44, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(45, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='git_commit_drafts';"));
         var missingTask = await Assert.ThrowsAsync<SqliteException>(() => fixture.ExecuteAsync(
@@ -42,13 +42,13 @@ public sealed class GitCommitDraftMigrationTests
             """);
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Initializer.InitializeAsync(fixture.Token));
         // v40 was removed and its migration rejected, but v41/v42 remain applied.
-        Assert.Equal(43, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(44, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='git_commit_drafts';"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_forty;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(44, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(45, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions WHERE version=40;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='git_commit_drafts';"));
@@ -72,7 +72,7 @@ public sealed class GitCommitDraftMigrationTests
             """);
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(44, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(45, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(message, Assert.Single(await fixture.Repository.GetMessagesAsync(fixture.Task.Id, fixture.Token)));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM conversation_drafts WHERE text='older draft' AND revision=3;"));

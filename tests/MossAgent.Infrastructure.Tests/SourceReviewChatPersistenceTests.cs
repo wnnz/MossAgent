@@ -84,13 +84,13 @@ public sealed class SourceReviewChatPersistenceTests
         Assert.Equal(fixture.Task.Id, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)).Id);
         await fixture.ExecuteAsync("DROP TRIGGER reject_twenty;");
         await fixture.Initializer.InitializeAsync(fixture.Token); await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(44, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(45, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
     }
 
     private static async Task<SourceReviewChatBinding> BindingAsync(SqliteFailurePersistenceFixture fixture)
     {
         var account = await new SqliteSourceAccountRepository(fixture.Connections).SaveAsync(SourceAccountValidationTests.Create(), fixture.Token);
-        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo");
+        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false);
         await new SqliteSourceRepositoryGrants(fixture.Connections).AddAsync(scope, fixture.Token);
         return new(Guid.NewGuid(), scope, new(7, new string('a', 40), new string('b', 40)), "immutable untrusted snapshot");
     }

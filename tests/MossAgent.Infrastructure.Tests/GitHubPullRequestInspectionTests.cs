@@ -10,7 +10,7 @@ public sealed class GitHubPullRequestInspectionTests
 {
     private static SourceAccount Account => SourceAccountValidationTests.Create().WithRevision(1);
     private static PullRequestRevision Revision => new(7, new string('a', 40), new string('b', 40));
-    private static SourceRepositoryScope Scope(SourceAccount account) => new(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo");
+    private static SourceRepositoryScope Scope(SourceAccount account) => new(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false);
     private static SourceAccountHttpProbe Probe(string body) => new()
     { RespondAsync = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body) }) };
 

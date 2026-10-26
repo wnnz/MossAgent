@@ -31,7 +31,7 @@ public sealed class PullRequestMarkViewModelTests : IAsyncLifetime
         });
         var account = await fixture.Accounts.SaveAsync(new(Guid.NewGuid(), "PR connection",
             new Uri("https://api.github.com/"), "synthetic-pr-credential", null, true), fixture.Token);
-        await fixture.Grants.AddAsync(new(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo"), fixture.Token);
+        await fixture.Grants.AddAsync(new(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false), fixture.Token);
         var model = fixture.Main.Pages.PullRequests!;
         var order = new List<string>();
         probe.GetHandler = (accountId, owner, repository, numbers, _) =>
@@ -66,7 +66,7 @@ public sealed class PullRequestMarkViewModelTests : IAsyncLifetime
         await using var fixture = await SourceAccountUiFixture.CreateAsync();
         var account = await fixture.Accounts.SaveAsync(new(Guid.NewGuid(), "PR connection",
             new Uri("https://api.github.com/"), "synthetic-pr-credential", null, true), fixture.Token);
-        await fixture.Grants.AddAsync(new(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo"), fixture.Token);
+        await fixture.Grants.AddAsync(new(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false), fixture.Token);
         var marks = fixture.Get<IPullRequestMarks>();
         await marks.MarkViewedAsync(account.Id, "fixture", "repo", 7, HeadC, fixture.Token);
         fixture.Transport.RespondAsync = PullRequestInspectionUiFixture.RespondAsync;
@@ -110,7 +110,7 @@ public sealed class PullRequestMarkViewModelTests : IAsyncLifetime
         });
         var account = await fixture.Accounts.SaveAsync(new(Guid.NewGuid(), "PR connection",
             new Uri("https://api.github.com/"), "synthetic-pr-credential", null, true), fixture.Token);
-        await fixture.Grants.AddAsync(new(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo"), fixture.Token);
+        await fixture.Grants.AddAsync(new(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false), fixture.Token);
         probe.MarkHandler = (_, _, _, _, _, _) => throw new SourceReviewException("invalid_arguments");
         fixture.Transport.RespondAsync = PullRequestInspectionUiFixture.RespondAsync;
         var model = fixture.Main.Pages.PullRequests!;
@@ -136,7 +136,7 @@ public sealed class PullRequestMarkViewModelTests : IAsyncLifetime
         });
         var account = await fixture.Accounts.SaveAsync(new(Guid.NewGuid(), "PR connection",
             new Uri("https://api.github.com/"), "synthetic-pr-credential", null, true), fixture.Token);
-        await fixture.Grants.AddAsync(new(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo"), fixture.Token);
+        await fixture.Grants.AddAsync(new(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false), fixture.Token);
         probe.GetHandler = (_, _, _, _, _) => throw new SourceReviewException("invalid_arguments");
         fixture.Transport.RespondAsync = PullRequestInspectionUiFixture.RespondAsync;
         var model = fixture.Main.Pages.PullRequests!;
@@ -155,8 +155,8 @@ public sealed class PullRequestMarkViewModelTests : IAsyncLifetime
             new Uri("https://api.github.com/"), "synthetic-pr-credential", null, true), fixture.Token);
         var second = await fixture.Accounts.SaveAsync(new(Guid.NewGuid(), "PR B",
             new Uri("https://api.github.com/"), "synthetic-pr-credential", null, true), fixture.Token);
-        await fixture.Grants.AddAsync(new(Guid.NewGuid(), first.Id, first.Revision, "fixture", "repo"), fixture.Token);
-        await fixture.Grants.AddAsync(new(Guid.NewGuid(), second.Id, second.Revision, "fixture", "repo"), fixture.Token);
+        await fixture.Grants.AddAsync(new(Guid.NewGuid(), first.Id, first.Revision, "fixture", "repo", false), fixture.Token);
+        await fixture.Grants.AddAsync(new(Guid.NewGuid(), second.Id, second.Revision, "fixture", "repo", false), fixture.Token);
         var marks = fixture.Get<IPullRequestMarks>();
         await marks.MarkViewedAsync(first.Id, "fixture", "repo", 7, HeadB, fixture.Token);
         fixture.Transport.RespondAsync = PullRequestInspectionUiFixture.RespondAsync;

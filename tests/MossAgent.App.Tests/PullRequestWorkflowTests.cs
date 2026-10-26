@@ -132,6 +132,34 @@ public sealed class PullRequestWorkflowTests : IAsyncLifetime
         Assert.Null(model.Detail);
     }, TestContext.Current.CancellationToken);
 
+    [Fact]
+    public Task GrantEditorCheckboxBuildsWriteScopeAndAccessBadge() => _session.DispatchAsync(async () =>
+    {
+        await using var fixture = await SourceAccountUiFixture.CreateAsync();
+        await fixture.Accounts.SaveAsync(new(Guid.NewGuid(), "PR connection",
+            new Uri("https://api.github.com/"), "synthetic-pr-credential", null, true), fixture.Token);
+        var model = fixture.Main.Pages.PullRequests!;
+        await model.OpenAsync();
+        Assert.False(model.EditorCanWrite);
+        model.CreateCommand.Execute(null);
+        model.Owner = "fixture"; model.Repository = "repo"; model.EditorCanWrite = true;
+        await model.SaveGrantCommand.ExecuteAsync(null);
+        Assert.False(model.IsEditorOpen, model.Status);
+        Assert.False(model.EditorCanWrite);
+        var write = Assert.Single(model.Repositories, item => item.Scope.Repository == "repo");
+        Assert.True(write.CanWrite);
+        Assert.Equal(PullRequestText.AccessReadWrite, write.AccessLabel);
+        Assert.True((await fixture.Grants.GetAsync(write.Scope.GrantId, fixture.Token))!.CanWrite);
+        model.CreateCommand.Execute(null);
+        Assert.False(model.EditorCanWrite);
+        model.Owner = "fixture"; model.Repository = "other";
+        await model.SaveGrantCommand.ExecuteAsync(null);
+        var read = Assert.Single(model.Repositories, item => item.Scope.Repository == "other");
+        Assert.False(read.CanWrite);
+        Assert.Equal(PullRequestText.AccessReadOnly, read.AccessLabel);
+        Assert.False((await fixture.Grants.GetAsync(read.Scope.GrantId, fixture.Token))!.CanWrite);
+    }, TestContext.Current.CancellationToken);
+
     private static void Press(Control view, System.Windows.Input.ICommand command)
     {
         var button = Assert.Single(view.GetVisualDescendants().OfType<AppButton>(), button => button.Command == command);

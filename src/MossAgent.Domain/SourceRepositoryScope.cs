@@ -1,6 +1,6 @@
 namespace MossAgent.Domain;
 
-public sealed record SourceRepositoryScope(Guid GrantId, Guid AccountId, long AccountRevision, string Owner, string Repository)
+public sealed record SourceRepositoryScope(Guid GrantId, Guid AccountId, long AccountRevision, string Owner, string Repository, bool CanWrite)
 {
     public static string ValidateSegment(string value, bool owner = false)
     {

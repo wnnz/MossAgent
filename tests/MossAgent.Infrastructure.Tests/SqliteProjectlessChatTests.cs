@@ -60,7 +60,7 @@ public sealed class SqliteProjectlessChatTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(44, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(45, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         foreach (var table in DependentTables)
             Assert.Equal(1, await fixture.CountAsync($"SELECT COUNT(*) FROM {table};"));
         Assert.Equal(1, await fixture.CountAsync("PRAGMA foreign_keys;"));

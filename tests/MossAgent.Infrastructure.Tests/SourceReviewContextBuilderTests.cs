@@ -9,7 +9,7 @@ public sealed class SourceReviewContextBuilderTests
     [Fact]
     public void ContextIsBoundedAndReportsMissingAndClippedData()
     {
-        var scope = new SourceRepositoryScope(Guid.NewGuid(), Guid.NewGuid(), 1, "fixture", "repo");
+        var scope = new SourceRepositoryScope(Guid.NewGuid(), Guid.NewGuid(), 1, "fixture", "repo", false);
         var summary = new PullRequestSummary(7, "change", "author", "open", false, new string('x', 10000), new string('a', 40), new string('b', 40));
         var files = Enumerable.Range(1, 20).Select(index => new PullRequestFile($"file-{index}", null, "modified", 1, 1,
             new string('x', 32768), PullRequestPatchState.Available)).ToArray();

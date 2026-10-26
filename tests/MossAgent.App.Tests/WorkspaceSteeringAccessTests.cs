@@ -27,7 +27,7 @@ public sealed class WorkspaceSteeringAccessTests : IAsyncLifetime
             await using var fixture = await CreateAsync(false);
             var account = await fixture.SourceAccounts.SaveAsync(new(Guid.NewGuid(), "steering source fixture",
                 new Uri("https://enterprise.example.test/api/v3/"), "synthetic-source-credential", null, true), fixture.Token);
-            var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo");
+            var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false);
             await fixture.SourceGrants.AddAsync(scope, fixture.Token);
             var task = await fixture.SourceChats.OpenAsync(new(Guid.NewGuid(), scope,
                 new(7, new string('a', 40), new string('b', 40)), "saved untrusted snapshot"), "source guidance", fixture.Token);

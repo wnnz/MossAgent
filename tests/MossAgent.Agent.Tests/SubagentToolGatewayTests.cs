@@ -11,7 +11,7 @@ public sealed class SubagentToolGatewayTests
     [Fact]
     public async Task ChildCannotReplaceOrDropTheParentsSourceScope()
     {
-        var parent = Context() with { SourceScope = new(Guid.NewGuid(), Guid.NewGuid(), 1, "fixture", "repo") };
+        var parent = Context() with { SourceScope = new(Guid.NewGuid(), Guid.NewGuid(), 1, "fixture", "repo", false) };
         var catalog = new DescriptorProbeToolCatalog([Descriptor("source.pr_get"), Descriptor("file.read")]);
         ToolExecutionContext? forwarded = null;
         var gateway = new SubagentToolGateway(catalog, new ToolProgressProbeExecutor((_, context, _) =>

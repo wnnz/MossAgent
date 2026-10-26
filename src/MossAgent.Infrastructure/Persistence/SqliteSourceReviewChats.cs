@@ -56,12 +56,20 @@ public sealed class SqliteSourceReviewChats(SqliteConnectionFactory connections)
     {
         await using var connection = connections.Create(); await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT grant_id,account_id,account_revision,owner,repository,number,base_revision,head_revision,context,mode FROM source_review_chats WHERE task_id=$task;";
+        command.CommandText = """
+            SELECT chat.grant_id,chat.account_id,chat.account_revision,chat.owner,chat.repository,
+                   chat.number,chat.base_revision,chat.head_revision,chat.context,chat.mode,
+                   IFNULL(grant.can_write,0)
+            FROM source_review_chats chat
+            LEFT JOIN source_repository_grants grant ON grant.id=chat.grant_id
+            WHERE chat.task_id=$task;
+            """;
         command.Parameters.AddWithValue("$task", taskId.ToString());
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken)) return null;
         var binding = new SourceReviewChatBinding(taskId, new(Guid.Parse(reader.GetString(0)), Guid.Parse(reader.GetString(1)),
-            reader.GetInt64(2), reader.GetString(3), reader.GetString(4)), new(reader.GetInt32(5), reader.GetString(6), reader.GetString(7)), reader.GetString(8),
+            reader.GetInt64(2), reader.GetString(3), reader.GetString(4), reader.GetInt64(10) != 0),
+            new(reader.GetInt32(5), reader.GetString(6), reader.GetString(7)), reader.GetString(8),
             (SourceReviewChatMode)reader.GetInt32(9));
         binding.Validate(); return binding;
     }

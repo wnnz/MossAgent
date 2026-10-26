@@ -25,7 +25,7 @@ public sealed class SourcePullRequestInspectionTests
         var accounts = new SqliteSourceAccountRepository(fixture.Connections);
         var account = await accounts.SaveAsync(SourceAccountValidationTests.Create(), fixture.Token);
         var grants = new SqliteSourceRepositoryGrants(fixture.Connections);
-        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo");
+        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false);
         await grants.AddAsync(scope, fixture.Token);
         var count = 0;
         var probe = new SourceAccountHttpProbe { RespondAsync = async (request, token) =>
@@ -58,7 +58,7 @@ public sealed class SourcePullRequestInspectionTests
         var accounts = new SqliteSourceAccountRepository(fixture.Connections);
         var account = await accounts.SaveAsync(SourceAccountValidationTests.Create(), fixture.Token);
         var grants = new SqliteSourceRepositoryGrants(fixture.Connections);
-        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo");
+        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false);
         await grants.AddAsync(scope, fixture.Token);
         var probe = new SourceAccountHttpProbe();
         var inspection = new SourcePullRequestInspection(new(grants, accounts), new GitHubPullRequestClient(probe), new GitHubPullRequestInspectionClient(probe));
@@ -81,7 +81,7 @@ public sealed class SourcePullRequestInspectionTests
         var accounts = new SqliteSourceAccountRepository(fixture.Connections);
         var account = await accounts.SaveAsync(SourceAccountValidationTests.Create(), fixture.Token);
         var grants = new SqliteSourceRepositoryGrants(fixture.Connections);
-        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo");
+        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false);
         await grants.AddAsync(scope, fixture.Token);
         var summaries = 0;
         var suffix = reviews ? "/reviews" : "/events";
@@ -116,7 +116,7 @@ public sealed class SourcePullRequestInspectionTests
         var accounts = new SqliteSourceAccountRepository(fixture.Connections);
         var account = await accounts.SaveAsync(SourceAccountValidationTests.Create(), fixture.Token);
         var grants = new SqliteSourceRepositoryGrants(fixture.Connections);
-        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo");
+        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false);
         await grants.AddAsync(scope, fixture.Token);
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var cleaned = false;

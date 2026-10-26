@@ -8,7 +8,7 @@ namespace MossAgent.Infrastructure.Tests;
 public sealed class GitHubPullRequestClientTests
 {
     private static SourceAccount Account => SourceAccountValidationTests.Create().WithRevision(1);
-    private static SourceRepositoryScope Scope(SourceAccount account) => new(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo");
+    private static SourceRepositoryScope Scope(SourceAccount account) => new(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false);
 
     [Fact]
     public async Task FixedEndpointPaginationAndDetailNeverFollowServerProvidedLinks()

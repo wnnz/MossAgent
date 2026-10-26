@@ -16,7 +16,7 @@ public sealed class PullRequestInspectionSectionTests : IAsyncLifetime
     public ValueTask DisposeAsync() => _session.DisposeAsync();
     private static PullRequestRevision Revision => new(7, new string('a', 40), new string('b', 40));
     private static ToolExecutionContext Context() => new(Guid.NewGuid(), string.Empty, [], ApprovalPolicy.ReadOnly)
-    { SourceScope = new(Guid.NewGuid(), Guid.NewGuid(), 1, "fixture", "repo") };
+    { SourceScope = new(Guid.NewGuid(), Guid.NewGuid(), 1, "fixture", "repo", false) };
 
     [Fact]
     public Task SectionsExposeAllSevenPagesInOrderAndRouteCurrentPage() => _session.DispatchAsync(async () =>

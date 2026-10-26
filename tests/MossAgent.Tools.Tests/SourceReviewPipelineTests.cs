@@ -10,7 +10,7 @@ namespace MossAgent.Tools.Tests;
 public sealed class SourceReviewPipelineTests
 {
     private static ToolExecutionContext Context() => new(Guid.NewGuid(), string.Empty, [], ApprovalPolicy.FullAccess)
-    { SourceScope = new(Guid.NewGuid(), Guid.NewGuid(), 1, "fixture", "repo") };
+    { SourceScope = new(Guid.NewGuid(), Guid.NewGuid(), 1, "fixture", "repo", false) };
     private static ToolRequest Request(string name = "source.pr_list") => new("fixture", name, JsonSerializer.SerializeToElement(new { page = 1 }));
 
     [Theory]

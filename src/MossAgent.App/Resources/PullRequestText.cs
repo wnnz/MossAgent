@@ -26,6 +26,9 @@ public static class PullRequestText
     public static string Owner => Get(nameof(Owner));
     public static string Name => Get(nameof(Name));
     public static string GrantHint => Get(nameof(GrantHint));
+    public static string GrantWrite => Get(nameof(GrantWrite));
+    public static string AccessReadOnly => Get(nameof(AccessReadOnly));
+    public static string AccessReadWrite => Get(nameof(AccessReadWrite));
     public static string Remaining => Get(nameof(Remaining));
     public static string BaseRevision => Get(nameof(BaseRevision));
     public static string HeadRevision => Get(nameof(HeadRevision));

@@ -27,7 +27,7 @@ public sealed class SourceRepositoryGrantTests
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM sqlite_master WHERE name='source_repository_grants';"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_nineteen;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(44, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(45, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(account.AccessToken, (await accounts.GetAsync(account.Id, fixture.Token))!.AccessToken);
         Assert.Equal(fixture.Task.Id, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)).Id);
     }
@@ -39,7 +39,7 @@ public sealed class SourceRepositoryGrantTests
         var accounts = new SqliteSourceAccountRepository(fixture.Connections);
         var account = await accounts.SaveAsync(SourceAccountValidationTests.Create(), fixture.Token);
         var grants = new SqliteSourceRepositoryGrants(fixture.Connections);
-        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo");
+        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false);
         await grants.AddAsync(scope, fixture.Token);
         var reopened = new SqliteSourceRepositoryGrants(fixture.Connections);
         Assert.Equal(scope, Assert.Single(await reopened.GetAllAsync(fixture.Token)));
@@ -63,6 +63,60 @@ public sealed class SourceRepositoryGrantTests
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM pragma_foreign_key_check;"));
     }
 
+    [Fact]
+    public async Task WriteGrantRoundTripsCanWriteAndRevocationStillBlocksReadd()
+    {
+        await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
+        var accounts = new SqliteSourceAccountRepository(fixture.Connections);
+        var account = await accounts.SaveAsync(SourceAccountValidationTests.Create(), fixture.Token);
+        var grants = new SqliteSourceRepositoryGrants(fixture.Connections);
+        var write = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", true);
+        await grants.AddAsync(write, fixture.Token);
+        var reopened = new SqliteSourceRepositoryGrants(fixture.Connections);
+        Assert.Equal(write, await reopened.GetAsync(write.GrantId, fixture.Token));
+        Assert.True(Assert.Single(await reopened.GetAllAsync(fixture.Token)).CanWrite);
+        await grants.RevokeAsync(write.GrantId, fixture.Token);
+        await Assert.ThrowsAsync<SourceReviewException>(() => grants.AddAsync(write, fixture.Token));
+        var read = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false);
+        await grants.AddAsync(read, fixture.Token);
+        Assert.False(Assert.Single(await reopened.GetAllAsync(fixture.Token)).CanWrite);
+        Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM pragma_foreign_key_check;"));
+    }
+
+    [Fact]
+    public async Task WriteResolveRequiresExplicitWriteGrantAndLiveAccountRevision()
+    {
+        await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
+        var accounts = new SqliteSourceAccountRepository(fixture.Connections);
+        var account = await accounts.SaveAsync(SourceAccountValidationTests.Create(), fixture.Token);
+        var grants = new SqliteSourceRepositoryGrants(fixture.Connections);
+        var write = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", true);
+        var read = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "other", false);
+        await grants.AddAsync(write, fixture.Token);
+        await grants.AddAsync(read, fixture.Token);
+        var access = new SourceRepositoryAccess(grants, accounts);
+        // Read resolution is unchanged: both grant kinds pass it.
+        Assert.Equal(account.Id, (await access.ResolveAsync(read, fixture.Token)).Id);
+        Assert.Equal(account.Id, (await access.ResolveAsync(write, fixture.Token)).Id);
+        Assert.Equal(account.Id, (await access.ResolveWriteAsync(write, fixture.Token)).Id);
+        Assert.Equal("source_scope_denied", (await Assert.ThrowsAsync<SourceReviewException>(
+            () => access.ResolveWriteAsync(read, fixture.Token))).ErrorCode);
+        // A forged write flag or a forged downgrade never satisfies either resolution.
+        Assert.Equal("source_scope_denied", (await Assert.ThrowsAsync<SourceReviewException>(
+            () => access.ResolveWriteAsync(read with { CanWrite = true }, fixture.Token))).ErrorCode);
+        Assert.Equal("source_scope_denied", (await Assert.ThrowsAsync<SourceReviewException>(
+            () => access.ResolveWriteAsync(write with { CanWrite = false }, fixture.Token))).ErrorCode);
+        // Stale account revision still denies write resolution on a write grant.
+        var updated = await accounts.SaveAsync(account, fixture.Token);
+        Assert.Equal("source_scope_denied", (await Assert.ThrowsAsync<SourceReviewException>(
+            () => access.ResolveWriteAsync(write, fixture.Token))).ErrorCode);
+        Assert.Equal("source_scope_denied", (await Assert.ThrowsAsync<SourceReviewException>(
+            () => access.ResolveWriteAsync(write with { AccountRevision = updated.Revision }, fixture.Token))).ErrorCode);
+        await grants.RevokeAsync(write.GrantId, fixture.Token);
+        Assert.Equal("source_scope_denied", (await Assert.ThrowsAsync<SourceReviewException>(
+            () => access.ResolveWriteAsync(write with { AccountRevision = updated.Revision }, fixture.Token))).ErrorCode);
+    }
+
     [Theory]
     [InlineData("../owner")]
     [InlineData("a%2fb")]
@@ -84,7 +138,7 @@ public sealed class SourceRepositoryGrantTests
         var accounts = new SqliteSourceAccountRepository(fixture.Connections);
         var account = await accounts.SaveAsync(SourceAccountValidationTests.Create(), fixture.Token);
         var grants = new SqliteSourceRepositoryGrants(fixture.Connections);
-        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo");
+        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false);
         await grants.AddAsync(scope, fixture.Token);
         var probe = new SourceAccountHttpProbe { RespondAsync = async (_, token) =>
         {

@@ -16,7 +16,7 @@ public sealed class GitHubPullRequestCommentRangeTests
     public async Task RangeMetadataIsPreservedOrRejectedWithoutFollowingUrls(int? start, string? side, bool valid)
     {
         var account = new SourceAccount(Guid.NewGuid(), "fixture", new Uri("https://api.github.com/"), "synthetic-comment-key", null, true).WithRevision(1);
-        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, 1, "fixture", "repo");
+        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, 1, "fixture", "repo", false);
         var revision = new PullRequestRevision(7, new string('a', 40), new string('b', 40));
         var probe = new SourceAccountHttpProbe { RespondAsync = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
         { Content = new StringContent($"[{PullRequestTestData.Comment(start: start, startSide: side)}]") }) };

@@ -15,7 +15,7 @@ public sealed class SourcePullRequestLinkResolverTests
         var account = await accounts.SaveAsync(SourceAccountValidationTests.Create(), fixture.Token);
         var other = await accounts.SaveAsync(SourceAccountValidationTests.Create(), fixture.Token);
         var grants = new SqliteSourceRepositoryGrants(fixture.Connections);
-        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo");
+        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false);
         await grants.AddAsync(scope, fixture.Token);
         var resolver = new SourcePullRequestLinkResolver(accounts, grants);
         const string url = "https://enterprise.example.test/Fixture/Repo/pull/42/files?access_token=synthetic-query#discussion_r7";
@@ -57,7 +57,7 @@ public sealed class SourcePullRequestLinkResolverTests
         var accounts = new SqliteSourceAccountRepository(fixture.Connections);
         var account = await accounts.SaveAsync(SourceAccountValidationTests.Create(), fixture.Token);
         var grants = new SqliteSourceRepositoryGrants(fixture.Connections);
-        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo");
+        var scope = new SourceRepositoryScope(Guid.NewGuid(), account.Id, account.Revision, "fixture", "repo", false);
         await grants.AddAsync(scope, fixture.Token);
         if (mutation == "revoke") await grants.RevokeAsync(scope.GrantId, fixture.Token);
         else if (mutation == "delete") await accounts.DeleteAsync(account.Id, account.Revision, fixture.Token);
