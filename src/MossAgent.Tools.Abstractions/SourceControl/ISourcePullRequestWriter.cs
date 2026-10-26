@@ -10,4 +10,6 @@ public interface ISourcePullRequestWriter
         PullRequestReviewDecision decision, string? body, CancellationToken cancellationToken);
     Task<PullRequestCloseReceipt> CloseAsync(SourceRepositoryScope scope, PullRequestRevision revision,
         CancellationToken cancellationToken);
+    Task<PullRequestMergeReceipt> MergeAsync(SourceRepositoryScope scope, PullRequestRevision revision,
+        PullRequestMergeMethod method, CancellationToken cancellationToken);
 }

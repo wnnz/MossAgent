@@ -5,7 +5,7 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
   <data name="Title" xml:space="preserve"><value>Pull Request</value></data>
-  <data name="Description" xml:space="preserve"><value>查看明确授权的 GitHub 仓库，写授权下可在 PR 讨论中发布评论、提交评审并关闭 PR。不克隆仓库、不授予本地工具权限。</value></data>
+  <data name="Description" xml:space="preserve"><value>查看明确授权的 GitHub 仓库，写授权下可在 PR 讨论中发布评论、提交评审、关闭并合并 PR。不克隆仓库、不授予本地工具权限。</value></data>
   <data name="Refresh" xml:space="preserve"><value>刷新账号与授权</value></data>
   <data name="Create" xml:space="preserve"><value>授权仓库</value></data>
   <data name="Repository" xml:space="preserve"><value>仓库</value></data>
@@ -39,7 +39,7 @@
   <data name="RateLimited" xml:space="preserve"><value>服务端限制了请求频率，请稍后手动重试。</value></data>
   <data name="NotFound" xml:space="preserve"><value>仓库或 PR 不存在，或当前令牌无权查看。</value></data>
   <data name="InvalidResponse" xml:space="preserve"><value>服务端响应无效、过大或发生重定向，已停止读取。</value></data>
-  <data name="Remaining" xml:space="preserve"><value>支持授权仓库的 PR 列表、链接打开、文件补丁、讨论、行内评论、评审意见、活动事件、检查读取、固定快照审阅、独立只读查询对话、个人收件箱、本地已读/版本标记，以及写授权下的讨论评论发布、评审提交与 PR 关闭（两步确认、固定来源提交、结果未知时查询核实、绝不自动重试）；PR 创建与合并仍待实现。</value></data>
+  <data name="Remaining" xml:space="preserve"><value>支持授权仓库的 PR 列表、链接打开、文件补丁、讨论、行内评论、评审意见、活动事件、检查读取、固定快照审阅、独立只读查询对话、个人收件箱、本地已读/版本标记，以及写授权下的讨论评论发布、评审提交、PR 关闭与合并（两步确认、固定来源提交、结果未知时查询核实、绝不自动重试）；PR 创建仍待实现。</value></data>
   <data name="OpenLink" xml:space="preserve"><value>从 PR 链接打开</value></data>
   <data name="LinkUrl" xml:space="preserve"><value>PR 链接（HTTPS）</value></data>
   <data name="LinkStatus" xml:space="preserve"><value>PR 链接打开结果</value></data>
@@ -151,4 +151,20 @@
   <data name="CloseRejected" xml:space="preserve"><value>服务端拒绝了 PR 关闭请求，未执行关闭。</value></data>
   <data name="CloseUnconfirmed" xml:space="preserve"><value>PR 关闭结果未确认：核实查询未显示已关闭状态，关闭可能稍后生效。请先在源代码平台核实，不要重复操作。</value></data>
   <data name="CloseUnknown" xml:space="preserve"><value>PR 关闭结果未知且核实查询失败；PR 可能已关闭也可能未关闭，请在源代码平台核实后再决定是否手动操作。</value></data>
+  <data name="MergePullRequest" xml:space="preserve"><value>合并此 PR</value></data>
+  <data name="MergeMethod" xml:space="preserve"><value>合并方式（写入当前 PR）</value></data>
+  <data name="MergeMethod_Merge" xml:space="preserve"><value>合并提交</value></data>
+  <data name="MergeMethod_Squash" xml:space="preserve"><value>压缩合并</value></data>
+  <data name="MergeMethod_Rebase" xml:space="preserve"><value>变基合并</value></data>
+  <data name="MergeConfirm" xml:space="preserve"><value>确认合并</value></data>
+  <data name="MergeConfirmHint" xml:space="preserve"><value>合并为公开操作且不可在面板内撤销，请再次点击“确认合并”完成写入；写入前会重新核对授权与提交版本并以服务端 sha 固定来源提交，绝不自动重试。</value></data>
+  <data name="MergeSubmitting" xml:space="preserve"><value>正在合并 PR…</value></data>
+  <data name="Merged" xml:space="preserve"><value>PR 已合并，已重新读取详情。</value></data>
+  <data name="MergedReconciled" xml:space="preserve"><value>PR 合并结果一度未知，经查询核实已合并；未自动重试，请勿重复操作。</value></data>
+  <data name="MergeCancelled" xml:space="preserve"><value>合并已取消；如果请求已发出，PR 可能已在服务端合并，请在源代码平台核实后再决定是否手动操作。</value></data>
+  <data name="MergeReadOnlyHint" xml:space="preserve"><value>此仓库为只读授权，不能合并 PR；如需写入请撤销授权后重新授权并勾选写权限。</value></data>
+  <data name="MergeDraftHint" xml:space="preserve"><value>草稿 PR 不能合并；请先在源代码平台将其标记为可评审后再操作。</value></data>
+  <data name="MergeRejected" xml:space="preserve"><value>服务端拒绝了 PR 合并请求，未执行合并。</value></data>
+  <data name="MergeUnconfirmed" xml:space="preserve"><value>PR 合并结果未确认：核实查询未显示已合并状态，合并可能稍后生效。请先在源代码平台核实，不要重复操作。</value></data>
+  <data name="MergeUnknown" xml:space="preserve"><value>PR 合并结果未知且核实查询失败；PR 可能已合并也可能未合并，请在源代码平台核实后再决定是否手动操作。</value></data>
 </root>

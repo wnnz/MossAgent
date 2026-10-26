@@ -25,6 +25,12 @@
   <data name="SourceCloseRejected" xml:space="preserve"><value>服务端拒绝了 PR 关闭请求，未执行关闭。</value></data>
   <data name="SourceCloseUnconfirmed" xml:space="preserve"><value>PR 关闭结果未确认：核实查询未显示已关闭状态，关闭可能稍后生效。请先在源代码平台核实，不要自动重试。</value></data>
   <data name="SourceCloseUnknown" xml:space="preserve"><value>PR 关闭结果未知且核实查询失败；PR 可能已关闭也可能未关闭，请在源代码平台核实后再决定是否手动操作。</value></data>
+  <data name="SourceMergeDescription" xml:space="preserve"><value>在已授予写权限的仓库中合并指定 PR（PUT pulls/{n}/merge，merge/squash/rebase 三选一）；合并前复核授权与最新提交版本并以 sha 字段固定来源提交，结果未知时以一次详情查询核实 merged 与来源提交，绝不自动重试。</value></data>
+  <data name="SourceMergeSubmitted" xml:space="preserve"><value>PR 已合并。</value></data>
+  <data name="SourceMergeLanded" xml:space="preserve"><value>PR 合并请求结果一度未知，经重新查询确认已合并；未自动重试，请勿重复操作。</value></data>
+  <data name="SourceMergeRejected" xml:space="preserve"><value>服务端拒绝了 PR 合并请求，未执行合并。</value></data>
+  <data name="SourceMergeUnconfirmed" xml:space="preserve"><value>PR 合并结果未确认：核实查询未显示已合并状态，合并可能稍后生效。请先在源代码平台核实，不要自动重试。</value></data>
+  <data name="SourceMergeUnknown" xml:space="preserve"><value>PR 合并结果未知且核实查询失败；PR 可能已合并也可能未合并，请在源代码平台核实后再决定是否手动操作。</value></data>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>

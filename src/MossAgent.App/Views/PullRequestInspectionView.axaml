@@ -21,6 +21,25 @@
                   IsVisible="{Binding ShowReadOnlyHint}" />
       <ui:AppText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />
     </StackPanel>
+    <StackPanel DataContext="{Binding Merge}" IsVisible="{Binding IsActive}" Spacing="8">
+      <ui:AppText Text="{x:Static text:PullRequestText.MergeMethod}" Classes="type-12 muted" IsVisible="{Binding CanMerge}" />
+      <ui:AppComboBox ItemsSource="{Binding Methods}" SelectedItem="{Binding SelectedMethod, Mode=TwoWay}"
+                      HorizontalAlignment="Stretch" IsVisible="{Binding CanMerge}"
+                      AutomationProperties.Name="{x:Static text:PullRequestText.MergeMethod}">
+        <ComboBox.ItemTemplate><DataTemplate><ui:AppText Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate>
+      </ui:AppComboBox>
+      <WrapPanel IsVisible="{Binding CanMerge}">
+        <ui:AppButton Content="{Binding MergeLabel}" Command="{Binding MergeCommand}" Classes="primary button-sm"
+                      AutomationProperties.Name="{x:Static text:PullRequestText.MergePullRequest}" />
+        <ui:AppButton Content="{x:Static text:PullRequestText.Cancel}" Command="{Binding CancelCommand}" Classes="ghost button-sm"
+                      IsVisible="{Binding IsBusy}" AutomationProperties.Name="{x:Static text:PullRequestText.Cancel}" />
+      </WrapPanel>
+      <ui:AppText Text="{x:Static text:PullRequestText.MergeReadOnlyHint}" Classes="type-12 muted" TextWrapping="Wrap"
+                  IsVisible="{Binding ShowReadOnlyHint}" />
+      <ui:AppText Text="{x:Static text:PullRequestText.MergeDraftHint}" Classes="type-12 muted" TextWrapping="Wrap"
+                  IsVisible="{Binding ShowDraftHint}" />
+      <ui:AppText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />
+    </StackPanel>
     <ui:AppText Text="{Binding Status}" Classes="type-12 muted" TextWrapping="Wrap" IsVisible="{Binding HasStatus}" />
     <StackPanel DataContext="{Binding CurrentPage}" Spacing="8">
       <WrapPanel>

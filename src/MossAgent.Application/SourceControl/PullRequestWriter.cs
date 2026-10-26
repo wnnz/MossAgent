@@ -85,6 +85,31 @@ public sealed class PullRequestWriter(SourceRepositoryAccess access, IPullReques
         }
     }
 
+    // Merge shares the close ordering — resolve grant, verify the live revision,
+    // re-resolve, then a single PUT pinned to the captured head via the sha field.
+    // The merge itself advances the base revision, so reconcile evidence is
+    // merged == true under the same head, never the summary match; never re-PUT.
+    public async Task<PullRequestMergeReceipt> MergeAsync(SourceRepositoryScope scope, PullRequestRevision revision,
+        PullRequestMergeMethod method, CancellationToken cancellationToken)
+    {
+        revision.Validate();
+        if (method is not (PullRequestMergeMethod.Merge or PullRequestMergeMethod.Squash
+            or PullRequestMergeMethod.Rebase))
+            throw new SourceReviewException("invalid_arguments");
+        var account = await access.ResolveWriteAsync(scope, cancellationToken);
+        var current = await summaries.GetAsync(account, scope, revision.Number, cancellationToken);
+        if (!revision.Matches(current)) throw new SourceReviewException("source_revision_changed");
+        account = await access.ResolveWriteAsync(scope, cancellationToken);
+        try
+        {
+            return new(await client.MergeAsync(account, scope, revision, method, cancellationToken), Reconciled: false);
+        }
+        catch (SourceReviewException exception) when (IsUnknownOutcome(exception))
+        {
+            return await ReconcileMergeAsync(scope, revision, cancellationToken);
+        }
+    }
+
     private static bool IsUnknownOutcome(SourceReviewException exception) =>
         exception.ErrorCode is "source_timeout" or "source_transport_failed" or "source_unavailable";
 
@@ -129,5 +154,20 @@ public sealed class PullRequestWriter(SourceRepositoryAccess access, IPullReques
         catch (Exception) { throw new SourceReviewException("source_write_unknown"); }
         return revision.Matches(current) && current.State.Equals("closed", StringComparison.OrdinalIgnoreCase)
             ? new("closed", Reconciled: true) : throw new SourceReviewException("source_write_unconfirmed");
+    }
+
+    private async Task<PullRequestMergeReceipt> ReconcileMergeAsync(SourceRepositoryScope scope,
+        PullRequestRevision revision, CancellationToken cancellationToken)
+    {
+        string? sha;
+        try
+        {
+            var account = await access.ResolveWriteAsync(scope, cancellationToken);
+            sha = await client.MergedAsync(account, scope, revision, cancellationToken);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception) { throw new SourceReviewException("source_write_unknown"); }
+        return sha is not null ? new(sha, Reconciled: true)
+            : throw new SourceReviewException("source_write_unconfirmed");
     }
 }

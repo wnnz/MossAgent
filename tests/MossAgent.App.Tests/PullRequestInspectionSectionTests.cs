@@ -52,7 +52,7 @@ public sealed class PullRequestInspectionSectionTests : IAsyncLifetime
         } };
         await using var inspection = new PullRequestInspectionViewModel(executor, () => Task.CompletedTask);
         Assert.False(inspection.Reviews.LoadCommand.CanExecute(null));
-        inspection.Attach(Context(), Revision, isOpen: true);
+        inspection.Attach(Context(), Revision, isOpen: true, isDraft: false);
         Assert.True(inspection.Reviews.LoadCommand.CanExecute(null));
         Assert.True(inspection.Activity.LoadCommand.CanExecute(null));
         await inspection.Reviews.LoadCommand.ExecuteAsync(null);
@@ -72,7 +72,7 @@ public sealed class PullRequestInspectionSectionTests : IAsyncLifetime
         var executor = new InspectorProbeToolExecutor { Execute = (request, context, token) =>
             Task.FromResult(ToolResult.Failure("synthetic", "source_revision_changed")) };
         await using var inspection = new PullRequestInspectionViewModel(executor, () => Task.CompletedTask);
-        inspection.Attach(Context(), Revision, isOpen: true);
+        inspection.Attach(Context(), Revision, isOpen: true, isDraft: false);
         await inspection.Reviews.LoadCommand.ExecuteAsync(null);
         Assert.False(inspection.IsActive);
         Assert.Empty(inspection.Reviews.Items);

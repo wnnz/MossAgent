@@ -32,6 +32,7 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
         Composer = new(tools, () => Conversation.LoadCommand.ExecuteAsync(null));
         ReviewComposer = new(tools, () => Reviews.LoadCommand.ExecuteAsync(null));
         Close = new(tools, reloadDetail);
+        Merge = new(tools, reloadDetail);
         Files.PropertyChanged += FileChanged;
     }
 
@@ -47,6 +48,7 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
     public PullRequestCommentComposerViewModel Composer { get; }
     public PullRequestReviewComposerViewModel ReviewComposer { get; }
     public PullRequestCloseViewModel Close { get; }
+    public PullRequestMergeViewModel Merge { get; }
     public string Status { get => _status; private set { SetProperty(ref _status, value); OnPropertyChanged(nameof(HasStatus)); } }
     public bool HasStatus => Status.Length > 0;
     public bool IsActive => _revision is not null;
@@ -90,13 +92,14 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
         _ => "SelectFile"
     });
 
-    public void Attach(ToolExecutionContext context, PullRequestRevision revision, bool isOpen)
+    public void Attach(ToolExecutionContext context, PullRequestRevision revision, bool isOpen, bool isDraft)
     {
         Clear(); _context = context; _revision = revision;
         Annotations.Attach(revision);
         Composer.Attach(context, revision);
         ReviewComposer.Attach(context, revision);
         Close.Attach(context, revision, isOpen);
+        Merge.Attach(context, revision, isOpen, isDraft);
         Files.Activate(); Conversation.Activate(); Inline.Activate(); Reviews.Activate(); Activity.Activate(); Runs.Activate(); Statuses.Activate();
         OnPropertyChanged(nameof(IsActive));
     }
@@ -108,6 +111,7 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
         Composer.Clear();
         ReviewComposer.Clear();
         Close.Clear();
+        Merge.Clear();
         Files.Clear(); Conversation.Clear(); Inline.Clear(); Reviews.Clear(); Activity.Clear(); Runs.Clear(); Statuses.Clear();
         OnPropertyChanged(nameof(IsActive));
     }
@@ -134,7 +138,7 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
 
     public async Task DrainAsync() => await Task.WhenAll(Files.DrainAsync(), Conversation.DrainAsync(), Inline.DrainAsync(),
         Reviews.DrainAsync(), Activity.DrainAsync(), Runs.DrainAsync(), Statuses.DrainAsync(), Composer.DrainAsync(),
-        ReviewComposer.DrainAsync(), Close.DrainAsync()).ConfigureAwait(false);
+        ReviewComposer.DrainAsync(), Close.DrainAsync(), Merge.DrainAsync()).ConfigureAwait(false);
     public void Dispose()
     {
         Files.PropertyChanged -= FileChanged;
@@ -142,6 +146,7 @@ public sealed class PullRequestInspectionViewModel : ObservableObject, IAsyncDis
         Composer.Dispose();
         ReviewComposer.Dispose();
         Close.Dispose();
+        Merge.Dispose();
         Clear(); Files.Dispose(); Conversation.Dispose(); Inline.Dispose(); Reviews.Dispose(); Activity.Dispose(); Runs.Dispose(); Statuses.Dispose();
     }
     public async ValueTask DisposeAsync() { Dispose(); await DrainAsync().ConfigureAwait(false); }

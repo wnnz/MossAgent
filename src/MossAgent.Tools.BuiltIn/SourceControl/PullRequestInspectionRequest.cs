@@ -28,6 +28,10 @@ internal static class PullRequestInspectionRequest
         {"type":"object","properties":{"number":{"type":"integer","minimum":1,"maximum":2147483647},"base_revision":{"type":"string","minLength":40,"maxLength":64},"head_revision":{"type":"string","minLength":40,"maxLength":64},"decision":{"type":"string","enum":["approve","request_changes","comment"]},"body":{"type":"string","maxLength":4096}},"required":["number","base_revision","head_revision","decision"],"additionalProperties":false}
         """;
 
+    public static string MergeSchema() => """
+        {"type":"object","properties":{"number":{"type":"integer","minimum":1,"maximum":2147483647},"base_revision":{"type":"string","minLength":40,"maxLength":64},"head_revision":{"type":"string","minLength":40,"maxLength":64},"method":{"type":"string","enum":["merge","squash","rebase"]}},"required":["number","base_revision","head_revision","method"],"additionalProperties":false}
+        """;
+
     public static PullRequestRevision Revision(ToolRequest request, ToolExecutionContext context)
     {
         var revision = new PullRequestRevision(request.Arguments.GetProperty("number").GetInt32(),

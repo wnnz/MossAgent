@@ -234,7 +234,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
                 Detail = detail; Status = PullRequestText.Get("Loaded");
                 if (marked) Items.FirstOrDefault(item => item.Summary.Number == detail.Number)?.ApplyMark(detail.HeadRevision);
                 Inspection.Attach(context, new(detail.Number, detail.BaseRevision, detail.HeadRevision),
-                    detail.State.Equals("open", StringComparison.OrdinalIgnoreCase));
+                    detail.State.Equals("open", StringComparison.OrdinalIgnoreCase), detail.IsDraft);
             }
         }).ConfigureAwait(false);
     }
@@ -271,7 +271,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
                 _page = 1; _hasNextPage = false; OnPropertyChanged(nameof(Page));
                 Status = PullRequestText.Get("LinkLoaded");
                 Inspection.Attach(context, new(detail.Number, detail.BaseRevision, detail.HeadRevision),
-                    detail.State.Equals("open", StringComparison.OrdinalIgnoreCase));
+                    detail.State.Equals("open", StringComparison.OrdinalIgnoreCase), detail.IsDraft);
             }
             finally { _updating = false; }
         }).ConfigureAwait(false);
@@ -296,7 +296,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
             MaximumOutputCharacters: 1024 * 1024, Timeout: TimeSpan.FromSeconds(30))
         { SourceScope = scope, AllowedToolNames = new HashSet<string> { "source.pr_list", "source.pr_get", "source.pr_files",
             "source.pr_comments", "source.pr_checks", "source.pr_reviews", "source.pr_activity", "source.pr_comment_create",
-            "source.pr_review_submit", "source.pr_close" } };
+            "source.pr_review_submit", "source.pr_close", "source.pr_merge" } };
 
     private async Task RunAsync(Func<CancellationToken, Task> action, CancellationToken caller)
     {

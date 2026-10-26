@@ -5,14 +5,31 @@ namespace MossAgent.Testing;
 internal static class PullRequestTestData
 {
     public static string Item(int number = 7, string repository = "fixture/repo", string title = "Review this change",
-        string body = "Untrusted PR description", string state = "open") =>
+        string body = "Untrusted PR description", string state = "open", bool draft = false,
+        string? head = null, string? baseSha = null) =>
         JsonSerializer.Serialize(new
         {
-            number, title, body, state, draft = false,
+            number, title, body, state, draft,
             url = $"https://api.github.com/repos/{repository}/pulls/{number}",
             user = new { login = "fixture-user" },
-            @base = new { sha = new string('a', 40), repo = new { full_name = repository } },
-            head = new { sha = new string('b', 40) }
+            @base = new { sha = baseSha ?? new string('a', 40), repo = new { full_name = repository } },
+            head = new { sha = head ?? new string('b', 40) }
+        });
+
+    // Detail shape after/for a merge: merged + merge_commit_sha ride on the same pulls/{n}
+    // payload the summary parser reads; the base sha may differ from the captured revision
+    // because a landed merge advances it — the merge reconcile must not compare base.
+    public static string Merged(int number = 7, string repository = "fixture/repo", bool merged = true,
+        string? head = null, string? baseSha = null, string? mergeCommit = null) =>
+        JsonSerializer.Serialize(new
+        {
+            number, title = "Review this change", body = "Untrusted PR description",
+            state = merged ? "closed" : "open", draft = false, merged,
+            merge_commit_sha = mergeCommit,
+            url = $"https://api.github.com/repos/{repository}/pulls/{number}",
+            user = new { login = "fixture-user" },
+            @base = new { sha = baseSha ?? new string('a', 40), repo = new { full_name = repository } },
+            head = new { sha = head ?? new string('b', 40) }
         });
 
     public static string File(string? patch = "@@ -1 +1 @@\n-old\n+new", string path = "src/sample.cs", int additions = 1, int deletions = 1) =>

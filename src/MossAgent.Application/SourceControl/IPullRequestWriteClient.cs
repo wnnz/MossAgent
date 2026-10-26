@@ -14,4 +14,8 @@ public interface IPullRequestWriteClient
         PullRequestReviewDecision decision, string? body, CancellationToken cancellationToken);
     Task<string> CloseAsync(SourceAccount account, SourceRepositoryScope scope, PullRequestRevision revision,
         CancellationToken cancellationToken);
+    Task<string> MergeAsync(SourceAccount account, SourceRepositoryScope scope, PullRequestRevision revision,
+        PullRequestMergeMethod method, CancellationToken cancellationToken);
+    Task<string?> MergedAsync(SourceAccount account, SourceRepositoryScope scope, PullRequestRevision revision,
+        CancellationToken cancellationToken);
 }

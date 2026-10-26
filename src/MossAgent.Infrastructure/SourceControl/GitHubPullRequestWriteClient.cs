@@ -136,6 +136,67 @@ public sealed class GitHubPullRequestWriteClient(ISourceAccountHttpClientFactory
         catch (Exception) { throw new SourceReviewException("source_invalid_response"); }
     }
 
+    // Merge is a single PUT whose sha field pins the merge to the captured head revision,
+    // so the server rejects the write when the pull request head moved instead of silently
+    // merging a newer commit. The response must declare merged == true and return the
+    // merge commit sha in the same 40/64-hex shape every revision uses.
+    public async Task<string> MergeAsync(SourceAccount account, SourceRepositoryScope scope,
+        PullRequestRevision revision, PullRequestMergeMethod method, CancellationToken cancellationToken)
+    {
+        revision.Validate();
+        Validate(account, scope);
+        var payload = JsonSerializer.SerializeToUtf8Bytes(new Dictionary<string, string>
+        { ["sha"] = revision.HeadRevision, ["merge_method"] = MethodName(method) });
+        var response = await _transport.PutAsync(account,
+            $"repos/{scope.Owner}/{scope.Repository}/pulls/{revision.Number}/merge", payload, cancellationToken);
+        try
+        {
+            using var document = JsonDocument.Parse(response, new JsonDocumentOptions { MaxDepth = 24 });
+            var item = document.RootElement;
+            if (item.ValueKind != JsonValueKind.Object) throw GitHubInspectionJson.Invalid();
+            if (!item.TryGetProperty("merged", out var flag) || flag.ValueKind != JsonValueKind.True)
+                throw GitHubInspectionJson.Invalid();
+            var sha = GitHubInspectionJson.Text(item, "sha", 64, account.AccessToken);
+            return PullRequestRevision.IsCommit(sha) ? sha : throw GitHubInspectionJson.Invalid();
+        }
+        catch (SourceReviewException) { throw; }
+        catch (Exception) { throw new SourceReviewException("source_invalid_response"); }
+    }
+
+    // Reconcile for a merge cannot reuse the summary match: a landed merge advances the
+    // base revision, so the captured revision never matches afterwards. A single detail
+    // read proves ownership by url and number, then requires merged == true under the
+    // same head sha; the merge commit sha rides along for the receipt when present.
+    public async Task<string?> MergedAsync(SourceAccount account, SourceRepositoryScope scope,
+        PullRequestRevision revision, CancellationToken cancellationToken)
+    {
+        revision.Validate();
+        Validate(account, scope);
+        var response = await _transport.GetAsync(account,
+            $"repos/{scope.Owner}/{scope.Repository}/pulls/{revision.Number}", cancellationToken);
+        try
+        {
+            using var document = JsonDocument.Parse(response, new JsonDocumentOptions { MaxDepth = 24 });
+            var item = document.RootElement;
+            if (item.ValueKind != JsonValueKind.Object) throw GitHubInspectionJson.Invalid();
+            var expected = new Uri(account.ApiEndpoint,
+                $"repos/{scope.Owner}/{scope.Repository}/pulls/{revision.Number}");
+            GitHubInspectionJson.CheckOwner(item, "url", expected, account.AccessToken);
+            if (!item.GetProperty("number").TryGetInt32(out var number) || number != revision.Number)
+                throw GitHubInspectionJson.Invalid();
+            if (!item.TryGetProperty("merged", out var flag)) return null;
+            if (flag.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) throw GitHubInspectionJson.Invalid();
+            if (!flag.GetBoolean()) return null;
+            var head = GitHubInspectionJson.Text(item.GetProperty("head"), "sha", 64, account.AccessToken);
+            if (!head.Equals(revision.HeadRevision, StringComparison.OrdinalIgnoreCase)) return null;
+            var sha = GitHubInspectionJson.OptionalText(item, "merge_commit_sha", 64, account.AccessToken);
+            return sha is null ? string.Empty
+                : PullRequestRevision.IsCommit(sha) ? sha : throw GitHubInspectionJson.Invalid();
+        }
+        catch (SourceReviewException) { throw; }
+        catch (Exception) { throw new SourceReviewException("source_invalid_response"); }
+    }
+
     private static (long? Found, int Count) Scan(byte[] response, Uri expected, string expectedState,
         string expectedCommit, string expectedBody, string token)
     {
@@ -167,6 +228,14 @@ public sealed class GitHubPullRequestWriteClient(ISourceAccountHttpClientFactory
         PullRequestReviewDecision.Approve => "APPROVED",
         PullRequestReviewDecision.RequestChanges => "CHANGES_REQUESTED",
         PullRequestReviewDecision.Comment => "COMMENTED",
+        _ => throw new SourceReviewException("invalid_arguments")
+    };
+
+    private static string MethodName(PullRequestMergeMethod method) => method switch
+    {
+        PullRequestMergeMethod.Merge => "merge",
+        PullRequestMergeMethod.Squash => "squash",
+        PullRequestMergeMethod.Rebase => "rebase",
         _ => throw new SourceReviewException("invalid_arguments")
     };
 

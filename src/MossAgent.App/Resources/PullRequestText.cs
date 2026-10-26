@@ -90,6 +90,16 @@ public static class PullRequestText
     public static string ClosedReconciled => Get(nameof(ClosedReconciled));
     public static string CloseCancelled => Get(nameof(CloseCancelled));
     public static string CloseReadOnlyHint => Get(nameof(CloseReadOnlyHint));
+    public static string MergePullRequest => Get(nameof(MergePullRequest));
+    public static string MergeMethod => Get(nameof(MergeMethod));
+    public static string MergeConfirm => Get(nameof(MergeConfirm));
+    public static string MergeConfirmHint => Get(nameof(MergeConfirmHint));
+    public static string MergeSubmitting => Get(nameof(MergeSubmitting));
+    public static string Merged => Get(nameof(Merged));
+    public static string MergedReconciled => Get(nameof(MergedReconciled));
+    public static string MergeCancelled => Get(nameof(MergeCancelled));
+    public static string MergeReadOnlyHint => Get(nameof(MergeReadOnlyHint));
+    public static string MergeDraftHint => Get(nameof(MergeDraftHint));
 
     public static string Failure(string code, string writeKind = "comment") => Get(code switch
     {
@@ -115,6 +125,7 @@ public static class PullRequestText
     {
         "review" => "ReviewWrite" + outcome,
         "close" => "Close" + outcome,
+        "merge" => "Merge" + outcome,
         _ => "Write" + outcome
     };
 }

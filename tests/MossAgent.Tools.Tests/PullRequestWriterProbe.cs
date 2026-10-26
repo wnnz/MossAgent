@@ -10,16 +10,21 @@ internal sealed class PullRequestWriterProbe : ISourcePullRequestWriter
     public int Writes { get; private set; }
     public int Reviews { get; private set; }
     public int Closes { get; private set; }
+    public int Merges { get; private set; }
     public PullRequestCommentReceipt Receipt { get; set; } = new(11, false);
     public PullRequestReviewReceipt ReviewReceipt { get; set; } = new(31, false);
     public PullRequestCloseReceipt CloseReceipt { get; set; } = new("closed", false);
+    public PullRequestMergeReceipt MergeReceipt { get; set; } = new(new string('c', 40), false);
     public string? FailureCode { get; set; }
     public string? ReviewFailureCode { get; set; }
     public string? CloseFailureCode { get; set; }
+    public string? MergeFailureCode { get; set; }
     public Func<CancellationToken, Task>? OnWrite { get; set; }
     public Func<CancellationToken, Task>? OnReview { get; set; }
     public Func<CancellationToken, Task>? OnClose { get; set; }
+    public Func<CancellationToken, Task>? OnMerge { get; set; }
     public PullRequestReviewDecision? LastDecision { get; private set; }
+    public PullRequestMergeMethod? LastMethod { get; private set; }
     public string? LastBody { get; private set; }
     public bool BodyWasSent { get; private set; }
 
@@ -68,5 +73,18 @@ internal sealed class PullRequestWriterProbe : ISourcePullRequestWriter
         if (OnClose is not null) await OnClose(cancellationToken);
         if (CloseFailureCode is not null) throw new SourceReviewException(CloseFailureCode);
         return CloseReceipt;
+    }
+
+    public async Task<PullRequestMergeReceipt> MergeAsync(SourceRepositoryScope scope, PullRequestRevision revision,
+        PullRequestMergeMethod method, CancellationToken cancellationToken)
+    {
+        Merges++;
+        revision.Validate();
+        LastMethod = method;
+        if (!scope.CanWrite || method is not (PullRequestMergeMethod.Merge or PullRequestMergeMethod.Squash
+            or PullRequestMergeMethod.Rebase)) throw new SourceReviewException("source_scope_denied");
+        if (OnMerge is not null) await OnMerge(cancellationToken);
+        if (MergeFailureCode is not null) throw new SourceReviewException(MergeFailureCode);
+        return MergeReceipt;
     }
 }

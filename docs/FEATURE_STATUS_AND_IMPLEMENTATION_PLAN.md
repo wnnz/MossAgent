@@ -129,7 +129,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | R09 | 部分完成、部分未验证 | 父子 run 期刊已落地（subagent_runs v41 快照/五态投影/启动核对 interrupted，绝不重放）；UI 历史投影已落地（审计面板五态子代理运行列表+快照详情，畸形快照回退 profile+状态）；可控模型触发验证、禁用模型失败验收、权限继承收窄矩阵与其余触发/审批/共享/并发/恢复验收仍待 | P1；R05/R06 |
 | R10 | 部分完成；其他组合待验 | 定时计划授权/参数版本、关闭/中断/并发/多实例、时区与 DST，以及关闭后的行为实机验收。授权快照已落地且认领时固定（run 行记录 snapshot_generation v42、历史按代际标注、保存时在途运行如实提示沿用旧快照）；编辑后自动停止在途运行仍非默认行为，实机验收仍缺 | P1；R02/R06 |
 | R11 | 部分完成 | 单文件区块暂存/取消暂存已落地（rename/copy/二进制/新增/删除/仅模式/冲突明确拒绝）；整组暂存/取消暂存已落地（git.stage_paths/unstage_paths，1–64 路径单命令原子、越界/链接/目录逐项拒绝）；提交消息草稿独立版本持久化（git_commit_drafts v40，编辑去抖 CAS 写入、重启恢复）与提交未知结果核对（复核 HEAD/暂存数后消费或保留草稿）已落地；推送非确定性失败后以远端跟踪引用核对实际结果（已推送→明示，未证实→保留原错误，核对失败→明示未知）；预览绑定已落地（git.diff 输出尾部绑定 diff-sha256 与各文件 file-sha256，hunk 工具 required expectedDiff 执行期哈希复核、漂移即拒绝）；远端/上游配置读取与凭据方式展示已落地（git.remotes 只读工具：脱敏 scheme://host 端点、local/ssh/https/embedded/unsupported 凭据方式分类、credential.helper 值链、当前分支上游；推送对话框凭据行揭示 URL 内嵌凭据并警示）；远端/上游条件变更端口已落地（git.remote_set_url 按脱敏端点+凭据方式做语义级 CAS、本地目的地复用推送授权端口、永不回显内嵌凭据，git.branch_upstream 按原文 CAS 写 branch.*.remote/merge 并如实报告部分应用）；推送非快进拒绝分类引导已落地（合并诊断分类为确定性 git_push_non_ff、提示先合并/变基远端更新再刷新预览、原始输出不回显）；真实远端核对部分落地：git.ls_remote 已落地（只读、脱敏端点、有界 64 条、非交互、凭据永不回显），供模型主动核对远端 refs；推送失败后自动核对仍走本地远端跟踪引用（离线、不触网络）；原生验收仍缺 | P2；R01/R02 |
-| R12 | 部分完成 | GitHub reviews/activity 只读已端到端落地（审阅面板分区 + 版本绑定工具）；按账号个人 PR 收件箱只读已落地（search/issues 固定端点、角色筛选、分页、incomplete 标记，双解析 revision 看守，不升级 grant、无写入）；已读/版本标记持久化已落地（pull_request_marks v44，按 account/repository/PR 记录查看时 head，列表批量取标记后与条目在同一代际原子发布，head 漂移明示“已更新”，打开详情按当前 head 尽力落账，标记不随账号删除清理）；按 grant 显式写授权模型已落地（v45 can_write，独立写解析端口，存量行只读、无升级通道）；确认写工具已落地三个（source.pr_comment_create：写授权+版本核对+两段式面板确认，绝不重试，未知结果经最近评论精确匹配核实；source.pr_review_submit：approve/request_changes/comment 三态结论+可选正文，POST 固定 commit_id 到已核对的 head，未知结果按状态/提交/规范化正文升序分页核实评审（≤10 页×20 条，服务端按时间升序返回），面板评审分区需显式选择结论并两段确认；source.pr_close：PATCH pulls/{n} {state:"closed"}，响应校验 url 归属与 number、返回 state 由写入器再核，未知结果经一次 GET 摘要核实 state=="closed"，面板顶部两段确认+只读提示+成功后重读详情）；PR 创建与合并、OAuth/GitLab/云审阅仍缺 | P2；公开接口与后续写工具 |
+| R12 | 部分完成 | GitHub reviews/activity 只读已端到端落地（审阅面板分区 + 版本绑定工具）；按账号个人 PR 收件箱只读已落地（search/issues 固定端点、角色筛选、分页、incomplete 标记，双解析 revision 看守，不升级 grant、无写入）；已读/版本标记持久化已落地（pull_request_marks v44，按 account/repository/PR 记录查看时 head，列表批量取标记后与条目在同一代际原子发布，head 漂移明示“已更新”，打开详情按当前 head 尽力落账，标记不随账号删除清理）；按 grant 显式写授权模型已落地（v45 can_write，独立写解析端口，存量行只读、无升级通道）；确认写工具已落地三个（source.pr_comment_create：写授权+版本核对+两段式面板确认，绝不重试，未知结果经最近评论精确匹配核实；source.pr_review_submit：approve/request_changes/comment 三态结论+可选正文，POST 固定 commit_id 到已核对的 head，未知结果按状态/提交/规范化正文升序分页核实评审（≤10 页×20 条，服务端按时间升序返回），面板评审分区需显式选择结论并两段确认；source.pr_close：PATCH pulls/{n} {state:"closed"}，响应校验 url 归属与 number、返回 state 由写入器再核，未知结果经一次 GET 摘要核实 state=="closed"，面板顶部两段确认+只读提示+成功后重读详情；source.pr_merge：PUT pulls/{n}/merge，负载以 sha 字段钉住已核对的 head、merge_method 为 merge/squash/rebase 闭集三选（默认拒绝），响应校验 merged==true 且 sha 为 40/64 位 hex 提交，未知结果经一次 GET 详情核实 merged==true 且 head.sha 相同（合并后 base 必前进故不比 base），命中回执带 merge_commit_sha，面板顶部须显式选择合并方式并两段确认、草稿 PR 显示提示而非按钮、成功后重读详情）；PR 创建、OAuth/GitLab/云审阅仍缺 | P2；公开接口与后续写工具 |
 | R13 | 未实现完整链路 | 插件/技能/扩展目录、安装、启停、执行、升级和卸载 | P2；R01/R08及目录/账号接口 |
 | R14 | 部分基础，完整操作未实现 | 目标窗口绑定的桌面指针、键盘、接管和恢复 | P2；Windows 原生输入与 R02 |
 | R15 | 未实现专用链路 | Web 搜索、来源正文获取及答案引用 | P3；搜索服务/模型原生能力 |
@@ -595,10 +595,11 @@ head 与 UTC Unix 秒，不随账号删除清理；列表/URL 直达加载后批
 授权模型已落地（schema 45：source_repository_grants.can_write NOT NULL DEFAULT 0，存量
 行保持只读且不提供改写通道；授权编辑器以本地化勾选框显式选择写权限、列表行标注只读/读写，
 变更权限只能撤销后重新授权；独立 ResolveWriteAsync 端口在读解析双重核查之上再核对 grant 行
-can_write，伪造或陈旧 scope 一律 source_scope_denied 拒绝）；确认写工具已落地三个：
+can_write，伪造或陈旧 scope 一律 source_scope_denied 拒绝）；确认写工具已落地四个：
 source.pr_comment_create（GitHub issues/{n}/comments 会话评论，模型不可见，仅面板入口）、
-source.pr_review_submit（GitHub pulls/{n}/reviews 评审提交，模型不可见，仅面板入口）与
-source.pr_close（GitHub PATCH pulls/{n} {"state":"closed"}，模型不可见，仅面板入口）。
+source.pr_review_submit（GitHub pulls/{n}/reviews 评审提交，模型不可见，仅面板入口）、
+source.pr_close（GitHub PATCH pulls/{n} {"state":"closed"}，模型不可见，仅面板入口）与
+source.pr_merge（GitHub PUT pulls/{n}/merge，模型不可见，仅面板入口）。
 写入链路为写授权 ResolveWriteAsync→GET 摘要核对捕获的 base/head revision（漂移即
 source_revision_changed）→再次 ResolveWriteAsync→单次远端写并校验响应归属；
 绝不自动重试，timeout/transport/unavailable 等未知结果只做有界 GET 核实——评论按近 5 条
@@ -608,12 +609,18 @@ source_revision_changed）→再次 ResolveWriteAsync→单次远端写并校验
 revision 漂移报 source_write_unconfirmed；命中返回带“经核实已落地”警示的成功回执，
 未命中报 source_write_unconfirmed，核实失败报 source_write_unknown；评审 POST 还固定
 commit_id 为捕获的 head，服务端对漂移 head 直接拒绝；关闭 PATCH 仅含 state="closed" 字段，
-响应校验 url 精确归属 pulls/{n}、number 相等、返回 state 由写入器复核为 closed；
+响应校验 url 精确归属 pulls/{n}、number 相等、返回 state 由写入器复核为 closed；合并 PUT
+负载仅含 sha（钉住已核对 head，服务端对漂移 head 直接拒绝）与 merge_method（merge/squash/
+rebase 闭集映射、默认拒绝）两字段，响应校验 merged==true 且 sha 为 40/64 位 hex 提交；
+合并不产生可查的新建资源且落地后 base 必然前进，故核实不复用摘要比对——以一次 GET 详情
+校验 url 归属与 number 后要求 merged==true 且 head.sha 与捕获 head 相同，命中返回
+merge_commit_sha 回执（服务端缺省则如实置空），未命中报 source_write_unconfirmed；
 面板正文上限 4096、两段式确认按钮（先进入确认态再执行），评审须先显式选择
-批准/请求修改/评论结论（正文可选），只读 grant 显示本地化只读提示，成功后回源刷新对应首页
-且不插入本地伪条目；PR 关闭在审阅面板顶部按两段确认呈现，取消文案如实说明请求可能已发出，
-成功后重读 PR 详情（已关闭的 PR 不再显示关闭入口）。PR 创建与合并、OAuth/GitLab/云审阅仍缺，
-有外部接口与账号依赖。
+批准/请求修改/评论结论（正文可选），合并须显式选择三种合并方式之一（无预选），
+只读 grant 显示本地化只读提示，成功后回源刷新对应首页
+且不插入本地伪条目；PR 关闭与合并在审阅面板顶部按两段确认呈现，取消文案如实说明请求可能已发出，
+草稿 PR 显示本地化草稿提示而非合并按钮，成功后重读 PR 详情（已关闭的 PR 不再显示关闭或合并入口）。
+PR 创建、OAuth/GitLab/云审阅仍缺，有外部接口与账号依赖。
 
 1. Application 来源控制端口与 Infrastructure 客户端继续扩展关联信息、限流反馈等剩余只读
    能力；viewed/标记持久化已落地（见现状），后续读取路径必须保持标记与条目原子发布、

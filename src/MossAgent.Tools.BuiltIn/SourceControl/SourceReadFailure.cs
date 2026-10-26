@@ -11,6 +11,8 @@ internal static class SourceReadFailure
 
     public static ToolResult CreateClose(string code) => Create(code, "close");
 
+    public static ToolResult CreateMerge(string code) => Create(code, "merge");
+
     private static ToolResult Create(string code, string writeKind) => ToolResult.Failure(ToolExecutionText.Get(code switch
     {
         "source_revision_changed" => "SourceRevisionChanged",
@@ -26,6 +28,7 @@ internal static class SourceReadFailure
     {
         "review" => "SourceReviewWrite" + outcome,
         "close" => "SourceClose" + outcome,
+        "merge" => "SourceMerge" + outcome,
         _ => "SourceWrite" + outcome
     };
 }
