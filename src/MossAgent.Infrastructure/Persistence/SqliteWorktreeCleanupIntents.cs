@@ -84,6 +84,14 @@ public sealed class SqliteWorktreeCleanupIntents(SqliteConnectionFactory connect
         await transaction.CommitAsync(token);
     }
 
+    // A live intent closes the drain window: in-flight (0,1) and recovery-pending (3,4)
+    // stages deny any new run admission on the worktree until the intent reaches a
+    // terminal stage (Detached=2 or Acknowledged=5).
+    public Task<bool> HasLiveIntentAsync(Guid taskId, CancellationToken token) =>
+        WorktreeIntentSqlite.QueryScalarAsync<bool>(connections, """
+            SELECT EXISTS(SELECT 1 FROM worktree_cleanup_intents WHERE task_id=$task AND stage IN (0,1,3,4));
+            """, token, ("$task", taskId.ToString()));
+
     public Task<IReadOnlyList<WorktreeCleanupIntent>> ReadIncompleteAsync(Guid projectId, CancellationToken token) =>
         WorktreeIntentSqlite.QueryAsync(connections, """
             SELECT task_id,project_id,repository,target,stage,error_code,created_at,updated_at

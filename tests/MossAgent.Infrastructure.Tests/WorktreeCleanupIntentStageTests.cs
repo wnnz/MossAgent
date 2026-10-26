@@ -222,6 +222,147 @@ public sealed class WorktreeCleanupIntentStageTests : IAsyncLifetime
             () => ((IWorktreeCleanupIntents)service).AcknowledgeAsync(taskId, Fixture.Token));
     }
 
+    [Fact]
+    public async Task LiveCleanupIntentBlocksAdmissionUntilAcknowledged()
+    {
+        var service = Service();
+        var store = Store();
+        var taskId = Guid.NewGuid();
+        var target = await service.CreateAsync(Fixture.Project, taskId, Fixture.Token);
+        await store.RecordAsync(taskId, Fixture.Project, Fixture.Repository, target, Fixture.Token);
+
+        await Assert.ThrowsAsync<WorktreeAuthorizationException>(
+            () => service.AcquireAsync(Fixture.Project, taskId, target, Fixture.Token));
+        await Assert.ThrowsAsync<WorktreeAuthorizationException>(
+            () => service.ValidateAsync(Fixture.Project, taskId, target, Fixture.Token));
+
+        await store.MarkFailedAsync(taskId, "git", Fixture.Token);
+        await Assert.ThrowsAsync<WorktreeAuthorizationException>(
+            () => service.AcquireAsync(Fixture.Project, taskId, target, Fixture.Token));
+
+        await ((IWorktreeCleanupIntents)service).AcknowledgeAsync(taskId, Fixture.Token);
+        await using var lease = await service.AcquireAsync(Fixture.Project, taskId, target, Fixture.Token);
+        Assert.NotNull(lease);
+    }
+
+    [Fact]
+    public async Task DetachedCleanupIntentDoesNotBlockAdmission()
+    {
+        var service = Service();
+        var store = Store();
+        var taskId = Guid.NewGuid();
+        var target = await service.CreateAsync(Fixture.Project, taskId, Fixture.Token);
+        var now = DateTimeOffset.UtcNow;
+        var task = new AgentTask(taskId, Fixture.Project.Id, "detached task", ApprovalPolicy.ReadOnly,
+            AgentTaskStatus.Interrupted, now, now, target);
+        await Storage.Repository.SaveTaskAsync(task, Fixture.Token);
+        await store.RecordAsync(taskId, Fixture.Project, Fixture.Repository, target, Fixture.Token);
+        await store.MarkStageAsync(taskId, WorktreeCleanupIntentStage.Recorded,
+            WorktreeCleanupIntentStage.GitRemoved, Fixture.Token);
+        await Storage.Repository.SaveTaskAsync(task with
+        {
+            WorktreePath = null,
+            UpdatedAt = DateTimeOffset.UtcNow
+        }, Fixture.Token);
+        await service.ReconcileAsync(Fixture.Token);
+        await AssertCleanupStageAsync(taskId, WorktreeCleanupIntentStage.Detached);
+
+        await using var lease = await service.AcquireAsync(Fixture.Project, taskId, target, Fixture.Token);
+        Assert.NotNull(lease);
+    }
+
+    [Fact]
+    public async Task OrphanedCleanupIntentBlocksAdmissionUntilAcknowledged()
+    {
+        var service = Service();
+        var store = Store();
+        var taskId = Guid.NewGuid();
+        var target = await service.CreateAsync(Fixture.Project, taskId, Fixture.Token);
+        await store.RecordAsync(taskId, Fixture.Project, Fixture.Repository, target, Fixture.Token);
+        await Storage.ExecuteAsync("""
+            UPDATE worktree_cleanup_intents SET updated_at='2000-01-01T00:00:00.0000000+00:00'
+            WHERE stage<3;
+            """);
+        await service.ReconcileAsync(Fixture.Token);
+        await AssertCleanupStageAsync(taskId, WorktreeCleanupIntentStage.Orphaned, "retained");
+
+        await Assert.ThrowsAsync<WorktreeAuthorizationException>(
+            () => service.AcquireAsync(Fixture.Project, taskId, target, Fixture.Token));
+
+        await ((IWorktreeCleanupIntents)service).AcknowledgeAsync(taskId, Fixture.Token);
+        await using var lease = await service.AcquireAsync(Fixture.Project, taskId, target, Fixture.Token);
+        Assert.NotNull(lease);
+    }
+
+    [Fact]
+    public async Task GitRemovedStageBlocksNewAdmission()
+    {
+        var service = Service();
+        var store = Store();
+        var taskId = Guid.NewGuid();
+        var target = await service.CreateAsync(Fixture.Project, taskId, Fixture.Token);
+        await store.RecordAsync(taskId, Fixture.Project, Fixture.Repository, target, Fixture.Token);
+        await store.MarkStageAsync(taskId, WorktreeCleanupIntentStage.Recorded,
+            WorktreeCleanupIntentStage.GitRemoved, Fixture.Token);
+
+        await Assert.ThrowsAsync<WorktreeAuthorizationException>(
+            () => service.AcquireAsync(Fixture.Project, taskId, target, Fixture.Token));
+    }
+
+    [Fact]
+    public async Task CleanupIntentIsScopedToItsTask()
+    {
+        var service = Service();
+        var store = Store();
+        var blockedId = Guid.NewGuid();
+        var openId = Guid.NewGuid();
+        var blockedTarget = await service.CreateAsync(Fixture.Project, blockedId, Fixture.Token);
+        var openTarget = await service.CreateAsync(Fixture.Project, openId, Fixture.Token);
+        await store.RecordAsync(blockedId, Fixture.Project, Fixture.Repository, blockedTarget, Fixture.Token);
+
+        await Assert.ThrowsAsync<WorktreeAuthorizationException>(
+            () => service.AcquireAsync(Fixture.Project, blockedId, blockedTarget, Fixture.Token));
+        await using var lease = await service.AcquireAsync(Fixture.Project, openId, openTarget, Fixture.Token);
+        Assert.NotNull(lease);
+    }
+
+    [Fact]
+    public async Task ConfirmLegacyIsDeniedWhileCleanupIntentIsLive()
+    {
+        var service = Service();
+        var store = Store();
+        var taskId = Guid.NewGuid();
+        var target = await service.CreateAsync(Fixture.Project, taskId, Fixture.Token);
+        var now = DateTimeOffset.UtcNow;
+        var task = new AgentTask(taskId, Fixture.Project.Id, "legacy task", ApprovalPolicy.ReadOnly,
+            AgentTaskStatus.Interrupted, now, now, target);
+        await store.RecordAsync(taskId, Fixture.Project, Fixture.Repository, target, Fixture.Token);
+
+        await Assert.ThrowsAsync<WorktreeAuthorizationException>(
+            () => service.ConfirmLegacyAsync(Fixture.Project, task, Fixture.Token));
+    }
+
+    [Fact]
+    public async Task CancelledAdmissionDoesNotConsumeOrLeakTheDrainGate()
+    {
+        var service = Service();
+        var store = Store();
+        var taskId = Guid.NewGuid();
+        var target = await service.CreateAsync(Fixture.Project, taskId, Fixture.Token);
+        using var cancelled = new CancellationTokenSource();
+        await cancelled.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => service.AcquireAsync(Fixture.Project, taskId, target, cancelled.Token));
+        await store.RecordAsync(taskId, Fixture.Project, Fixture.Repository, target, Fixture.Token);
+        await Assert.ThrowsAsync<WorktreeAuthorizationException>(
+            () => service.AcquireAsync(Fixture.Project, taskId, target, Fixture.Token));
+        await store.MarkFailedAsync(taskId, "git", Fixture.Token);
+        await ((IWorktreeCleanupIntents)service).AcknowledgeAsync(taskId, Fixture.Token);
+        await using var lease = await service.AcquireAsync(Fixture.Project, taskId, target, Fixture.Token);
+        Assert.NotNull(lease);
+    }
+
     private async Task AssertCleanupStageAsync(Guid taskId, WorktreeCleanupIntentStage stage, string? errorCode = null)
     {
         await using var connection = Storage.Connections.Create();

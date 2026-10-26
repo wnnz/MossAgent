@@ -17,6 +17,19 @@ internal static class WorktreeIntentSqlite
         return await command.ExecuteNonQueryAsync(token);
     }
 
+    public static async Task<T> QueryScalarAsync<T>(SqliteConnectionFactory connections, string commandText,
+        CancellationToken token, params (string Name, object? Value)[] parameters)
+    {
+        await using var connection = connections.Create();
+        await connection.OpenAsync(token);
+        await using var command = connection.CreateCommand();
+        command.CommandText = commandText;
+        foreach (var (name, value) in parameters)
+            command.Parameters.AddWithValue(name, value ?? DBNull.Value);
+        var result = await command.ExecuteScalarAsync(token);
+        return result is null or DBNull ? default! : (T)Convert.ChangeType(result, typeof(T));
+    }
+
     public static async Task<IReadOnlyList<T>> QueryAsync<T>(SqliteConnectionFactory connections,
         string commandText, Func<SqliteDataReader, T> read, CancellationToken token,
         params (string Name, object? Value)[] parameters)

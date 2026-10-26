@@ -315,8 +315,13 @@ intent 记录链路，成功推进 GitRemoved 并刷新列表，授权过期提�
 仅删除该已证实单槽（不做全局 prune），目标仍存在或位于项目主仓库内时拒绝，行为经
 `WorktreeStaleRegistrationTests` 覆盖；恢复面板对 Orphaned 且目标已消失（removed）
 的清理 intent 提供显式“清理注册项”操作，不推进 intent 阶段、失败可重试。
-清理前关闭新运行的 drain 与替换对象重新授权仍未实现；无 `IWorktreeRemovalGuardFactory`
-注册的平台（当前仅 Windows 提供实现）最终删除窗口竞态仍存在。
+清理前新运行准入已由清理 intent 联锁关闭：阶段 Recorded/GitRemoved/Failed/Orphaned
+视为在途，`AcquireAsync`/`ValidateAsync`/`ConfirmLegacyAsync` 经持久化活性检查
+拒绝准入，`Detached`/`Acknowledged` 终态放行；进程内以每任务 drain 门把活性检查
+与 intent 记录/git 删除串行化，消除检查-记录交错窗口。跨进程仍以持久 intent 行与
+启动对账兜底；调用方"任务未在运行"先验检查与准入本身的交错不在本层闭合。
+替换对象重新授权仍未实现；无 `IWorktreeRemovalGuardFactory` 注册的平台（当前仅
+Windows 提供实现）最终删除窗口竞态仍存在。
 
 1. 已落地：受管 runner 的本地分支/标签发现、搜索/分页和固定 commit 预览已并入基准
    选择器，自动发现与手工输入分别保留。远端获取已做成单独显式动作：基准选择器内的
@@ -330,9 +335,10 @@ rev-parse 链路固定 commit。网络失败给本地化提示，不静默退化
    授权修订条件插入、既有工作树任务回填为已认领），成功后首个任务/消息保存同事务
    条件认领；无 intent 的任务保存被拒绝。
 3. 按保存 grant 的受控删除会话已落地（Windows 删除共享守卫 + DeletePending 复核，
-   见上）；恢复面板重试移除已落地。清理前关闭新运行并完成 R02 的 drain 仍未实现。
-   研究仅处理该 worktree 注册槽的 Git 元数据清理，避免对象删除后 Git 再按同名路径
-   删除替换目录，不采用全局 prune。
+   见上）；恢复面板重试移除已落地；清理前新运行准入联锁已落地（在途 intent 阶段
+   拒绝 Acquire/Validate/ConfirmLegacy，进程内 drain 门串行化，见上）。R02 的撤权
+   drain 仍未实现。研究仅处理该 worktree 注册槽的 Git 元数据清理，避免对象删除后
+   Git 再按同名路径删除替换目录，不采用全局 prune。
 4. 创建侧阶段已落地（schema 30：阶段列+错误码，claim/Git/失败/认领逐阶持久化，启动
    对账标记 Orphaned/Consumed，`IWorktreeCreationIntents` 读口与确认）；对账复核已
    解析 `.git` 指针并核对注册槽 commondir 归属本仓库与 gitdir 回指目标。启动恢复展示
