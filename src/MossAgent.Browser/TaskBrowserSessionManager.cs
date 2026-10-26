@@ -13,8 +13,10 @@ public sealed class TaskBrowserSessionManager(
     IBrowserConfigurationRepository browserConfigurations,
     IConfigurationRepository configurations,
     IBrowserProfilePaths profiles,
-    IBrowserProfileAccessApproval profileAccess) : ITaskBrowserSessionManager, IBrowserTakeoverController
+    IBrowserProfileAccessApproval profileAccess,
+    IBrowserSessionJournal? sessionJournal = null) : ITaskBrowserSessionManager, IBrowserTakeoverController
 {
+    private readonly BrowserSessionJournalGate _journalGate = new(sessionJournal);
     private readonly ConcurrentDictionary<Guid, LazyBrowserSession> _sessions = [];
     private readonly ConcurrentDictionary<Guid, TakeoverBrowserSession> _gatedSessions = [];
     private readonly ConcurrentDictionary<Guid, BrowserTaskSessionState> _states = [];
@@ -24,7 +26,8 @@ public sealed class TaskBrowserSessionManager(
     public IBrowserSession GetLazySession(Guid taskId) =>
         _gatedSessions.GetOrAdd(taskId, id =>
             new TakeoverBrowserSession(
-                GetOrCreateLazy(id), GetOrCreateState(id), () => MarkDisconnected(id)));
+                GetOrCreateLazy(id), GetOrCreateState(id), id, sessionJournal,
+                () => MarkDisconnected(id)));
 
     public bool HasControlState(Guid taskId) =>
         (_sessions.TryGetValue(taskId, out var lazy) && lazy.CreatedSession is not null)
@@ -90,9 +93,15 @@ public sealed class TaskBrowserSessionManager(
 
         var previous = state.State;
         var current = state.MarkDisconnected();
-        if (current != previous)
+        if (current == previous)
         {
-            RaiseStateChanged(taskId, current);
+            return current;
+        }
+
+        RaiseStateChanged(taskId, current);
+        if (current == BrowserControlState.Disconnected)
+        {
+            _ = _journalGate.RecordDisconnectedBestEffortAsync(taskId);
         }
 
         return current;
@@ -105,6 +114,8 @@ public sealed class TaskBrowserSessionManager(
         {
             await session.DisposeAsync();
         }
+
+        await _journalGate.RecordDetachedBestEffortAsync(taskId);
 
         if (_states.TryRemove(taskId, out var state))
         {
@@ -138,10 +149,7 @@ public sealed class TaskBrowserSessionManager(
         CancellationToken cancellationToken)
     {
         var active = _sessions.TryGetValue(taskId, out var lazy) ? lazy.CreatedSession : null;
-        if (active is null)
-        {
-            return BrowserControlState.Automated;
-        }
+        if (active is null) { return BrowserControlState.Automated; }
 
         try
         {
@@ -178,9 +186,11 @@ public sealed class TaskBrowserSessionManager(
             configuration.CdpEndpoint,
             proxy?.ToUri(), proxy?.Username, proxy?.Password, taskId);
         await ConfirmProfileAccessAsync(taskId, options.ProfileMode, approvals, cancellationToken);
-        return options.Engine == BrowserEngine.Embedded
+        var session = options.Engine == BrowserEngine.Embedded
             ? await embeddedSessions.CreateAsync(options, cancellationToken)
             : await sessions.CreateAsync(options, cancellationToken);
+        await _journalGate.RecordSessionOrDisposeAsync(taskId, options, session, cancellationToken);
+        return session;
     }
 
     private async Task ConfirmProfileAccessAsync(
@@ -207,25 +217,20 @@ public sealed class TaskBrowserSessionManager(
         Guid? proxyId,
         CancellationToken cancellationToken)
     {
-        if (proxyId is null)
-        {
-            return null;
-        }
+        if (proxyId is null) { return null; }
 
         var available = await configurations.GetProxiesAsync(cancellationToken);
         return available.SingleOrDefault(proxy => proxy.Id == proxyId && proxy.IsEnabled)
             ?? throw new InvalidOperationException("浏览器选择的代理不存在或已禁用。");
     }
 
-    private string? GetProfileDirectory(BrowserConfiguration configuration, Guid taskId)
-    {
-        return configuration.ProfilePreference switch
+    private string? GetProfileDirectory(BrowserConfiguration configuration, Guid taskId) =>
+        configuration.ProfilePreference switch
         {
             BrowserProfilePreference.ExistingCdp => null,
             BrowserProfilePreference.DailyProfile => configuration.ProfileDirectory,
             _ => profiles.GetManagedProfileDirectory(taskId.ToString("N"))
         };
-    }
 
     private static BrowserEngine ToEngine(DefaultBrowserKind browser) =>
         browser switch

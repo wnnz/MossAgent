@@ -12,7 +12,7 @@ public sealed class ArtifactSessionJournalMigrationTests
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
 
-        Assert.Equal(42, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(43, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='artifact_session_records';"));
         Assert.Equal(1, await fixture.CountAsync(
@@ -61,7 +61,7 @@ public sealed class ArtifactSessionJournalMigrationTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_thirty_seven;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(42, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(43, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM schema_versions WHERE version=37;"));
         Assert.Equal(1, await fixture.CountAsync(
@@ -85,7 +85,7 @@ public sealed class ArtifactSessionJournalMigrationTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(42, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(43, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(2, await fixture.CountAsync("SELECT COUNT(*) FROM artifact_session_records;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM artifact_session_records WHERE file_name='keep-artifact.txt' AND kind=0 AND stage=2 AND byte_count=12;"));
@@ -123,7 +123,7 @@ public sealed class ArtifactSessionJournalMigrationTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_thirty_eight;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(42, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(43, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM schema_versions WHERE version=38;"));
         Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM artifact_session_records;"));
@@ -142,7 +142,7 @@ public sealed class ArtifactSessionJournalMigrationTests
 
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(42, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(43, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var record = Assert.Single(await journal.ReadTaskAsync(fixture.Task.Id, fixture.Token));
         Assert.Equal(id, record.Id);
         Assert.Equal(ArtifactSessionStage.Recorded, record.Stage);

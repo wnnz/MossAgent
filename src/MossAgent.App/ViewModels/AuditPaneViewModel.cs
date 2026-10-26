@@ -11,6 +11,7 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
 {
     private readonly IToolExecutionAuditReader _reader;
     private readonly ISubagentRunJournal? _runJournal;
+    private readonly IBrowserSessionJournal? _browserJournal;
     private Guid? _taskId;
     private ToolExecutionAuditRecord? _selectedExecution;
     private AuditSubagentRunViewModel? _selectedSubagentRun;
@@ -22,23 +23,28 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
     private int _generation;
     private int _artifactVersion;
 
-    public AuditPaneViewModel(IToolExecutionAuditReader reader, ISubagentRunJournal? runJournal = null)
+    public AuditPaneViewModel(IToolExecutionAuditReader reader, ISubagentRunJournal? runJournal = null,
+        IBrowserSessionJournal? browserJournal = null)
     {
         _reader = reader;
         _runJournal = runJournal;
+        _browserJournal = browserJournal;
         RefreshCommand = new AsyncRelayCommand(RefreshAsync, () => HasTask && !IsLoading);
     }
 
     public ObservableCollection<ToolExecutionAuditRecord> Executions { get; } = [];
     public ObservableCollection<AuditExecutionViewModel> ExecutionItems { get; } = [];
     public ObservableCollection<AuditSubagentRunViewModel> SubagentRuns { get; } = [];
+    public ObservableCollection<AuditBrowserSessionViewModel> BrowserSessions { get; } = [];
     public ObservableCollection<ToolArtifactRecord> Artifacts { get; } = [];
     public IAsyncRelayCommand RefreshCommand { get; }
     public bool HasTask => _taskId is not null && !_disposed;
     public bool HasExecutions => Executions.Count > 0;
     public bool HasRuns => SubagentRuns.Count > 0;
+    public bool HasBrowserSessions => BrowserSessions.Count > 0;
     public bool HasArtifacts => Artifacts.Count > 0;
     public string RunsTitle => InspectorText.Format("AuditSubagentRunsTitle", SubagentRuns.Count);
+    public string BrowserSessionsTitle => InspectorText.Format("AuditBrowserSessionsTitle", BrowserSessions.Count);
     public bool IsLoading { get => _isLoading; private set { if (SetProperty(ref _isLoading, value)) RefreshCommand.NotifyCanExecuteChanged(); } }
     public string Status { get => _status; private set => SetProperty(ref _status, value); }
     public string ArtifactsStatus { get => _artifactsStatus; private set => SetProperty(ref _artifactsStatus, value); }
@@ -87,6 +93,7 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
         Executions.Clear();
         ExecutionItems.Clear();
         SubagentRuns.Clear();
+        BrowserSessions.Clear();
         Artifacts.Clear();
         SelectedExecution = null;
         SelectedSubagentRun = null;
@@ -110,8 +117,10 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
         try
         {
             var runsTask = ReadRunsAsync(taskId, token);
+            var browserTask = ReadBrowserSessionsAsync(taskId, token);
             var records = await _reader.GetRecentAsync(taskId, 200, token);
             var runs = await runsTask;
+            var sessions = await browserTask;
             if (_disposed || generation != _generation) return;
             var selectionId = SelectedExecution?.Id;
             var selectedRunId = SelectedSubagentRun?.Record.RunId;
@@ -119,6 +128,7 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
             ExecutionItems.ReplaceWith(Executions.Select(record => new AuditExecutionViewModel(record)));
             SubagentRuns.ReplaceWith(runs.Where(run => run.TaskId == taskId).DistinctBy(run => run.RunId)
                 .Select(run => new AuditSubagentRunViewModel(run)));
+            BrowserSessions.ReplaceWith(sessions);
             SelectedExecution = Executions.FirstOrDefault(record => record.Id == selectionId) ?? Executions.FirstOrDefault();
             SelectedSubagentRun = SubagentRuns.FirstOrDefault(run => run.Record.RunId == selectedRunId)
                 ?? SubagentRuns.FirstOrDefault();
@@ -137,6 +147,25 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
     {
         if (_runJournal is null) return [];
         try { return await _runJournal.ReadTaskAsync(taskId, token); }
+        catch (Exception) { return []; }
+    }
+
+    // The browser journal reads are best-effort for the same reason: a missing or
+    // failing journal degrades to no browser rows and never breaks the tool audit path.
+    private async Task<IReadOnlyList<AuditBrowserSessionViewModel>> ReadBrowserSessionsAsync(
+        Guid taskId, CancellationToken token)
+    {
+        if (_browserJournal is null) return [];
+        try
+        {
+            var sessions = await _browserJournal.ReadSessionsAsync(taskId, token);
+            var intents = await _browserJournal.ReadIntentsAsync(taskId, token);
+            return sessions.Where(session => session.TaskId == taskId).DistinctBy(session => session.SessionId)
+                .Select(session => new AuditBrowserSessionViewModel(session,
+                    intents.Where(intent => intent.SessionId == session.SessionId)
+                        .OrderBy(intent => intent.CreatedAt).ToArray()))
+                .ToArray();
+        }
         catch (Exception) { return []; }
     }
 
@@ -170,6 +199,8 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(HasExecutions));
         OnPropertyChanged(nameof(HasRuns));
         OnPropertyChanged(nameof(RunsTitle));
+        OnPropertyChanged(nameof(HasBrowserSessions));
+        OnPropertyChanged(nameof(BrowserSessionsTitle));
         OnPropertyChanged(nameof(HasArtifacts));
     }
 

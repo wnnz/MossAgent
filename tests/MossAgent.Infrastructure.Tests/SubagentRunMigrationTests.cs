@@ -11,7 +11,7 @@ public sealed class SubagentRunMigrationTests
     public async Task FreshDatabaseCreatesSubagentRunsAtVersionFortyOne()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
-        Assert.Equal(42, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(43, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='subagent_runs';"));
         Assert.Equal(1, await fixture.CountAsync(
@@ -60,13 +60,13 @@ public sealed class SubagentRunMigrationTests
             WHEN NEW.version=41 BEGIN SELECT RAISE(ABORT,'synthetic migration failure'); END;
             """);
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Initializer.InitializeAsync(fixture.Token));
-        Assert.Equal(41, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(42, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='subagent_runs';"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_forty_one;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(42, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(43, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM schema_versions WHERE version=41;"));
         Assert.Equal(1, await fixture.CountAsync(
@@ -86,7 +86,7 @@ public sealed class SubagentRunMigrationTests
 
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(42, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(43, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var stored = Assert.Single(await journal.ReadTaskAsync(fixture.Task.Id, fixture.Token));
         Assert.Equal(record.RunId, stored.RunId);
         Assert.Equal(SubagentRunStatus.Running, stored.Status);

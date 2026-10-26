@@ -1,0 +1,30 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppAuditBrowserSessionRow" x:Name="RowOwner"
+                   x:CompileBindings="False">
+  <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" Classes="audit-row-layout">
+    <ui:AppIcon x:Name="OutcomeIcon" Classes="audit-outcome-icon" VerticalAlignment="Center" />
+    <ui:AppText x:Name="SessionTitle" Grid.Column="1" Text="{Binding #RowOwner.Title}"
+                Classes="type-12 line-18" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+    <ui:AppText x:Name="OutcomeText" Grid.Column="2" Text="{Binding #RowOwner.OutcomeLabel}"
+                Classes="type-11 muted line-18" VerticalAlignment="Center" />
+    <ui:AppText x:Name="MetadataText" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding #RowOwner.Metadata}"
+                Classes="type-11 subtle line-18" TextTrimming="CharacterEllipsis" />
+    <ui:AppText x:Name="DetailText" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding #RowOwner.Detail}"
+                IsVisible="{Binding #RowOwner.HasDetail}" Classes="type-12 muted line-18" TextWrapping="Wrap" />
+    <ui:AppItemsControl x:Name="ActionList" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                        ItemsSource="{Binding #RowOwner.Actions}" IsVisible="{Binding #RowOwner.HasActions}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
+            <ui:AppText Text="{Binding KindLabel}" Classes="type-11 line-18" />
+            <ui:AppText Grid.Column="1" Text="{Binding OutcomeLabel}" Classes="type-11 muted line-18" />
+            <ui:AppText Grid.Column="2" Text="{Binding TargetLabel}" Classes="type-10 subtle code-font line-18"
+                        TextTrimming="CharacterEllipsis" HorizontalAlignment="Right" />
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ui:AppItemsControl>
+  </Grid>
+</ui:AppUserControl>

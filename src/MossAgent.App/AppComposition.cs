@@ -122,6 +122,7 @@ internal static class AppComposition
         services.AddSingleton<ITaskArtifactPaths, TaskArtifactPaths>();
         services.AddSingleton<IArtifactSessionJournal, SqliteArtifactSessionJournal>();
         services.AddSingleton<ISubagentRunJournal, SqliteSubagentRunJournal>();
+        services.AddSingleton<IBrowserSessionJournal, SqliteBrowserSessionJournal>();
         services.AddSingleton<ITaskArtifactContentReader, TaskArtifactContentReader>();
         services.AddSingleton<IBrowserProfilePaths, BrowserProfilePaths>();
         services.AddSingleton<GitProcessRunner>();

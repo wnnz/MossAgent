@@ -50,8 +50,9 @@ public sealed class InspectorArtifactEmptyLayoutTests : IAsyncLifetime
             var empty = Assert.Single(window.GetVisualDescendants().OfType<AppEmptyState>(), control => control.Title == InspectorText.NoArtifacts);
             Assert.True(empty.IsEffectivelyVisible);
             var row = Assert.IsType<Grid>(empty.Parent);
-            var rowTop = row.RowDefinitions.Take(4).Sum(definition => definition.ActualHeight);
-            var rowBottom = rowTop + row.RowDefinitions[4].ActualHeight;
+            var rowIndex = Grid.GetRow(empty);
+            var rowTop = row.RowDefinitions.Take(rowIndex).Sum(definition => definition.ActualHeight);
+            var rowBottom = rowTop + row.RowDefinitions[rowIndex].ActualHeight;
             foreach (var text in empty.GetVisualDescendants().OfType<AppText>().Where(text => text.IsEffectivelyVisible))
             {
                 var origin = text.TranslatePoint(new Point(), row)!.Value;

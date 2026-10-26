@@ -17,6 +17,7 @@ public sealed class AppStartupService : IAsyncDisposable
     private readonly IAttachmentSnapshotReaper? _reaper;
     private readonly IArtifactSessionJournal? _artifactJournal;
     private readonly ISubagentRunJournal? _runJournal;
+    private readonly IBrowserSessionJournal? _browserJournal;
     private readonly CancellationTokenSource _shutdown = new();
     private readonly object _gate = new();
     private Task? _loading;
@@ -24,7 +25,8 @@ public sealed class AppStartupService : IAsyncDisposable
 
     public AppStartupService(IMcpManager mcp, AppStartupViewModel state, Action<Action>? publish = null,
         IWorktreeCreationIntents? creationIntents = null, IAttachmentSnapshotReaper? reaper = null,
-        IArtifactSessionJournal? artifactJournal = null, ISubagentRunJournal? runJournal = null)
+        IArtifactSessionJournal? artifactJournal = null, ISubagentRunJournal? runJournal = null,
+        IBrowserSessionJournal? browserJournal = null)
     {
         _mcp = mcp;
         _state = state;
@@ -33,6 +35,7 @@ public sealed class AppStartupService : IAsyncDisposable
         _reaper = reaper;
         _artifactJournal = artifactJournal;
         _runJournal = runJournal;
+        _browserJournal = browserJournal;
     }
 
     public Task StartAsync()
@@ -81,6 +84,14 @@ public sealed class AppStartupService : IAsyncDisposable
         if (_runJournal is not null)
         {
             try { await _runJournal.MarkInterruptedRunningAsync(_shutdown.Token).ConfigureAwait(false); }
+            catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { return; }
+            catch (Exception) { storageWarning = true; }
+        }
+        // Marks leftover attached sessions and committed browser intents interrupted
+        // only; a journaled browser side effect is never replayed automatically.
+        if (_browserJournal is not null)
+        {
+            try { await _browserJournal.ReconcileAsync(_shutdown.Token).ConfigureAwait(false); }
             catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { return; }
             catch (Exception) { storageWarning = true; }
         }

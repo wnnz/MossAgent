@@ -134,6 +134,32 @@ public sealed class AppStartupServiceTests
         if (fails) Assert.Equal("附件快照回收对账未完成，残留文件将保留待处理。", state.Status);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task BrowserSessionJournalReconcile_PublishesStorageWarningOnlyOnFailure(bool fails)
+    {
+        var manager = new DeferredStartupMcpManager();
+        var journal = new RecordingBrowserSessionJournal();
+        if (fails) journal.ReconcileFailure = new InvalidOperationException("synthetic-reconcile-secret");
+        var state = new AppStartupViewModel();
+        var queue = new ConcurrentQueue<Action>();
+        await using var startup = new AppStartupService(manager, state, queue.Enqueue, browserJournal: journal);
+        var loading = startup.StartAsync();
+        manager.Release.TrySetResult();
+        await loading.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+
+        Assert.Single(queue)();
+
+        Assert.Equal(1, journal.ReconcileCalls);
+        // Reconciliation only marks stale rows interrupted; no session or intent is replayed.
+        Assert.Equal(0, journal.WriteCalls);
+        Assert.True(state.IsReady);
+        Assert.Equal(fails, state.HasStatus);
+        Assert.False(state.HasWarning);
+        if (fails) Assert.Equal("附件快照回收对账未完成，残留文件将保留待处理。", state.Status);
+    }
+
     [Fact]
     public async Task SuccessfulReclaim_PublishesNoStorageWarning()
     {

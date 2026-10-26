@@ -20,4 +20,6 @@
   <data name="BrowserTakeoverActive" xml:space="preserve"><value>浏览器已交给用户手动控制，代理暂时不能执行浏览器操作。</value></data>
   <data name="BrowserSessionDisconnected" xml:space="preserve"><value>浏览器会话已断开，代理无法继续操作。请检查浏览器状态后重试。</value></data>
   <data name="BrowserProfileAccessDenied" xml:space="preserve"><value>浏览器配置文件访问被拒绝，未启动任务浏览器。</value></data>
+  <data name="BrowserSessionJournalUnavailable" xml:space="preserve"><value>无法登记任务浏览器会话，未审计的会话已取消，不会执行浏览器操作。</value></data>
+  <data name="BrowserActionJournalUnavailable" xml:space="preserve"><value>无法登记该浏览器操作，未审计的操作不会发出，请核实页面状态后重试。</value></data>
 </root>

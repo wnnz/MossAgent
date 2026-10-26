@@ -15,6 +15,11 @@ public sealed class LazyBrowserSession(Func<CancellationToken, Task<IBrowserSess
     public bool SupportsDeveloperTools => _inner?.SupportsDeveloperTools == true;
     internal IBrowserSession? CreatedSession => Volatile.Read(ref _inner);
 
+    // Lets the journaled session wrapper materialize (and thereby journal) the inner
+    // session before recording the mutating intent; read paths keep lazy creation.
+    internal Task<IBrowserSession> GetOrCreateAsync(CancellationToken cancellationToken) =>
+        GetAsync(cancellationToken);
+
     public async Task<IReadOnlyList<BrowserTabInfo>> ListTabsAsync(
         CancellationToken cancellationToken) =>
         await (await GetAsync(cancellationToken)).ListTabsAsync(cancellationToken);

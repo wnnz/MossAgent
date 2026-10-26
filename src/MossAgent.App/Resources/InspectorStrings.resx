@@ -253,6 +253,31 @@
   <data name="AuditSubagentSnapshot" xml:space="preserve"><value>{0} · {1} · 思考强度 {2} · {3} · 任务：{4}</value></data>
   <data name="AuditSubagentShareOn" xml:space="preserve"><value>共享上下文</value></data>
   <data name="AuditSubagentShareOff" xml:space="preserve"><value>独立上下文</value></data>
+  <data name="AuditBrowserSessionsTitle" xml:space="preserve"><value>浏览器会话（{0}）</value></data>
+  <data name="AuditBrowserSessionSummary" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="AuditBrowserSessionAttached" xml:space="preserve"><value>已附加</value></data>
+  <data name="AuditBrowserSessionDetached" xml:space="preserve"><value>已分离</value></data>
+  <data name="AuditBrowserSessionDisconnected" xml:space="preserve"><value>已断开</value></data>
+  <data name="AuditBrowserSessionInterruptedHint" xml:space="preserve"><value>应用关闭前该浏览器会话仍处于活动状态，实际页面结果未知；请核实状态后手动继续，应用不会自动重放。</value></data>
+  <data name="AuditBrowserSessionDisconnectedHint" xml:space="preserve"><value>浏览器会话已断开连接；已登记操作的实际页面结果请人工核实。</value></data>
+  <data name="AuditBrowserPendingIntentHint" xml:space="preserve"><value>该会话存在登记后未收到完成结果的操作，可能已发生；请核实页面状态后手动继续，应用不会自动重放。</value></data>
+  <data name="AuditBrowserEngineEmbedded" xml:space="preserve"><value>内置浏览器</value></data>
+  <data name="AuditBrowserEngineChrome" xml:space="preserve"><value>Chrome</value></data>
+  <data name="AuditBrowserEngineEdge" xml:space="preserve"><value>Edge</value></data>
+  <data name="AuditBrowserProfileManaged" xml:space="preserve"><value>隔离资料</value></data>
+  <data name="AuditBrowserProfileDaily" xml:space="preserve"><value>日常资料</value></data>
+  <data name="AuditBrowserProfileExistingCdp" xml:space="preserve"><value>已有 CDP 会话</value></data>
+  <data name="AuditBrowserActionNavigate" xml:space="preserve"><value>导航</value></data>
+  <data name="AuditBrowserActionNavigateBack" xml:space="preserve"><value>后退</value></data>
+  <data name="AuditBrowserActionNavigateForward" xml:space="preserve"><value>前进</value></data>
+  <data name="AuditBrowserActionReload" xml:space="preserve"><value>刷新</value></data>
+  <data name="AuditBrowserActionNewTab" xml:space="preserve"><value>新建标签页</value></data>
+  <data name="AuditBrowserActionCloseTab" xml:space="preserve"><value>关闭标签页</value></data>
+  <data name="AuditBrowserActionClick" xml:space="preserve"><value>点击</value></data>
+  <data name="AuditBrowserActionType" xml:space="preserve"><value>输入</value></data>
+  <data name="AuditBrowserActionSelectOption" xml:space="preserve"><value>选择选项</value></data>
+  <data name="AuditBrowserActionDownload" xml:space="preserve"><value>下载</value></data>
+  <data name="AuditBrowserTarget" xml:space="preserve"><value>目标 {0}</value></data>
 <data name="PreviewPdfExtraction" xml:space="preserve"><value>PDF 将以提取的文字发送（非原始文件）</value></data>
 <data name="PreviewPdfTruncated" xml:space="preserve"><value>已截断</value></data>
 <data name="PreviewPdfPages" xml:space="preserve"><value>第 {0} 页 / 共 {1} 页</value></data>
