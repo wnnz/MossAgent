@@ -244,6 +244,15 @@
   <data name="AuditInterrupted" xml:space="preserve"><value>已中断</value></data>
   <data name="AuditInterruptedHint" xml:space="preserve"><value>应用关闭前未收到完成结果，操作可能已发生。请先核实实际状态，再手动继续；应用不会自动重放该操作。</value></data>
   <data name="AuditUnknownDuration" xml:space="preserve"><value>执行结果未知</value></data>
+  <data name="AuditSubagentRunsTitle" xml:space="preserve"><value>子代理运行（{0}）</value></data>
+  <data name="AuditSubagentRunning" xml:space="preserve"><value>运行中</value></data>
+  <data name="AuditSubagentRunningHint" xml:space="preserve"><value>子代理仍在运行，尚无终态结果。</value></data>
+  <data name="AuditSubagentFailedHint" xml:space="preserve"><value>子代理运行未完成，请检查子代理配置与模型状态后重试。</value></data>
+  <data name="AuditSubagentCancelledHint" xml:space="preserve"><value>子代理运行已取消；已经产生的影响不会自动撤回。</value></data>
+  <data name="AuditSubagentInterruptedHint" xml:space="preserve"><value>应用关闭前该子代理仍在运行，实际结果未知；请核实状态后手动继续，应用不会自动重放。</value></data>
+  <data name="AuditSubagentSnapshot" xml:space="preserve"><value>{0} · {1} · 思考强度 {2} · {3} · 任务：{4}</value></data>
+  <data name="AuditSubagentShareOn" xml:space="preserve"><value>共享上下文</value></data>
+  <data name="AuditSubagentShareOff" xml:space="preserve"><value>独立上下文</value></data>
 <data name="PreviewPdfExtraction" xml:space="preserve"><value>PDF 将以提取的文字发送（非原始文件）</value></data>
 <data name="PreviewPdfTruncated" xml:space="preserve"><value>已截断</value></data>
 <data name="PreviewPdfPages" xml:space="preserve"><value>第 {0} 页 / 共 {1} 页</value></data>

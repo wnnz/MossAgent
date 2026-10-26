@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.App.Resources;
+using MossAgent.Application.Persistence;
 using MossAgent.Tools.Abstractions;
 
 namespace MossAgent.App.ViewModels;
@@ -9,8 +10,10 @@ namespace MossAgent.App.ViewModels;
 public sealed class AuditPaneViewModel : ObservableObject, IDisposable
 {
     private readonly IToolExecutionAuditReader _reader;
+    private readonly ISubagentRunJournal? _runJournal;
     private Guid? _taskId;
     private ToolExecutionAuditRecord? _selectedExecution;
+    private AuditSubagentRunViewModel? _selectedSubagentRun;
     private CancellationTokenSource _scope = new();
     private string _status = InspectorText.Get("SelectTask");
     private string _artifactsStatus = InspectorText.Get("ArtifactsHint");
@@ -19,19 +22,23 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
     private int _generation;
     private int _artifactVersion;
 
-    public AuditPaneViewModel(IToolExecutionAuditReader reader)
+    public AuditPaneViewModel(IToolExecutionAuditReader reader, ISubagentRunJournal? runJournal = null)
     {
         _reader = reader;
+        _runJournal = runJournal;
         RefreshCommand = new AsyncRelayCommand(RefreshAsync, () => HasTask && !IsLoading);
     }
 
     public ObservableCollection<ToolExecutionAuditRecord> Executions { get; } = [];
     public ObservableCollection<AuditExecutionViewModel> ExecutionItems { get; } = [];
+    public ObservableCollection<AuditSubagentRunViewModel> SubagentRuns { get; } = [];
     public ObservableCollection<ToolArtifactRecord> Artifacts { get; } = [];
     public IAsyncRelayCommand RefreshCommand { get; }
     public bool HasTask => _taskId is not null && !_disposed;
     public bool HasExecutions => Executions.Count > 0;
+    public bool HasRuns => SubagentRuns.Count > 0;
     public bool HasArtifacts => Artifacts.Count > 0;
+    public string RunsTitle => InspectorText.Format("AuditSubagentRunsTitle", SubagentRuns.Count);
     public bool IsLoading { get => _isLoading; private set { if (SetProperty(ref _isLoading, value)) RefreshCommand.NotifyCanExecuteChanged(); } }
     public string Status { get => _status; private set => SetProperty(ref _status, value); }
     public string ArtifactsStatus { get => _artifactsStatus; private set => SetProperty(ref _artifactsStatus, value); }
@@ -56,6 +63,17 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
             if (value is null || ExecutionItems.Contains(value)) SelectedExecution = value?.Record;
         }
     }
+    public AuditSubagentRunViewModel? SelectedSubagentRun
+    {
+        get => _selectedSubagentRun;
+        set
+        {
+            if (value is not null && !SubagentRuns.Any(run => ReferenceEquals(run, value))) return;
+            if (ReferenceEquals(_selectedSubagentRun, value)) return;
+            _selectedSubagentRun = value;
+            OnPropertyChanged();
+        }
+    }
 
     public void Attach(Guid? taskId)
     {
@@ -68,8 +86,10 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
         _taskId = taskId;
         Executions.Clear();
         ExecutionItems.Clear();
+        SubagentRuns.Clear();
         Artifacts.Clear();
         SelectedExecution = null;
+        SelectedSubagentRun = null;
         IsLoading = false;
         Status = InspectorText.Get(taskId is null ? "SelectTask" : "Loading");
         ArtifactsStatus = InspectorText.Get("ArtifactsHint");
@@ -89,12 +109,19 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
         Status = InspectorText.Get("Loading");
         try
         {
+            var runsTask = ReadRunsAsync(taskId, token);
             var records = await _reader.GetRecentAsync(taskId, 200, token);
+            var runs = await runsTask;
             if (_disposed || generation != _generation) return;
             var selectionId = SelectedExecution?.Id;
+            var selectedRunId = SelectedSubagentRun?.Record.RunId;
             Executions.ReplaceWith(records.Where(record => record.TaskId == taskId).DistinctBy(record => record.Id).Take(200));
             ExecutionItems.ReplaceWith(Executions.Select(record => new AuditExecutionViewModel(record)));
+            SubagentRuns.ReplaceWith(runs.Where(run => run.TaskId == taskId).DistinctBy(run => run.RunId)
+                .Select(run => new AuditSubagentRunViewModel(run)));
             SelectedExecution = Executions.FirstOrDefault(record => record.Id == selectionId) ?? Executions.FirstOrDefault();
+            SelectedSubagentRun = SubagentRuns.FirstOrDefault(run => run.Record.RunId == selectedRunId)
+                ?? SubagentRuns.FirstOrDefault();
             OnPropertyChanged(nameof(SelectedItem));
             Status = !HasExecutions ? InspectorText.Get("NoAuditHint") : InspectorText.Format("AuditCount", Executions.Count);
             NotifyCollections();
@@ -102,6 +129,15 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
         catch (Exception) { if (!_disposed && generation == _generation) Status = InspectorText.Get("AuditFailed"); }
         finally { if (!_disposed && generation == _generation) IsLoading = false; }
+    }
+
+    // The run journal read is best-effort: a missing journal leaves an empty list and a
+    // failed read must never break the executions main path.
+    private async Task<IReadOnlyList<SubagentRunRecord>> ReadRunsAsync(Guid taskId, CancellationToken token)
+    {
+        if (_runJournal is null) return [];
+        try { return await _runJournal.ReadTaskAsync(taskId, token); }
+        catch (Exception) { return []; }
     }
 
     private async Task LoadArtifactsAsync(ToolExecutionAuditRecord? execution, int version)
@@ -132,6 +168,8 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
     private void NotifyCollections()
     {
         OnPropertyChanged(nameof(HasExecutions));
+        OnPropertyChanged(nameof(HasRuns));
+        OnPropertyChanged(nameof(RunsTitle));
         OnPropertyChanged(nameof(HasArtifacts));
     }
 

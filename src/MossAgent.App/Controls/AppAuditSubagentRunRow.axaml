@@ -1,0 +1,17 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:ui="clr-namespace:MossAgent.App.Controls"
+                   x:Class="MossAgent.App.Controls.AppAuditSubagentRunRow" x:Name="RowOwner"
+                   x:CompileBindings="False">
+  <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" Classes="audit-row-layout">
+    <ui:AppIcon x:Name="OutcomeIcon" Classes="audit-outcome-icon" VerticalAlignment="Center" />
+    <ui:AppText x:Name="ProfileTitle" Grid.Column="1" Text="{Binding #RowOwner.ProfileName}"
+                Classes="type-12 line-18" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+    <ui:AppText x:Name="OutcomeText" Grid.Column="2" Text="{Binding #RowOwner.OutcomeLabel}"
+                Classes="type-11 muted line-18" VerticalAlignment="Center" />
+    <ui:AppText Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding #RowOwner.Metadata}"
+                Classes="type-11 subtle line-18" TextTrimming="CharacterEllipsis" />
+    <ui:AppText x:Name="DetailText" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding #RowOwner.Detail}"
+                IsVisible="{Binding #RowOwner.HasDetail}" Classes="type-12 muted line-18" TextWrapping="Wrap" />
+  </Grid>
+</ui:AppUserControl>

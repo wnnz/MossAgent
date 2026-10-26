@@ -182,7 +182,7 @@
       </Grid>
 
       <!-- 6. 审计与产物详情视图 -->
-      <Grid RowDefinitions="Auto,*,Auto,120" Classes="inspector-content" IsVisible="{Binding IsInspectorAudit}">
+      <Grid RowDefinitions="Auto,*,Auto,Auto,120" Classes="inspector-content" IsVisible="{Binding IsInspectorAudit}">
         <Grid ColumnDefinitions="*,Auto" Margin="2,0,2,8">
           <ui:AppText Text="{Binding Audit.Status}" Classes="muted type-12" VerticalAlignment="Center" />
           <ui:AppIconButton Grid.Column="1" Command="{Binding Audit.RefreshCommand}"
@@ -202,13 +202,30 @@
           </ui:AppListBox>
         </ui:AppBorder>
 
-        <StackPanel Grid.Row="2" Spacing="4" Margin="2,8,2,4">
+        <StackPanel Grid.Row="2" Spacing="4" Margin="2,8,2,4" IsVisible="{Binding Audit.HasRuns}">
+          <ui:AppText Text="{Binding Audit.RunsTitle}" Classes="muted type-12 weight-semibold" />
+          <ui:AppBorder Classes="inspector-list-surface" Padding="4">
+            <ui:AppListBox Classes="audit-history-list thin-scrollbar" MaxHeight="120"
+                           ItemsSource="{Binding Audit.SubagentRuns}" SelectedItem="{Binding Audit.SelectedSubagentRun}">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <ui:AppAuditSubagentRunRow ProfileName="{Binding ProfileName}" OutcomeKind="{Binding OutcomeKind}"
+                                            OutcomeLabel="{Binding OutcomeLabel}" Metadata="{Binding Metadata}" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ui:AppListBox>
+          </ui:AppBorder>
+          <ui:AppText Text="{Binding Audit.SelectedSubagentRun.Detail}" Classes="type-11 subtle line-18" TextWrapping="Wrap"
+                      IsVisible="{Binding Audit.SelectedSubagentRun, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="3" Spacing="4" Margin="2,8,2,4">
           <ui:AppText Text="{res:L '生成产物'}" Classes="muted type-12 weight-semibold" />
           <ui:AppText Text="{Binding Audit.ArtifactsStatus}" IsVisible="{Binding Audit.HasArtifacts}" Classes="type-11 subtle line-18" TextWrapping="Wrap" />
         </StackPanel>
-        <ui:AppEmptyState Grid.Row="3" Classes="compact" Title="{x:Static text:InspectorText.NoArtifacts}" Description="{Binding Audit.ArtifactsStatus}"
+        <ui:AppEmptyState Grid.Row="4" Classes="compact" Title="{x:Static text:InspectorText.NoArtifacts}" Description="{Binding Audit.ArtifactsStatus}"
                           IconData="{StaticResource UiIconDocument}" IsVisible="{Binding !Audit.HasArtifacts}" />
-        <ui:AppBorder Grid.Row="3" Classes="inspector-list-surface" Padding="4" IsVisible="{Binding Audit.HasArtifacts}">
+        <ui:AppBorder Grid.Row="4" Classes="inspector-list-surface" Padding="4" IsVisible="{Binding Audit.HasArtifacts}">
           <ui:AppListBox ItemsSource="{Binding Audit.Artifacts}">
             <ListBox.ItemTemplate>
               <DataTemplate>
