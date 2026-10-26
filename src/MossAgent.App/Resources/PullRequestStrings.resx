@@ -36,7 +36,7 @@
   <data name="RateLimited" xml:space="preserve"><value>服务端限制了请求频率，请稍后手动重试。</value></data>
   <data name="NotFound" xml:space="preserve"><value>仓库或 PR 不存在，或当前令牌无权查看。</value></data>
   <data name="InvalidResponse" xml:space="preserve"><value>服务端响应无效、过大或发生重定向，已停止读取。</value></data>
-  <data name="Remaining" xml:space="preserve"><value>支持授权仓库的 PR 列表、链接打开、文件补丁、讨论、行内评论、评审意见、活动事件、检查读取、固定快照审阅、独立只读查询对话和个人收件箱；已读标记和远程写操作仍待实现。</value></data>
+  <data name="Remaining" xml:space="preserve"><value>支持授权仓库的 PR 列表、链接打开、文件补丁、讨论、行内评论、评审意见、活动事件、检查读取、固定快照审阅、独立只读查询对话、个人收件箱和本地已读/版本标记；远程写操作仍待实现。</value></data>
   <data name="OpenLink" xml:space="preserve"><value>从 PR 链接打开</value></data>
   <data name="LinkUrl" xml:space="preserve"><value>PR 链接（HTTPS）</value></data>
   <data name="LinkStatus" xml:space="preserve"><value>PR 链接打开结果</value></data>
@@ -104,4 +104,7 @@
   <data name="InboxIncomplete" xml:space="preserve"><value>服务端返回的结果不完整，仅展示部分结果，可稍后重试。</value></data>
   <data name="InboxDraft" xml:space="preserve"><value>草稿</value></data>
   <data name="InboxHint" xml:space="preserve"><value>收件箱按账号列出与当前登录用户相关的开放 PR，不读取仓库内容；详情需先授权仓库后从上方列表打开。筛选切换会重新请求服务端。</value></data>
+  <data name="MarkUnviewed" xml:space="preserve"><value>未读</value></data>
+  <data name="MarkViewed" xml:space="preserve"><value>已读</value></data>
+  <data name="MarkUpdated" xml:space="preserve"><value>已更新</value></data>
 </root>

@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.App.Browser;
 using MossAgent.App.Resources;
+using MossAgent.Application.Persistence;
 using MossAgent.Application.SourceControl;
 using MossAgent.Domain;
 using MossAgent.Tools.Abstractions;
@@ -17,11 +18,12 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
     private readonly ISourceRepositoryGrants _grants;
     private readonly ISourceReviewSessions _sessions;
     private readonly IToolExecutor _tools;
+    private readonly IPullRequestMarks _marks;
     private readonly CancellationTokenSource _shutdown = new();
     private CancellationTokenSource? _operation;
     private SourceRepositoryItemViewModel? _selectedRepository;
     private SourceAccountItemViewModel? _selectedAccount;
-    private PullRequestSummary? _selectedItem;
+    private PullRequestItemViewModel? _selectedItem;
     private PullRequestSummary? _detail;
     private string _owner = string.Empty;
     private string _repository = string.Empty;
@@ -36,9 +38,9 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
 
     public PullRequestsViewModel(ISourceAccountRepository accounts, ISourceRepositoryGrants grants,
         ISourceReviewSessions sessions, IToolExecutor tools, SourceInboxReader inbox,
-        SourceReviewChatCreator? reviewChats = null)
+        IPullRequestMarks marks, SourceReviewChatCreator? reviewChats = null)
     {
-        _accounts = accounts; _grants = grants; _sessions = sessions; _tools = tools;
+        _accounts = accounts; _grants = grants; _sessions = sessions; _tools = tools; _marks = marks;
         Inspection = new(tools);
         Inbox = new(inbox);
         Link = new(new SourcePullRequestLinkResolver(accounts, grants), Accounts, LoadLinkedAsync,
@@ -66,7 +68,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
 
     public ObservableCollection<SourceAccountItemViewModel> Accounts { get; } = [];
     public ObservableCollection<SourceRepositoryItemViewModel> Repositories { get; } = [];
-    public ObservableCollection<PullRequestSummary> Items { get; } = [];
+    public ObservableCollection<PullRequestItemViewModel> Items { get; } = [];
     public PullRequestInspectionViewModel Inspection { get; }
     public PullRequestInboxViewModel Inbox { get; }
     public PullRequestLinkViewModel Link { get; }
@@ -95,7 +97,7 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
         get => _selectedAccount;
         set { SetProperty(ref _selectedAccount, value); Inbox.SetAccount(value); NotifyCommands(); }
     }
-    public PullRequestSummary? SelectedItem
+    public PullRequestItemViewModel? SelectedItem
     {
         get => _selectedItem;
         set { if (SetProperty(ref _selectedItem, value)) { Invalidate(); Detail = null; NotifyCommands(); } }
@@ -194,13 +196,17 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
             JsonSerializer.SerializeToElement(new { page })), context, token).ConfigureAwait(false);
         if (!result.IsSuccess) throw new SourceReviewException(result.ErrorCode ?? "source_unavailable");
         var payload = JsonSerializer.Deserialize<PullRequestPage>(result.Content!) ?? throw new SourceReviewException("source_invalid_response");
+        var marks = await _marks.GetAsync(scope.AccountId, scope.Owner, scope.Repository,
+            payload.Items.Select(item => item.Number).ToArray(), token).ConfigureAwait(false);
+        var heads = marks.ToDictionary(mark => mark.Number, mark => mark.HeadRevision);
         await PublishAsync(() =>
         {
             if (token.IsCancellationRequested || generation != _generation) return;
             _updating = true;
             Items.Clear(); SelectedItem = null; Detail = null;
             _updating = false;
-            foreach (var item in payload.Items) Items.Add(item);
+            foreach (var item in payload.Items)
+                Items.Add(new(item, heads.TryGetValue(item.Number, out var head) ? head : null));
             _page = payload.Page; _hasNextPage = payload.HasNextPage;
             Status = PullRequestText.Get("Loaded");
             OnPropertyChanged(nameof(Page)); OnPropertyChanged(nameof(IsEmpty));
@@ -210,18 +216,20 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
     private async Task LoadDetailAsync(CancellationToken token)
     {
         var scope = SelectedRepository!.Scope;
-        var number = SelectedItem!.Number;
+        var number = SelectedItem!.Summary.Number;
         var generation = _generation;
         var context = await ContextAsync(scope, token).ConfigureAwait(false);
         var result = await _tools.ExecuteAsync(new(Guid.NewGuid().ToString("N"), "source.pr_get",
             JsonSerializer.SerializeToElement(new { number })), context, token).ConfigureAwait(false);
         if (!result.IsSuccess) throw new SourceReviewException(result.ErrorCode ?? "source_unavailable");
         var detail = JsonSerializer.Deserialize<PullRequestSummary>(result.Content!) ?? throw new SourceReviewException("source_invalid_response");
+        var marked = await TryMarkViewedAsync(scope, detail.Number, detail.HeadRevision, token).ConfigureAwait(false);
         await PublishAsync(() =>
         {
             if (!token.IsCancellationRequested && generation == _generation)
             {
                 Detail = detail; Status = PullRequestText.Get("Loaded");
+                if (marked) Items.FirstOrDefault(item => item.Summary.Number == detail.Number)?.ApplyMark(detail.HeadRevision);
                 Inspection.Attach(context, new(detail.Number, detail.BaseRevision, detail.HeadRevision));
             }
         }).ConfigureAwait(false);
@@ -238,6 +246,10 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
             JsonSerializer.SerializeToElement(new { number = target.Number })), context, token).ConfigureAwait(false);
         if (!result.IsSuccess) throw new SourceReviewException(result.ErrorCode ?? "source_unavailable");
         var detail = JsonSerializer.Deserialize<PullRequestSummary>(result.Content!) ?? throw new SourceReviewException("source_invalid_response");
+        var marks = await _marks.GetAsync(target.Scope.AccountId, target.Scope.Owner, target.Scope.Repository,
+            [detail.Number], token).ConfigureAwait(false);
+        var marked = await TryMarkViewedAsync(target.Scope, detail.Number, detail.HeadRevision, token).ConfigureAwait(false);
+        var linked = new PullRequestItemViewModel(detail, marked ? detail.HeadRevision : marks.FirstOrDefault()?.HeadRevision);
         await PublishAsync(() =>
         {
             if (token.IsCancellationRequested || generation != _generation) return;
@@ -251,13 +263,27 @@ public sealed class PullRequestsViewModel : ObservableObject, IDisposable, IAsyn
                     Repositories.Add(repository);
                 }
                 SelectedRepository = repository;
-                Items.Clear(); Items.Add(detail); SelectedItem = detail; Detail = detail;
+                Items.Clear(); Items.Add(linked); SelectedItem = linked; Detail = detail;
                 _page = 1; _hasNextPage = false; OnPropertyChanged(nameof(Page));
                 Status = PullRequestText.Get("LinkLoaded");
                 Inspection.Attach(context, new(detail.Number, detail.BaseRevision, detail.HeadRevision));
             }
             finally { _updating = false; }
         }).ConfigureAwait(false);
+    }
+
+    // Bookkeeping is best effort: persistence failures must not fail detail loading, but
+    // cancellation still propagates so the operation reports "Cancelled" honestly.
+    private async Task<bool> TryMarkViewedAsync(SourceRepositoryScope scope, int number, string headRevision,
+        CancellationToken token)
+    {
+        try
+        {
+            await _marks.MarkViewedAsync(scope.AccountId, scope.Owner, scope.Repository, number,
+                headRevision, token).ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException) { return false; }
     }
 
     private async Task<ToolExecutionContext> ContextAsync(SourceRepositoryScope scope, CancellationToken token) =>

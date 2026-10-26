@@ -55,6 +55,9 @@ public static class PullRequestText
     public static string InboxIncomplete => Get(nameof(InboxIncomplete));
     public static string InboxDraft => Get(nameof(InboxDraft));
     public static string InboxHint => Get(nameof(InboxHint));
+    public static string MarkUnviewed => Get(nameof(MarkUnviewed));
+    public static string MarkViewed => Get(nameof(MarkViewed));
+    public static string MarkUpdated => Get(nameof(MarkUpdated));
 
     public static string Failure(string code) => Get(code switch
     {

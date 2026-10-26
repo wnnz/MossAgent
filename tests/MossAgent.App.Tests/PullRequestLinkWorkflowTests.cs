@@ -52,7 +52,7 @@ public sealed class PullRequestLinkWorkflowTests : IAsyncLifetime
             Press(dialog, model.Link.OpenCommand); await model.Link.OpenCommand.ExecutionTask!; window.UpdateLayout();
             Assert.False(model.Link.IsOpen, model.Link.Status); Assert.False(model.IsEmpty);
             Assert.Equal(42, model.Detail?.Number); Assert.Equal("closed", model.Detail?.State);
-            Assert.Equal(model.Detail, Assert.Single(model.Items)); Assert.True(model.Inspection.IsActive);
+            Assert.Equal(model.Detail, Assert.Single(model.Items).Summary); Assert.True(model.Inspection.IsActive);
             Assert.Equal("https://api.github.com/repos/fixture/repo/pulls/42", Assert.Single(requests).AbsoluteUri);
             Assert.Contains(view.GetVisualDescendants().OfType<AppSelectableText>(), text => text.IsEffectivelyVisible && text.Text == "Untrusted PR description");
             Assert.Equal("unsaved-owner", model.Owner); Assert.Equal("unsaved-repository", model.Repository); Assert.Same(editorAccount, model.SelectedAccount);

@@ -9,7 +9,7 @@ public sealed class SteeringAttachmentMigrationTests
     public async Task FreshDatabaseCreatesSteeringAttachmentsAtVersionThirtyNine()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
-        Assert.Equal(43, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(44, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='conversation_steering_input_attachments';"));
         Assert.Equal(1, await fixture.CountAsync(
@@ -37,13 +37,13 @@ public sealed class SteeringAttachmentMigrationTests
             """);
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Initializer.InitializeAsync(fixture.Token));
         // v39 was removed and its migration rejected, but v40/v41/v42 remain applied.
-        Assert.Equal(42, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(43, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='conversation_steering_input_attachments';"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_thirty_nine;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(43, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(44, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions WHERE version=39;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='conversation_steering_input_attachments';"));
@@ -62,7 +62,7 @@ public sealed class SteeringAttachmentMigrationTests
             """);
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(43, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(44, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var restored = Assert.Single((await fixture.InputsAsync()).Items);
         Assert.Equal(input.Id, restored.Id);
         Assert.Equal(input.Text, restored.Text);

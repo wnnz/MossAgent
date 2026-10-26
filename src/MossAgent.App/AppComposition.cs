@@ -82,6 +82,7 @@ internal static class AppComposition
         services.AddSingleton<SourceAccountConnections>();
         services.AddSingleton<ISourceRepositoryGrants, SqliteSourceRepositoryGrants>();
         services.AddSingleton<ISourceReviewSessions, SqliteSourceReviewSessions>();
+        services.AddSingleton<IPullRequestMarks, SqlitePullRequestMarks>();
         services.AddSingleton<IPullRequestClient, GitHubPullRequestClient>();
         services.AddSingleton<ISourceReviewReader, SourceReviewReader>();
         services.AddSingleton<SourceRepositoryAccess>();
