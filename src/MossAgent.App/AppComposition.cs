@@ -332,6 +332,7 @@ internal static class AppComposition
         services.AddSingleton<AuditPaneViewModel>();
         services.AddSingleton<BrowserSettingsViewModel>();
         services.AddSingleton<McpSettingsViewModel>();
+        services.AddSingleton<PluginPackagesViewModel>();
         services.AddSingleton<WorkspaceViewModel>();
         services.AddSingleton<IAutomationTaskRunner, WorkspaceAutomationRunner>();
         services.AddSingleton<IAutomationAuthorizationGate, AutomationAuthorizationGate>();

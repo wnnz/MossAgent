@@ -81,6 +81,12 @@
                           Label="{res:L '插件'}" IconData="{StaticResource UiIconPlug}" />
             <ui:AppSettingsNavButton
                           HorizontalAlignment="Stretch"
+                          IsVisible="{Binding IsPluginPackageSettingsMatch}"
+                          IsChecked="{Binding IsPluginPackageSettingsSelected, Mode=OneWay}"
+                          Command="{Binding SelectSettingsTabCommand}" CommandParameter="9"
+                          Label="{res:L '本地插件'}" IconData="{StaticResource UiIconArchive}" />
+            <ui:AppSettingsNavButton
+                          HorizontalAlignment="Stretch"
                           IsVisible="{Binding IsBrowserSettingsMatch}"
                           IsChecked="{Binding IsBrowserSettingsSelected, Mode=OneWay}"
                           Command="{Binding SelectSettingsTabCommand}" CommandParameter="2"
@@ -135,6 +141,9 @@
           </ui:AppBorder>
           <ui:AppBorder IsVisible="{Binding IsMcpSettingsSelected}">
             <views:McpSettingsPane DataContext="{Binding Mcp}" />
+          </ui:AppBorder>
+          <ui:AppBorder IsVisible="{Binding IsPluginPackageSettingsSelected}">
+            <views:PluginPackagesPane DataContext="{Binding Plugins}" />
           </ui:AppBorder>
           <ui:AppBorder IsVisible="{Binding IsSourceAccountSettingsSelected}">
             <views:SourceAccountSettingsPane DataContext="{Binding SourceAccounts}" />

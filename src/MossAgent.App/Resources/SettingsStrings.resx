@@ -196,4 +196,51 @@
   <data name="ProjectRootsNeedConfirmation" xml:space="preserve"><value>这些目录尚未登记对象身份。请核对目录后明确确认授权，历史与草稿已保留。</value></data>
   <data name="ProjectRootIdentityFailed" xml:space="preserve"><value>目录对象已变化、尚未确认或无法安全验证。请重新打开项目编辑器，核对目录后明确确认授权。</value></data>
   <data name="ProjectRootObjectsConfirmed" xml:space="preserve"><value>已登记当前目录对象。旧运行不会恢复，请手动开始新运行。</value></data>
+  <data name="PluginPick" xml:space="preserve"><value>选择插件包</value></data>
+  <data name="PluginRefresh" xml:space="preserve"><value>刷新</value></data>
+  <data name="PluginPackageFilter" xml:space="preserve"><value>插件包</value></data>
+  <data name="PluginEmpty" xml:space="preserve"><value>还没有已安装的插件</value></data>
+  <data name="PluginEmptyHint" xml:space="preserve"><value>选择本地插件包并核对清单后安装。</value></data>
+  <data name="PluginConfirmTitle" xml:space="preserve"><value>确认安装插件包</value></data>
+  <data name="PluginConfirmInstall" xml:space="preserve"><value>确认安装</value></data>
+  <data name="PluginCancelInstall" xml:space="preserve"><value>取消</value></data>
+  <data name="PluginUninstall" xml:space="preserve"><value>卸载</value></data>
+  <data name="PluginUninstallConfirm" xml:space="preserve"><value>确认卸载</value></data>
+  <data name="PluginStateInstalled" xml:space="preserve"><value>已安装</value></data>
+  <data name="PluginStateEnabled" xml:space="preserve"><value>已启用</value></data>
+  <data name="PluginStateDisabled" xml:space="preserve"><value>已停用</value></data>
+  <data name="PluginRowSummary" xml:space="preserve"><value>版本 {0} · {1} 个组件 · {2}</value></data>
+  <data name="PluginComponentSkill" xml:space="preserve"><value>技能</value></data>
+  <data name="PluginComponentMcpServer" xml:space="preserve"><value>MCP 服务</value></data>
+  <data name="PluginComponentAsset" xml:space="preserve"><value>资产</value></data>
+  <data name="PluginPreviewComponents" xml:space="preserve"><value>组件（{0}）</value></data>
+  <data name="PluginPreviewNoComponents" xml:space="preserve"><value>组件：无</value></data>
+  <data name="PluginPreviewMcpServers" xml:space="preserve"><value>MCP 服务声明：{0}</value></data>
+  <data name="PluginPreviewNoMcpServers" xml:space="preserve"><value>MCP 服务声明：无</value></data>
+  <data name="PluginPreviewHash" xml:space="preserve"><value>内容哈希：{0}</value></data>
+  <data name="PluginPreviewSource" xml:space="preserve"><value>来源：{0}</value></data>
+  <data name="PluginPreviewReady" xml:space="preserve"><value>请核对组件与来源后确认安装 {0} {1}。</value></data>
+  <data name="PluginInstalled" xml:space="preserve"><value>已安装插件 {0} {1}。</value></data>
+  <data name="PluginInstallCancelled" xml:space="preserve"><value>已取消安装。</value></data>
+  <data name="PluginEnabled" xml:space="preserve"><value>已启用插件 {0}。启用仅保存状态标记，组件暂不激活。</value></data>
+  <data name="PluginDisabled" xml:space="preserve"><value>已停用插件 {0}。</value></data>
+  <data name="PluginUninstalled" xml:space="preserve"><value>已卸载插件 {0}。</value></data>
+  <data name="PluginUninstallPayloadKept" xml:space="preserve"><value>已卸载插件 {0}，但载荷目录删除失败，已保留为残留，启动核对时将报告。</value></data>
+  <data name="PluginUninstallPrompt" xml:space="preserve"><value>再次点击“{0}”以卸载 {1}。</value></data>
+  <data name="PluginTargetUnavailable" xml:space="preserve"><value>该插件已不存在，请刷新列表后重试。</value></data>
+  <data name="PluginListRefreshed" xml:space="preserve"><value>插件列表已刷新。</value></data>
+  <data name="PluginLoadFailed" xml:space="preserve"><value>无法加载插件列表，请检查数据目录后刷新重试。</value></data>
+  <data name="PluginPreviewFailed" xml:space="preserve"><value>无法预览插件包，请确认文件可读后重试。</value></data>
+  <data name="PluginInstallFailed" xml:space="preserve"><value>无法安装插件包，请检查数据目录后重试。</value></data>
+  <data name="PluginInstalledRefreshFailed" xml:space="preserve"><value>已安装插件，但列表刷新失败，请手动刷新。</value></data>
+  <data name="PluginToggleFailed" xml:space="preserve"><value>无法切换插件启用状态，请刷新后重试。</value></data>
+  <data name="PluginUninstallFailed" xml:space="preserve"><value>无法卸载插件，请刷新后重试。</value></data>
+  <data name="PluginOperationCancelled" xml:space="preserve"><value>插件操作已取消。</value></data>
+  <data name="PluginErrorUnreadable" xml:space="preserve"><value>无法读取插件包，请确认文件未损坏后重试。</value></data>
+  <data name="PluginErrorEntryInvalid" xml:space="preserve"><value>插件包包含不安全或无效的归档条目，已拒绝。</value></data>
+  <data name="PluginErrorTooLarge" xml:space="preserve"><value>插件包超出大小限制，已拒绝。</value></data>
+  <data name="PluginErrorManifestMissing" xml:space="preserve"><value>插件包缺少 plugin.json 清单。</value></data>
+  <data name="PluginErrorManifestInvalid" xml:space="preserve"><value>插件清单 plugin.json 无效，已拒绝。</value></data>
+  <data name="PluginErrorMcpInvalid" xml:space="preserve"><value>插件声明的 mcp.json 无效，已拒绝。</value></data>
+  <data name="PluginErrorConflict" xml:space="preserve"><value>已存在同名同版本但内容不同的插件，请先卸载现有版本。</value></data>
 </root>

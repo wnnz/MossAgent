@@ -1,0 +1,77 @@
+<ui:AppUserControl xmlns="https://github.com/avaloniaui" xmlns:res="clr-namespace:MossAgent.App.Resources"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:MossAgent.App.Controls"
+             xmlns:labels="clr-namespace:MossAgent.App.Resources"
+             x:Class="MossAgent.App.Views.PluginPackagesPane"
+             x:CompileBindings="False">
+  <Grid Classes="settings-content-column">
+    <ui:AppScrollViewer Classes="settings-page-scroll">
+      <StackPanel Spacing="24" Margin="0,0,0,32">
+        <ui:AppSettingsPageHeader Title="{res:L '本地插件'}"
+                                  Description="{res:L '安装本地插件包并管理启用状态；启用仅保存状态标记，组件暂不激活。'}"
+                                  Status="{Binding Status}" IsStatusError="{Binding HasStatusError}">
+          <ui:AppSettingsPageHeader.Actions>
+            <StackPanel Classes="settings-header-actions">
+              <ui:AppActionButton Label="{x:Static labels:PluginPackageLabels.Refresh}"
+                                  IconData="{StaticResource UiIconRefresh}" Classes="ghost"
+                                  Command="{Binding RefreshCommand}" />
+              <ui:AppActionButton Label="{x:Static labels:PluginPackageLabels.Pick}"
+                                  IconData="{StaticResource UiIconFolderOpen}" Classes="primary"
+                                  Command="{Binding PickPackageCommand}" />
+            </StackPanel>
+          </ui:AppSettingsPageHeader.Actions>
+        </ui:AppSettingsPageHeader>
+
+        <ui:AppCard Classes="card card-inset-list" IsVisible="{Binding HasPendingPreview}">
+          <StackPanel Spacing="9" DataContext="{Binding PendingPreview}">
+            <ui:AppText Text="{x:Static labels:PluginPackageLabels.ConfirmTitle}" Classes="type-14 weight-semibold" />
+            <ui:AppText Text="{Binding Title}" Classes="type-13 weight-semibold" TextWrapping="Wrap" />
+            <ui:AppText Text="{Binding Description}" Classes="muted type-12" TextWrapping="Wrap"
+                        IsVisible="{Binding HasDescription}" />
+            <ui:AppText Text="{Binding ComponentsHeader}" Classes="subtle type-11" />
+            <ui:AppItemsControl ItemsSource="{Binding ComponentLines}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <ui:AppText Text="{Binding}" Classes="muted type-12"
+                              TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ui:AppItemsControl>
+            <ui:AppText Text="{Binding McpServersText}" Classes="muted type-12" TextWrapping="Wrap" />
+            <ui:AppText Text="{Binding HashText}" Classes="subtle type-11" />
+            <ui:AppText Text="{Binding SourceText}" Classes="subtle type-11" TextWrapping="Wrap" />
+            <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
+              <ui:AppButton Classes="primary" Content="{x:Static labels:PluginPackageLabels.ConfirmInstall}"
+                            Command="{Binding $parent[UserControl].DataContext.ConfirmInstallCommand}" />
+              <ui:AppButton Grid.Column="1" Content="{x:Static labels:PluginPackageLabels.CancelInstall}"
+                            Command="{Binding $parent[UserControl].DataContext.CancelInstallCommand}" />
+            </Grid>
+          </StackPanel>
+        </ui:AppCard>
+
+        <ui:AppCard Classes="card card-inset-list">
+          <StackPanel>
+            <ui:AppEmptyState Classes="settings-empty" IsVisible="{Binding HasNoItems}"
+                              IconData="{StaticResource UiIconArchive}"
+                              Title="{x:Static labels:PluginPackageLabels.Empty}"
+                              Description="{x:Static labels:PluginPackageLabels.EmptyHint}" />
+            <ui:AppListBox MaxHeight="560" ItemsSource="{Binding Items}">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <ui:AppSettingsItemRow Classes="multiline" Title="{Binding Name}"
+                        Subtitle="{Binding Subtitle}" BadgeText="{Binding StateText}"
+                        ActionTarget="{Binding}" IsPrimaryAlternate="{Binding IsEnabled}"
+                        PrimaryLabel="{x:Static labels:SettingsItemLabels.Enable}"
+                        AlternatePrimaryLabel="{x:Static labels:SettingsItemLabels.Disable}"
+                        PrimaryCommand="{Binding $parent[UserControl].DataContext.ToggleEnabledCommand}"
+                        SecondaryLabel="{Binding UninstallLabel}"
+                        SecondaryCommand="{Binding $parent[UserControl].DataContext.UninstallCommand}" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ui:AppListBox>
+          </StackPanel>
+        </ui:AppCard>
+      </StackPanel>
+    </ui:AppScrollViewer>
+  </Grid>
+</ui:AppUserControl>

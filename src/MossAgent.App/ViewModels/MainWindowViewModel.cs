@@ -32,6 +32,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         ModelSettingsViewModel models,
         BrowserSettingsViewModel browser,
         McpSettingsViewModel mcp,
+        PluginPackagesViewModel plugins,
         AgentSettingsViewModel agents,
         SubagentSettingsViewModel subagents,
         TerminalPaneViewModel terminal,
@@ -60,6 +61,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         Models = models;
         Browser = browser;
         Mcp = mcp;
+        Plugins = plugins;
         Agents = agents;
         Subagents = subagents;
         Terminal = terminal;
@@ -138,6 +140,9 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     /// </summary>
     public McpSettingsViewModel Mcp { get; }
 
+    /// <summary>本地插件包管理视图模型。</summary>
+    public PluginPackagesViewModel Plugins { get; }
+
     public SubagentSettingsViewModel Subagents { get; }
     public AgentSettingsViewModel Agents { get; }
     public WorkspacePageNavigationViewModel Pages { get; }
@@ -192,6 +197,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         Agents.ProfilesChanged -= Workspace.ReloadAgentsAsync;
         Agents.Dispose();
         Subagents.Dispose();
+        Plugins.Dispose();
     }
 
     private async Task ReloadModelCatalogAsync()
@@ -244,43 +250,36 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         set
         {
             if (!SetProperty(ref _settingsTabIndex, value)) return;
-            OnPropertyChanged(nameof(IsProviderSettingsSelected));
-            OnPropertyChanged(nameof(IsProxySettingsSelected));
-            OnPropertyChanged(nameof(IsBrowserSettingsSelected));
-            OnPropertyChanged(nameof(IsMcpSettingsSelected));
-            OnPropertyChanged(nameof(IsSubagentSettingsSelected));
-            OnPropertyChanged(nameof(IsAgentSettingsSelected));
-            OnPropertyChanged(nameof(IsAppearanceSettingsSelected));
-            OnPropertyChanged(nameof(IsSourceAccountSettingsSelected));
-            OnPropertyChanged(nameof(IsComposerSettingsSelected));
+            foreach (var name in SettingsTabNotifications) OnPropertyChanged(name);
         }
     }
 
+    private static readonly string[] SettingsTabNotifications =
+    [
+        nameof(IsProviderSettingsSelected), nameof(IsProxySettingsSelected), nameof(IsBrowserSettingsSelected),
+        nameof(IsMcpSettingsSelected), nameof(IsSubagentSettingsSelected), nameof(IsAgentSettingsSelected),
+        nameof(IsAppearanceSettingsSelected), nameof(IsSourceAccountSettingsSelected),
+        nameof(IsComposerSettingsSelected), nameof(IsPluginPackageSettingsSelected)
+    ];
+
     public bool IsProviderSettingsSelected => SettingsTabIndex == 0;
-
     public bool IsProxySettingsSelected => SettingsTabIndex == 1;
-
     public bool IsBrowserSettingsSelected => SettingsTabIndex == 2;
-
     public bool IsMcpSettingsSelected => SettingsTabIndex == 3;
-
     public bool IsSubagentSettingsSelected => SettingsTabIndex == 4;
     public bool IsAgentSettingsSelected => SettingsTabIndex == 6;
-
     public bool IsAppearanceSettingsSelected => SettingsTabIndex == 5;
     public bool IsSourceAccountSettingsSelected => SettingsTabIndex == 7 && SourceAccounts is not null;
     public bool IsComposerSettingsSelected => SettingsTabIndex == 8;
+    public bool IsPluginPackageSettingsSelected => SettingsTabIndex == 9;
 
     public bool IsSystemThemeSelected => _themeService.Preference == ThemePreference.System;
     public bool IsLightThemeSelected => _themeService.Preference == ThemePreference.Light;
     public bool IsDarkThemeSelected => _themeService.Preference == ThemePreference.Dark;
 
     public ThemePaletteSettingsViewModel Palette { get; }
-
     public ThemePaletteEditorViewModel ActivePalette => IsDarkMode ? Palette.Dark : Palette.Light;
-
     public string? AppearanceError => _themeService.PersistenceError;
-
     public bool HasAppearanceError => !string.IsNullOrWhiteSpace(AppearanceError);
 
     public string SettingsSearchQuery
@@ -289,21 +288,19 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         set
         {
             if (!SetProperty(ref _settingsSearchQuery, value ?? string.Empty)) return;
-            OnPropertyChanged(nameof(IsProviderSettingsMatch));
-            OnPropertyChanged(nameof(IsProxySettingsMatch));
-            OnPropertyChanged(nameof(IsBrowserSettingsMatch));
-            OnPropertyChanged(nameof(IsMcpSettingsMatch));
-            OnPropertyChanged(nameof(IsSubagentSettingsMatch));
-            OnPropertyChanged(nameof(IsAgentSettingsMatch));
-            OnPropertyChanged(nameof(IsAppearanceSettingsMatch));
-            OnPropertyChanged(nameof(IsSourceAccountSettingsMatch));
-            OnPropertyChanged(nameof(IsComposerSettingsMatch));
-            OnPropertyChanged(nameof(IsPersonalSettingsMatch));
-            OnPropertyChanged(nameof(IsIntegrationSettingsMatch));
-            OnPropertyChanged(nameof(IsAgentSectionSettingsMatch));
-            OnPropertyChanged(nameof(HasSettingsSearchResults));
+            foreach (var name in SettingsMatchNotifications) OnPropertyChanged(name);
         }
     }
+
+    private static readonly string[] SettingsMatchNotifications =
+    [
+        nameof(IsProviderSettingsMatch), nameof(IsProxySettingsMatch), nameof(IsBrowserSettingsMatch),
+        nameof(IsMcpSettingsMatch), nameof(IsSubagentSettingsMatch), nameof(IsAgentSettingsMatch),
+        nameof(IsAppearanceSettingsMatch), nameof(IsSourceAccountSettingsMatch),
+        nameof(IsComposerSettingsMatch), nameof(IsPluginPackageSettingsMatch),
+        nameof(IsPersonalSettingsMatch), nameof(IsIntegrationSettingsMatch),
+        nameof(IsAgentSectionSettingsMatch), nameof(HasSettingsSearchResults)
+    ];
 
     public bool IsProviderSettingsMatch => MatchesSettingsQuery(UiText.T("AI 提供商 提供商与模型 供应商 模型"));
     public bool IsProxySettingsMatch => MatchesSettingsQuery(UiText.T("网络代理 Proxy SOCKS"));
@@ -312,16 +309,15 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     public bool IsSubagentSettingsMatch => MatchesSettingsQuery(UiText.T("子代理 模型 思考"));
     public bool IsAgentSettingsMatch => MatchesSettingsQuery(UiText.T("自定义代理 提示词 模型 思考"));
     public bool IsAppearanceSettingsMatch => MatchesSettingsQuery(UiText.T("外观 主题 浅色 深色 系统"));
-    public bool IsSourceAccountSettingsMatch => SourceAccounts is not null
-        && MatchesSettingsQuery(SourceAccountText.Title + " GitHub PR Pull Request source account");
+    public bool IsSourceAccountSettingsMatch => SourceAccounts is not null && MatchesSettingsQuery(SourceAccountText.Title + " GitHub PR Pull Request source account");
     public bool IsComposerSettingsMatch => MatchesSettingsQuery(ComposerPreferenceText.Title + " Enter 发送 队列 引导");
+    public bool IsPluginPackageSettingsMatch => MatchesSettingsQuery(UiText.T("本地插件 插件包 plugin zip mossplugin"));
     public bool IsPersonalSettingsMatch => IsComposerSettingsMatch || IsAppearanceSettingsMatch || IsProviderSettingsMatch || IsProxySettingsMatch;
-    public bool IsIntegrationSettingsMatch => IsMcpSettingsMatch || IsBrowserSettingsMatch || IsSourceAccountSettingsMatch;
+    public bool IsIntegrationSettingsMatch => IsMcpSettingsMatch || IsBrowserSettingsMatch || IsSourceAccountSettingsMatch || IsPluginPackageSettingsMatch;
     public bool IsAgentSectionSettingsMatch => IsAgentSettingsMatch || IsSubagentSettingsMatch;
-    public bool HasSettingsSearchResults => IsProviderSettingsMatch || IsProxySettingsMatch
-        || IsBrowserSettingsMatch || IsMcpSettingsMatch || IsSubagentSettingsMatch
-        || IsAppearanceSettingsMatch || IsAgentSettingsMatch || IsSourceAccountSettingsMatch
-        || IsComposerSettingsMatch;
+    public bool HasSettingsSearchResults => IsProviderSettingsMatch || IsProxySettingsMatch || IsBrowserSettingsMatch
+        || IsMcpSettingsMatch || IsSubagentSettingsMatch || IsAppearanceSettingsMatch || IsAgentSettingsMatch
+        || IsSourceAccountSettingsMatch || IsComposerSettingsMatch || IsPluginPackageSettingsMatch;
 
     /// <summary>
     /// 是否展开左侧项目和会话导航栏。
@@ -444,7 +440,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
 
     private void SelectSettingsTab(string? tab)
     {
-        if (!int.TryParse(tab, out var index) || index is < 0 or > 8 || (index == 7 && SourceAccounts is null)) return;
+        if (!int.TryParse(tab, out var index) || index is < 0 or > 9 || (index == 7 && SourceAccounts is null)) return;
         Workspace.ModelPicker.IsPickerOpen = false;
         SettingsTabIndex = index;
         IsSettingsOpen = true;
