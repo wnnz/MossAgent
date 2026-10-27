@@ -18,11 +18,7 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
     public async Task<InstalledPlugin?> GetAsync(Guid id, CancellationToken cancellationToken)
     {
         await using var connection = await OpenAsync(cancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText = $"SELECT {Columns} FROM plugin_packages WHERE id=$id;";
-        command.Parameters.AddWithValue("$id", id.ToString());
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        return await reader.ReadAsync(cancellationToken) ? Map(reader) : null;
+        return await FindByIdAsync(connection, null, id, cancellationToken);
     }
 
     public async Task<InstalledPlugin?> GetByNameVersionAsync(string name, string version,
@@ -65,6 +61,42 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
         return plugin;
     }
 
+    public async Task<InstalledPlugin?> SetStateAsync(Guid id, InstalledPluginState state,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await OpenAsync(cancellationToken);
+        await using var transaction = connection.BeginTransaction();
+        var row = await FindByIdAsync(connection, transaction, id, cancellationToken);
+        if (row is null) return null;
+        if (row.State != state)
+        {
+            await using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = "UPDATE plugin_packages SET state=$state WHERE id=$id;";
+            command.Parameters.AddWithValue("$state", (int)state);
+            command.Parameters.AddWithValue("$id", id.ToString());
+            if (await command.ExecuteNonQueryAsync(cancellationToken) == 0) return null;
+            row = row with { State = state };
+        }
+        await transaction.CommitAsync(cancellationToken);
+        return row;
+    }
+
+    public async Task<InstalledPlugin?> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        await using var connection = await OpenAsync(cancellationToken);
+        await using var transaction = connection.BeginTransaction();
+        var row = await FindByIdAsync(connection, transaction, id, cancellationToken);
+        if (row is null) return null;
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = "DELETE FROM plugin_packages WHERE id=$id;";
+        command.Parameters.AddWithValue("$id", id.ToString());
+        await command.ExecuteNonQueryAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return row;
+    }
+
     public async Task<IReadOnlyList<InstalledPlugin>> ListAsync(CancellationToken cancellationToken)
     {
         await using var connection = await OpenAsync(cancellationToken);
@@ -82,6 +114,17 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
         var connection = connections.Create();
         await connection.OpenAsync(cancellationToken);
         return connection;
+    }
+
+    private static async Task<InstalledPlugin?> FindByIdAsync(SqliteConnection connection,
+        SqliteTransaction? transaction, Guid id, CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = $"SELECT {Columns} FROM plugin_packages WHERE id=$id;";
+        command.Parameters.AddWithValue("$id", id.ToString());
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken) ? Map(reader) : null;
     }
 
     private static async Task<InstalledPlugin?> FindAsync(SqliteConnection connection,

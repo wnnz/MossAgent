@@ -14,5 +14,14 @@ public interface IInstalledPluginStore
 
     Task<InstalledPlugin> InsertAsync(InstalledPlugin plugin, CancellationToken cancellationToken);
 
+    /// <summary>Single-statement state transition. Lifecycle transitions are total and
+    /// idempotent, so no expected-state check is needed; returns the updated row or null
+    /// when the id no longer exists.</summary>
+    Task<InstalledPlugin?> SetStateAsync(Guid id, InstalledPluginState state, CancellationToken cancellationToken);
+
+    /// <summary>Removes the row and returns it as stored, or null when the id no longer
+    /// exists. The caller owns any payload cleanup after the row is gone.</summary>
+    Task<InstalledPlugin?> DeleteAsync(Guid id, CancellationToken cancellationToken);
+
     Task<IReadOnlyList<InstalledPlugin>> ListAsync(CancellationToken cancellationToken);
 }

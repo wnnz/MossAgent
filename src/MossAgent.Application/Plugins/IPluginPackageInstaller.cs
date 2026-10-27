@@ -18,4 +18,17 @@ public interface IPluginPackageInstaller
     /// have no row. Orphaned payloads belong to the user and are only reported, never deleted
     /// or executed.</summary>
     Task<PluginInstallReconciliation> ReconcileAsync(CancellationToken cancellationToken);
+
+    /// <summary>Marks a row enabled. Enablement is a persisted state flag only — no
+    /// component becomes executable until runtime activation lands. Idempotent and null
+    /// when the id is gone.</summary>
+    Task<InstalledPlugin?> EnableAsync(Guid id, CancellationToken cancellationToken);
+
+    /// <summary>Marks a row disabled. Idempotent and null when the id is gone.</summary>
+    Task<InstalledPlugin?> DisableAsync(Guid id, CancellationToken cancellationToken);
+
+    /// <summary>Deletes the row, then best-effort removes the extracted payload. A payload
+    /// that cannot be removed stays behind as an orphan for startup reconciliation to
+    /// report; the source package file is never touched. Null when the id is gone.</summary>
+    Task<PluginUninstallOutcome?> UninstallAsync(Guid id, CancellationToken cancellationToken);
 }

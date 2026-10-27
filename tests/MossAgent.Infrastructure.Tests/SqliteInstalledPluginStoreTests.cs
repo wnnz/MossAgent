@@ -76,6 +76,42 @@ public sealed class SqliteInstalledPluginStoreTests
     }
 
     [Fact]
+    public async Task SetStateRoundTripsThroughEveryLifecycleValue()
+    {
+        await using var fixture = await PluginInstallFixture.CreateAsync();
+        var store = fixture.Store();
+        var row = await store.InsertAsync(Row("demo", "1.0", new string('a', 64)), fixture.Token);
+        Assert.Equal(InstalledPluginState.Installed, row.State);
+        PluginRowAssert.Equal(row with { State = InstalledPluginState.Enabled },
+            await store.SetStateAsync(row.Id, InstalledPluginState.Enabled, fixture.Token));
+        PluginRowAssert.Equal(row with { State = InstalledPluginState.Disabled },
+            await store.SetStateAsync(row.Id, InstalledPluginState.Disabled, fixture.Token));
+        PluginRowAssert.Equal(row with { State = InstalledPluginState.Enabled },
+            await store.SetStateAsync(row.Id, InstalledPluginState.Enabled, fixture.Token));
+        Assert.Equal(InstalledPluginState.Enabled, (await store.GetAsync(row.Id, fixture.Token))!.State);
+    }
+
+    [Fact]
+    public async Task SetStateOnAMissingRowReturnsNull()
+    {
+        await using var fixture = await PluginInstallFixture.CreateAsync();
+        Assert.Null(await fixture.Store().SetStateAsync(Guid.NewGuid(),
+            InstalledPluginState.Enabled, fixture.Token));
+    }
+
+    [Fact]
+    public async Task DeleteReturnsTheStoredRowAndRemovesIt()
+    {
+        await using var fixture = await PluginInstallFixture.CreateAsync();
+        var store = fixture.Store();
+        var row = await store.InsertAsync(Row("demo", "1.0", new string('a', 64)), fixture.Token);
+        PluginRowAssert.Equal(row, await store.DeleteAsync(row.Id, fixture.Token));
+        Assert.Null(await store.GetAsync(row.Id, fixture.Token));
+        Assert.Null(await store.DeleteAsync(row.Id, fixture.Token));
+        Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM plugin_packages;"));
+    }
+
+    [Fact]
     public async Task SchemaViolationWithoutARowIsAFailureNotAConflict()
     {
         await using var fixture = await PluginInstallFixture.CreateAsync();

@@ -90,6 +90,28 @@ public sealed class PluginPackageInstaller(
         return new PluginInstallReconciliation(removed, orphaned);
     }
 
+    public Task<InstalledPlugin?> EnableAsync(Guid id, CancellationToken cancellationToken) =>
+        store.SetStateAsync(id, InstalledPluginState.Enabled, cancellationToken);
+
+    public Task<InstalledPlugin?> DisableAsync(Guid id, CancellationToken cancellationToken) =>
+        store.SetStateAsync(id, InstalledPluginState.Disabled, cancellationToken);
+
+    public async Task<PluginUninstallOutcome?> UninstallAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var plugin = await store.DeleteAsync(id, cancellationToken);
+        if (plugin is null) return null;
+        var payload = PayloadPath(plugin.InstallPath);
+        return new PluginUninstallOutcome(plugin, payload is not null && TryDelete(payload));
+    }
+
+    private string? PayloadPath(string installPath)
+    {
+        var path = Path.GetFullPath(Path.Combine(_pluginRoot, installPath));
+        var prefix = _pluginRoot.EndsWith(Path.DirectorySeparatorChar)
+            ? _pluginRoot : _pluginRoot + Path.DirectorySeparatorChar;
+        return path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ? path : null;
+    }
+
     private void MoveIntoPlace(string staging, string final)
     {
         if (Directory.Exists(final) || File.Exists(final))

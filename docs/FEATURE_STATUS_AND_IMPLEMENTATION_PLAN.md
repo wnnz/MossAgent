@@ -130,7 +130,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | R10 | 部分完成；其他组合待验 | 定时计划授权/参数版本、关闭/中断/并发/多实例、时区与 DST，以及关闭后的行为实机验收。授权快照已落地且认领时固定（run 行记录 snapshot_generation v42、历史按代际标注、保存时在途运行如实提示沿用旧快照）；编辑后自动停止在途运行仍非默认行为，实机验收仍缺 | P1；R02/R06 |
 | R11 | 部分完成 | 单文件区块暂存/取消暂存已落地（rename/copy/二进制/新增/删除/仅模式/冲突明确拒绝）；整组暂存/取消暂存已落地（git.stage_paths/unstage_paths，1–64 路径单命令原子、越界/链接/目录逐项拒绝）；提交消息草稿独立版本持久化（git_commit_drafts v40，编辑去抖 CAS 写入、重启恢复）与提交未知结果核对（复核 HEAD/暂存数后消费或保留草稿）已落地；推送非确定性失败后以远端跟踪引用核对实际结果（已推送→明示，未证实→保留原错误，核对失败→明示未知）；预览绑定已落地（git.diff 输出尾部绑定 diff-sha256 与各文件 file-sha256，hunk 工具 required expectedDiff 执行期哈希复核、漂移即拒绝）；远端/上游配置读取与凭据方式展示已落地（git.remotes 只读工具：脱敏 scheme://host 端点、local/ssh/https/embedded/unsupported 凭据方式分类、credential.helper 值链、当前分支上游；推送对话框凭据行揭示 URL 内嵌凭据并警示）；远端/上游条件变更端口已落地（git.remote_set_url 按脱敏端点+凭据方式做语义级 CAS、本地目的地复用推送授权端口、永不回显内嵌凭据，git.branch_upstream 按原文 CAS 写 branch.*.remote/merge 并如实报告部分应用）；推送非快进拒绝分类引导已落地（合并诊断分类为确定性 git_push_non_ff、提示先合并/变基远端更新再刷新预览、原始输出不回显）；真实远端核对部分落地：git.ls_remote 已落地（只读、脱敏端点、有界 64 条、非交互、凭据永不回显），供模型主动核对远端 refs；推送失败后自动核对仍走本地远端跟踪引用（离线、不触网络）；原生验收仍缺 | P2；R01/R02 |
 | R12 | 部分完成 | GitHub reviews/activity 只读已端到端落地（审阅面板分区 + 版本绑定工具）；按账号个人 PR 收件箱只读已落地（search/issues 固定端点、角色筛选、分页、incomplete 标记，双解析 revision 看守，不升级 grant、无写入）；已读/版本标记持久化已落地（pull_request_marks v44，按 account/repository/PR 记录查看时 head，列表批量取标记后与条目在同一代际原子发布，head 漂移明示“已更新”，打开详情按当前 head 尽力落账，标记不随账号删除清理）；按 grant 显式写授权模型已落地（v45 can_write，独立写解析端口，存量行只读、无升级通道）；确认写工具已落地五个（source.pr_comment_create：写授权+版本核对+两段式面板确认，绝不重试，未知结果经最近评论精确匹配核实；source.pr_review_submit：approve/request_changes/comment 三态结论+可选正文，POST 固定 commit_id 到已核对的 head，未知结果按状态/提交/规范化正文升序分页核实评审（≤10 页×20 条，服务端按时间升序返回），面板评审分区需显式选择结论并两段确认；source.pr_close：PATCH pulls/{n} {state:"closed"}，响应校验 url 归属与 number、返回 state 由写入器再核，未知结果经一次 GET 摘要核实 state=="closed"，面板顶部两段确认+只读提示+成功后重读详情；source.pr_merge：PUT pulls/{n}/merge，负载以 sha 字段钉住已核对的 head、merge_method 为 merge/squash/rebase 闭集三选（默认拒绝），响应校验 merged==true 且 sha 为 40/64 位 hex 提交，未知结果经一次 GET 详情核实 merged==true 且 head.sha 相同（合并后 base 必前进故不比 base），命中回执带 merge_commit_sha，面板顶部须显式选择合并方式并两段确认、草稿 PR 显示提示而非按钮、成功后重读详情；source.pr_create：POST pulls 新建 PR，无既有 revision 可钉故按无 revision 的写预校验，分支列表走只读端点（resolve→GET→resolve 双重核查，≤100 项直接枚举、重名/坏 sha 一律拒绝），base/head 必须显式选择且不得相同，两段确认后单次 POST，服务端 422 拒绝重复 PR，未知结果经一次有界 GET 按 head/base/标题精确匹配核实，命中返回已核实回执并由既有链接加载路径打开新 PR，绝不二次 POST）；OAuth/GitLab/云审阅仍缺 | P2；公开接口与后续写工具 |
-| R13 | 本地包预览与安装基础设施已落地；启用/接入未实现 | 本地插件包预览管线（归档安全校验+清单/组件解析+整包 SHA-256）与安装基础设施（plugin_packages v46 行、重校验提取到不可变 hash 目录、启动 reconcile 清 staging 残留并报告 orphan final 不删）已落地；启用、禁用、MCP/skill 接入、市场、OAuth、hooks、升级/卸载、UI 仍未实现 | P2；R01/R08及目录/账号接口 |
+| R13 | 本地包预览、安装与生命周期状态已落地；接入未实现 | 本地插件包预览管线（归档安全校验+清单/组件解析+整包 SHA-256）、安装基础设施（plugin_packages v46 行、重校验提取到不可变 hash 目录、启动 reconcile 清 staging 残留并报告 orphan final 不删）与生命周期操作（启用/禁用状态迁移仅持久化标记、卸载删行后尽力删载荷、源包不动、残留变 orphan 上报）已落地；启用不激活任何组件、MCP/skill 接入、市场、OAuth、hooks、升级、UI 仍未实现 | P2；R01/R08及目录/账号接口 |
 | R14 | 部分基础，完整操作未实现 | 目标窗口绑定的桌面指针、键盘、接管和恢复 | P2；Windows 原生输入与 R02 |
 | R15 | 未实现专用链路 | Web 搜索、来源正文获取及答案引用 | P3；搜索服务/模型原生能力 |
 | R16 | 未实现专用链路 | 图像生成/编辑、任务状态、产物和结果展示 | P3；模型服务/费用与能力 |
@@ -695,7 +695,10 @@ OAuth/GitLab/云审阅仍缺，有外部接口与账号依赖。
 任何中途失败或取消清理 staging、不落行；行写失败则尽力删除 final，遗留由 `ReconcileAsync`
 报告（清 `_staging` 残留、列出 orphan final，均不自动执行/删除）。`AppStartupService`
 已在启动恢复链中接线 reconcile——失败或存在 orphan final 时计入存储恢复警示。
-启用、禁用、卸载、skill/MCP 接入与全部 UI 仍缺——目录→安装→启用→执行→卸载的完整生产链路仍不存在。
+生命周期操作也已落地：`EnableAsync`/`DisableAsync` 迁移状态标记（Installed/Enabled/Disabled
+全转换幂等；启用仅持久化标记、不激活任何组件），`UninstallAsync` 先删行再尽力删载荷——
+删不掉时行已删、载荷留作 orphan 由 reconcile 报告，源包文件从不动。
+skill/MCP 运行时接入与全部 UI 仍缺——目录→安装→启用→执行→卸载的完整生产链路仍不存在。
 2026-10-19 入库的官方记录将相关 App Server 插件方法列为尚不供生产调用；实施前应重新核实，不能假定目录接口可用。
 
 1. Domain 保存包身份、来源/版本、组件及信任状态；Application 定义目录/安装/启停/移除端口；

@@ -25,4 +25,13 @@ internal sealed class RecordingPluginPackageInstaller : IPluginPackageInstaller
             ? Task.FromException<PluginInstallReconciliation>(ReconcileFailure)
             : Task.FromResult(Result);
     }
+
+    public Task<InstalledPlugin?> EnableAsync(Guid id, CancellationToken cancellationToken) =>
+        Task.FromResult<InstalledPlugin?>(null);
+
+    public Task<InstalledPlugin?> DisableAsync(Guid id, CancellationToken cancellationToken) =>
+        Task.FromResult<InstalledPlugin?>(null);
+
+    public Task<PluginUninstallOutcome?> UninstallAsync(Guid id, CancellationToken cancellationToken) =>
+        Task.FromResult<PluginUninstallOutcome?>(null);
 }
