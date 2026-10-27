@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MossAgent.Application.Authorization;
 using MossAgent.Application.Git;
 using MossAgent.Application.Persistence;
 using MossAgent.App.Services;
@@ -11,6 +12,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
 {
     private readonly IWorkspaceRepository _workspaces;
     private readonly ConversationAttachmentThumbnailFactory? _thumbnails;
+    private readonly WorkspaceAuthorizationDrainTracker? _drainTracker;
     private ProjectProfile? _selectedProject;
     private AgentTask? _selectedTask;
     private string _status = string.Empty;
@@ -25,11 +27,15 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         IWorkspaceRepository workspaces,
         IGitWorktreeAuthorizationService? worktreeAuthorizations,
         WorkspaceProjectService projectService, ConversationAttachmentThumbnailFactory? thumbnails = null,
-        IGitWorktreeReferenceDiscovery? worktreeReferences = null)
+        IGitWorktreeReferenceDiscovery? worktreeReferences = null,
+        ProjectAuthorizationMonitor? authorizations = null)
     {
         _workspaces = workspaces;
         Environment = new WorkspaceTaskEnvironmentViewModel(worktreeReferences);
         _thumbnails = thumbnails;
+        if (authorizations is not null)
+            _drainTracker = new WorkspaceAuthorizationDrainTracker(authorizations,
+                projectId => ProjectNavigation.FindProjectGroup(projectId));
         WorktreeAuthorization = new(worktreeAuthorizations);
         ProjectEditor = new WorkspaceProjectEditorViewModel(projectService);
         ProjectEditor.ProjectCreated += AddProject;
@@ -141,6 +147,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
             _workspaces, projects, ProjectNavigation, TaskSearch.Query);
         Projects.ReplaceWith(projects);
         ProjectNavigation.ReplaceWith(navigation);
+        foreach (var group in navigation) _drainTracker?.Refresh(group);
         _projectlessTasks.Clear();
         foreach (var task in await _workspaces.GetTasksAsync(null, CancellationToken.None))
             _projectlessTasks[task.Id] = task;
@@ -314,6 +321,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         Projects.Add(project);
         var group = new WorkspaceProjectNavigationViewModel(project);
         group.ApplyFilter(TaskSearch.Query);
+        _drainTracker?.Refresh(group);
         ProjectNavigation.Add(group);
         SelectedProject = project;
     }
@@ -330,7 +338,9 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         var index = Projects.FindProjectIndex(project.Id);
         if (index < 0) return;
         Projects[index] = project;
-        ProjectNavigation.FindProjectGroup(project.Id)?.UpdateProject(project);
+        var group = ProjectNavigation.FindProjectGroup(project.Id);
+        group?.UpdateProject(project);
+        if (group is not null) _drainTracker?.Refresh(group);
         if (SelectedProject?.Id == project.Id &&
             SetProperty(ref _selectedProject, project, nameof(SelectedProject))) NotifySelectionChanged();
     }

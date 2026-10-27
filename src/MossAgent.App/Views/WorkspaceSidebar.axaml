@@ -175,6 +175,8 @@
                           </ui:AppCard>
                     </ui:AppProjectNavigationRow.SummaryContent>
                   </ui:AppProjectNavigationRow>
+                  <ui:AppText Text="{Binding DrainLabel}" Classes="subtle type-10"
+                              IsVisible="{Binding HasDrainBadge}" Margin="26,0,8,2" TextWrapping="Wrap" />
                   <ui:AppItemsControl Classes="sidebar-task-list" ItemsSource="{Binding TaskPreview.Items}"
                                       IsVisible="{Binding IsExpanded}">
                     <ItemsControl.ItemTemplate>

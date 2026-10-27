@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.App.Resources;
+using MossAgent.Application.Authorization;
 using MossAgent.Domain;
 
 namespace MossAgent.App.ViewModels;
@@ -25,6 +26,8 @@ public sealed class WorkspaceProjectNavigationViewModel : ObservableObject
     private Guid? _selectedTaskId;
     /// <summary>当前搜索下项目标题或会话是否匹配。</summary>
     private bool _isVisible = true;
+    /// <summary>本项目租约的撤权排空状态，由授权监视器推送。</summary>
+    private AuthorizationDrainState _authorizationDrain;
 
     /// <summary>
     /// 项目资料，点击标题时用于切换当前工作区。
@@ -42,6 +45,29 @@ public sealed class WorkspaceProjectNavigationViewModel : ObservableObject
     }
 
     public string ProjectTaskSummary => UiText.T("{0} 个任务", _allTasks.Count);
+
+    /// <summary>
+    /// 撤权后排空状态：授权已保存与运行资源是否退出分开显示。
+    /// </summary>
+    public AuthorizationDrainState AuthorizationDrain
+    {
+        get => _authorizationDrain;
+        set
+        {
+            if (!SetProperty(ref _authorizationDrain, value)) return;
+            OnPropertyChanged(nameof(HasDrainBadge));
+            OnPropertyChanged(nameof(DrainLabel));
+        }
+    }
+
+    public bool HasDrainBadge => AuthorizationDrain != AuthorizationDrainState.Idle;
+
+    public string DrainLabel => AuthorizationDrain switch
+    {
+        AuthorizationDrainState.Draining => SidebarText.Get("ProjectDrainActive"),
+        AuthorizationDrainState.CleanupUnknown => SidebarText.Get("ProjectDrainUnknown"),
+        _ => string.Empty
+    };
     public DateTimeOffset LastActivityAt => _allTasks.Count == 0
         ? Project.CreatedAt : _allTasks.Max(task => task.UpdatedAt);
 

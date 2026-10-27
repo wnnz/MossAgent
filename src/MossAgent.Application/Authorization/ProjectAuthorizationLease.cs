@@ -18,6 +18,7 @@ internal sealed class ProjectAuthorizationLease : ITaskWorkspaceLease
     private Task _cancelling = Task.CompletedTask;
     private Task? _disposal;
     private bool _revoked;
+    private bool _releaseFailed;
 
     internal ProjectAuthorizationLease(ProjectAuthorizationMonitor monitor, ProjectProfile project, TimeProvider time, IRootIdentitySession? roots = null)
     {
@@ -32,6 +33,7 @@ internal sealed class ProjectAuthorizationLease : ITaskWorkspaceLease
     public long Revision => _project.AuthorizationRevision;
     public CancellationToken Revocation => _revocationToken;
     public bool IsRevoked { get { lock (_sync) return _revoked; } }
+    internal bool ReleaseFailed { get { lock (_sync) return _releaseFailed; } }
 
     internal void Start()
     {
@@ -50,6 +52,7 @@ internal sealed class ProjectAuthorizationLease : ITaskWorkspaceLease
             _revoked = true;
             _cancelling = _revocation.CancelAsync();
         }
+        _monitor.NotifyLeaseRevoked(this);
     }
 
     private async Task PollAsync()
@@ -84,6 +87,7 @@ internal sealed class ProjectAuthorizationLease : ITaskWorkspaceLease
 
     private async Task DisposeOwnedAsync(TaskCompletionSource completion)
     {
+        var released = false;
         try
         {
             await _stopping.CancelAsync().ConfigureAwait(false);
@@ -92,13 +96,24 @@ internal sealed class ProjectAuthorizationLease : ITaskWorkspaceLease
             catch (AggregateException) { /* Observer failures cannot prevent lease cleanup. */ }
             _roots?.Dispose();
             _monitor.Release(this);
+            released = true;
             completion.SetResult();
         }
-        catch (Exception exception) { completion.SetException(exception); }
+        catch (Exception exception)
+        {
+            if (!released) MarkReleaseFailed();
+            completion.SetException(exception);
+        }
         finally
         {
             _stopping.Dispose();
             _revocation.Dispose();
         }
+    }
+
+    private void MarkReleaseFailed()
+    {
+        lock (_sync) _releaseFailed = true;
+        _monitor.NotifyReleaseFailed(this);
     }
 }

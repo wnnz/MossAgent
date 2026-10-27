@@ -9,6 +9,7 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
     private readonly Lock _sync = new();
     private readonly HashSet<ProjectAuthorizationLease> _leases = [];
     private readonly Dictionary<Guid, long> _highest = [];
+    private readonly Dictionary<Guid, AuthorizationDrainState> _drainStates = [];
     private readonly IProjectAuthorizationReader _reader;
     private readonly IProjectAuthorizationChanges _changes;
     private readonly TimeProvider _time;
@@ -24,6 +25,40 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
         _time = timeProvider ?? TimeProvider.System;
         _roots = roots;
         changes.Changed += RevokeOlder;
+    }
+
+    public event Action<Guid>? DrainStateChanged;
+
+    public AuthorizationDrainState DrainState(Guid projectId)
+    {
+        lock (_sync) return DrainStateLocked(projectId);
+    }
+
+    private AuthorizationDrainState DrainStateLocked(Guid projectId)
+    {
+        var draining = false;
+        foreach (var lease in _leases)
+        {
+            if (lease.ProjectId != projectId) continue;
+            if (lease.ReleaseFailed) return AuthorizationDrainState.CleanupUnknown;
+            if (lease.IsRevoked) draining = true;
+        }
+        return draining ? AuthorizationDrainState.Draining : AuthorizationDrainState.Idle;
+    }
+
+    private bool UpdateDrainStateLocked(Guid projectId)
+    {
+        var current = DrainStateLocked(projectId);
+        if (current == _drainStates.GetValueOrDefault(projectId)) return false;
+        if (current == AuthorizationDrainState.Idle) _drainStates.Remove(projectId);
+        else _drainStates[projectId] = current;
+        return true;
+    }
+
+    private void RaiseDrainStateChanged(Guid projectId)
+    {
+        try { DrainStateChanged?.Invoke(projectId); }
+        catch { /* Observer failures cannot affect lease cleanup or admission. */ }
     }
 
     public async Task ValidateAsync(ProjectProfile expected, CancellationToken cancellationToken)
@@ -75,11 +110,14 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
         var lease = new ProjectAuthorizationLease(this, snapshot, _time, roots);
         try
         {
+            bool changed;
             lock (_sync)
             {
                 ThrowIfAdmissionBlockedLocked(snapshot);
                 _leases.Add(lease);
+                changed = UpdateDrainStateLocked(snapshot.Id);
             }
+            if (changed) RaiseDrainStateChanged(snapshot.Id);
             await ValidateAsync(snapshot, cancellationToken).ConfigureAwait(false);
             lease.Start();
             if (lease.IsRevoked) throw new WorkspaceAuthorizationException();
@@ -98,6 +136,7 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
             leases = _leases.Where(lease => lease.ProjectId == projectId && lease.Revision < revision).ToArray();
         }
         foreach (var lease in leases) lease.Revoke();
+        if (leases.Length != 0) NotifyDrainStateAfterMutation(projectId);
     }
 
     private void RevokeMatching(Guid projectId, long revision)
@@ -105,11 +144,29 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
         ProjectAuthorizationLease[] leases;
         lock (_sync) leases = _leases.Where(lease => lease.ProjectId == projectId && lease.Revision == revision).ToArray();
         foreach (var lease in leases) lease.Revoke();
+        if (leases.Length != 0) NotifyDrainStateAfterMutation(projectId);
     }
 
     internal void Release(ProjectAuthorizationLease lease)
     {
-        lock (_sync) _leases.Remove(lease);
+        bool changed;
+        lock (_sync)
+        {
+            _leases.Remove(lease);
+            changed = UpdateDrainStateLocked(lease.ProjectId);
+        }
+        if (changed) RaiseDrainStateChanged(lease.ProjectId);
+    }
+
+    internal void NotifyReleaseFailed(ProjectAuthorizationLease lease) => NotifyDrainStateAfterMutation(lease.ProjectId);
+
+    internal void NotifyLeaseRevoked(ProjectAuthorizationLease lease) => NotifyDrainStateAfterMutation(lease.ProjectId);
+
+    private void NotifyDrainStateAfterMutation(Guid projectId)
+    {
+        bool changed;
+        lock (_sync) changed = UpdateDrainStateLocked(projectId);
+        if (changed) RaiseDrainStateChanged(projectId);
     }
 
     public ValueTask DisposeAsync()
