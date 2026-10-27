@@ -42,7 +42,7 @@ public sealed class PluginPackagesViewModel : ObservableObject, IDisposable
         CancelInstallCommand = new RelayCommand(CancelInstall, () => PendingPreview is not null);
         RefreshCommand = new GuardedAsyncRelayCommand(RefreshAsync, () => CanOperate);
         ToggleEnabledCommand = new GuardedAsyncRelayCommand<InstalledPluginRowViewModel>(
-            ToggleEnabledAsync, row => CanOperate && row is not null);
+            ToggleEnabledAsync, row => CanOperate && row is not null && row.CanToggle);
         UninstallCommand = new GuardedAsyncRelayCommand<InstalledPluginRowViewModel>(
             UninstallAsync, row => CanOperate && row is not null);
         ToggleSkillCommand = new GuardedAsyncRelayCommand<PluginSkillRowViewModel>(
@@ -171,6 +171,7 @@ public sealed class PluginPackagesViewModel : ObservableObject, IDisposable
         {
             SetStatus(SettingsText.Get("PluginOperationCancelled"));
         }
+        catch (PluginPackageException error) { SetStatus(MapPackageError(error.Code, "PluginToggleFailed"), true); }
         catch (Exception) { SetStatus(SettingsText.Get("PluginToggleFailed"), true); }
     }
 
@@ -323,6 +324,7 @@ public sealed class PluginPackagesViewModel : ObservableObject, IDisposable
         PluginPackageErrorCode.McpInvalid => SettingsText.Get("PluginErrorMcpInvalid"),
         PluginPackageErrorCode.InstallConflict => SettingsText.Get("PluginErrorConflict"),
         PluginPackageErrorCode.InstallFailed => SettingsText.Get("PluginInstallFailed"),
+        PluginPackageErrorCode.PayloadDrifted => SettingsText.Get("PluginErrorDrifted"),
         _ => SettingsText.Get(fallbackKey)
     };
 

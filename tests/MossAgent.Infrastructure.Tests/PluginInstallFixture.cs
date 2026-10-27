@@ -57,6 +57,15 @@ internal sealed class PluginInstallFixture : IAsyncDisposable
         return Convert.ToInt64(await command.ExecuteScalarAsync(Token));
     }
 
+    public async Task ExecuteAsync(string sql)
+    {
+        await using var connection = Connections.Create();
+        await connection.OpenAsync(Token);
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        await command.ExecuteNonQueryAsync(Token);
+    }
+
     public IReadOnlyList<string> StagingEntries() =>
         Directory.Exists(StagingRoot) ? [.. Directory.EnumerateFileSystemEntries(StagingRoot)] : [];
 

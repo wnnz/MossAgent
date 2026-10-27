@@ -375,4 +375,42 @@ public sealed class PluginPackagesViewModelTests
         Assert.False(skill.IsEnabled);
         Assert.Equal(3, settings.ListCalls);
     }
+
+    [Fact]
+    public async Task DriftedRowsShowTheDriftBadgeAndRefuseTheToggle()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Drifted);
+        var (viewModel, installer, _, _, _) = Create(plugin);
+        using var _ = viewModel;
+        await viewModel.RefreshCommand.ExecuteAsync(null);
+        var row = Assert.Single(viewModel.Items);
+
+        Assert.Equal("载荷已漂移", row.StateText);
+        Assert.False(row.IsEnabled);
+        Assert.False(row.CanToggle);
+        Assert.False(viewModel.ToggleEnabledCommand.CanExecute(row));
+        Assert.True(viewModel.UninstallCommand.CanExecute(row));
+
+        await viewModel.ToggleEnabledCommand.ExecuteAsync(row);
+
+        Assert.Empty(installer.EnabledIds);
+        Assert.Empty(installer.DisabledIds);
+    }
+
+    [Fact]
+    public async Task ToggleFailureWithTheDriftCodeMapsTheDriftStatus()
+    {
+        var plugin = Plugin();
+        var (viewModel, installer, _, _, _) = Create(plugin);
+        installer.ToggleFailure = new PluginPackageException(PluginPackageErrorCode.PayloadDrifted, "synthetic");
+        using var _ = viewModel;
+        await viewModel.RefreshCommand.ExecuteAsync(null);
+        var row = Assert.Single(viewModel.Items);
+
+        await viewModel.ToggleEnabledCommand.ExecuteAsync(row);
+
+        Assert.True(viewModel.HasStatusError);
+        Assert.Equal("插件载荷已漂移：请卸载后重新安装", viewModel.Status);
+        Assert.DoesNotContain("synthetic", viewModel.Status);
+    }
 }

@@ -113,7 +113,7 @@ public sealed class SqliteConversationAttachmentTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_fourteen;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(49, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(message, Assert.Single(await fixture.Repository.GetMessagesAsync(fixture.Task.Id, fixture.Token)));
         await fixture.Repository.SaveTaskAsync(fixture.Task with { FailureReason = TaskFailureReason.AttachmentHistory }, fixture.Token);
         Assert.Equal(15, await fixture.CountAsync("SELECT reason FROM agent_task_failures;"));

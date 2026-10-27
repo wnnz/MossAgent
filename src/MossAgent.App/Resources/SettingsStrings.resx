@@ -209,6 +209,7 @@
   <data name="PluginStateInstalled" xml:space="preserve"><value>已安装</value></data>
   <data name="PluginStateEnabled" xml:space="preserve"><value>已启用</value></data>
   <data name="PluginStateDisabled" xml:space="preserve"><value>已停用</value></data>
+  <data name="PluginStateDrifted" xml:space="preserve"><value>载荷已漂移</value></data>
   <data name="PluginRowSummary" xml:space="preserve"><value>版本 {0} · {1} 个组件 · {2}</value></data>
   <data name="PluginComponentSkill" xml:space="preserve"><value>技能</value></data>
   <data name="PluginComponentMcpServer" xml:space="preserve"><value>MCP 服务</value></data>
@@ -247,4 +248,5 @@
   <data name="PluginErrorManifestInvalid" xml:space="preserve"><value>插件清单 plugin.json 无效，已拒绝。</value></data>
   <data name="PluginErrorMcpInvalid" xml:space="preserve"><value>插件声明的 mcp.json 无效，已拒绝。</value></data>
   <data name="PluginErrorConflict" xml:space="preserve"><value>已存在同名同版本但内容不同的插件，请先卸载现有版本。</value></data>
+  <data name="PluginErrorDrifted" xml:space="preserve"><value>插件载荷已漂移：请卸载后重新安装</value></data>
 </root>

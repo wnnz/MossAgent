@@ -7,12 +7,15 @@ namespace MossAgent.Infrastructure.Plugins;
 /// <summary>Extracts a package into a fresh staging directory with the full entry hygiene
 /// re-run locally — the archive bytes are the only input, never a prior preview. Every file is
 /// written under a path proven inside the staging root, copied in bounded chunks with a hard
-/// byte cap regardless of the declared length, and verified byte-for-byte afterwards.</summary>
+/// byte cap regardless of the declared length, hashed incrementally while it is written, and
+/// verified byte-for-byte afterwards. The result carries the whole-archive hash plus each
+/// file's payload hash so the installer can pin a per-component baseline.</summary>
 internal static class PluginPackageExtractor
 {
     private const int CopyBufferBytes = 64 * 1024;
 
-    public static async Task<string> ExtractAsync(string packagePath, string stagingRoot, CancellationToken token)
+    public static async Task<PluginExtractionResult> ExtractAsync(string packagePath, string stagingRoot,
+        CancellationToken token)
     {
         var root = Path.GetFullPath(stagingRoot);
         var stream = Open(packagePath);
@@ -20,11 +23,18 @@ internal static class PluginPackageExtractor
         {
             using var archive = OpenArchive(stream);
             var entries = PluginArchiveEntryNormalizer.Normalize(archive.Entries);
+            var fileHashes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var directories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var entry in entries)
-                await ExtractEntryAsync(entry, root, token);
+            {
+                var hash = await ExtractEntryAsync(entry, root, token);
+                if (entry.IsDirectory) directories.Add(entry.NormalizedName);
+                else if (hash is not null) fileHashes[entry.NormalizedName] = hash;
+            }
             stream.Position = 0;
-            var hash = await SHA256.HashDataAsync(stream, token);
-            return Convert.ToHexStringLower(hash);
+            var contentHash = await SHA256.HashDataAsync(stream, token);
+            return new PluginExtractionResult(Convert.ToHexStringLower(contentHash), fileHashes,
+                directories);
         }
     }
 
@@ -53,7 +63,8 @@ internal static class PluginPackageExtractor
         }
     }
 
-    private static async Task ExtractEntryAsync(PluginArchiveEntry entry, string root, CancellationToken token)
+    private static async Task<string?> ExtractEntryAsync(PluginArchiveEntry entry, string root,
+        CancellationToken token)
     {
         var fullPath = Path.GetFullPath(Path.Combine(root, entry.NormalizedName));
         var prefix = root.EndsWith(Path.DirectorySeparatorChar) ? root : root + Path.DirectorySeparatorChar;
@@ -65,10 +76,10 @@ internal static class PluginPackageExtractor
             if (entry.IsDirectory)
             {
                 Directory.CreateDirectory(fullPath);
-                return;
+                return null;
             }
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
-            await CopyFileAsync(entry, fullPath, token);
+            return await CopyFileAsync(entry, fullPath, token);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -76,7 +87,8 @@ internal static class PluginPackageExtractor
         }
     }
 
-    private static async Task CopyFileAsync(PluginArchiveEntry entry, string fullPath, CancellationToken token)
+    private static async Task<string> CopyFileAsync(PluginArchiveEntry entry, string fullPath,
+        CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
         Stream source;
@@ -92,16 +104,17 @@ internal static class PluginPackageExtractor
         {
             await using var destination = new FileStream(fullPath, FileMode.CreateNew,
                 FileAccess.Write, FileShare.None, CopyBufferBytes, FileOptions.Asynchronous);
-            await BoundedCopyAsync(entry, source, destination, token);
+            return await BoundedCopyAsync(entry, source, destination, token);
         }
     }
 
-    private static async Task BoundedCopyAsync(PluginArchiveEntry entry, Stream source,
+    private static async Task<string> BoundedCopyAsync(PluginArchiveEntry entry, Stream source,
         FileStream destination, CancellationToken token)
     {
         var buffer = new byte[CopyBufferBytes];
         var written = 0L;
         var crc = ArchiveCrc32.Start();
+        using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         while (true)
         {
             int read;
@@ -115,6 +128,7 @@ internal static class PluginPackageExtractor
             }
             if (read == 0) break;
             crc = ArchiveCrc32.Append(crc, buffer.AsSpan(0, read));
+            hasher.AppendData(buffer, 0, read);
             await destination.WriteAsync(buffer.AsMemory(0, read), token);
             written += read;
             if (written > PluginArchiveLimits.MaximumFileBytes)
@@ -123,6 +137,7 @@ internal static class PluginPackageExtractor
         }
         if (ArchiveCrc32.Finish(crc) != (uint)entry.Entry.Crc32 || written != entry.Length)
             throw Failed($"entry '{entry.NormalizedName}' failed its integrity check", null);
+        return Convert.ToHexStringLower(hasher.GetHashAndReset());
     }
 
     private static PluginPackageException Unreadable(string detail, Exception inner) =>

@@ -20,7 +20,7 @@ public sealed class WorktreeObjectMigrationTests
         await fixture.ExecuteAsync("DROP TRIGGER refuse_v28;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(49, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM worktree_root_authorizations;"));
         Assert.Equal(task, Assert.Single(await fixture.Repository.GetTasksAsync(task.ProjectId, fixture.Token)));
         Assert.Equal(message, Assert.Single(await fixture.Repository.GetMessagesAsync(task.Id, fixture.Token)));

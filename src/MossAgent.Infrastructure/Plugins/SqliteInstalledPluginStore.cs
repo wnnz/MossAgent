@@ -9,7 +9,9 @@ namespace MossAgent.Infrastructure.Plugins;
 /// <summary>SQLite store for installed plugin rows. All reads and the compare-and-swap insert
 /// run in single statements or one transaction; a UNIQUE(name,version) violation is resolved by
 /// re-reading the committed row — same content hash means an idempotent reinstall, anything
-/// else is a conflict.</summary>
+/// else is a conflict. Per-component payload hashes are written in the same transaction as
+/// their plugin row and only ever inserted, never replaced, so the first recorded baseline
+/// stays authoritative.</summary>
 public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connections) : IInstalledPluginStore
 {
     private const string Columns =
@@ -28,7 +30,8 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
         return await FindAsync(connection, null, name, version, cancellationToken);
     }
 
-    public async Task<InstalledPlugin> InsertAsync(InstalledPlugin plugin, CancellationToken cancellationToken)
+    public async Task<InstalledPlugin> InsertAsync(InstalledPlugin plugin,
+        IReadOnlyDictionary<string, string> payloadHashes, CancellationToken cancellationToken)
     {
         var components = InstalledPluginJson.SerializeComponents(plugin.Components);
         var servers = InstalledPluginJson.SerializeServers(plugin.DeclaredMcpServers);
@@ -36,7 +39,13 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
         await using var transaction = connection.BeginTransaction();
         var existing = await FindAsync(connection, transaction, plugin.Name, plugin.Version, cancellationToken);
         if (existing is not null)
-            return SameContent(existing, plugin) ? existing : throw Conflict(plugin);
+        {
+            if (!SameContent(existing, plugin)) throw Conflict(plugin);
+            await InsertHashesAsync(connection, transaction, existing.Id, payloadHashes, true,
+                cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return existing;
+        }
         await using var command = connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = $"INSERT INTO plugin_packages({Columns}) "
@@ -51,12 +60,17 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
             var raced = await FindAsync(connection, transaction, plugin.Name, plugin.Version, cancellationToken);
             if (raced is not null)
             {
-                if (SameContent(raced, plugin)) return raced;
-                throw Conflict(plugin);
+                if (!SameContent(raced, plugin)) throw Conflict(plugin);
+                await InsertHashesAsync(connection, transaction, raced.Id, payloadHashes, true,
+                    cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                return raced;
             }
             throw new PluginPackageException(PluginPackageErrorCode.InstallFailed,
                 "the plugin row violated the storage schema", error);
         }
+        await InsertHashesAsync(connection, transaction, plugin.Id, payloadHashes, false,
+            cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return plugin;
     }
@@ -109,6 +123,30 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
         return plugins;
     }
 
+    public async Task<IReadOnlyDictionary<string, string>> ListPayloadHashesAsync(Guid pluginId,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT component_path,sha256 FROM plugin_component_hashes "
+            + "WHERE plugin_id=$plugin ORDER BY component_path;";
+        command.Parameters.AddWithValue("$plugin", pluginId.ToString());
+        var hashes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+            hashes[reader.GetString(0)] = reader.GetString(1);
+        return hashes;
+    }
+
+    public async Task SavePayloadHashesAsync(Guid pluginId, IReadOnlyDictionary<string, string> hashes,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await OpenAsync(cancellationToken);
+        await using var transaction = connection.BeginTransaction();
+        await InsertHashesAsync(connection, transaction, pluginId, hashes, true, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+    }
+
     private async Task<SqliteConnection> OpenAsync(CancellationToken cancellationToken)
     {
         var connection = connections.Create();
@@ -137,6 +175,28 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
         command.Parameters.AddWithValue("$version", version);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         return await reader.ReadAsync(cancellationToken) ? Map(reader) : null;
+    }
+
+    /// <summary>Writes hash rows inside the caller's transaction. <paramref name="orIgnore"/>
+    /// keeps an already-established baseline authoritative — reruns and races only fill missing
+    /// keys. A fresh plugin row uses a strict insert instead: any invalid hash row fails the
+    /// transaction so the plugin row is never committed without its complete baseline.</summary>
+    private static async Task InsertHashesAsync(SqliteConnection connection, SqliteTransaction transaction,
+        Guid pluginId, IReadOnlyDictionary<string, string> hashes, bool orIgnore,
+        CancellationToken cancellationToken)
+    {
+        foreach (var (path, hash) in hashes)
+        {
+            await using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = (orIgnore ? "INSERT OR IGNORE" : "INSERT")
+                + " INTO plugin_component_hashes(plugin_id,component_path,sha256) "
+                + "VALUES($plugin,$path,$hash);";
+            command.Parameters.AddWithValue("$plugin", pluginId.ToString());
+            command.Parameters.AddWithValue("$path", path);
+            command.Parameters.AddWithValue("$hash", hash);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
     }
 
     private static void AddParameters(SqliteCommand command, InstalledPlugin plugin,

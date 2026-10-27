@@ -75,4 +75,32 @@ public sealed class PluginPackageLifecycleTests
         Assert.Equal([installed.InstallPath], reconciliation.OrphanedFinals);
         Assert.True(Directory.Exists(payload));
     }
+
+    [Fact]
+    public async Task DriftedRowsRefuseEnableButStillDisableAndUninstall()
+    {
+        await using var fixture = await PluginInstallFixture.CreateAsync();
+        var path = fixture.Packages.WritePackage(
+            PluginTestEntry.Text("plugin.json", Manifest), PluginTestEntry.Text("a.txt", "x"));
+        var installer = fixture.Installer();
+        var store = fixture.Store();
+        var installed = await installer.InstallAsync(path, fixture.Token);
+        var drifted = await store.SetStateAsync(installed.Id, InstalledPluginState.Drifted, fixture.Token);
+        Assert.Equal(InstalledPluginState.Drifted, drifted!.State);
+
+        var error = await Assert.ThrowsAsync<PluginPackageException>(() =>
+            installer.EnableAsync(installed.Id, fixture.Token));
+        Assert.Equal(PluginPackageErrorCode.PayloadDrifted, error.Code);
+        Assert.Equal(InstalledPluginState.Drifted,
+            (await store.GetAsync(installed.Id, fixture.Token))!.State);
+
+        PluginRowAssert.Equal(drifted with { State = InstalledPluginState.Disabled },
+            await installer.DisableAsync(installed.Id, fixture.Token));
+
+        await store.SetStateAsync(installed.Id, InstalledPluginState.Drifted, fixture.Token);
+        var outcome = await installer.UninstallAsync(installed.Id, fixture.Token);
+        Assert.Equal(installed.Id, outcome?.Plugin.Id);
+        Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM plugin_packages;"));
+        Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM plugin_component_hashes;"));
+    }
 }

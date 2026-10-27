@@ -11,7 +11,7 @@ public sealed class PluginPackageMigrationTests
     public async Task FreshDatabaseCreatesPluginPackagesAtVersionFortySix()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
-        Assert.Equal(49, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='plugin_packages';"));
         var hash = new string('a', 64);
@@ -36,13 +36,13 @@ public sealed class PluginPackageMigrationTests
             WHEN NEW.version=46 BEGIN SELECT RAISE(ABORT,'synthetic migration failure'); END;
             """);
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Initializer.InitializeAsync(fixture.Token));
-        Assert.Equal(48, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(49, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='plugin_packages';"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_forty_six;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(49, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM schema_versions WHERE version=46;"));
         Assert.Equal(1, await fixture.CountAsync(
@@ -58,11 +58,11 @@ public sealed class PluginPackageMigrationTests
         var plugin = new InstalledPlugin(Guid.NewGuid(), "demo", "1.0", new string('a', 64),
             "demo-1-0-aaaaaaaa", InstalledPluginState.Installed, "/tmp/p.mossplugin",
             DateTimeOffset.UnixEpoch, [], [], PluginOverlaySource.None);
-        await store.InsertAsync(plugin, fixture.Token);
+        await store.InsertAsync(plugin, new Dictionary<string, string>(), fixture.Token);
         await fixture.ExecuteAsync("DELETE FROM schema_versions WHERE version=46;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(49, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM plugin_packages;"));
         PluginRowAssert.Equal(plugin, await store.GetAsync(plugin.Id, fixture.Token));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM pragma_foreign_key_check;"));

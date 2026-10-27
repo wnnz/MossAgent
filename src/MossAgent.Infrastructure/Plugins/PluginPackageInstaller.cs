@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using MossAgent.Application.Plugins;
 using MossAgent.Domain.Plugins;
 
@@ -5,9 +6,12 @@ namespace MossAgent.Infrastructure.Plugins;
 
 /// <summary>Orchestrates local installs: re-runs the full preview validation, extracts to a
 /// unique staging directory, moves the payload into an immutable content-addressed final
-/// directory, then records the row. Any failure or cancellation removes the staging tree and
-/// leaves no row; a row-write failure removes the moved payload as best effort, leaving
-/// reconciliation to report what could not be cleaned.</summary>
+/// directory, then records the row together with the per-component payload hashes the
+/// extraction produced. Any failure or cancellation removes the staging tree and leaves no
+/// row; a row-write failure removes the moved payload as best effort, leaving reconciliation
+/// to report what could not be cleaned. Enablement refuses drifted rows; reconciliation also
+/// backfills the hash baseline for rows installed before baselines existed, hashing only
+/// component files still present under the install directory.</summary>
 public sealed class PluginPackageInstaller(
     IPluginPackagePreviewer previewer,
     IInstalledPluginStore store,
@@ -28,20 +32,44 @@ public sealed class PluginPackageInstaller(
         var relative = PluginInstallDirectory.Name(preview.Name, preview.Version, preview.ContentHash);
         var staging = Path.Combine(_pluginRoot, StagingDirectoryName, Guid.NewGuid().ToString("N"));
         var final = Path.Combine(_pluginRoot, relative);
-        await GuardedAsync(staging, "the package could not be extracted", async () =>
+        var payloadHashes = await GuardedAsync(staging, "the package could not be extracted", async () =>
         {
             Directory.CreateDirectory(staging);
-            var extractedHash = await PluginPackageExtractor.ExtractAsync(packagePath, staging, cancellationToken);
-            if (!extractedHash.Equals(preview.ContentHash, StringComparison.Ordinal))
+            var extraction = await PluginPackageExtractor.ExtractAsync(packagePath, staging, cancellationToken);
+            if (!extraction.ContentHash.Equals(preview.ContentHash, StringComparison.Ordinal))
                 throw Failed("the package changed between preview and installation", null);
+            var hashes = ComponentHashes(preview.Components, extraction);
             MoveIntoPlace(staging, final);
-            return true;
+            return hashes;
         });
         var plugin = new InstalledPlugin(Guid.NewGuid(), preview.Name, preview.Version, preview.ContentHash,
             relative, InstalledPluginState.Installed, preview.SourcePath, _time.GetUtcNow(),
             preview.Components, preview.DeclaredMcpServers, preview.OverlaySource);
         return await GuardedAsync(final, "the installed plugin row could not be written",
-            () => store.InsertAsync(plugin, cancellationToken));
+            () => store.InsertAsync(plugin, payloadHashes, cancellationToken));
+    }
+
+    /// <summary>The install-time baseline: exactly the file-backed component paths, each
+    /// pinned to the hash extraction recorded for the same archive entry. A component whose
+    /// path is an archive directory entry carries no payload of its own — its children are
+    /// hashed individually — so it gets no row. A component path that is neither an extracted
+    /// file nor an extracted directory means the manifest and archive disagree: the install
+    /// fails closed.</summary>
+    private static IReadOnlyDictionary<string, string> ComponentHashes(
+        IReadOnlyList<PluginComponentDescriptor> components, PluginExtractionResult extraction)
+    {
+        var hashes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var component in components)
+        {
+            if (extraction.FileHashes.TryGetValue(component.RelativePath, out var hash))
+            {
+                hashes[component.RelativePath] = hash;
+                continue;
+            }
+            if (extraction.Directories.Contains(component.RelativePath)) continue;
+            throw Failed($"component '{component.RelativePath}' has no extracted payload file", null);
+        }
+        return hashes;
     }
 
     private async Task<T> GuardedAsync<T>(string cleanup, string detail, Func<Task<T>> action)
@@ -69,8 +97,12 @@ public sealed class PluginPackageInstaller(
     public Task<IReadOnlyList<InstalledPlugin>> ListAsync(CancellationToken cancellationToken) =>
         store.ListAsync(cancellationToken);
 
-    /// <summary>Removes leftover staging trees and reports final directories without a row.
-    /// Not wired to startup yet; orphaned finals are only listed, never deleted.</summary>
+    /// <summary>Removes leftover staging trees, reports final directories without a row and
+    /// backfills missing payload-hash rows for installed plugins. Orphaned finals are only
+    /// listed, never deleted. Backfill establishes the baseline honestly for rows installed
+    /// before baselines existed: only component files still present under the plugin's own
+    /// install directory are hashed; a file missing on disk gets no row, so its component
+    /// fails closed at dispatch.</summary>
     public async Task<PluginInstallReconciliation> ReconcileAsync(CancellationToken cancellationToken)
     {
         var stagingRoot = Path.Combine(_pluginRoot, StagingDirectoryName);
@@ -78,8 +110,8 @@ public sealed class PluginPackageInstaller(
         if (Directory.Exists(stagingRoot))
             foreach (var leftover in Directory.EnumerateDirectories(stagingRoot))
                 if (TryDelete(leftover)) removed++;
-        var known = (await store.ListAsync(cancellationToken))
-            .Select(row => row.InstallPath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var plugins = await store.ListAsync(cancellationToken);
+        var known = plugins.Select(row => row.InstallPath).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var orphaned = Directory.Exists(_pluginRoot)
             ? Directory.EnumerateDirectories(_pluginRoot)
                 .Select(path => Path.GetFileName(path)!)
@@ -87,11 +119,49 @@ public sealed class PluginPackageInstaller(
                     && !known.Contains(name))
                 .OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray()
             : [];
+        await BackfillPayloadHashesAsync(plugins, cancellationToken);
         return new PluginInstallReconciliation(removed, orphaned);
     }
 
-    public Task<InstalledPlugin?> EnableAsync(Guid id, CancellationToken cancellationToken) =>
-        store.SetStateAsync(id, InstalledPluginState.Enabled, cancellationToken);
+    private async Task BackfillPayloadHashesAsync(IReadOnlyList<InstalledPlugin> plugins,
+        CancellationToken cancellationToken)
+    {
+        foreach (var plugin in plugins)
+        {
+            var stored = await store.ListPayloadHashesAsync(plugin.Id, cancellationToken);
+            var baseline = new HashSet<string>(stored.Keys, StringComparer.OrdinalIgnoreCase);
+            var missing = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var component in plugin.Components)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!baseline.Add(component.RelativePath)) continue;
+                var path = PluginInstallPaths.Resolve(_pluginRoot, plugin.InstallPath, component.RelativePath);
+                if (path is null || !File.Exists(path)) continue;
+                missing[component.RelativePath] = await HashFileAsync(path, cancellationToken);
+            }
+            if (missing.Count > 0)
+                await store.SavePayloadHashesAsync(plugin.Id, missing, cancellationToken);
+        }
+    }
+
+    private static async Task<string> HashFileAsync(string path, CancellationToken cancellationToken)
+    {
+        await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read,
+            81920, FileOptions.Asynchronous | FileOptions.SequentialScan);
+        return Convert.ToHexStringLower(await SHA256.HashDataAsync(stream, cancellationToken));
+    }
+
+    /// <summary>Marks a row enabled, unless it is drifted: a payload that no longer matches
+    /// its install-time baseline is never re-enabled — the only recovery is uninstall and
+    /// reinstall. Idempotent and null when the id is gone.</summary>
+    public async Task<InstalledPlugin?> EnableAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var row = await store.GetAsync(id, cancellationToken);
+        if (row is not null && row.State == InstalledPluginState.Drifted)
+            throw new PluginPackageException(PluginPackageErrorCode.PayloadDrifted,
+                $"plugin '{row.Name}' {row.Version} payload drifted from its install-time hashes");
+        return await store.SetStateAsync(id, InstalledPluginState.Enabled, cancellationToken);
+    }
 
     public Task<InstalledPlugin?> DisableAsync(Guid id, CancellationToken cancellationToken) =>
         store.SetStateAsync(id, InstalledPluginState.Disabled, cancellationToken);

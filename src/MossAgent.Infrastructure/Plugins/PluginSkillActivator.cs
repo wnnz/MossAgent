@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 using MossAgent.Application.Plugins;
 using MossAgent.Domain.Plugins;
@@ -8,12 +9,19 @@ namespace MossAgent.Infrastructure.Plugins;
 /// is re-validated against the plugin's install directory (rejecting rooted, empty or
 /// '..'-carrying component paths and any escape), the file must exist within the 8 KiB per-skill
 /// bound, and entries accumulate only while the joined text stays within the 24 K character
-/// prompt budget. When <paramref name="componentSettings"/> is supplied, a skill component the
-/// user explicitly disabled is skipped before any file read — disabled skills were never
-/// injected, so they leave no activation row; the overrides are read once per plugin and read
-/// failures propagate like plugin-list failures. The rows persisted for the task are exactly the
-/// skills in the returned text — unreadable or excluded skills leave no row, and storage failures
-/// propagate.</summary>
+/// prompt budget. Before any text is decoded, the file bytes are hashed and compared to the
+/// install-time baseline stored for that component path — a missing baseline row, a mismatch,
+/// a missing or unreadable component file, or a path that fails containment marks the plugin
+/// <see cref="InstalledPluginState.Drifted"/> via
+/// <see cref="IInstalledPluginStore.SetStateAsync"/>. Drift is judged per plugin: components
+/// verified before the failing one are discarded too, so nothing from a drifted plugin is
+/// injected for this dispatch; other plugins are unaffected. When
+/// <paramref name="componentSettings"/> is supplied, a skill component the user explicitly
+/// disabled is skipped before any file read — disabled skills were never injected, so they
+/// leave no activation row; the overrides and the baseline map are each read once per plugin
+/// and read failures propagate like plugin-list failures. The rows persisted for the task are
+/// exactly the skills in the returned text — unreadable, excluded or unverified skills leave
+/// no row, and storage failures propagate.</summary>
 public sealed class PluginSkillActivator(
     IInstalledPluginStore plugins,
     ITaskSkillActivationStore activations,
@@ -54,7 +62,10 @@ public sealed class PluginSkillActivator(
         foreach (var plugin in await plugins.ListAsync(cancellationToken))
         {
             if (plugin.State != InstalledPluginState.Enabled) continue;
+            var candidates = new List<(InstalledPlugin Plugin, PluginComponentDescriptor Component, string Content)>();
+            var drifted = false;
             IReadOnlyDictionary<string, bool>? overrides = null;
+            IReadOnlyDictionary<string, string>? hashes = null;
             foreach (var component in plugin.Components)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -65,52 +76,51 @@ public sealed class PluginSkillActivator(
                     if (overrides.TryGetValue(component.RelativePath, out var enabled) && !enabled)
                         continue;
                 }
-                var content = await TryReadAsync(plugin, component.RelativePath, cancellationToken);
-                if (content is not null) found.Add((plugin, component, content));
+                hashes ??= await plugins.ListPayloadHashesAsync(plugin.Id, cancellationToken);
+                var (bytes, untrusted) = await TryReadBytesAsync(plugin, component.RelativePath, cancellationToken);
+                if (untrusted || (bytes is not null && !Verified(bytes, component.RelativePath, hashes)))
+                {
+                    await plugins.SetStateAsync(plugin.Id, InstalledPluginState.Drifted, cancellationToken);
+                    drifted = true;
+                    break;
+                }
+                if (bytes is null) continue;
+                var content = Encoding.UTF8.GetString(bytes);
+                if (content.Length <= MaximumSkillBytes) candidates.Add((plugin, component, content));
             }
+            if (!drifted) found.AddRange(candidates);
         }
         return [.. found
             .OrderBy(item => item.Plugin.Name, StringComparer.Ordinal)
             .ThenBy(item => item.Component.RelativePath, StringComparer.Ordinal)];
     }
 
-    private async Task<string?> TryReadAsync(InstalledPlugin plugin, string relativePath,
-        CancellationToken cancellationToken)
+    private static bool Verified(byte[] bytes, string relativePath,
+        IReadOnlyDictionary<string, string> hashes) =>
+        hashes.TryGetValue(relativePath, out var expected)
+        && Convert.ToHexStringLower(SHA256.HashData(bytes)).Equals(expected, StringComparison.Ordinal);
+
+    /// <summary>Reads the component bytes. The second tuple element reports trust, not just
+    /// readability: a path that fails containment, a missing file, or a read failure means the
+    /// payload can no longer be proven intact and is treated as drift. A file that exists but
+    /// exceeds the per-skill byte bound keeps the pre-baseline semantics — it is skipped for
+    /// this dispatch without condemning the whole plugin.</summary>
+    private async Task<(byte[]? Bytes, bool Untrusted)> TryReadBytesAsync(InstalledPlugin plugin,
+        string relativePath, CancellationToken cancellationToken)
     {
-        var path = CandidatePath(plugin.InstallPath, relativePath);
-        if (path is null) return null;
+        var path = PluginInstallPaths.Resolve(_root, plugin.InstallPath, relativePath);
+        if (path is null) return (null, true);
         var info = new FileInfo(path);
-        if (!info.Exists || info.Length > MaximumSkillBytes) return null;
+        if (!info.Exists) return (null, true);
+        if (info.Length > MaximumSkillBytes) return (null, false);
         try
         {
-            var content = await File.ReadAllTextAsync(path, Encoding.UTF8, cancellationToken);
-            return content.Length <= MaximumSkillBytes ? content : null;
+            var bytes = await File.ReadAllBytesAsync(path, cancellationToken);
+            return bytes.Length <= MaximumSkillBytes ? (bytes, false) : (null, false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            return null;
-        }
-    }
-
-    private string? CandidatePath(string installPath, string relativePath)
-    {
-        if (string.IsNullOrWhiteSpace(relativePath)) return null;
-        var normalized = relativePath.Replace('/', Path.DirectorySeparatorChar);
-        if (Path.IsPathRooted(normalized) || Path.IsPathFullyQualified(normalized)) return null;
-        if (normalized.Split(Path.DirectorySeparatorChar).Any(segment => segment == "..")) return null;
-        try
-        {
-            var rootPrefix = _root.EndsWith(Path.DirectorySeparatorChar) ? _root : _root + Path.DirectorySeparatorChar;
-            var installRoot = Path.GetFullPath(Path.Combine(_root, installPath));
-            if (!installRoot.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase)) return null;
-            var installPrefix = installRoot.EndsWith(Path.DirectorySeparatorChar)
-                ? installRoot : installRoot + Path.DirectorySeparatorChar;
-            var candidate = Path.GetFullPath(Path.Combine(installRoot, normalized));
-            return candidate.StartsWith(installPrefix, StringComparison.OrdinalIgnoreCase) ? candidate : null;
-        }
-        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
-        {
-            return null;
+            return (null, true);
         }
     }
 }

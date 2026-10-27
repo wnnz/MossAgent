@@ -13,7 +13,8 @@ internal sealed class FailingInstalledPluginStore(Exception error) : IInstalledP
     public Task<InstalledPlugin?> GetByNameVersionAsync(string name, string version,
         CancellationToken cancellationToken) => Task.FromResult<InstalledPlugin?>(null);
 
-    public Task<InstalledPlugin> InsertAsync(InstalledPlugin plugin, CancellationToken cancellationToken) =>
+    public Task<InstalledPlugin> InsertAsync(InstalledPlugin plugin,
+        IReadOnlyDictionary<string, string> payloadHashes, CancellationToken cancellationToken) =>
         Task.FromException<InstalledPlugin>(error);
 
     public Task<InstalledPlugin?> SetStateAsync(Guid id, InstalledPluginState state,
@@ -24,4 +25,11 @@ internal sealed class FailingInstalledPluginStore(Exception error) : IInstalledP
 
     public Task<IReadOnlyList<InstalledPlugin>> ListAsync(CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<InstalledPlugin>>([]);
+
+    public Task<IReadOnlyDictionary<string, string>> ListPayloadHashesAsync(Guid pluginId,
+        CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
+
+    public Task SavePayloadHashesAsync(Guid pluginId, IReadOnlyDictionary<string, string> hashes,
+        CancellationToken cancellationToken) => Task.CompletedTask;
 }

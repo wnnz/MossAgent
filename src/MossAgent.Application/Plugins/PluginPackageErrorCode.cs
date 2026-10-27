@@ -12,4 +12,5 @@ public static class PluginPackageErrorCode
     public const string McpInvalid = "plugin_mcp_invalid";
     public const string InstallConflict = "plugin_install_conflict";
     public const string InstallFailed = "plugin_install_failed";
+    public const string PayloadDrifted = "plugin_payload_drifted";
 }

@@ -28,6 +28,10 @@ public sealed class InstalledPluginRowViewModel : ObservableObject
     public string Version => Plugin.Version;
     public string InstallPath => Plugin.InstallPath;
     public bool IsEnabled => Plugin.State == InstalledPluginState.Enabled;
+    /// <summary>A drifted payload is never re-enabled: the installer refuses the transition,
+    /// so the enable/disable command stays disabled for the row until the plugin is
+    /// uninstalled and reinstalled.</summary>
+    public bool CanToggle => Plugin.State != InstalledPluginState.Drifted;
     public ObservableCollection<PluginSkillRowViewModel> Skills { get; } = [];
     public bool HasSkills => Skills.Count > 0;
 
@@ -35,6 +39,7 @@ public sealed class InstalledPluginRowViewModel : ObservableObject
     {
         InstalledPluginState.Enabled => SettingsText.Get("PluginStateEnabled"),
         InstalledPluginState.Disabled => SettingsText.Get("PluginStateDisabled"),
+        InstalledPluginState.Drifted => SettingsText.Get("PluginStateDrifted"),
         _ => SettingsText.Get("PluginStateInstalled")
     };
 
@@ -61,6 +66,7 @@ public sealed class InstalledPluginRowViewModel : ObservableObject
         OnPropertyChanged(nameof(Version));
         OnPropertyChanged(nameof(InstallPath));
         OnPropertyChanged(nameof(IsEnabled));
+        OnPropertyChanged(nameof(CanToggle));
         OnPropertyChanged(nameof(StateText));
         OnPropertyChanged(nameof(Subtitle));
     }

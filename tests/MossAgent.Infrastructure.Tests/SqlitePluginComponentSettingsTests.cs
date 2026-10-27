@@ -18,7 +18,7 @@ public sealed class SqlitePluginComponentSettingsTests
     {
         await using var fixture = await PluginInstallFixture.CreateAsync();
         var settings = new SqlitePluginComponentSettings(fixture.Connections);
-        var plugin = await fixture.Store().InsertAsync(Plugin(), fixture.Token);
+        var plugin = await fixture.Store().InsertAsync(Plugin(), new Dictionary<string, string>(), fixture.Token);
 
         Assert.True(await settings.IsSkillEnabledAsync(plugin.Id, "skills/a/SKILL.md", fixture.Token));
         Assert.Empty(await settings.ListOverridesAsync(plugin.Id, fixture.Token));
@@ -29,7 +29,7 @@ public sealed class SqlitePluginComponentSettingsTests
     {
         await using var fixture = await PluginInstallFixture.CreateAsync();
         var settings = new SqlitePluginComponentSettings(fixture.Connections);
-        var plugin = await fixture.Store().InsertAsync(Plugin(), fixture.Token);
+        var plugin = await fixture.Store().InsertAsync(Plugin(), new Dictionary<string, string>(), fixture.Token);
 
         await settings.SetSkillEnabledAsync(plugin.Id, "skills/a/SKILL.md", false, fixture.Token);
         Assert.False(await settings.IsSkillEnabledAsync(plugin.Id, "skills/a/SKILL.md", fixture.Token));
@@ -50,8 +50,8 @@ public sealed class SqlitePluginComponentSettingsTests
     {
         await using var fixture = await PluginInstallFixture.CreateAsync();
         var settings = new SqlitePluginComponentSettings(fixture.Connections);
-        var alpha = await fixture.Store().InsertAsync(Plugin("alpha"), fixture.Token);
-        var beta = await fixture.Store().InsertAsync(Plugin("beta"), fixture.Token);
+        var alpha = await fixture.Store().InsertAsync(Plugin("alpha"), new Dictionary<string, string>(), fixture.Token);
+        var beta = await fixture.Store().InsertAsync(Plugin("beta"), new Dictionary<string, string>(), fixture.Token);
 
         await settings.SetSkillEnabledAsync(alpha.Id, "skills/a/SKILL.md", false, fixture.Token);
 
@@ -67,7 +67,7 @@ public sealed class SqlitePluginComponentSettingsTests
         await using var fixture = await PluginInstallFixture.CreateAsync();
         var settings = new SqlitePluginComponentSettings(fixture.Connections);
         var store = fixture.Store();
-        var plugin = await store.InsertAsync(Plugin(), fixture.Token);
+        var plugin = await store.InsertAsync(Plugin(), new Dictionary<string, string>(), fixture.Token);
         await settings.SetSkillEnabledAsync(plugin.Id, "skills/a/SKILL.md", false, fixture.Token);
 
         await store.DeleteAsync(plugin.Id, fixture.Token);

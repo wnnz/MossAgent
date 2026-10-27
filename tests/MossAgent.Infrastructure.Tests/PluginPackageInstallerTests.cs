@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using MossAgent.Application.Plugins;
 using MossAgent.Domain.Plugins;
 using MossAgent.Infrastructure.Plugins;
@@ -119,4 +121,87 @@ public sealed class PluginPackageInstallerTests
         Assert.True(Directory.Exists(Path.Combine(fixture.PluginRoot, installed.InstallPath)));
         Assert.Empty(fixture.StagingEntries());
     }
+
+    [Fact]
+    public async Task InstallPersistsExactlyTheComponentPayloadHashes()
+    {
+        await using var fixture = await PluginInstallFixture.CreateAsync();
+        var path = fixture.Packages.WritePackage(FullPackage());
+
+        var installed = await fixture.Installer().InstallAsync(path, fixture.Token);
+
+        var hashes = await fixture.Store().ListPayloadHashesAsync(installed.Id, fixture.Token);
+        Assert.Equal(
+            ["assets/logo.png", "docs/intro.md", "mcp.json", "readme.txt", "skills/a/SKILL.md"],
+            hashes.Keys.Order(StringComparer.Ordinal).ToArray());
+        Assert.Equal(Sha256("skill a"), hashes["skills/a/SKILL.md"]);
+        Assert.Equal(Sha256("""{"mcpServers":{"beta":{"type":"http"},"alpha":{"type":"stdio"}}}"""),
+            hashes["mcp.json"]);
+        Assert.Equal(Sha256("readme"), hashes["readme.txt"]);
+        Assert.Equal(Sha256("intro"), hashes["docs/intro.md"]);
+        Assert.Equal(Convert.ToHexStringLower(SHA256.HashData(new byte[32])), hashes["assets/logo.png"]);
+        Assert.Equal(5, await fixture.CountAsync("SELECT COUNT(*) FROM plugin_component_hashes;"));
+    }
+
+    [Fact]
+    public async Task ManifestComponentWithoutAnExtractedFileFailsTheInstall()
+    {
+        await using var fixture = await PluginInstallFixture.CreateAsync();
+        var path = fixture.Packages.WritePackage(FullPackage());
+        var preview = await new ZipPluginPackagePreviewer().PreviewAsync(path, fixture.Token);
+        var ghosted = preview with
+        {
+            Components = [.. preview.Components,
+                new PluginComponentDescriptor(PluginComponentKind.Skill, "ghost", "skills/ghost/SKILL.md")]
+        };
+        var installer = fixture.Installer(previewer: new StubPluginPackagePreviewer(ghosted));
+
+        var error = await Assert.ThrowsAsync<PluginPackageException>(() =>
+            installer.InstallAsync(path, fixture.Token));
+
+        Assert.Equal(PluginPackageErrorCode.InstallFailed, error.Code);
+        Assert.Empty(fixture.StagingEntries());
+        Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM plugin_packages;"));
+        Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM plugin_component_hashes;"));
+    }
+
+    [Fact]
+    public async Task ReconcileBackfillsMissingBaselineRowsFromTheOnDiskPayload()
+    {
+        await using var fixture = await PluginInstallFixture.CreateAsync();
+        var path = fixture.Packages.WritePackage(FullPackage());
+        var installed = await fixture.Installer().InstallAsync(path, fixture.Token);
+        await fixture.ExecuteAsync("DELETE FROM plugin_component_hashes;");
+
+        await fixture.Installer().ReconcileAsync(fixture.Token);
+
+        var hashes = await fixture.Store().ListPayloadHashesAsync(installed.Id, fixture.Token);
+        Assert.Equal(
+            ["assets/logo.png", "docs/intro.md", "mcp.json", "readme.txt", "skills/a/SKILL.md"],
+            hashes.Keys.Order(StringComparer.Ordinal).ToArray());
+        Assert.Equal(Sha256("skill a"), hashes["skills/a/SKILL.md"]);
+        Assert.Equal(Sha256("readme"), hashes["readme.txt"]);
+        Assert.Equal(5, await fixture.CountAsync("SELECT COUNT(*) FROM plugin_component_hashes;"));
+    }
+
+    [Fact]
+    public async Task ReconcileLeavesDeletedComponentFilesWithoutABaselineRow()
+    {
+        await using var fixture = await PluginInstallFixture.CreateAsync();
+        var path = fixture.Packages.WritePackage(FullPackage());
+        var installed = await fixture.Installer().InstallAsync(path, fixture.Token);
+        await fixture.ExecuteAsync("DELETE FROM plugin_component_hashes;");
+        File.Delete(Path.Combine(fixture.PluginRoot, installed.InstallPath, "readme.txt"));
+
+        await fixture.Installer().ReconcileAsync(fixture.Token);
+
+        var hashes = await fixture.Store().ListPayloadHashesAsync(installed.Id, fixture.Token);
+        Assert.Equal(
+            ["assets/logo.png", "docs/intro.md", "mcp.json", "skills/a/SKILL.md"],
+            hashes.Keys.Order(StringComparer.Ordinal).ToArray());
+        Assert.Equal(4, await fixture.CountAsync("SELECT COUNT(*) FROM plugin_component_hashes;"));
+    }
+
+    private static string Sha256(string content) =>
+        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(content)));
 }

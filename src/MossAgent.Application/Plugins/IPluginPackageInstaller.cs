@@ -14,14 +14,17 @@ public interface IPluginPackageInstaller
 
     Task<IReadOnlyList<InstalledPlugin>> ListAsync(CancellationToken cancellationToken);
 
-    /// <summary>Clears interrupted-install staging trees and reports final directories that
-    /// have no row. Orphaned payloads belong to the user and are only reported, never deleted
-    /// or executed.</summary>
+    /// <summary>Clears interrupted-install staging trees, reports final directories that
+    /// have no row, and backfills missing payload-hash baselines for rows installed before
+    /// baselines existed — only component files still present are hashed. Orphaned payloads
+    /// belong to the user and are only reported, never deleted or executed.</summary>
     Task<PluginInstallReconciliation> ReconcileAsync(CancellationToken cancellationToken);
 
     /// <summary>Marks a row enabled. Enablement is a persisted state flag only — no
-    /// component becomes executable until runtime activation lands. Idempotent and null
-    /// when the id is gone.</summary>
+    /// component becomes executable until runtime activation lands. A drifted row is
+    /// refused with <see cref="PluginPackageErrorCode.PayloadDrifted"/>: a payload that
+    /// no longer matches its install-time hashes must be uninstalled and reinstalled.
+    /// Idempotent and null when the id is gone.</summary>
     Task<InstalledPlugin?> EnableAsync(Guid id, CancellationToken cancellationToken);
 
     /// <summary>Marks a row disabled. Idempotent and null when the id is gone.</summary>

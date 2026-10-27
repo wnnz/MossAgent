@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using MossAgent.Application.Plugins;
 using MossAgent.Domain.Plugins;
 using MossAgent.Infrastructure.Plugins;
@@ -11,10 +13,13 @@ public sealed class PluginSkillActivatorTests : IDisposable
         Guid.NewGuid().ToString("N"));
     private readonly RecordingTaskSkillActivationStore _activations = new();
     private readonly ManualToolTimeProvider _time = new();
+    private readonly Dictionary<Guid, Dictionary<string, string>> _hashes = [];
 
     private PluginSkillActivator Subject(IReadOnlyList<InstalledPlugin> rows,
-        ITaskSkillActivationStore? activations = null, IPluginComponentSettings? settings = null) =>
-        new(new StaticInstalledPluginStore(rows), activations ?? _activations, _root, _time, settings);
+        ITaskSkillActivationStore? activations = null, IPluginComponentSettings? settings = null,
+        StaticInstalledPluginStore? store = null) =>
+        new(store ?? new StaticInstalledPluginStore(rows, _hashes), activations ?? _activations,
+            _root, _time, settings);
 
     private static InstalledPlugin Plugin(string name, InstalledPluginState state,
         params PluginComponentDescriptor[] components) =>
@@ -24,13 +29,21 @@ public sealed class PluginSkillActivatorTests : IDisposable
     private static PluginComponentDescriptor Skill(string relativePath) =>
         new(PluginComponentKind.Skill, relativePath, relativePath);
 
+    /// <summary>Writes the component file and records its bytes as the install-time baseline,
+    /// mirroring what an install through the extractor would have stored.</summary>
     private void WriteSkill(InstalledPlugin plugin, string relativePath, string content)
     {
         var path = Path.Combine(_root, plugin.InstallPath,
             relativePath.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, content);
+        if (!_hashes.TryGetValue(plugin.Id, out var baseline))
+            baseline = _hashes[plugin.Id] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        baseline[relativePath] = Hash(content);
     }
+
+    private static string Hash(string content) =>
+        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(content)));
 
     public void Dispose()
     {
@@ -88,13 +101,16 @@ public sealed class PluginSkillActivatorTests : IDisposable
     }
 
     [Fact]
-    public async Task MissingSkillFileIsSkippedNotFailed()
+    public async Task MissingSkillFileMarksThePluginDriftedAndInjectsNothing()
     {
         var plugin = Plugin("demo", InstalledPluginState.Enabled, Skill("skills/a/SKILL.md"));
+        var store = new StaticInstalledPluginStore([plugin], _hashes);
 
-        var text = await Subject([plugin]).BuildSkillInstructionsAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+        var text = await Subject([plugin], store: store)
+            .BuildSkillInstructionsAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
 
         Assert.Null(text);
+        Assert.Equal([(plugin.Id, InstalledPluginState.Drifted)], store.StateChanges);
         Assert.Empty(Assert.Single(_activations.Saves).Rows);
     }
 
@@ -122,10 +138,13 @@ public sealed class PluginSkillActivatorTests : IDisposable
         Directory.CreateDirectory(_root);
         File.WriteAllText(Path.Combine(_root, "escape.md"), "escaped sentinel content");
         var plugin = Plugin("demo", InstalledPluginState.Enabled, Skill(relativePath));
+        var store = new StaticInstalledPluginStore([plugin], _hashes);
 
-        var text = await Subject([plugin]).BuildSkillInstructionsAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+        var text = await Subject([plugin], store: store)
+            .BuildSkillInstructionsAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
 
         Assert.Null(text);
+        Assert.Equal([(plugin.Id, InstalledPluginState.Drifted)], store.StateChanges);
         Assert.Empty(Assert.Single(_activations.Saves).Rows);
     }
 
@@ -243,5 +262,74 @@ public sealed class PluginSkillActivatorTests : IDisposable
 
         Assert.Same(failure, thrown);
         Assert.Empty(_activations.Saves);
+    }
+
+    [Fact]
+    public async Task TamperedSkillBytesMarkThePluginDriftedAndInjectNothing()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled, Skill("skills/a/SKILL.md"));
+        WriteSkill(plugin, "skills/a/SKILL.md", "honest baseline");
+        var store = new StaticInstalledPluginStore([plugin], _hashes);
+        File.WriteAllText(Path.Combine(_root, plugin.InstallPath, "skills/a/SKILL.md"), "tampered payload");
+
+        var text = await Subject([plugin], store: store)
+            .BuildSkillInstructionsAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        Assert.Null(text);
+        Assert.Equal([(plugin.Id, InstalledPluginState.Drifted)], store.StateChanges);
+        Assert.Empty(Assert.Single(_activations.Saves).Rows);
+    }
+
+    [Fact]
+    public async Task DriftSkipsEveryComponentOfThePluginButNotOtherPlugins()
+    {
+        var tampered = Plugin("tampered", InstalledPluginState.Enabled,
+            Skill("skills/a/SKILL.md"), Skill("skills/b/SKILL.md"));
+        WriteSkill(tampered, "skills/a/SKILL.md", "first");
+        WriteSkill(tampered, "skills/b/SKILL.md", "second");
+        var honest = Plugin("honest", InstalledPluginState.Enabled, Skill("skills/c/SKILL.md"));
+        WriteSkill(honest, "skills/c/SKILL.md", "clean body");
+        var store = new StaticInstalledPluginStore([tampered, honest], _hashes);
+        File.WriteAllText(Path.Combine(_root, tampered.InstallPath, "skills/a/SKILL.md"), "drifted");
+
+        var text = await Subject([tampered, honest], store: store)
+            .BuildSkillInstructionsAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        Assert.Equal("### honest v1.0 — skills/c/SKILL.md\nclean body", text);
+        Assert.Equal([(tampered.Id, InstalledPluginState.Drifted)], store.StateChanges);
+        Assert.Equal(["skills/c/SKILL.md"],
+            Assert.Single(_activations.Saves).Rows.Select(row => row.ComponentPath).ToArray());
+    }
+
+    [Fact]
+    public async Task MissingBaselineRowMarksDriftedAndSkipsTheComponent()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled, Skill("skills/a/SKILL.md"));
+        var path = Path.Combine(_root, plugin.InstallPath, "skills/a/SKILL.md");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, "payload with no recorded baseline");
+        var store = new StaticInstalledPluginStore([plugin], _hashes);
+
+        var text = await Subject([plugin], store: store)
+            .BuildSkillInstructionsAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        Assert.Null(text);
+        Assert.Equal([(plugin.Id, InstalledPluginState.Drifted)], store.StateChanges);
+        Assert.Empty(Assert.Single(_activations.Saves).Rows);
+    }
+
+    [Fact]
+    public async Task DriftedPluginsAreNotReadOrMarkedAgain()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Drifted, Skill("skills/a/SKILL.md"));
+        WriteSkill(plugin, "skills/a/SKILL.md", "still on disk");
+        var store = new StaticInstalledPluginStore([plugin], _hashes);
+
+        var text = await Subject([plugin], store: store)
+            .BuildSkillInstructionsAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        Assert.Null(text);
+        Assert.Empty(store.StateChanges);
+        Assert.Empty(Assert.Single(_activations.Saves).Rows);
     }
 }

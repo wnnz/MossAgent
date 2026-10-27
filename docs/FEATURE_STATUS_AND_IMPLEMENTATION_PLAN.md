@@ -130,7 +130,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 | R10 | 部分完成；其他组合待验 | 定时计划授权/参数版本、关闭/中断/并发/多实例、时区与 DST，以及关闭后的行为实机验收。授权快照已落地且认领时固定（run 行记录 snapshot_generation v42、历史按代际标注、保存时在途运行如实提示沿用旧快照）；编辑后自动停止在途运行仍非默认行为，实机验收仍缺 | P1；R02/R06 |
 | R11 | 部分完成 | 单文件区块暂存/取消暂存已落地（rename/copy/二进制/新增/删除/仅模式/冲突明确拒绝）；整组暂存/取消暂存已落地（git.stage_paths/unstage_paths，1–64 路径单命令原子、越界/链接/目录逐项拒绝）；提交消息草稿独立版本持久化（git_commit_drafts v40，编辑去抖 CAS 写入、重启恢复）与提交未知结果核对（复核 HEAD/暂存数后消费或保留草稿）已落地；推送非确定性失败后以远端跟踪引用核对实际结果（已推送→明示，未证实→保留原错误，核对失败→明示未知）；预览绑定已落地（git.diff 输出尾部绑定 diff-sha256 与各文件 file-sha256，hunk 工具 required expectedDiff 执行期哈希复核、漂移即拒绝）；远端/上游配置读取与凭据方式展示已落地（git.remotes 只读工具：脱敏 scheme://host 端点、local/ssh/https/embedded/unsupported 凭据方式分类、credential.helper 值链、当前分支上游；推送对话框凭据行揭示 URL 内嵌凭据并警示）；远端/上游条件变更端口已落地（git.remote_set_url 按脱敏端点+凭据方式做语义级 CAS、本地目的地复用推送授权端口、永不回显内嵌凭据，git.branch_upstream 按原文 CAS 写 branch.*.remote/merge 并如实报告部分应用）；推送非快进拒绝分类引导已落地（合并诊断分类为确定性 git_push_non_ff、提示先合并/变基远端更新再刷新预览、原始输出不回显）；真实远端核对部分落地：git.ls_remote 已落地（只读、脱敏端点、有界 64 条、非交互、凭据永不回显），供模型主动核对远端 refs；推送失败后自动核对仍走本地远端跟踪引用（离线、不触网络）；原生验收仍缺 | P2；R01/R02 |
 | R12 | 部分完成 | GitHub reviews/activity 只读已端到端落地（审阅面板分区 + 版本绑定工具）；按账号个人 PR 收件箱只读已落地（search/issues 固定端点、角色筛选、分页、incomplete 标记，双解析 revision 看守，不升级 grant、无写入）；已读/版本标记持久化已落地（pull_request_marks v44，按 account/repository/PR 记录查看时 head，列表批量取标记后与条目在同一代际原子发布，head 漂移明示“已更新”，打开详情按当前 head 尽力落账，标记不随账号删除清理）；按 grant 显式写授权模型已落地（v45 can_write，独立写解析端口，存量行只读、无升级通道）；确认写工具已落地五个（source.pr_comment_create：写授权+版本核对+两段式面板确认，绝不重试，未知结果经最近评论精确匹配核实；source.pr_review_submit：approve/request_changes/comment 三态结论+可选正文，POST 固定 commit_id 到已核对的 head，未知结果按状态/提交/规范化正文升序分页核实评审（≤10 页×20 条，服务端按时间升序返回），面板评审分区需显式选择结论并两段确认；source.pr_close：PATCH pulls/{n} {state:"closed"}，响应校验 url 归属与 number、返回 state 由写入器再核，未知结果经一次 GET 摘要核实 state=="closed"，面板顶部两段确认+只读提示+成功后重读详情；source.pr_merge：PUT pulls/{n}/merge，负载以 sha 字段钉住已核对的 head、merge_method 为 merge/squash/rebase 闭集三选（默认拒绝），响应校验 merged==true 且 sha 为 40/64 位 hex 提交，未知结果经一次 GET 详情核实 merged==true 且 head.sha 相同（合并后 base 必前进故不比 base），命中回执带 merge_commit_sha，面板顶部须显式选择合并方式并两段确认、草稿 PR 显示提示而非按钮、成功后重读详情；source.pr_create：POST pulls 新建 PR，无既有 revision 可钉故按无 revision 的写预校验，分支列表走只读端点（resolve→GET→resolve 双重核查，≤100 项直接枚举、重名/坏 sha 一律拒绝），base/head 必须显式选择且不得相同，两段确认后单次 POST，服务端 422 拒绝重复 PR，未知结果经一次有界 GET 按 head/base/标题精确匹配核实，命中返回已核实回执并由既有链接加载路径打开新 PR，绝不二次 POST）；OAuth/GitLab/云审阅仍缺 | P2；公开接口与后续写工具 |
-| R13 | 本地包预览、安装、生命周期、skill 提示词注入与单技能启停已落地；MCP 等接入未实现 | 本地插件包预览管线（归档安全校验+清单/组件解析+整包 SHA-256）、安装基础设施（plugin_packages v46 行、重校验提取到不可变 hash 目录、启动 reconcile 清 staging 残留并报告 orphan final 不删）与生命周期操作（启用/禁用状态迁移仅持久化标记、卸载删行后尽力删载荷、源包不动、残留变 orphan 上报）及设置页本地插件 UI（选包→组件清单预览→确认安装、启停、两段确认卸载）已落地；skill 组件注入也已落地（Enabled 插件 SKILL.md 派发时物化：路径复核、≤8KiB/文件、≤24K 字符总量、护栏前带标签段、按任务落 task_skill_activations v47 快照、source-review 聊天不注入、审计页可查看激活行与注入文本节选）；单技能启停已落地（plugin_component_settings v49：(plugin,component) 最后一次显式选择、无行即默认启用、随插件行 ON DELETE CASCADE 清除、重装换新 id 即重置为默认——语义上有意为之；派发端按插件批量读取覆盖并跳过停用技能、停用不留激活行；设置页插件行内嵌技能列表逐个启停，仅影响后续派发、不回改已派发任务快照）；MCP 运行时接入（stdio 等 R01 沙箱）、按会话技能选择、信任修订、市场、OAuth、hooks、升级仍未实现 | P2；R01/R08及目录/账号接口 |
+| R13 | 本地包预览、安装、生命周期、skill 提示词注入与单技能启停已落地；MCP 等接入未实现 | 本地插件包预览管线（归档安全校验+清单/组件解析+整包 SHA-256）、安装基础设施（plugin_packages v46 行、重校验提取到不可变 hash 目录、启动 reconcile 清 staging 残留并报告 orphan final 不删）与生命周期操作（启用/禁用状态迁移仅持久化标记、卸载删行后尽力删载荷、源包不动、残留变 orphan 上报）及设置页本地插件 UI（选包→组件清单预览→确认安装、启停、两段确认卸载）已落地；skill 组件注入也已落地（Enabled 插件 SKILL.md 派发时物化：路径复核、≤8KiB/文件、≤24K 字符总量、护栏前带标签段、按任务落 task_skill_activations v47 快照、source-review 聊天不注入、审计页可查看激活行与注入文本节选）；单技能启停已落地（plugin_component_settings v49：(plugin,component) 最后一次显式选择、无行即默认启用、随插件行 ON DELETE CASCADE 清除、重装换新 id 即重置为默认——语义上有意为之；派发端按插件批量读取覆盖并跳过停用技能、停用不留激活行；设置页插件行内嵌技能列表逐个启停，仅影响后续派发、不回改已派发任务快照）；组件载荷信任基线也已落地（plugin_component_hashes v50：安装时按清单组件逐文件 SHA-256 随插件行原子落库、只插不改、随行级联，派发时对每个启用技能先验字节哈希再解码，缺行或不一致即置 Drifted 信任态并跳过该插件其余组件；state CHECK 经表重建放宽，启用层以 plugin_payload_drifted 拒绝漂移行、停用/卸载仍可用，启动 reconcile 为存量行按磁盘现状回填缺失基线、文件缺失即不留行——恢复仅可卸载重装）；MCP 运行时接入（stdio 等 R01 沙箱）、按会话技能选择、显式信任修订计数与升级流、市场、OAuth、hooks 仍未实现 | P2；R01/R08及目录/账号接口 |
 | R14 | 部分基础，完整操作未实现 | 目标窗口绑定的桌面指针、键盘、接管和恢复 | P2；Windows 原生输入与 R02 |
 | R15 | 未实现专用链路 | Web 搜索、来源正文获取及答案引用 | P3；搜索服务/模型原生能力 |
 | R16 | 未实现专用链路 | 图像生成/编辑、任务状态、产物和结果展示 | P3；模型服务/费用与能力 |
@@ -737,9 +737,20 @@ source-review 聊天派发时调用，注入的确切 skill 文本逐条落 `tas
 `PluginSkillActivator` 对每个 Enabled 插件批量读取一次覆盖表、停用技能在文件读取前即跳过且不留
 激活行（覆盖读取失败与插件列表读取失败一样向上传播，不静默降级）；设置页"本地插件"在每个
 插件行内嵌该包的技能列表与独立开关，写前经 `FindAsync` 复核插件仍在，写失败回滚行内勾选并
-提示刷新。开关只影响后续派发——已派发任务的 `task_skill_activations` 快照不回改。MCP 运行时接入
-（stdio 等 R01 沙箱）、按会话技能选择与信任修订仍缺——目录→安装→启用→执行→卸载的
-完整生产链路仍不完整。
+提示刷新。开关只影响后续派发——已派发任务的 `task_skill_activations` 快照不回改。载荷信任基线也已落地：
+`plugin_component_hashes`（schema v50，(plugin_id,component_path) 主键、随 plugin_packages ON DELETE
+CASCADE）按清单组件记录安装时逐文件 SHA-256，与插件行在同一事务原子写入且只插不改（INSERT OR
+IGNORE，已建立的基线永不被覆盖）；因 `state` CHECK 需容纳 Drifted 值，v50 同时以 foreign_keys=OFF
+的重建迁移把 `plugin_packages` 放宽到 (0,1,2,3) 并保留既有行与 component_settings 子行，重放仅由
+版本行门控。`PluginSkillActivator` 对每个 Enabled 插件随覆盖表一并读一次基线：技能组件先读磁盘
+字节算 SHA-256 与基线比对，通过后才 UTF-8 解码并沿用既有 ≤8KiB/≤24K 限额与激活行流程；缺基线行、
+不一致、组件文件缺失或不可读即经 `SetStateAsync` 置 Drifted 并中断该插件其余组件（其他插件不受
+影响），漂移仅影响本次及后续派发、不回改已派发快照。`PluginPackageInstaller.EnableAsync` 对 Drifted 行以
+plugin_payload_drifted 拒绝——漂移载荷只能卸载后重装，停用与卸载仍照常；设置页行徽标显示
+“载荷已漂移”且启停开关禁用。启动 `ReconcileAsync` 也为缺基线的存量插件行回填：仅对按同一包容
+规则解析到且仍在安装目录内的组件文件计算 SHA-256 入库，文件缺失即不留行，使旧库升级到基线语义
+而不重写已验证内容。MCP 运行时接入（stdio 等 R01 沙箱）、按会话技能选择、显式信任修订计数与
+升级流仍缺——目录→安装→启用→执行→卸载的完整生产链路仍不完整。
 2026-10-19 入库的官方记录将相关 App Server 插件方法列为尚不供生产调用；实施前应重新核实，不能假定目录接口可用。
 
 1. Domain 保存包身份、来源/版本、组件及信任状态；Application 定义目录/安装/启停/移除端口；
