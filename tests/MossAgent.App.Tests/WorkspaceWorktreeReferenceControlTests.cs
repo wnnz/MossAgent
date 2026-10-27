@@ -86,7 +86,7 @@ public sealed class WorkspaceWorktreeReferenceControlTests : IAsyncLifetime
     }, TestContext.Current.CancellationToken);
 
     [Fact]
-    public Task DiscoveredReferencesRenderAndSelectBaseReference() => _session.Dispatch(async () =>
+    public Task DiscoveredReferencesRenderAndSelectBaseReference() => _session.DispatchAsync(async () =>
     {
         var environment = new WorkspaceTaskEnvironmentViewModel(new StaticWorktreeReferenceDiscovery());
         environment.SetContext(new ProjectProfile(Guid.NewGuid(), "project", "root", ["root"], DateTimeOffset.UtcNow), null);

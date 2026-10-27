@@ -125,7 +125,7 @@ public sealed class AuditSubagentRunPaneTests : IAsyncLifetime
     }, TestContext.Current.CancellationToken);
 
     [Fact]
-    public Task RefreshKeepsTheSelectedRunByRunId() => _session.Dispatch(async () =>
+    public Task RefreshKeepsTheSelectedRunByRunId() => _session.DispatchAsync(async () =>
     {
         var taskId = Guid.NewGuid();
         var keep = Run(taskId, SubagentRunStatus.Cancelled);
