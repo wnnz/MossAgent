@@ -65,6 +65,7 @@ public sealed class SqliteDatabaseInitializer(
         await ApplyVersionAsync(connection, 44, PullRequestMarkDatabaseSchema.VersionFortyFour, cancellationToken);
         await SourceRepositoryGrantWriteMigration.ApplyAsync(connection, cancellationToken);
         await ApplyVersionAsync(connection, 46, PluginPackageDatabaseSchema.VersionFortySix, cancellationToken);
+        await ApplyVersionAsync(connection, 47, TaskSkillActivationDatabaseSchema.VersionFortySeven, cancellationToken);
         await SqliteInterruptedWorkRecovery.RecoverAsync(connection, cancellationToken);
     }
 

@@ -2,6 +2,7 @@ using MossAgent.Application.Agent;
 using MossAgent.Application.Models;
 using MossAgent.Application.Persistence;
 using MossAgent.Application.Attachments;
+using MossAgent.Application.Plugins;
 using MossAgent.Application.SourceControl;
 using MossAgent.Application.Conversations;
 using MossAgent.Domain;
@@ -15,7 +16,8 @@ public sealed class WorkspaceRunExecutor(
     WorkspaceTaskFactory taskFactory,
     IConversationAttachmentStore? attachments = null,
     SourceReviewChatAccess? reviewChats = null,
-    IConversationSteeringRepository? steering = null)
+    IConversationSteeringRepository? steering = null,
+    IPluginSkillActivator? skillActivator = null)
 {
     public async Task<AgentTask> ExecuteAsync(
         WorkspaceRunState state,
@@ -49,12 +51,16 @@ public sealed class WorkspaceRunExecutor(
             ?? throw new ConversationSteeringException("SteeringRunUnavailable");
         try
         {
+            var skillInstructions = review is null && skillActivator is not null
+                ? await skillActivator.BuildSkillInstructionsAsync(state.Task.Id, cancellationToken)
+                : null;
             var request = new AgentRunRequest(
                 state.Provider,
                 state.Model,
                 messages,
                 context,
                 AgentInstructions: review is null ? state.AgentInstructions : sourceReads ? SourceReviewContextBuilder.ReadOnlyInstructions : SourceReviewContextBuilder.Instructions,
+                PluginSkillInstructions: skillInstructions,
                 PinnedUserContext: review?.Context, Steering: state.Steering, AttachmentStore: attachments);
             var failed = false;
             TaskFailureReason? failureReason = null;

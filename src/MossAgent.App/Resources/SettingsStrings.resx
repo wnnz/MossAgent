@@ -222,7 +222,7 @@
   <data name="PluginPreviewReady" xml:space="preserve"><value>请核对组件与来源后确认安装 {0} {1}。</value></data>
   <data name="PluginInstalled" xml:space="preserve"><value>已安装插件 {0} {1}。</value></data>
   <data name="PluginInstallCancelled" xml:space="preserve"><value>已取消安装。</value></data>
-  <data name="PluginEnabled" xml:space="preserve"><value>已启用插件 {0}。启用仅保存状态标记，组件暂不激活。</value></data>
+  <data name="PluginEnabled" xml:space="preserve"><value>已启用插件 {0}。其技能指令将注入后续任务；其余组件暂不激活。</value></data>
   <data name="PluginDisabled" xml:space="preserve"><value>已停用插件 {0}。</value></data>
   <data name="PluginUninstalled" xml:space="preserve"><value>已卸载插件 {0}。</value></data>
   <data name="PluginUninstallPayloadKept" xml:space="preserve"><value>已卸载插件 {0}，但载荷目录删除失败，已保留为残留，启动核对时将报告。</value></data>

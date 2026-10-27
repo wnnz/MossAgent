@@ -11,7 +11,7 @@ public sealed class AutomationRunGenerationMigrationTests
     public async Task FreshDatabaseAddsRunGenerationColumnAtVersionFortyTwo()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
-        Assert.Equal(46, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(47, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM pragma_table_info('automation_runs') WHERE name='snapshot_generation';"));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM pragma_foreign_key_check;"));
@@ -28,13 +28,13 @@ public sealed class AutomationRunGenerationMigrationTests
             WHEN NEW.version=42 BEGIN SELECT RAISE(ABORT,'synthetic migration failure'); END;
             """);
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Initializer.InitializeAsync(fixture.Token));
-        Assert.Equal(45, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(46, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync(
             "SELECT COUNT(*) FROM pragma_table_info('automation_runs') WHERE name='snapshot_generation';"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_forty_two;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(46, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(47, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM schema_versions WHERE version=42;"));
         Assert.Equal(1, await fixture.CountAsync(
@@ -61,7 +61,7 @@ public sealed class AutomationRunGenerationMigrationTests
 
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(46, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(47, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var legacy = Assert.Single(await repository.GetRunsAsync(plan.Id, 50, fixture.Token));
         Assert.Equal(AutomationRunStatus.Completed, legacy.Status);
         Assert.Null(legacy.SnapshotGeneration);

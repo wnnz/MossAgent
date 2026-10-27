@@ -144,7 +144,7 @@ public sealed class PluginPackagesViewModelTests
         Assert.Equal([plugin.Id], installer.EnabledIds);
         Assert.True(row.IsEnabled);
         Assert.Equal("已启用", row.StateText);
-        Assert.Equal("已启用插件 demo。启用仅保存状态标记，组件暂不激活。", viewModel.Status);
+        Assert.Equal("已启用插件 demo。其技能指令将注入后续任务；其余组件暂不激活。", viewModel.Status);
 
         await viewModel.ToggleEnabledCommand.ExecuteAsync(row);
 

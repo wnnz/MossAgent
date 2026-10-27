@@ -26,7 +26,7 @@ public sealed class AgentRunner(
                 .Take(16)
                 .ToArray();
             var messages = request.Messages.ToList();
-            var systemPrompt = AgentSystemPromptBuilder.Build(request.ToolContext, request.AgentInstructions)
+            var systemPrompt = AgentSystemPromptBuilder.Build(request.ToolContext, request.AgentInstructions, request.PluginSkillInstructions)
                 + SubagentCatalogPromptBuilder.Build(enabledSubagents);
             messages.Insert(0, new ModelMessage(ModelRole.System, systemPrompt));
             await foreach (var agentEvent in RunTurnsAsync(

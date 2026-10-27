@@ -8,7 +8,7 @@
     <ui:AppScrollViewer Classes="settings-page-scroll">
       <StackPanel Spacing="24" Margin="0,0,0,32">
         <ui:AppSettingsPageHeader Title="{res:L '本地插件'}"
-                                  Description="{res:L '安装本地插件包并管理启用状态；启用仅保存状态标记，组件暂不激活。'}"
+                                  Description="{res:L '安装本地插件包并管理启用状态；启用后其技能指令会注入后续任务，MCP 等其余组件暂不激活。'}"
                                   Status="{Binding Status}" IsStatusError="{Binding HasStatusError}">
           <ui:AppSettingsPageHeader.Actions>
             <StackPanel Classes="settings-header-actions">

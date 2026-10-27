@@ -23,6 +23,7 @@ internal sealed class WorkspacePersistenceFixture : IAsyncDisposable
     public IToolExecutor Tools => _services!.GetRequiredService<IToolExecutor>();
     public IToolExecutionAuditReader Audit => _services!.GetRequiredService<IToolExecutionAuditReader>();
     public WorkspaceViewModel Workspace => _services!.GetRequiredService<WorkspaceViewModel>();
+    public T Get<T>() where T : notnull => _services!.GetRequiredService<T>();
 
     public WorkspaceRunController CreateController(IAgentRunner runner, WorkspaceRunTracker runs) =>
         new(new WorkspaceRunExecutor(Repository, runner, Factory), runs, Factory);
