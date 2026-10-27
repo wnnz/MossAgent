@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MossAgent.App.Resources;
 using MossAgent.Application.Persistence;
+using MossAgent.Application.Plugins;
+using MossAgent.Domain.Plugins;
 using MossAgent.Tools.Abstractions;
 
 namespace MossAgent.App.ViewModels;
@@ -12,9 +14,11 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
     private readonly IToolExecutionAuditReader _reader;
     private readonly ISubagentRunJournal? _runJournal;
     private readonly IBrowserSessionJournal? _browserJournal;
+    private readonly ITaskSkillActivationStore? _skillActivations;
     private Guid? _taskId;
     private ToolExecutionAuditRecord? _selectedExecution;
     private AuditSubagentRunViewModel? _selectedSubagentRun;
+    private AuditSkillActivationViewModel? _selectedSkillActivation;
     private CancellationTokenSource _scope = new();
     private string _status = InspectorText.Get("SelectTask");
     private string _artifactsStatus = InspectorText.Get("ArtifactsHint");
@@ -24,11 +28,12 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
     private int _artifactVersion;
 
     public AuditPaneViewModel(IToolExecutionAuditReader reader, ISubagentRunJournal? runJournal = null,
-        IBrowserSessionJournal? browserJournal = null)
+        IBrowserSessionJournal? browserJournal = null, ITaskSkillActivationStore? skillActivations = null)
     {
         _reader = reader;
         _runJournal = runJournal;
         _browserJournal = browserJournal;
+        _skillActivations = skillActivations;
         RefreshCommand = new AsyncRelayCommand(RefreshAsync, () => HasTask && !IsLoading);
     }
 
@@ -36,15 +41,18 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
     public ObservableCollection<AuditExecutionViewModel> ExecutionItems { get; } = [];
     public ObservableCollection<AuditSubagentRunViewModel> SubagentRuns { get; } = [];
     public ObservableCollection<AuditBrowserSessionViewModel> BrowserSessions { get; } = [];
+    public ObservableCollection<AuditSkillActivationViewModel> SkillActivations { get; } = [];
     public ObservableCollection<ToolArtifactRecord> Artifacts { get; } = [];
     public IAsyncRelayCommand RefreshCommand { get; }
     public bool HasTask => _taskId is not null && !_disposed;
     public bool HasExecutions => Executions.Count > 0;
     public bool HasRuns => SubagentRuns.Count > 0;
     public bool HasBrowserSessions => BrowserSessions.Count > 0;
+    public bool HasSkillActivations => SkillActivations.Count > 0;
     public bool HasArtifacts => Artifacts.Count > 0;
     public string RunsTitle => InspectorText.Format("AuditSubagentRunsTitle", SubagentRuns.Count);
     public string BrowserSessionsTitle => InspectorText.Format("AuditBrowserSessionsTitle", BrowserSessions.Count);
+    public string SkillActivationsTitle => InspectorText.Format("AuditSkillActivationsTitle", SkillActivations.Count);
     public bool IsLoading { get => _isLoading; private set { if (SetProperty(ref _isLoading, value)) RefreshCommand.NotifyCanExecuteChanged(); } }
     public string Status { get => _status; private set => SetProperty(ref _status, value); }
     public string ArtifactsStatus { get => _artifactsStatus; private set => SetProperty(ref _artifactsStatus, value); }
@@ -80,6 +88,17 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
             OnPropertyChanged();
         }
     }
+    public AuditSkillActivationViewModel? SelectedSkillActivation
+    {
+        get => _selectedSkillActivation;
+        set
+        {
+            if (value is not null && !SkillActivations.Any(item => ReferenceEquals(item, value))) return;
+            if (ReferenceEquals(_selectedSkillActivation, value)) return;
+            _selectedSkillActivation = value;
+            OnPropertyChanged();
+        }
+    }
 
     public void Attach(Guid? taskId)
     {
@@ -94,9 +113,11 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
         ExecutionItems.Clear();
         SubagentRuns.Clear();
         BrowserSessions.Clear();
+        SkillActivations.Clear();
         Artifacts.Clear();
         SelectedExecution = null;
         SelectedSubagentRun = null;
+        SelectedSkillActivation = null;
         IsLoading = false;
         Status = InspectorText.Get(taskId is null ? "SelectTask" : "Loading");
         ArtifactsStatus = InspectorText.Get("ArtifactsHint");
@@ -118,20 +139,27 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
         {
             var runsTask = ReadRunsAsync(taskId, token);
             var browserTask = ReadBrowserSessionsAsync(taskId, token);
+            var skillsTask = ReadSkillActivationsAsync(taskId, token);
             var records = await _reader.GetRecentAsync(taskId, 200, token);
             var runs = await runsTask;
             var sessions = await browserTask;
+            var skills = await skillsTask;
             if (_disposed || generation != _generation) return;
             var selectionId = SelectedExecution?.Id;
             var selectedRunId = SelectedSubagentRun?.Record.RunId;
+            var selectedSkillId = SelectedSkillActivation?.Record.Id;
             Executions.ReplaceWith(records.Where(record => record.TaskId == taskId).DistinctBy(record => record.Id).Take(200));
             ExecutionItems.ReplaceWith(Executions.Select(record => new AuditExecutionViewModel(record)));
             SubagentRuns.ReplaceWith(runs.Where(run => run.TaskId == taskId).DistinctBy(run => run.RunId)
                 .Select(run => new AuditSubagentRunViewModel(run)));
             BrowserSessions.ReplaceWith(sessions);
+            SkillActivations.ReplaceWith(skills.Where(item => item.TaskId == taskId).DistinctBy(item => item.Id)
+                .Select(item => new AuditSkillActivationViewModel(item)));
             SelectedExecution = Executions.FirstOrDefault(record => record.Id == selectionId) ?? Executions.FirstOrDefault();
             SelectedSubagentRun = SubagentRuns.FirstOrDefault(run => run.Record.RunId == selectedRunId)
                 ?? SubagentRuns.FirstOrDefault();
+            SelectedSkillActivation = SkillActivations.FirstOrDefault(item => item.Record.Id == selectedSkillId)
+                ?? SkillActivations.FirstOrDefault();
             OnPropertyChanged(nameof(SelectedItem));
             Status = !HasExecutions ? InspectorText.Get("NoAuditHint") : InspectorText.Format("AuditCount", Executions.Count);
             NotifyCollections();
@@ -169,6 +197,16 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
         catch (Exception) { return []; }
     }
 
+    // The activation snapshot read is best-effort like the journals: a missing or failing
+    // store degrades to no activation rows and never breaks the executions main path.
+    private async Task<IReadOnlyList<TaskSkillActivation>> ReadSkillActivationsAsync(
+        Guid taskId, CancellationToken token)
+    {
+        if (_skillActivations is null) return [];
+        try { return await _skillActivations.ListForTaskAsync(taskId, token); }
+        catch (Exception) { return []; }
+    }
+
     private async Task LoadArtifactsAsync(ToolExecutionAuditRecord? execution, int version)
     {
         Artifacts.Clear();
@@ -201,6 +239,8 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(RunsTitle));
         OnPropertyChanged(nameof(HasBrowserSessions));
         OnPropertyChanged(nameof(BrowserSessionsTitle));
+        OnPropertyChanged(nameof(HasSkillActivations));
+        OnPropertyChanged(nameof(SkillActivationsTitle));
         OnPropertyChanged(nameof(HasArtifacts));
     }
 
