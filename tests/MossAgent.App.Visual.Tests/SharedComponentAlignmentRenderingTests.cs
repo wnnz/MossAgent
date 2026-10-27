@@ -39,7 +39,7 @@ public sealed class SharedComponentAlignmentRenderingTests : IAsyncLifetime
         try
         {
             Save(window, FormattableString.Invariant($"notice-{dark}-{width}-{scale}x"));
-            var text = Assert.Single(notice.GetVisualDescendants().OfType<AppText>());
+            var text = Assert.Single(notice.GetVisualDescendants().OfType<AppText>(), item => item.IsEffectivelyVisible);
             var icon = Assert.Single(notice.GetVisualDescendants().OfType<AppIcon>());
             Assert.Equal(new Thickness(4, 0, 4, 16), notice.Margin);
             Assert.Equal(VerticalAlignment.Top, icon.VerticalAlignment);

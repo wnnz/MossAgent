@@ -21,6 +21,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     private readonly WorkspaceBackgroundRunCoordinator _backgroundRuns;
     private readonly WorkspaceAttachmentDraftCoordinator _attachmentDrafts;
     private readonly WorkspaceSendCoordinator _sender;
+    private readonly WorkspaceSendActionCoordinator _sendActions;
     private readonly WorkspaceLoadCoordinator _loads = new();
     private AiProvider? _selectedProvider;
     private ModelProfile? _selectedModel;
@@ -77,7 +78,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         ModelPicker.ModelSelected += HandleModelSelected;
         ModelPicker.PropertyChanged += HandleModelPickerChanged;
         RefreshCommand = new AsyncRelayCommand(LoadAsync);
-        PrimaryActionCommand = new RelayCommand(ExecutePrimaryAction, CanExecutePrimaryAction);
+        PrimaryActionCommand = new RelayCommand(() => _sendActions!.ExecutePrimaryAction(), () => _sendActions!.CanExecutePrimaryAction());
         _preparation.StateChanged += NotifyRunStateChanged;
         FileChanges.Undo.StateChanged += HandleUndoStateChanged;
         _projectPicker = new(catalog);
@@ -94,9 +95,11 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         _sender = new(taskFactory, runs, runController, panels, catalog, attachments, Drafts, _preparation,
             ConversationPreferences, new(PresentEventAsync, SetActivity, ApplyTaskUpdate, NotifyRunStateChanged),
             () => _disposed, () => IsShuttingDown, value => Activity = value);
-        RunRetry = new(taskFactory, () => Catalog.SelectedTask, CanRetrySend, SendRetryAsync);
+        _sendActions = new(this, _preparation, runs, _sender, () => _disposed,
+            value => HasSendPreparationError = value, value => Activity = value, OnPropertyChanged);
+        RunRetry = new(taskFactory, () => Catalog.SelectedTask, _sendActions.CanRetrySend, _sendActions.SendRetryAsync);
         Queue = followups?.Create(this, taskFactory, runs, runController, panels,
-            new(PresentEventAsync, SetActivity, ApplyTaskUpdate, NotifyRunStateChanged), () => HasActiveRun && CanSend(true),
+            new(PresentEventAsync, SetActivity, ApplyTaskUpdate, NotifyRunStateChanged), () => HasActiveRun && _sendActions.CanSend(true),
             () => !_disposed && Startup.IsReady && !IsRunning && !IsShuttingDown && !FileChanges.Undo.IsBusy
                 && Catalog.SelectedTask is { } task && !Catalog.TaskManagement.BlocksTaskStart(task.Id)
                 && !Catalog.WorktreeAuthorization.BlocksTaskStart(task.Id))
@@ -260,24 +263,6 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         SelectedModel = model;
     }
 
-    private void ExecutePrimaryAction()
-    {
-        if (IsRunning) Stop();
-        else if (CanSend()) _preparation.Start(SendAsync);
-    }
-
-    private bool CanExecutePrimaryAction() => !_disposed && (IsRunning ? CanStop() : CanSend());
-    private bool CanSend(bool allowRunning = false) =>
-        !_disposed && Startup.IsReady && Drafts.CanSend && Attachments.IsModelCompatible && !_preparation.IsActive && !IsShuttingDown && !FileChanges.Undo.IsBusy && AgentPicker.CanUseSelection
-        && SelectedProvider is not null
-        && SelectedModel is not null && ModelPicker.CanSendWithSelectedModel
-        && ModelPicker.SelectedItem?.Provider.Id == SelectedProvider.Id
-        && ModelPicker.SelectedItem.Model.Id == SelectedModel.Id && (!string.IsNullOrWhiteSpace(ComposerText) || Attachments.HasImageItems)
-        && (Catalog.SelectedTask is null || (Catalog.SelectedTask.ProjectId == Catalog.SelectedProject?.Id && (allowRunning || !_runs.IsRunning(Catalog.SelectedTask.Id))
-            && Queue?.IsPreparing(Catalog.SelectedTask.Id) != true
-            && !Catalog.TaskManagement.BlocksTaskStart(Catalog.SelectedTask.Id)
-            && !Catalog.WorktreeAuthorization.BlocksTaskStart(Catalog.SelectedTask.Id)));
-
     private void HandleTaskMutationChanged(object? sender, PropertyChangedEventArgs args)
     {
         if (args.PropertyName == nameof(WorkspaceTaskManagementViewModel.IsBusy))
@@ -389,57 +374,6 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         }
     }
 
-    private async Task SendAsync(CancellationToken cancellationToken) =>
-        await SendRequestAsync(WorkspaceSendRequest.Capture(this), cancellationToken);
-
-    private Task SendRetryAsync(AgentTask task, string prompt)
-    {
-        var request = WorkspaceSendRequest.Capture(this) with
-        {
-            Draft = prompt,
-            ExistingTask = task,
-            Attachments = [],
-            UseWorktree = false,
-            WorktreeBaseReference = null
-        };
-        return _preparation.Start(cancellationToken => SendRequestAsync(request, cancellationToken));
-    }
-
-    private bool CanRetrySend() =>
-        !_disposed && Startup.IsReady && Drafts.CanSend && Attachments.IsModelCompatible && !_preparation.IsActive
-        && !IsShuttingDown && !FileChanges.Undo.IsBusy && AgentPicker.CanUseSelection
-        && SelectedProvider is not null && SelectedModel is not null && ModelPicker.CanSendWithSelectedModel
-        && ModelPicker.SelectedItem?.Provider.Id == SelectedProvider.Id
-        && ModelPicker.SelectedItem.Model.Id == SelectedModel.Id
-        && Catalog.SelectedTask is { Status: AgentTaskStatus.Failed } task
-        && task.ProjectId == Catalog.SelectedProject?.Id && !_runs.IsRunning(task.Id)
-        && Queue?.IsPreparing(task.Id) != true
-        && !Catalog.TaskManagement.BlocksTaskStart(task.Id)
-        && !Catalog.WorktreeAuthorization.BlocksTaskStart(task.Id);
-
-    private async Task SendRequestAsync(WorkspaceSendRequest request, CancellationToken cancellationToken)
-    {
-        Catalog.Environment.ClearPreparationNotice();
-        HasSendPreparationError = false;
-        try
-        {
-            await _sender.SendAsync(request, cancellationToken);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            if (!_disposed) Activity = WorkspaceText.Get("PreparationCancelled");
-        }
-        catch (Exception exception)
-        {
-            if (_disposed) throw new InvalidOperationException("Task finalization failed.");
-            Catalog.Environment.ReportPreparationFailure(exception);
-            OnPropertyChanged(nameof(SendPreparationError));
-            HasSendPreparationError = true;
-            Activity = SendPreparationError;
-            if (IsShuttingDown) throw new InvalidOperationException("Task finalization failed.");
-        }
-    }
-
     private async Task PresentEventAsync(WorkspaceRunState state, AgentEvent agentEvent) =>
         state.Assistant = await WorkspaceAgentEventPresenter.PresentAsync(
             agentEvent, state.Assistant, state.Messages,
@@ -507,14 +441,6 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
 
     private void ApplyTaskUpdate(AgentTask task) =>
         Catalog.UpsertTask(task, Catalog.SelectedTask?.Id == task.Id);
-
-    private bool CanStop() => HasActiveRun || _preparation.CanCancel || Catalog.SelectedTask is { } task && Queue.IsPreparing(task.Id);
-    private void Stop()
-    {
-        if (HasActiveRun && Catalog.SelectedTask is { } task) _runs.Cancel(task.Id);
-        else _preparation.Cancel();
-        if (Catalog.SelectedTask is { } selected) Queue.CancelPreparation(selected.Id);
-    }
 
     private void HandleUndoStateChanged()
     {
