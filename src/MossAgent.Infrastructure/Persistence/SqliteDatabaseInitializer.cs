@@ -67,6 +67,7 @@ public sealed class SqliteDatabaseInitializer(
         await ApplyVersionAsync(connection, 46, PluginPackageDatabaseSchema.VersionFortySix, cancellationToken);
         await ApplyVersionAsync(connection, 47, TaskSkillActivationDatabaseSchema.VersionFortySeven, cancellationToken);
         await ApplyVersionAsync(connection, 48, ProjectDrainStateDatabaseSchema.VersionFortyEight, cancellationToken);
+        await ApplyVersionAsync(connection, 49, PluginComponentSettingsDatabaseSchema.VersionFortyNine, cancellationToken);
         await SqliteInterruptedWorkRecovery.RecoverAsync(connection, cancellationToken);
     }
 

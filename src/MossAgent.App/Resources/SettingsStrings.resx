@@ -236,6 +236,10 @@
   <data name="PluginToggleFailed" xml:space="preserve"><value>无法切换插件启用状态，请刷新后重试。</value></data>
   <data name="PluginUninstallFailed" xml:space="preserve"><value>无法卸载插件，请刷新后重试。</value></data>
   <data name="PluginOperationCancelled" xml:space="preserve"><value>插件操作已取消。</value></data>
+  <data name="PluginSkillEnabled" xml:space="preserve"><value>已启用技能 {0}。</value></data>
+  <data name="PluginSkillDisabled" xml:space="preserve"><value>已停用技能 {0}；后续任务不再注入该技能。</value></data>
+  <data name="PluginSkillToggleFailed" xml:space="preserve"><value>无法切换技能启用状态，请刷新后重试。</value></data>
+  <data name="PluginSkillToggleHint" xml:space="preserve"><value>停用后该技能不再注入后续任务；已派发任务不受影响。</value></data>
   <data name="PluginErrorUnreadable" xml:space="preserve"><value>无法读取插件包，请确认文件未损坏后重试。</value></data>
   <data name="PluginErrorEntryInvalid" xml:space="preserve"><value>插件包包含不安全或无效的归档条目，已拒绝。</value></data>
   <data name="PluginErrorTooLarge" xml:space="preserve"><value>插件包超出大小限制，已拒绝。</value></data>

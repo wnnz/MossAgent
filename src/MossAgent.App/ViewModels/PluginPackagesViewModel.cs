@@ -11,13 +11,15 @@ using MossAgent.Domain.Plugins;
 
 namespace MossAgent.App.ViewModels;
 
-/// <summary>本地插件包设置页：选择包预览→确认安装→启用/停用→两段确认卸载。
-/// 所有包操作经 <see cref="IPluginPackageInstaller"/> 端口；安装器自行重校验，不信任预览。</summary>
+/// <summary>本地插件包设置页：选择包预览→确认安装→启用/停用→单技能启停→两段确认卸载。
+/// 所有包操作经 <see cref="IPluginPackageInstaller"/> 端口；安装器自行重校验，不信任预览。
+/// 单技能启停经 <see cref="IPluginComponentSettings"/> 端口持久化显式选择，仅影响后续派发。</summary>
 public sealed class PluginPackagesViewModel : ObservableObject, IDisposable
 {
     private readonly IPluginPackageInstaller _installer;
     private readonly IPluginPackagePreviewer _previewer;
     private readonly IFilePickerService _picker;
+    private readonly IPluginComponentSettings _componentSettings;
     private readonly CancellationTokenSource _lifetime = new();
     private bool _disposed;
     private string _status = string.Empty;
@@ -26,11 +28,13 @@ public sealed class PluginPackagesViewModel : ObservableObject, IDisposable
     private Guid? _uninstallPendingId;
 
     public PluginPackagesViewModel(IPluginPackageInstaller installer,
-        IPluginPackagePreviewer previewer, IFilePickerService picker)
+        IPluginPackagePreviewer previewer, IFilePickerService picker,
+        IPluginComponentSettings componentSettings)
     {
         _installer = installer;
         _previewer = previewer;
         _picker = picker;
+        _componentSettings = componentSettings;
         Items.CollectionChanged += HandleItemsChanged;
         PickPackageCommand = new GuardedAsyncRelayCommand(PickPackageAsync, () => CanOperate);
         ConfirmInstallCommand = new GuardedAsyncRelayCommand(ConfirmInstallAsync,
@@ -41,6 +45,8 @@ public sealed class PluginPackagesViewModel : ObservableObject, IDisposable
             ToggleEnabledAsync, row => CanOperate && row is not null);
         UninstallCommand = new GuardedAsyncRelayCommand<InstalledPluginRowViewModel>(
             UninstallAsync, row => CanOperate && row is not null);
+        ToggleSkillCommand = new GuardedAsyncRelayCommand<PluginSkillRowViewModel>(
+            ToggleSkillAsync, row => CanOperate && row is not null);
         foreach (var command in Operations) command.PropertyChanged += HandleOperationChanged;
         _ = LoadSafelyAsync();
     }
@@ -48,13 +54,15 @@ public sealed class PluginPackagesViewModel : ObservableObject, IDisposable
     public ObservableCollection<InstalledPluginRowViewModel> Items { get; } = [];
     public bool HasNoItems => Items.Count == 0;
     public bool CanOperate => !_disposed && !PickPackageCommand.IsRunning && !ConfirmInstallCommand.IsRunning
-        && !RefreshCommand.IsRunning && !ToggleEnabledCommand.IsRunning && !UninstallCommand.IsRunning;
+        && !RefreshCommand.IsRunning && !ToggleEnabledCommand.IsRunning && !UninstallCommand.IsRunning
+        && !ToggleSkillCommand.IsRunning;
     public IAsyncRelayCommand PickPackageCommand { get; }
     public IAsyncRelayCommand ConfirmInstallCommand { get; }
     public IRelayCommand CancelInstallCommand { get; }
     public IAsyncRelayCommand RefreshCommand { get; }
     public IAsyncRelayCommand<InstalledPluginRowViewModel> ToggleEnabledCommand { get; }
     public IAsyncRelayCommand<InstalledPluginRowViewModel> UninstallCommand { get; }
+    public IAsyncRelayCommand<PluginSkillRowViewModel> ToggleSkillCommand { get; }
     public bool HasPendingPreview => PendingPreview is not null;
 
     public PluginPackagePreviewViewModel? PendingPreview
@@ -82,7 +90,8 @@ public sealed class PluginPackagesViewModel : ObservableObject, IDisposable
     }
 
     private IAsyncRelayCommand[] Operations =>
-        [PickPackageCommand, ConfirmInstallCommand, RefreshCommand, ToggleEnabledCommand, UninstallCommand];
+        [PickPackageCommand, ConfirmInstallCommand, RefreshCommand, ToggleEnabledCommand,
+            UninstallCommand, ToggleSkillCommand];
 
     private async Task PickPackageAsync(CancellationToken cancellationToken)
     {
@@ -198,6 +207,39 @@ public sealed class PluginPackagesViewModel : ObservableObject, IDisposable
         catch (Exception) { SetStatus(SettingsText.Get("PluginUninstallFailed"), true); }
     }
 
+    private async Task ToggleSkillAsync(PluginSkillRowViewModel? row, CancellationToken cancellationToken)
+    {
+        if (_disposed || row is null) return;
+        var enabled = row.IsEnabled;
+        using var operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
+        try
+        {
+            if (await _installer.FindAsync(row.PluginId, operation.Token) is null)
+            {
+                row.IsEnabled = !enabled;
+                if (_disposed) return;
+                SetStatus(SettingsText.Get("PluginTargetUnavailable"), true);
+                _ = await TryLoadAsync(operation.Token);
+                return;
+            }
+            await _componentSettings.SetSkillEnabledAsync(row.PluginId, row.RelativePath, enabled,
+                operation.Token);
+            operation.Token.ThrowIfCancellationRequested();
+            if (_disposed) return;
+            SetStatus(Format(enabled ? "PluginSkillEnabled" : "PluginSkillDisabled", row.Name));
+        }
+        catch (OperationCanceledException) when (operation.IsCancellationRequested)
+        {
+            row.IsEnabled = !enabled;
+            SetStatus(SettingsText.Get("PluginOperationCancelled"));
+        }
+        catch (Exception)
+        {
+            row.IsEnabled = !enabled;
+            SetStatus(SettingsText.Get("PluginSkillToggleFailed"), true);
+        }
+    }
+
     private async Task RefreshAsync(CancellationToken cancellationToken)
     {
         if (_disposed) return;
@@ -223,8 +265,22 @@ public sealed class PluginPackagesViewModel : ObservableObject, IDisposable
         Items.Clear();
         foreach (var plugin in plugins)
         {
-            Items.Add(new InstalledPluginRowViewModel(plugin) { IsUninstallPending = plugin.Id == _uninstallPendingId });
+            var row = new InstalledPluginRowViewModel(plugin, await LoadSkillRowsAsync(plugin, token))
+            { IsUninstallPending = plugin.Id == _uninstallPendingId };
+            Items.Add(row);
         }
+    }
+
+    private async Task<IReadOnlyList<PluginSkillRowViewModel>> LoadSkillRowsAsync(
+        InstalledPlugin plugin, CancellationToken token)
+    {
+        var components = plugin.Components
+            .Where(static component => component.Kind == PluginComponentKind.Skill).ToList();
+        if (components.Count == 0) return [];
+        var overrides = await _componentSettings.ListOverridesAsync(plugin.Id, token);
+        token.ThrowIfCancellationRequested();
+        return [.. components.Select(component => new PluginSkillRowViewModel(plugin.Id, component,
+            !overrides.TryGetValue(component.RelativePath, out var enabled) || enabled))];
     }
 
     private async Task<bool> TryLoadAsync(CancellationToken token)

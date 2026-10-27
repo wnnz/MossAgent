@@ -30,7 +30,7 @@ internal sealed class RecordingPluginPackageInstaller : IPluginPackageInstaller
     }
 
     public Task<InstalledPlugin?> FindAsync(Guid id, CancellationToken cancellationToken) =>
-        Task.FromResult<InstalledPlugin?>(null);
+        Task.FromResult(Installed.FirstOrDefault(plugin => plugin.Id == id));
 
     public Task<IReadOnlyList<InstalledPlugin>> ListAsync(CancellationToken cancellationToken)
     {

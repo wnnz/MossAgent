@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MossAgent.App.Resources;
@@ -7,12 +8,19 @@ namespace MossAgent.App.ViewModels;
 
 /// <summary>List row for one installed plugin package. <see cref="Update"/> re-points the row
 /// after a lifecycle transition; <see cref="IsUninstallPending"/> drives the two-stage
-/// uninstall label on the shared settings item row.</summary>
+/// uninstall label on the shared settings item row. <see cref="Skills"/> carries one row per
+/// skill component so each can be enabled or disabled independently.</summary>
 public sealed class InstalledPluginRowViewModel : ObservableObject
 {
     private bool _uninstallPending;
 
-    public InstalledPluginRowViewModel(InstalledPlugin plugin) => Plugin = plugin;
+    public InstalledPluginRowViewModel(InstalledPlugin plugin,
+        IEnumerable<PluginSkillRowViewModel>? skills = null)
+    {
+        Plugin = plugin;
+        if (skills is null) return;
+        foreach (var skill in skills) Skills.Add(skill);
+    }
 
     public InstalledPlugin Plugin { get; private set; }
     public Guid Id => Plugin.Id;
@@ -20,6 +28,8 @@ public sealed class InstalledPluginRowViewModel : ObservableObject
     public string Version => Plugin.Version;
     public string InstallPath => Plugin.InstallPath;
     public bool IsEnabled => Plugin.State == InstalledPluginState.Enabled;
+    public ObservableCollection<PluginSkillRowViewModel> Skills { get; } = [];
+    public bool HasSkills => Skills.Count > 0;
 
     public string StateText => Plugin.State switch
     {

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using MossAgent.App.ViewModels;
 using MossAgent.Application.Plugins;
 using MossAgent.Infrastructure.Persistence;
 using MossAgent.Infrastructure.Plugins;
@@ -30,6 +31,9 @@ public sealed class AppDataDirectoryTests
         Assert.IsType<PluginPackageInstaller>(installer);
         Assert.IsType<ZipPluginPackagePreviewer>(services.GetRequiredService<IPluginPackagePreviewer>());
         Assert.IsType<SqliteInstalledPluginStore>(services.GetRequiredService<IInstalledPluginStore>());
+        Assert.IsType<SqlitePluginComponentSettings>(services.GetRequiredService<IPluginComponentSettings>());
+        Assert.NotNull(services.GetRequiredService<IPluginSkillActivator>());
+        Assert.NotNull(services.GetRequiredService<PluginPackagesViewModel>());
         Assert.Equal(Path.Combine(expectedRoot, "plugins"), services.GetRequiredService<AppDataPaths>().PluginsPath);
         Assert.NotNull(services.GetRequiredService<MossAgent.App.Services.AppStartupService>());
     }

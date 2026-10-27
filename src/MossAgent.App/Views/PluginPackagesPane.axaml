@@ -58,14 +58,36 @@
             <ui:AppListBox MaxHeight="560" ItemsSource="{Binding Items}">
               <ListBox.ItemTemplate>
                 <DataTemplate>
-                  <ui:AppSettingsItemRow Classes="multiline" Title="{Binding Name}"
-                        Subtitle="{Binding Subtitle}" BadgeText="{Binding StateText}"
-                        ActionTarget="{Binding}" IsPrimaryAlternate="{Binding IsEnabled}"
-                        PrimaryLabel="{x:Static labels:SettingsItemLabels.Enable}"
-                        AlternatePrimaryLabel="{x:Static labels:SettingsItemLabels.Disable}"
-                        PrimaryCommand="{Binding $parent[UserControl].DataContext.ToggleEnabledCommand}"
-                        SecondaryLabel="{Binding UninstallLabel}"
-                        SecondaryCommand="{Binding $parent[UserControl].DataContext.UninstallCommand}" />
+                  <StackPanel>
+                    <ui:AppSettingsItemRow Classes="multiline" Title="{Binding Name}"
+                          Subtitle="{Binding Subtitle}" BadgeText="{Binding StateText}"
+                          ActionTarget="{Binding}" IsPrimaryAlternate="{Binding IsEnabled}"
+                          PrimaryLabel="{x:Static labels:SettingsItemLabels.Enable}"
+                          AlternatePrimaryLabel="{x:Static labels:SettingsItemLabels.Disable}"
+                          PrimaryCommand="{Binding $parent[UserControl].DataContext.ToggleEnabledCommand}"
+                          SecondaryLabel="{Binding UninstallLabel}"
+                          SecondaryCommand="{Binding $parent[UserControl].DataContext.UninstallCommand}" />
+                    <ui:AppItemsControl ItemsSource="{Binding Skills}" IsVisible="{Binding HasSkills}"
+                                        Margin="16,0,8,6">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,2">
+                            <StackPanel>
+                              <ui:AppText Text="{Binding Name}" Classes="type-12"
+                                          TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+                              <ui:AppText Text="{Binding RelativePath}" Classes="subtle type-11"
+                                          TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding RelativePath}" />
+                            </StackPanel>
+                            <ui:AppToggleButton Grid.Column="1" VerticalAlignment="Center"
+                                                IsChecked="{Binding IsEnabled}" Content="{Binding StateText}"
+                                                ToolTip.Tip="{x:Static labels:PluginPackageLabels.SkillToggleHint}"
+                                                Command="{Binding $parent[UserControl].DataContext.ToggleSkillCommand}"
+                                                CommandParameter="{Binding}" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ui:AppItemsControl>
+                  </StackPanel>
                 </DataTemplate>
               </ListBox.ItemTemplate>
             </ui:AppListBox>

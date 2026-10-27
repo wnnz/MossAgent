@@ -13,8 +13,8 @@ public sealed class PluginSkillActivatorTests : IDisposable
     private readonly ManualToolTimeProvider _time = new();
 
     private PluginSkillActivator Subject(IReadOnlyList<InstalledPlugin> rows,
-        ITaskSkillActivationStore? activations = null) =>
-        new(new StaticInstalledPluginStore(rows), activations ?? _activations, _root, _time);
+        ITaskSkillActivationStore? activations = null, IPluginComponentSettings? settings = null) =>
+        new(new StaticInstalledPluginStore(rows), activations ?? _activations, _root, _time, settings);
 
     private static InstalledPlugin Plugin(string name, InstalledPluginState state,
         params PluginComponentDescriptor[] components) =>
@@ -187,5 +187,61 @@ public sealed class PluginSkillActivatorTests : IDisposable
 
         Assert.Null(text);
         Assert.Empty(Assert.Single(_activations.Saves).Rows);
+    }
+
+    [Fact]
+    public async Task DisabledSkillComponentsAreSkippedAndLeaveNoRows()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled,
+            Skill("skills/a/SKILL.md"), Skill("skills/b/SKILL.md"));
+        WriteSkill(plugin, "skills/a/SKILL.md", "alpha body");
+        WriteSkill(plugin, "skills/b/SKILL.md", "beta body");
+        var settings = new RecordingPluginComponentSettings();
+        settings.Seed(plugin.Id, "skills/b/SKILL.md", false);
+
+        var text = await Subject([plugin], settings: settings)
+            .BuildSkillInstructionsAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        Assert.Equal("### demo v1.0 — skills/a/SKILL.md\nalpha body", text);
+        Assert.Equal(["skills/a/SKILL.md"],
+            Assert.Single(_activations.Saves).Rows.Select(row => row.ComponentPath).ToArray());
+        Assert.Equal(1, settings.ListCalls);
+    }
+
+    [Fact]
+    public async Task ExplicitlyReEnabledAndAbsentChoicesAreBothIncluded()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled,
+            Skill("skills/a/SKILL.md"), Skill("skills/b/SKILL.md"), Skill("skills/c/SKILL.md"));
+        WriteSkill(plugin, "skills/a/SKILL.md", "alpha body");
+        WriteSkill(plugin, "skills/b/SKILL.md", "beta body");
+        WriteSkill(plugin, "skills/c/SKILL.md", "gamma body");
+        var settings = new RecordingPluginComponentSettings();
+        settings.Seed(plugin.Id, "skills/b/SKILL.md", true);
+        settings.Seed(Guid.NewGuid(), "skills/b/SKILL.md", false);
+
+        var text = await Subject([plugin], settings: settings)
+            .BuildSkillInstructionsAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        Assert.Contains("skills/a/SKILL.md", text, StringComparison.Ordinal);
+        Assert.Contains("skills/b/SKILL.md", text, StringComparison.Ordinal);
+        Assert.Contains("skills/c/SKILL.md", text, StringComparison.Ordinal);
+        Assert.Equal(3, Assert.Single(_activations.Saves).Rows.Count);
+    }
+
+    [Fact]
+    public async Task ComponentSettingsFailurePropagatesAndNoSnapshotIsWritten()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled, Skill("skills/a/SKILL.md"));
+        WriteSkill(plugin, "skills/a/SKILL.md", "body");
+        var failure = new InvalidOperationException("overrides read failed");
+        var settings = new RecordingPluginComponentSettings { ListFailure = failure };
+
+        var thrown = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            Subject([plugin], settings: settings)
+                .BuildSkillInstructionsAsync(Guid.NewGuid(), TestContext.Current.CancellationToken));
+
+        Assert.Same(failure, thrown);
+        Assert.Empty(_activations.Saves);
     }
 }

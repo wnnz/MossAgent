@@ -9,4 +9,5 @@ public static class PluginPackageLabels
     public static string ConfirmTitle => SettingsText.Get("PluginConfirmTitle");
     public static string ConfirmInstall => SettingsText.Get("PluginConfirmInstall");
     public static string CancelInstall => SettingsText.Get("PluginCancelInstall");
+    public static string SkillToggleHint => SettingsText.Get("PluginSkillToggleHint");
 }

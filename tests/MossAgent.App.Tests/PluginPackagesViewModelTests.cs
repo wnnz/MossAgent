@@ -22,20 +22,22 @@ public sealed class PluginPackagesViewModelTests
         PluginOverlaySource.None, [new PluginMcpServerDeclaration("docs", "stdio")]);
 
     private static (PluginPackagesViewModel ViewModel, RecordingPluginPackageInstaller Installer,
-        RecordingPluginPackagePreviewer Previewer, PluginPackagePickerProbe Picker) Create(
-            params InstalledPlugin[] installed)
+        RecordingPluginPackagePreviewer Previewer, PluginPackagePickerProbe Picker,
+        RecordingPluginComponentSettings Settings) Create(params InstalledPlugin[] installed)
     {
         var installer = new RecordingPluginPackageInstaller { Installed = installed };
         var previewer = new RecordingPluginPackagePreviewer();
         var picker = new PluginPackagePickerProbe { Paths = [PackagePath] };
-        return (new PluginPackagesViewModel(installer, previewer, picker), installer, previewer, picker);
+        var settings = new RecordingPluginComponentSettings();
+        return (new PluginPackagesViewModel(installer, previewer, picker, settings),
+            installer, previewer, picker, settings);
     }
 
     [Fact]
     public async Task PickPreviewAndConfirmInstallAddsRowAndReportsSuccess()
     {
         var plugin = Plugin("demo-plugin");
-        var (viewModel, installer, previewer, picker) = Create();
+        var (viewModel, installer, previewer, picker, _) = Create();
         previewer.Result = Preview;
         installer.InstallHandler = _ =>
         {
@@ -77,7 +79,7 @@ public sealed class PluginPackagesViewModelTests
     [InlineData(PluginPackageErrorCode.McpInvalid, "插件声明的 mcp.json 无效，已拒绝。")]
     public async Task PreviewRejectionMapsCodeToLocalizedErrorStatus(string code, string expected)
     {
-        var (viewModel, _, previewer, _) = Create();
+        var (viewModel, _, previewer, _, _) = Create();
         previewer.Failure = new PluginPackageException(code, "synthetic-secret");
         using var _ = viewModel;
 
@@ -93,7 +95,7 @@ public sealed class PluginPackagesViewModelTests
     public async Task ConfirmInstallConflictShowsConflictStatusAndKeepsListUnchanged()
     {
         var existing = Plugin();
-        var (viewModel, installer, previewer, _) = Create(existing);
+        var (viewModel, installer, previewer, _, _) = Create(existing);
         previewer.Result = Preview;
         installer.InstallFailure = new PluginPackageException(PluginPackageErrorCode.InstallConflict, "synthetic");
         using var _ = viewModel;
@@ -110,7 +112,7 @@ public sealed class PluginPackagesViewModelTests
     [Fact]
     public async Task CancelInstallClearsPendingPreviewAndKeepsStatusHint()
     {
-        var (viewModel, installer, previewer, _) = Create();
+        var (viewModel, installer, previewer, _, _) = Create();
         previewer.Result = Preview;
         using var _ = viewModel;
         await viewModel.PickPackageCommand.ExecuteAsync(null);
@@ -129,7 +131,7 @@ public sealed class PluginPackagesViewModelTests
     public async Task ToggleEnabledRoundtripsThroughPortAndUpdatesRow()
     {
         var plugin = Plugin();
-        var (viewModel, installer, _, _) = Create(plugin);
+        var (viewModel, installer, _, _, _) = Create(plugin);
         installer.ToggleHandler = (id, enable) => plugin with
         {
             Id = id,
@@ -158,7 +160,7 @@ public sealed class PluginPackagesViewModelTests
     public async Task UninstallRequiresSecondClickThenRemovesRowAndReportsKeptPayload()
     {
         var plugin = Plugin();
-        var (viewModel, installer, _, _) = Create(plugin);
+        var (viewModel, installer, _, _, _) = Create(plugin);
         installer.UninstallHandler = _ => new PluginUninstallOutcome(plugin, PayloadRemoved: false);
         using var _ = viewModel;
         await viewModel.RefreshCommand.ExecuteAsync(null);
@@ -185,7 +187,7 @@ public sealed class PluginPackagesViewModelTests
     public async Task ToggleOrUninstallOnVanishedRowReportsTargetUnavailable()
     {
         var plugin = Plugin();
-        var (viewModel, installer, _, _) = Create(plugin);
+        var (viewModel, installer, _, _, _) = Create(plugin);
         using var _ = viewModel;
         await viewModel.RefreshCommand.ExecuteAsync(null);
         var row = Assert.Single(viewModel.Items);
@@ -216,7 +218,7 @@ public sealed class PluginPackagesViewModelTests
     [Fact]
     public async Task RefreshLoadsInstalledRowsWithLocalizedPresentation()
     {
-        var (viewModel, installer, _, _) = Create(
+        var (viewModel, installer, _, _, _) = Create(
             Plugin("alpha", InstalledPluginState.Enabled),
             Plugin("beta", InstalledPluginState.Disabled));
         using var _ = viewModel;
@@ -235,7 +237,7 @@ public sealed class PluginPackagesViewModelTests
     [Fact]
     public async Task EmptyPickerSelectionDoesNotStartPreview()
     {
-        var (viewModel, _, previewer, picker) = Create();
+        var (viewModel, _, previewer, picker, _) = Create();
         picker.Paths = [];
         using var _ = viewModel;
 
@@ -249,7 +251,7 @@ public sealed class PluginPackagesViewModelTests
     [Fact]
     public async Task DisposeDisablesCommandsAndIgnoresLateInteractions()
     {
-        var (viewModel, installer, previewer, _) = Create(Plugin());
+        var (viewModel, installer, previewer, _, _) = Create(Plugin());
         previewer.Result = Preview;
         await viewModel.RefreshCommand.ExecuteAsync(null);
 
@@ -260,5 +262,117 @@ public sealed class PluginPackagesViewModelTests
         await viewModel.PickPackageCommand.ExecuteAsync(null);
         Assert.Empty(previewer.Paths);
         Assert.Empty(installer.InstallPaths);
+    }
+
+    [Fact]
+    public async Task RefreshBuildsSkillRowsOnlyForSkillComponentsAndAppliesOverrides()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled);
+        var plain = new InstalledPlugin(Guid.NewGuid(), "plain", "1.0.0", "hashabc",
+            "plugins/plain-1.0.0-hashabc8", InstalledPluginState.Enabled,
+            @"D:\packages\plain.mossplugin", DateTimeOffset.UtcNow,
+            [new PluginComponentDescriptor(PluginComponentKind.Asset, "logo", "assets/logo.png")],
+            [], PluginOverlaySource.None);
+        var (viewModel, _, _, _, settings) = Create(plugin, plain);
+        settings.Seed(plugin.Id, "skills/review/SKILL.md", false);
+        using var _ = viewModel;
+
+        await viewModel.RefreshCommand.ExecuteAsync(null);
+
+        var skilled = viewModel.Items[0];
+        Assert.True(skilled.HasSkills);
+        var skill = Assert.Single(skilled.Skills);
+        Assert.Equal(plugin.Id, skill.PluginId);
+        Assert.Equal("review", skill.Name);
+        Assert.Equal("skills/review/SKILL.md", skill.RelativePath);
+        Assert.False(skill.IsEnabled);
+        Assert.Equal("已停用", skill.StateText);
+        var unskilled = viewModel.Items[1];
+        Assert.False(unskilled.HasSkills);
+        Assert.Empty(unskilled.Skills);
+        Assert.Equal(2, settings.ListCalls);
+    }
+
+    [Fact]
+    public async Task ToggleSkillWritesTheFlippedChoiceAndReportsIt()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled);
+        var (viewModel, _, _, _, settings) = Create(plugin);
+        using var _ = viewModel;
+        await viewModel.RefreshCommand.ExecuteAsync(null);
+        var skill = Assert.Single(viewModel.Items[0].Skills);
+        Assert.True(viewModel.ToggleSkillCommand.CanExecute(skill));
+        skill.IsEnabled = false;
+
+        await viewModel.ToggleSkillCommand.ExecuteAsync(skill);
+
+        Assert.Equal([(plugin.Id, "skills/review/SKILL.md", false)], settings.Writes);
+        Assert.False(skill.IsEnabled);
+        Assert.Equal("已停用技能 review；后续任务不再注入该技能。", viewModel.Status);
+        Assert.False(viewModel.HasStatusError);
+
+        skill.IsEnabled = true;
+        await viewModel.ToggleSkillCommand.ExecuteAsync(skill);
+
+        Assert.Equal((plugin.Id, "skills/review/SKILL.md", true), settings.Writes[^1]);
+        Assert.Equal("已启用技能 review。", viewModel.Status);
+    }
+
+    [Fact]
+    public async Task ToggleSkillFailureRestoresTheRowChoiceAndReportsError()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled);
+        var (viewModel, _, _, _, settings) = Create(plugin);
+        settings.WriteFailure = new InvalidOperationException("synthetic");
+        using var _ = viewModel;
+        await viewModel.RefreshCommand.ExecuteAsync(null);
+        var skill = Assert.Single(viewModel.Items[0].Skills);
+        skill.IsEnabled = false;
+
+        await viewModel.ToggleSkillCommand.ExecuteAsync(skill);
+
+        Assert.Empty(settings.Writes);
+        Assert.True(skill.IsEnabled);
+        Assert.Equal("已启用", skill.StateText);
+        Assert.Equal("无法切换技能启用状态，请刷新后重试。", viewModel.Status);
+        Assert.True(viewModel.HasStatusError);
+    }
+
+    [Fact]
+    public async Task ToggleSkillOnVanishedPluginRestoresAndRefreshesTheList()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled);
+        var (viewModel, installer, _, _, settings) = Create(plugin);
+        using var _ = viewModel;
+        await viewModel.RefreshCommand.ExecuteAsync(null);
+        var skill = Assert.Single(viewModel.Items[0].Skills);
+        installer.Installed = [];
+        skill.IsEnabled = false;
+
+        await viewModel.ToggleSkillCommand.ExecuteAsync(skill);
+
+        Assert.Empty(settings.Writes);
+        Assert.True(skill.IsEnabled);
+        Assert.Equal("该插件已不存在，请刷新列表后重试。", viewModel.Status);
+        Assert.True(viewModel.HasStatusError);
+        Assert.Empty(viewModel.Items);
+    }
+
+    [Fact]
+    public async Task RefreshReReadsOverridesAfterExternalChange()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled);
+        var (viewModel, _, _, _, settings) = Create(plugin);
+        using var _ = viewModel;
+        await viewModel.RefreshCommand.ExecuteAsync(null);
+        var skill = Assert.Single(viewModel.Items[0].Skills);
+        Assert.True(skill.IsEnabled);
+
+        settings.Seed(plugin.Id, "skills/review/SKILL.md", false);
+        await viewModel.RefreshCommand.ExecuteAsync(null);
+
+        skill = Assert.Single(viewModel.Items[0].Skills);
+        Assert.False(skill.IsEnabled);
+        Assert.Equal(3, settings.ListCalls);
     }
 }

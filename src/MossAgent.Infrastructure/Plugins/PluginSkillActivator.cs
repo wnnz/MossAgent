@@ -8,13 +8,18 @@ namespace MossAgent.Infrastructure.Plugins;
 /// is re-validated against the plugin's install directory (rejecting rooted, empty or
 /// '..'-carrying component paths and any escape), the file must exist within the 8 KiB per-skill
 /// bound, and entries accumulate only while the joined text stays within the 24 K character
-/// prompt budget. The rows persisted for the task are exactly the skills in the returned text —
-/// unreadable or excluded skills leave no row, and storage failures propagate.</summary>
+/// prompt budget. When <paramref name="componentSettings"/> is supplied, a skill component the
+/// user explicitly disabled is skipped before any file read — disabled skills were never
+/// injected, so they leave no activation row; the overrides are read once per plugin and read
+/// failures propagate like plugin-list failures. The rows persisted for the task are exactly the
+/// skills in the returned text — unreadable or excluded skills leave no row, and storage failures
+/// propagate.</summary>
 public sealed class PluginSkillActivator(
     IInstalledPluginStore plugins,
     ITaskSkillActivationStore activations,
     string pluginsRoot,
-    TimeProvider? timeProvider = null) : IPluginSkillActivator
+    TimeProvider? timeProvider = null,
+    IPluginComponentSettings? componentSettings = null) : IPluginSkillActivator
 {
     internal const int MaximumSkillBytes = 8 * 1024;
     internal const int MaximumPromptCharacters = 24_000;
@@ -49,10 +54,17 @@ public sealed class PluginSkillActivator(
         foreach (var plugin in await plugins.ListAsync(cancellationToken))
         {
             if (plugin.State != InstalledPluginState.Enabled) continue;
+            IReadOnlyDictionary<string, bool>? overrides = null;
             foreach (var component in plugin.Components)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (component.Kind != PluginComponentKind.Skill) continue;
+                if (componentSettings is not null)
+                {
+                    overrides ??= await componentSettings.ListOverridesAsync(plugin.Id, cancellationToken);
+                    if (overrides.TryGetValue(component.RelativePath, out var enabled) && !enabled)
+                        continue;
+                }
                 var content = await TryReadAsync(plugin, component.RelativePath, cancellationToken);
                 if (content is not null) found.Add((plugin, component, content));
             }
