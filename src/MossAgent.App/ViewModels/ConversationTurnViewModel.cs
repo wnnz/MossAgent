@@ -15,6 +15,13 @@ public sealed class ConversationTurnViewModel : ObservableObject
     private bool _isExpanded;
     private bool _initialized;
     private bool _manuallyToggled;
+    private DateTimeOffset? _timestampSource;
+    private DateTime _timestampLocalDate;
+    private int _timestampKey = -1;
+    private bool _summaryAssigned;
+    private bool _summaryHasElapsed;
+    private long _summaryElapsedTicks;
+    private bool _summaryRunning;
 
     public ConversationTurnViewModel() => ToggleCommand = new RelayCommand(
         () => { _manuallyToggled = true; IsExpanded = !IsExpanded; }, () => HasActivities);
@@ -33,7 +40,7 @@ public sealed class ConversationTurnViewModel : ObservableObject
     public bool IsExpanded { get => _isExpanded; set => SetProperty(ref _isExpanded, value); }
 
     internal void Refresh(IReadOnlyList<ChatMessageViewModel> messages, int rangeStart, int rangeEnd,
-        bool isRunning, DateTimeOffset now)
+        bool isRunning, DateTime today)
     {
         var previouslyRunning = IsRunning;
         var hadTimestamp = HasTimestamp;
@@ -46,9 +53,8 @@ public sealed class ConversationTurnViewModel : ObservableObject
         IsRunning = isRunning;
         Elapsed = !isRunning && UserMessage?.CreatedAt is { } start && Response?.CreatedAt is { } end && end >= start
             ? end - start : null;
-        Timestamp = ConversationTimelineText.Timestamp(Response?.CreatedAt ?? UserMessage?.CreatedAt, now);
-        Summary = Elapsed is { } elapsed ? ConversationTimelineText.Elapsed(elapsed)
-            : WorkspaceText.Get(isRunning ? "TimelineRunning" : "TimelineActivities");
+        Timestamp = CachedTimestamp(Response?.CreatedAt ?? UserMessage?.CreatedAt, today);
+        Summary = CachedSummary(Elapsed, isRunning);
         if (!_initialized || previouslyRunning && !isRunning && !_manuallyToggled) IsExpanded = isRunning;
         _initialized = true;
         if (hadTimestamp != HasTimestamp) OnPropertyChanged(nameof(HasTimestamp));
@@ -58,6 +64,43 @@ public sealed class ConversationTurnViewModel : ObservableObject
             OnPropertyChanged(nameof(HasActivities));
             ToggleCommand.NotifyCanExecuteChanged();
         }
+    }
+
+    /// <summary>The formatted timestamp depends only on the recorded instant and which
+    /// day bucket "now" falls in, so unchanged input reuses the cached string instead of
+    /// formatting a new one on every refresh.</summary>
+    private string CachedTimestamp(DateTimeOffset? recordedAt, DateTime today)
+    {
+        if (recordedAt is null)
+        {
+            _timestampSource = null;
+            _timestampKey = -1;
+            return string.Empty;
+        }
+        if (recordedAt != _timestampSource)
+        {
+            _timestampLocalDate = TimeZoneInfo.ConvertTime(recordedAt.Value, TimeZoneInfo.Local).Date;
+            _timestampSource = recordedAt;
+            _timestampKey = -1;
+        }
+        var key = ConversationTimelineText.TimestampKey(_timestampLocalDate, today);
+        if (key == _timestampKey) return _timestamp;
+        _timestampKey = key;
+        return ConversationTimelineText.FormatTimestamp(recordedAt.Value, key);
+    }
+
+    /// <summary>Same caching as <see cref="CachedTimestamp"/>: the summary is recomputed
+    /// only when the elapsed duration or the running state actually changes.</summary>
+    private string CachedSummary(TimeSpan? elapsed, bool isRunning)
+    {
+        var hasElapsed = elapsed is not null;
+        var ticks = elapsed?.Ticks ?? 0;
+        if (_summaryAssigned && hasElapsed == _summaryHasElapsed
+            && ticks == _summaryElapsedTicks && isRunning == _summaryRunning) return _summary;
+        (_summaryAssigned, _summaryHasElapsed, _summaryElapsedTicks, _summaryRunning) =
+            (true, hasElapsed, ticks, isRunning);
+        return elapsed is { } value ? ConversationTimelineText.Elapsed(value)
+            : WorkspaceText.Get(isRunning ? "TimelineRunning" : "TimelineActivities");
     }
 
     private void RefreshActivities(IReadOnlyList<ChatMessageViewModel> messages, int rangeStart, int rangeEnd)

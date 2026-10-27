@@ -106,14 +106,14 @@ public sealed class ConversationTimelineViewModel : IDisposable
     {
         List<ConversationTurnViewModel>? rows = null;
         var rowCount = 0;
-        var now = DateTimeOffset.UtcNow;
+        var today = ConversationTimelineText.Today(DateTimeOffset.UtcNow);
         for (var start = 0; _source is not null && start < _source.Count;)
         {
             var end = start + 1;
             while (end < _source.Count && !_source[end].IsUserMessage) end++;
             var anchor = _source[start];
             var turn = _turns.GetValueOrDefault(anchor) ?? new ConversationTurnViewModel();
-            turn.Refresh(_source, start, end, _isRunning && end == _source.Count, now);
+            turn.Refresh(_source, start, end, _isRunning && end == _source.Count, today);
             if (rows is null && (rowCount >= Turns.Count || !ReferenceEquals(Turns[rowCount], turn)))
             {
                 rows = new(Turns.Count + 1);

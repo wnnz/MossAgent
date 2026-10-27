@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Resources;
 
@@ -12,9 +13,13 @@ public static class UiText
 {
     private static readonly ResourceManager Labels = new(
         "MossAgent.App.Resources.UiStrings", typeof(UiText).Assembly);
+    private static readonly ConcurrentDictionary<(CultureInfo, string), string> Cache = new();
 
-    public static string T(string msgid) =>
-        Labels.GetString(msgid, CultureInfo.CurrentUICulture) ?? msgid;
+    public static string T(string msgid)
+    {
+        var culture = CultureInfo.CurrentUICulture;
+        return Cache.GetOrAdd((culture, msgid), key => Labels.GetString(key.Item2, key.Item1) ?? key.Item2);
+    }
 
     public static string T(string msgid, params object?[] args) => string.Format(T(msgid), args);
 }
