@@ -31,7 +31,7 @@ public sealed class SharedSurfaceShadowTests
     {
         foreach (var (file, selector) in new[]
         {
-            ("App.axaml", "controls|AppCard"),
+            ("Styles/AppButtonVariants.axaml", "controls|AppCard"),
             ("Styles/ComboBoxVariants.axaml", ".app-combo-box /template/ Border#PopupBorder"),
             ("Styles/AttachmentChipVariants.axaml", "controls|AppBorder.attachment-chip-surface")
         })
