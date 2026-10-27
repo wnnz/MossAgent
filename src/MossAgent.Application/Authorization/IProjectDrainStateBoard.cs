@@ -20,4 +20,10 @@ public interface IProjectDrainStateBoard
     /// unreachable and cleanup cannot be confirmed finished. No rows yields Idle.</summary>
     Task<AuthorizationDrainState> AggregateAsync(Guid projectId, DateTimeOffset staleBefore,
         CancellationToken cancellationToken);
+
+    /// <summary>Deletes every row — any project, any instance — whose UpdatedAt is not newer
+    /// than <paramref name="staleBefore"/>. A row that old can only belong to an instance
+    /// that stopped publishing, and a dead owner's in-process lease barrier died with it, so
+    /// any observer may reclaim the row; returns the number of rows deleted.</summary>
+    Task<int> ReapStaleAsync(DateTimeOffset staleBefore, CancellationToken cancellationToken);
 }

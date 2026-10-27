@@ -43,23 +43,52 @@ public sealed class SqliteProjectDrainStateBoard(SqliteConnectionFactory connect
         DateTimeOffset staleBefore, CancellationToken cancellationToken)
     {
         await using var connection = await OpenAsync(cancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT instance_id,state,updated_at FROM project_drain_states "
-            + "WHERE project_id=$project;";
-        command.Parameters.AddWithValue("$project", projectId.ToString());
         var worst = AuthorizationDrainState.Idle;
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
+        var sawStale = false;
+        await using (var command = connection.CreateCommand())
         {
-            var row = new ProjectDrainStateRow(projectId, Guid.Parse(reader.GetString(0)),
-                (AuthorizationDrainState)reader.GetInt64(1),
-                DateTimeOffset.Parse(reader.GetString(2), CultureInfo.InvariantCulture));
-            var effective = row.UpdatedAt <= staleBefore
-                ? AuthorizationDrainState.CleanupUnknown
-                : row.State;
-            if (effective > worst) worst = effective;
+            command.CommandText = "SELECT instance_id,state,updated_at FROM project_drain_states "
+                + "WHERE project_id=$project;";
+            command.Parameters.AddWithValue("$project", projectId.ToString());
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var row = new ProjectDrainStateRow(projectId, Guid.Parse(reader.GetString(0)),
+                    (AuthorizationDrainState)reader.GetInt64(1),
+                    DateTimeOffset.Parse(reader.GetString(2), CultureInfo.InvariantCulture));
+                var effective = row.UpdatedAt <= staleBefore
+                    ? AuthorizationDrainState.CleanupUnknown
+                    : row.State;
+                sawStale |= row.UpdatedAt <= staleBefore;
+                if (effective > worst) worst = effective;
+            }
         }
+        if (sawStale) await ReapAsync(connection, projectId, staleBefore, cancellationToken);
         return worst;
+    }
+
+    public async Task<int> ReapStaleAsync(DateTimeOffset staleBefore,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await OpenAsync(cancellationToken);
+        return await ReapAsync(connection, null, staleBefore, cancellationToken);
+    }
+
+    /// <summary>Deletes rows past the staleness window, scoped to
+    /// <paramref name="projectId"/> when given (the opportunistic aggregate-path reap) or
+    /// across every project and instance when null. Reclaiming is safe: a row that old
+    /// outlived its owner's publish loop, and a dead owner's barrier died with it.</summary>
+    private static async Task<int> ReapAsync(SqliteConnection connection, Guid? projectId,
+        DateTimeOffset staleBefore, CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = projectId is null
+            ? "DELETE FROM project_drain_states WHERE updated_at<=$stale;"
+            : "DELETE FROM project_drain_states WHERE project_id=$project AND updated_at<=$stale;";
+        if (projectId is { } project)
+            command.Parameters.AddWithValue("$project", project.ToString());
+        command.Parameters.AddWithValue("$stale", staleBefore.ToString("O"));
+        return await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private async Task<SqliteConnection> OpenAsync(CancellationToken cancellationToken)

@@ -4,7 +4,8 @@ namespace MossAgent.Infrastructure.Tests;
 
 /// <summary>In-memory <see cref="IProjectDrainStateBoard"/> double that applies the same
 /// semantics as the SQLite store — publishing Idle deletes the row, stale non-Idle rows
-/// aggregate as CleanupUnknown — so monitor tests observe publishes deterministically.</summary>
+/// aggregate as CleanupUnknown and are reclaimed project-scoped by the same aggregate —
+/// so monitor tests observe publishes deterministically.</summary>
 internal sealed class RecordingProjectDrainStateBoard : IProjectDrainStateBoard
 {
     private readonly object _sync = new();
@@ -12,6 +13,7 @@ internal sealed class RecordingProjectDrainStateBoard : IProjectDrainStateBoard
     private readonly List<(Guid Project, Guid Instance, AuthorizationDrainState State)> _publishes = [];
     private TaskCompletionSource _signal = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private int _clears;
+    private int _reapCalls;
     private DateTimeOffset _lastStaleBefore = DateTimeOffset.MinValue;
 
     public Exception? PublishFailure { get; set; }
@@ -23,6 +25,7 @@ internal sealed class RecordingProjectDrainStateBoard : IProjectDrainStateBoard
     }
 
     public int Clears { get { lock (_sync) return _clears; } }
+    public int ReapCalls { get { lock (_sync) return _reapCalls; } }
     public DateTimeOffset LastStaleBefore { get { lock (_sync) return _lastStaleBefore; } }
 
     public Task PublishAsync(Guid projectId, Guid instanceId, AuthorizationDrainState state,
@@ -66,14 +69,37 @@ internal sealed class RecordingProjectDrainStateBoard : IProjectDrainStateBoard
             if (AggregateFailure is not null)
                 return Task.FromException<AuthorizationDrainState>(AggregateFailure);
             var worst = AuthorizationDrainState.Idle;
+            var sawStale = false;
             foreach (var row in _rows.Values.Where(row => row.ProjectId == projectId))
             {
                 var effective = row.UpdatedAt <= staleBefore
                     ? AuthorizationDrainState.CleanupUnknown
                     : row.State;
+                sawStale |= row.UpdatedAt <= staleBefore;
                 if (effective > worst) worst = effective;
             }
+            if (sawStale)
+            {
+                foreach (var key in _rows.Keys.Where(key =>
+                        key.Project == projectId && _rows[key].UpdatedAt <= staleBefore).ToArray())
+                    _rows.Remove(key);
+                Signal();
+            }
             return Task.FromResult(worst);
+        }
+    }
+
+    public Task<int> ReapStaleAsync(DateTimeOffset staleBefore, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        lock (_sync)
+        {
+            _reapCalls++;
+            var stale = _rows.Where(pair => pair.Value.UpdatedAt <= staleBefore)
+                .Select(pair => pair.Key).ToArray();
+            foreach (var key in stale) _rows.Remove(key);
+            if (stale.Length != 0) Signal();
+            return Task.FromResult(stale.Length);
         }
     }
 

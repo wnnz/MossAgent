@@ -64,6 +64,62 @@ public sealed class WorkspaceAuthorizationDrainBadgeTests
         await Assert.ThrowsAnyAsync<Exception>(() => monitor.DisposeAsync().AsTask());
     }
 
+    [Fact]
+    public async Task NonIdleRowSchedulesBoundedFollowupObservesUntilIdle()
+    {
+        var project = new ProjectProfile(Guid.NewGuid(), "授权项目", Path.GetTempPath(),
+            [Path.GetTempPath()], DateTimeOffset.UtcNow);
+        var repository = new TestWorkspaceRepository { ProjectItems = [project] };
+        var changes = new ProjectAuthorizationChanges();
+        var board = new CountingProjectDrainStateBoard { State = AuthorizationDrainState.Draining };
+        var time = new ManualToolTimeProvider();
+        await using var monitor = new ProjectAuthorizationMonitor(
+            new WorkspaceProjectAuthorizationReader(repository), changes, time, board: board);
+        var row = new WorkspaceProjectNavigationViewModel(project);
+        using var tracker = new WorkspaceAuthorizationDrainTracker(monitor, _ => row, time);
+
+        tracker.Refresh(row);
+        await WaitForAsync(() => board.Aggregates >= 1);
+        await WaitForAsync(() => row.AuthorizationDrain == AuthorizationDrainState.Draining);
+
+        time.Advance(TimeSpan.FromSeconds(30));
+        await WaitForAsync(() => board.Aggregates >= 2);
+        Assert.Equal(2, board.Aggregates);
+        time.Advance(TimeSpan.FromSeconds(30));
+        await WaitForAsync(() => board.Aggregates >= 3);
+        Assert.Equal(3, board.Aggregates);
+
+        board.State = AuthorizationDrainState.Idle;
+        time.Advance(TimeSpan.FromSeconds(30));
+        await WaitForAsync(() => board.Aggregates >= 4);
+        await WaitForAsync(() => row.AuthorizationDrain == AuthorizationDrainState.Idle);
+        time.Advance(TimeSpan.FromMinutes(10));
+        await Task.Delay(50, Token);
+        Assert.Equal(4, board.Aggregates);
+    }
+
+    [Fact]
+    public async Task IdleObservationSchedulesNoFollowup()
+    {
+        var project = new ProjectProfile(Guid.NewGuid(), "授权项目", Path.GetTempPath(),
+            [Path.GetTempPath()], DateTimeOffset.UtcNow);
+        var repository = new TestWorkspaceRepository { ProjectItems = [project] };
+        var changes = new ProjectAuthorizationChanges();
+        var board = new CountingProjectDrainStateBoard { State = AuthorizationDrainState.Idle };
+        var time = new ManualToolTimeProvider();
+        await using var monitor = new ProjectAuthorizationMonitor(
+            new WorkspaceProjectAuthorizationReader(repository), changes, time, board: board);
+        var row = new WorkspaceProjectNavigationViewModel(project);
+        using var tracker = new WorkspaceAuthorizationDrainTracker(monitor, _ => row, time);
+
+        tracker.Refresh(row);
+        await WaitForAsync(() => board.Aggregates >= 1);
+        time.Advance(TimeSpan.FromMinutes(10));
+        await Task.Delay(50, Token);
+        Assert.Equal(1, board.Aggregates);
+        Assert.Equal(AuthorizationDrainState.Idle, row.AuthorizationDrain);
+    }
+
     private static WorkspaceCatalogViewModel Catalog(TestWorkspaceRepository repository,
         ProjectAuthorizationMonitor monitor) => new(repository, null,
         new WorkspaceProjectService(repository, new TestFolderPickerService()), authorizations: monitor);

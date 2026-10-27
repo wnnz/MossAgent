@@ -91,6 +91,79 @@ public sealed class SqliteProjectDrainStateBoardTests
     }
 
     [Fact]
+    public async Task AggregateReapsStaleRowsAfterFolding()
+    {
+        await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
+        var board = new SqliteProjectDrainStateBoard(fixture.Connections);
+        var project = Guid.NewGuid();
+        var staleAt = Now - ProjectAuthorizationMonitor.BoardStaleWindow - TimeSpan.FromSeconds(1);
+        await board.PublishAsync(project, Guid.NewGuid(), AuthorizationDrainState.Draining, staleAt, Token);
+
+        Assert.Equal(AuthorizationDrainState.CleanupUnknown,
+            await board.AggregateAsync(project, StaleBoundary, Token));
+        Assert.Equal(0, await fixture.CountAsync(
+            "SELECT COUNT(*) FROM project_drain_states;"));
+        Assert.Equal(AuthorizationDrainState.Idle,
+            await board.AggregateAsync(project, StaleBoundary, Token));
+    }
+
+    [Fact]
+    public async Task AggregateReapLeavesOtherProjectsUntouched()
+    {
+        await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
+        var board = new SqliteProjectDrainStateBoard(fixture.Connections);
+        var own = Guid.NewGuid();
+        var foreign = Guid.NewGuid();
+        var staleAt = Now - ProjectAuthorizationMonitor.BoardStaleWindow - TimeSpan.FromSeconds(1);
+        await board.PublishAsync(own, Guid.NewGuid(), AuthorizationDrainState.Draining, staleAt, Token);
+        await board.PublishAsync(foreign, Guid.NewGuid(), AuthorizationDrainState.Draining, staleAt, Token);
+
+        Assert.Equal(AuthorizationDrainState.CleanupUnknown,
+            await board.AggregateAsync(own, StaleBoundary, Token));
+        Assert.Equal(1, await fixture.CountAsync(
+            "SELECT COUNT(*) FROM project_drain_states;"));
+        Assert.Equal(AuthorizationDrainState.CleanupUnknown,
+            await board.AggregateAsync(foreign, StaleBoundary, Token));
+        Assert.Equal(0, await fixture.CountAsync(
+            "SELECT COUNT(*) FROM project_drain_states;"));
+    }
+
+    [Fact]
+    public async Task AggregateOfOnlyFreshRowsDeletesNothing()
+    {
+        await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
+        var board = new SqliteProjectDrainStateBoard(fixture.Connections);
+        var project = Guid.NewGuid();
+        var staleAt = Now - ProjectAuthorizationMonitor.BoardStaleWindow - TimeSpan.FromSeconds(1);
+        await board.PublishAsync(project, Guid.NewGuid(), AuthorizationDrainState.Draining, Now, Token);
+        await board.PublishAsync(Guid.NewGuid(), Guid.NewGuid(), AuthorizationDrainState.Draining, staleAt, Token);
+
+        Assert.Equal(AuthorizationDrainState.Draining,
+            await board.AggregateAsync(project, StaleBoundary, Token));
+        Assert.Equal(2, await fixture.CountAsync(
+            "SELECT COUNT(*) FROM project_drain_states;"));
+    }
+
+    [Fact]
+    public async Task ReapStaleDeletesAcrossProjectsAndReportsCount()
+    {
+        await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
+        var board = new SqliteProjectDrainStateBoard(fixture.Connections);
+        var project = Guid.NewGuid();
+        var staleAt = Now - ProjectAuthorizationMonitor.BoardStaleWindow - TimeSpan.FromSeconds(1);
+        await board.PublishAsync(project, Guid.NewGuid(), AuthorizationDrainState.Draining, staleAt, Token);
+        await board.PublishAsync(Guid.NewGuid(), Guid.NewGuid(), AuthorizationDrainState.CleanupUnknown, staleAt, Token);
+        await board.PublishAsync(project, Guid.NewGuid(), AuthorizationDrainState.Draining, Now, Token);
+
+        Assert.Equal(2, await board.ReapStaleAsync(StaleBoundary, Token));
+        Assert.Equal(0, await board.ReapStaleAsync(StaleBoundary, Token));
+        Assert.Equal(1, await fixture.CountAsync(
+            "SELECT COUNT(*) FROM project_drain_states;"));
+        Assert.Equal(AuthorizationDrainState.Draining,
+            await board.AggregateAsync(project, StaleBoundary, Token));
+    }
+
+    [Fact]
     public async Task WorstStateWinsAcrossInstances()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();

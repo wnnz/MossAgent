@@ -197,6 +197,49 @@ public sealed class ProjectAuthorizationDrainBoardTests
     }
 
     [Fact]
+    public async Task StaleForeignRowIsReapedByObservation()
+    {
+        var project = Project();
+        var changes = new ProjectAuthorizationChanges();
+        var reader = new ProjectAuthorizationReaderProbe(project);
+        var board = new RecordingProjectDrainStateBoard();
+        var time = new ManualToolTimeProvider();
+        await using var monitor = new ProjectAuthorizationMonitor(reader, changes, time, board: board);
+        var staleAt = time.GetUtcNow() - ProjectAuthorizationMonitor.BoardStaleWindow - TimeSpan.FromSeconds(1);
+        await board.PublishAsync(project.Id, Guid.NewGuid(), AuthorizationDrainState.Draining,
+            staleAt, Token);
+
+        Assert.Equal(AuthorizationDrainState.CleanupUnknown,
+            await monitor.ObserveDrainStateAsync(project.Id, Token));
+        Assert.Equal(AuthorizationDrainState.Idle,
+            await monitor.ObserveDrainStateAsync(project.Id, Token));
+        Assert.Equal(AuthorizationDrainState.Idle,
+            await board.AggregateAsync(project.Id, DateTimeOffset.MinValue, Token));
+    }
+
+    [Fact]
+    public async Task ReapStaleDeletesEveryStaleRowAcrossProjects()
+    {
+        var board = new RecordingProjectDrainStateBoard();
+        var now = DateTimeOffset.UtcNow;
+        var staleAt = now - ProjectAuthorizationMonitor.BoardStaleWindow - TimeSpan.FromSeconds(1);
+        var first = Guid.NewGuid();
+        var second = Guid.NewGuid();
+        var fresh = Guid.NewGuid();
+        await board.PublishAsync(first, Guid.NewGuid(), AuthorizationDrainState.Draining, staleAt, Token);
+        await board.PublishAsync(second, Guid.NewGuid(), AuthorizationDrainState.CleanupUnknown, staleAt, Token);
+        await board.PublishAsync(fresh, Guid.NewGuid(), AuthorizationDrainState.Draining, now, Token);
+        var staleBefore = now - ProjectAuthorizationMonitor.BoardStaleWindow;
+
+        Assert.Equal(2, await board.ReapStaleAsync(staleBefore, Token));
+        Assert.Equal(1, board.ReapCalls);
+        Assert.Equal(AuthorizationDrainState.Idle,
+            await board.AggregateAsync(first, staleBefore, Token));
+        Assert.Equal(AuthorizationDrainState.Draining,
+            await board.AggregateAsync(fresh, staleBefore, Token));
+    }
+
+    [Fact]
     public async Task BoardReadFailureFallsBackToLocalState()
     {
         var project = Project();
