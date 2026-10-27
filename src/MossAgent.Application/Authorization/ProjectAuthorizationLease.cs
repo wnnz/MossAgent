@@ -95,8 +95,7 @@ internal sealed class ProjectAuthorizationLease : ITaskWorkspaceLease
             await _polling.WaitAsync(deadline.Token).ConfigureAwait(false);
             try { await _cancelling.WaitAsync(deadline.Token).ConfigureAwait(false); }
             catch (AggregateException) { /* Observer failures cannot prevent lease cleanup. */ }
-            if (_roots is not null)
-                await Task.Run(() => _roots.Dispose(), CancellationToken.None).WaitAsync(deadline.Token).ConfigureAwait(false);
+            if (_roots is not null) await ReleaseRootsAsync(deadline.Token).ConfigureAwait(false);
             _monitor.Release(this);
             released = true;
             completion.SetResult();
@@ -116,6 +115,27 @@ internal sealed class ProjectAuthorizationLease : ITaskWorkspaceLease
             _stopping.Dispose();
             _revocation.Dispose();
         }
+    }
+
+    /// <summary>Releases the root session under the shared drain deadline. A failed first
+    /// attempt gets exactly one retry after a bounded settle delay — transient release
+    /// failures (handle still closing, I/O flush) recover instead of leaving CleanupUnknown;
+    /// persistent failures still throw and mark the lease ReleaseFailed.</summary>
+    private async Task ReleaseRootsAsync(CancellationToken deadline)
+    {
+        try
+        {
+            await Task.Run(() => _roots!.Dispose(), CancellationToken.None).WaitAsync(deadline)
+                .ConfigureAwait(false);
+            return;
+        }
+        catch (Exception) when (!deadline.IsCancellationRequested)
+        {
+        }
+        await Task.Delay(ProjectAuthorizationMonitor.RootReleaseRetryDelay, _time, deadline)
+            .ConfigureAwait(false);
+        await Task.Run(() => _roots!.Dispose(), CancellationToken.None).WaitAsync(deadline)
+            .ConfigureAwait(false);
     }
 
     private void MarkReleaseFailed()

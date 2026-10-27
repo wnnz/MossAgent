@@ -24,6 +24,10 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
     /// exceeding it marks the lease release-failed (cleanup unknown) and retains the admission barrier.</summary>
     public static readonly TimeSpan DrainTimeout = TimeSpan.FromSeconds(30);
 
+    /// <summary>Settle delay before the single retry of a failed root-session release —
+    /// gives the OS a moment to finish closing transient resources; still under DrainTimeout.</summary>
+    public static readonly TimeSpan RootReleaseRetryDelay = TimeSpan.FromSeconds(2);
+
     /// <summary>Shared-board rows untouched longer than this window count as CleanupUnknown:
     /// their owner instance is unreachable, so its cleanup cannot be confirmed finished.</summary>
     public static readonly TimeSpan BoardStaleWindow = TimeSpan.FromSeconds(120);

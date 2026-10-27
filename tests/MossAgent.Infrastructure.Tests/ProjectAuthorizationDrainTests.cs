@@ -161,6 +161,43 @@ public sealed class ProjectAuthorizationDrainTests
     }
 
     [Fact]
+    public async Task TransientRootDisposalFailureRecoversOnBoundedRetry()
+    {
+        var project = Enrolled();
+        var changes = new ProjectAuthorizationChanges();
+        var reader = new ProjectAuthorizationReaderProbe(project);
+        var identity = project.RootAuthorizations[0]!.Identity;
+        using var gate = new ManualResetEventSlim(true);
+        var session = new BlockingRootIdentitySession(identity, gate,
+            new InvalidOperationException("transient-drain-failure"), failAttempts: 1);
+        var opens = 0;
+        var roots = new RootIdentityProbe
+        {
+            Override = (_, _) => Task.FromResult<IRootIdentitySession>(Interlocked.Increment(ref opens) == 2
+                ? session : new RootIdentityProbeSession([identity], () => { }))
+        };
+        var time = new ManualToolTimeProvider();
+        await using var monitor = new ProjectAuthorizationMonitor(reader, changes, time, roots: roots);
+        var old = await monitor.AcquireAsync(project, Token);
+        reader.Current = project with { AuthorizationRevision = 2 };
+        changes.Publish(project.Id, 2);
+
+        var disposing = old.DisposeAsync().AsTask();
+        await session.DisposeStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        for (var i = 0; i < 10 && !disposing.IsCompleted; i++)
+        {
+            time.Advance(ProjectAuthorizationMonitor.RootReleaseRetryDelay);
+            await Task.Delay(20, Token);
+        }
+        await disposing.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        Assert.Equal(2, session.Attempts);
+        Assert.True(session.Completed);
+        Assert.Equal(AuthorizationDrainState.Idle, monitor.DrainState(project.Id));
+        await using var next = await monitor.AcquireAsync(reader.Current, Token);
+        Assert.False(next.IsRevoked);
+    }
+
+    [Fact]
     public async Task StaleReaderSnapshotCannotReacquireKnownLowerRevisionWithoutReading()
     {
         var project = Project();

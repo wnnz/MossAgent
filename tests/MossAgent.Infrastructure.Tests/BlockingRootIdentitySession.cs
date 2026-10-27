@@ -5,24 +5,28 @@ namespace MossAgent.Infrastructure.Tests;
 
 internal sealed class BlockingRootIdentitySession : IRootIdentitySession
 {
-    private int _disposed;
-    public BlockingRootIdentitySession(DirectoryObjectIdentity identity, ManualResetEventSlim gate, Exception? failure = null)
+    private int _attempts;
+    public BlockingRootIdentitySession(DirectoryObjectIdentity identity, ManualResetEventSlim gate,
+        Exception? failure = null, int failAttempts = int.MaxValue)
     {
         Roots = [identity];
         Gate = gate;
         Failure = failure;
+        FailAttempts = failAttempts;
     }
     public ManualResetEventSlim Gate { get; }
     public Exception? Failure { get; }
+    public int FailAttempts { get; }
+    public int Attempts => Volatile.Read(ref _attempts);
     public TaskCompletionSource DisposeStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     public IReadOnlyList<DirectoryObjectIdentity> Roots { get; }
     public bool Completed { get; private set; }
     public void Dispose()
     {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        var attempt = Interlocked.Increment(ref _attempts);
         DisposeStarted.TrySetResult();
         if (!Gate.Wait(TimeSpan.FromSeconds(15))) throw new TimeoutException("synthetic disposal gate");
-        if (Failure is not null) throw Failure;
+        if (Failure is not null && attempt <= FailAttempts) throw Failure;
         Completed = true;
     }
 }
