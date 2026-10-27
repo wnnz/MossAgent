@@ -88,20 +88,27 @@ internal sealed class ProjectAuthorizationLease : ITaskWorkspaceLease
     private async Task DisposeOwnedAsync(TaskCompletionSource completion)
     {
         var released = false;
+        using var deadline = new CancellationTokenSource(ProjectAuthorizationMonitor.DrainTimeout, _time);
         try
         {
-            await _stopping.CancelAsync().ConfigureAwait(false);
-            await _polling.ConfigureAwait(false);
-            try { await _cancelling.ConfigureAwait(false); }
+            await _stopping.CancelAsync().WaitAsync(deadline.Token).ConfigureAwait(false);
+            await _polling.WaitAsync(deadline.Token).ConfigureAwait(false);
+            try { await _cancelling.WaitAsync(deadline.Token).ConfigureAwait(false); }
             catch (AggregateException) { /* Observer failures cannot prevent lease cleanup. */ }
-            _roots?.Dispose();
+            if (_roots is not null)
+                await Task.Run(() => _roots.Dispose(), CancellationToken.None).WaitAsync(deadline.Token).ConfigureAwait(false);
             _monitor.Release(this);
             released = true;
             completion.SetResult();
         }
         catch (Exception exception)
         {
-            if (!released) MarkReleaseFailed();
+            if (!released)
+            {
+                MarkReleaseFailed();
+                if (deadline.IsCancellationRequested)
+                    exception = new TimeoutException("The revocation drain exceeded its deadline.", exception);
+            }
             completion.SetException(exception);
         }
         finally

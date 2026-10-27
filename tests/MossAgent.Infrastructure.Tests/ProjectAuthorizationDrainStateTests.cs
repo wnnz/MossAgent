@@ -117,6 +117,60 @@ public sealed class ProjectAuthorizationDrainStateTests
     }
 
     [Fact]
+    public async Task BlockedResourceReleaseExceedsDeadlineMarksCleanupUnknown()
+    {
+        var project = Enrolled();
+        var changes = new ProjectAuthorizationChanges();
+        var reader = new ProjectAuthorizationReaderProbe(project);
+        var identity = project.RootAuthorizations[0]!.Identity;
+        using var gate = new ManualResetEventSlim();
+        var session = new BlockingRootIdentitySession(identity, gate);
+        var opens = 0;
+        var roots = new RootIdentityProbe
+        {
+            Override = (_, _) => Task.FromResult<IRootIdentitySession>(Interlocked.Increment(ref opens) == 2
+                ? session : new RootIdentityProbeSession([identity], () => { }))
+        };
+        var time = new MossAgent.Testing.ManualToolTimeProvider();
+        var monitor = new ProjectAuthorizationMonitor(reader, changes, time, roots);
+        var lease = await monitor.AcquireAsync(project, Token);
+        reader.Current = project with { AuthorizationRevision = 2 };
+        changes.Publish(project.Id, 2);
+
+        var disposing = lease.DisposeAsync().AsTask();
+        await session.DisposeStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        time.Advance(ProjectAuthorizationMonitor.DrainTimeout + TimeSpan.FromSeconds(1));
+        await Assert.ThrowsAsync<TimeoutException>(() => disposing.WaitAsync(TimeSpan.FromSeconds(5), Token));
+        Assert.Equal(AuthorizationDrainState.CleanupUnknown, monitor.DrainState(project.Id));
+        await Assert.ThrowsAsync<WorkspaceAuthorizationException>(() => monitor.AcquireAsync(reader.Current, Token));
+        gate.Set();
+        await Assert.ThrowsAnyAsync<Exception>(() => monitor.DisposeAsync().AsTask());
+    }
+
+    [Fact]
+    public async Task HungRevocationCallbackExceedsDeadlineMarksCleanupUnknown()
+    {
+        var project = Project();
+        var changes = new ProjectAuthorizationChanges();
+        var reader = new ProjectAuthorizationReaderProbe(project);
+        var time = new MossAgent.Testing.ManualToolTimeProvider();
+        var monitor = new ProjectAuthorizationMonitor(reader, changes, time);
+        var lease = await monitor.AcquireAsync(project, Token);
+        var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        lease.Revocation.Register((_, _) => new ValueTask(pending.Task), null);
+        reader.Current = project with { AuthorizationRevision = 2 };
+        changes.Publish(project.Id, 2);
+
+        var disposing = lease.DisposeAsync().AsTask();
+        time.Advance(ProjectAuthorizationMonitor.DrainTimeout + TimeSpan.FromSeconds(1));
+        await Assert.ThrowsAsync<TimeoutException>(() => disposing.WaitAsync(TimeSpan.FromSeconds(5), Token));
+        Assert.Equal(AuthorizationDrainState.CleanupUnknown, monitor.DrainState(project.Id));
+        await Assert.ThrowsAsync<WorkspaceAuthorizationException>(() => monitor.AcquireAsync(reader.Current, Token));
+        pending.TrySetResult();
+        await Assert.ThrowsAnyAsync<Exception>(() => monitor.DisposeAsync().AsTask());
+    }
+
+    [Fact]
     public async Task ReaderFailureSelfRevocationNotifiesTheDrainState()
     {
         var project = Project();

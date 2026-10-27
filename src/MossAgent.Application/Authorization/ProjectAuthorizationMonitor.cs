@@ -17,6 +17,10 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
     private bool _disposed;
     private Task? _disposal;
 
+    /// <summary>Cumulative bound for a revoked lease to finish draining local resources;
+    /// exceeding it marks the lease release-failed (cleanup unknown) and retains the admission barrier.</summary>
+    public static readonly TimeSpan DrainTimeout = TimeSpan.FromSeconds(30);
+
     public ProjectAuthorizationMonitor(IProjectAuthorizationReader reader, IProjectAuthorizationChanges changes,
         TimeProvider? timeProvider = null, IRootIdentitySessionFactory? roots = null)
     {
