@@ -50,6 +50,61 @@ public sealed class ToolApprovalCancellationTests
         Assert.Equal(0, tool.ExecutionCount);
     }
 
+    [Fact]
+    public async Task CancelAheadOfInFlightRevocation_RecordsAuthorizationChanged()
+    {
+        var lease = new RevocableWorkspaceLease();
+        var context = Context() with { WorkspaceGuard = lease };
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var tool = new ApprovalExecutionProbeTool();
+        var approvals = new PolicyApprovalService(async (_, _, token) =>
+        {
+            entered.TrySetResult();
+            await Task.Delay(Timeout.Infinite, token);
+            return true;
+        });
+        var running = new ToolExecutor(new ToolRegistry([tool]), approvals)
+            .ExecuteAsync(Request(tool), context, cancellation.Token);
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
+
+        await cancellation.CancelAsync();
+        lease.Revoke();
+
+        var result = await running;
+
+        Assert.Equal("workspace_authorization_changed", result.ErrorCode);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(0, tool.ExecutionCount);
+    }
+
+    [Fact]
+    public async Task CancelWithoutRevocation_KeepsToolCancelled()
+    {
+        var lease = new RevocableWorkspaceLease();
+        var context = Context() with { WorkspaceGuard = lease };
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var tool = new ApprovalExecutionProbeTool();
+        var approvals = new PolicyApprovalService(async (_, _, token) =>
+        {
+            entered.TrySetResult();
+            await Task.Delay(Timeout.Infinite, token);
+            return true;
+        });
+        var running = new ToolExecutor(new ToolRegistry([tool]), approvals)
+            .ExecuteAsync(Request(tool), context, cancellation.Token);
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
+
+        await cancellation.CancelAsync();
+
+        var result = await running;
+
+        Assert.Equal("tool_cancelled", result.ErrorCode);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(0, tool.ExecutionCount);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

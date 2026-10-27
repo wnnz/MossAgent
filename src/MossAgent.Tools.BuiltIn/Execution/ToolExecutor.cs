@@ -14,6 +14,11 @@ public sealed class ToolExecutor(
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
+    /// <summary>Bounded settle for attributing a cancelled pending approval to workspace
+    /// revocation when the caller-side cancellation arrived ahead of the lease's own revoke
+    /// (change-event subscribers may run before the monitor's revoke handler).</summary>
+    private static readonly TimeSpan RevocationAttributionWindow = TimeSpan.FromMilliseconds(50);
+
     public async Task<ToolResult> ExecuteAsync(
         ToolRequest request,
         ToolExecutionContext context,
@@ -89,10 +94,14 @@ public sealed class ToolExecutor(
             var approved = await RequestApprovalAsync(tool, request, context, operation.Token);
             ToolResult result;
             if (approved != true)
+            {
+                if (operation.Token.IsCancellationRequested && !operation.IsRevoked)
+                    await operation.AwaitRevocationAsync(RevocationAttributionWindow, _timeProvider).ConfigureAwait(false);
                 result = operation.Token.IsCancellationRequested
                     ? ToolResult.Failure(ToolExecutionText.Get("ApprovalCancelled"), "tool_cancelled")
                     : approved == false ? ToolResult.Failure("用户或策略拒绝了工具调用。", "approval_denied")
                     : ToolResult.Failure(ToolExecutionText.Get("ApprovalFailed"), "approval_failed");
+            }
             else
             {
                 result = await ExecuteToolAsync(tool, request, context, roots, operation.Token);
