@@ -14,6 +14,8 @@ internal sealed class SubagentLifetimeModelServer : IAsyncDisposable
     private readonly ConcurrentQueue<JsonElement> _requests = new();
     private readonly Task _serving;
     private readonly bool _chunked;
+    private const string Completed =
+        "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"fixture-response\",\"status\":\"completed\"}}\n\n";
 
     public SubagentLifetimeModelServer(CancellationToken token, bool chunked = false)
     {
@@ -41,7 +43,8 @@ internal sealed class SubagentLifetimeModelServer : IAsyncDisposable
             _requests.Enqueue(request.Clone());
             var response = turn == 0 ? CreateDelegation(request)
                 : JsonSerializer.Serialize(new { type = "response.output_text.delta", delta = PartialReply });
-            var bytes = Encoding.UTF8.GetBytes($"data: {response}\n\n" + (turn == 0 ? "data: [DONE]\n\n" : string.Empty));
+            var bytes = Encoding.UTF8.GetBytes($"data: {response}\n\n"
+                + (turn == 0 ? Completed + "data: [DONE]\n\n" : string.Empty));
             await WriteResponseAsync(stream, bytes, turn == 1, token);
             if (turn == 1)
             {

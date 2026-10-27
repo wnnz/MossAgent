@@ -205,7 +205,7 @@ public sealed class SubagentWorkspaceFlowTests
         });
         var responses = new List<string>
         {
-            approved ? $"data: {prelude}\n\ndata: {call}\n\ndata: [DONE]\n\n" : Sse(call)
+            approved ? $"data: {prelude}\n\n" + Sse(call) : Sse(call)
         };
         if (approved) responses.Add(Sse(JsonSerializer.Serialize(new
         {
@@ -279,5 +279,7 @@ public sealed class SubagentWorkspaceFlowTests
         + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(SubagentTool.ToolName)))
             [..12].ToLowerInvariant();
 
-    private static string Sse(string data) => $"data: {data}\n\ndata: [DONE]\n\n";
+    private static string Sse(string data) => $"data: {data}\n\n"
+        + "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"fixture-response\",\"status\":\"completed\"}}\n\n"
+        + "data: [DONE]\n\n";
 }

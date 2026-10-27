@@ -80,10 +80,11 @@ public sealed class AgentImageInputTests
         var fixture = Create(false, _ => throw new InvalidOperationException("Must not contact the provider."));
         var request = fixture.Request with { Model = fixture.Request.Model with { SupportsImages = false } };
 
-        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        var failure = await Assert.ThrowsAsync<ModelCapabilityException>(async () =>
         {
             await foreach (var unused in fixture.Runner.RunAsync(request, TestContext.Current.CancellationToken)) { }
         });
+        Assert.Equal(ModelCapabilityException.UnsupportedImageInput, failure.Code);
 
         Assert.Equal(0, fixture.Provider.Calls);
         Assert.Equal(0, fixture.Catalog.Reads);

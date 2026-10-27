@@ -208,7 +208,7 @@ public sealed class SubagentToolInvocationTests
             new Uri("https://example.test/v1"), "test-key", null, false, true,
             new Dictionary<string, string>());
         var hasImages = messages?.Any(static message => !message.Images.IsDefaultOrEmpty) == true;
-        var mainModel = CreateModel(provider.Id, "main", hasImages);
+        var mainModel = CreateModel(provider.Id, signed ? "gemini-3.1-pro" : "main", hasImages);
         var childModel = CreateModel(provider.Id, signed ? "gemini-3-flash-preview" : "child", childSupportsImages);
         var profile = new SubagentProfile(
             Guid.NewGuid(), "review", "检查改动", "审查代码。",

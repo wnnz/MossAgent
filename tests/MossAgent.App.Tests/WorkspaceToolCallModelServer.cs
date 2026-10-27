@@ -15,6 +15,8 @@ internal sealed class WorkspaceToolCallModelServer : IAsyncDisposable
     private readonly JsonElement _arguments;
     private readonly Task _serving;
     private readonly int _conversations;
+    private const string Completed =
+        "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"fixture-response\",\"status\":\"completed\"}}\n\n";
 
     public WorkspaceToolCallModelServer(string toolName, JsonElement arguments, CancellationToken token,
         bool useNamespacePrefix = false, int conversations = 1)
@@ -44,7 +46,7 @@ internal sealed class WorkspaceToolCallModelServer : IAsyncDisposable
             _requests.Enqueue(body);
             using var document = JsonDocument.Parse(body);
             var response = CreateResponse(document.RootElement, turn % 2);
-            var bytes = Encoding.UTF8.GetBytes($"data: {response}\n\ndata: [DONE]\n\n");
+            var bytes = Encoding.UTF8.GetBytes($"data: {response}\n\n" + Completed + "data: [DONE]\n\n");
             var header = Encoding.ASCII.GetBytes($"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n"
                 + $"Content-Length: {bytes.Length}\r\nConnection: close\r\n\r\n");
             await stream.WriteAsync(header, token).ConfigureAwait(false);

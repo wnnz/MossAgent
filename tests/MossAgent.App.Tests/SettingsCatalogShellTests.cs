@@ -77,7 +77,8 @@ public sealed class SettingsCatalogShellTests : IAsyncLifetime
             var server = Assert.IsType<McpServerProfile>(target);
             var saved = await fixture.Servers.GetAllAsync(fixture.Token);
             Assert.Equal(30, saved.Count);
-            Assert.Equal(server with { Name = "Z shell edited item" }, Assert.Single(saved, item => item.Id == server.Id));
+            Assert.Equal(server with { Name = "Z shell edited item", Revision = server.Revision + 1 },
+                Assert.Single(saved, item => item.Id == server.Id));
         }
     }
 }
