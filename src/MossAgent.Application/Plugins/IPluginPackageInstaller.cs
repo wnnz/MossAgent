@@ -13,4 +13,9 @@ public interface IPluginPackageInstaller
     Task<InstalledPlugin?> FindAsync(Guid id, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<InstalledPlugin>> ListAsync(CancellationToken cancellationToken);
+
+    /// <summary>Clears interrupted-install staging trees and reports final directories that
+    /// have no row. Orphaned payloads belong to the user and are only reported, never deleted
+    /// or executed.</summary>
+    Task<PluginInstallReconciliation> ReconcileAsync(CancellationToken cancellationToken);
 }

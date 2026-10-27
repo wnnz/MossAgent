@@ -44,6 +44,8 @@ using MossAgent.Infrastructure.SourceControl;
 using MossAgent.Tools.Abstractions.SourceControl;
 using MossAgent.Tools.BuiltIn.SourceControl;
 using MossAgent.Application.Authorization;
+using MossAgent.Application.Plugins;
+using MossAgent.Infrastructure.Plugins;
 
 namespace MossAgent.App;
 
@@ -130,6 +132,13 @@ internal static class AppComposition
         services.AddSingleton<IArtifactSessionJournal, SqliteArtifactSessionJournal>();
         services.AddSingleton<ISubagentRunJournal, SqliteSubagentRunJournal>();
         services.AddSingleton<IBrowserSessionJournal, SqliteBrowserSessionJournal>();
+        services.AddSingleton<IPluginPackagePreviewer, ZipPluginPackagePreviewer>();
+        services.AddSingleton<IInstalledPluginStore, SqliteInstalledPluginStore>();
+        services.AddSingleton<IPluginPackageInstaller>(static provider => new PluginPackageInstaller(
+            provider.GetRequiredService<IPluginPackagePreviewer>(),
+            provider.GetRequiredService<IInstalledPluginStore>(),
+            provider.GetRequiredService<AppDataPaths>().PluginsPath,
+            provider.GetRequiredService<TimeProvider>()));
         services.AddSingleton<ITaskArtifactContentReader, TaskArtifactContentReader>();
         services.AddSingleton<IBrowserProfilePaths, BrowserProfilePaths>();
         services.AddSingleton<GitProcessRunner>();

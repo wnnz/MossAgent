@@ -3,6 +3,7 @@ using MossAgent.App.ViewModels;
 using MossAgent.Application.Attachments;
 using MossAgent.Application.Git;
 using MossAgent.Application.Persistence;
+using MossAgent.Application.Plugins;
 using MossAgent.Mcp;
 using MossAgent.Tools.Abstractions.Files;
 
@@ -18,6 +19,7 @@ public sealed class AppStartupService : IAsyncDisposable
     private readonly IArtifactSessionJournal? _artifactJournal;
     private readonly ISubagentRunJournal? _runJournal;
     private readonly IBrowserSessionJournal? _browserJournal;
+    private readonly IPluginPackageInstaller? _pluginInstaller;
     private readonly CancellationTokenSource _shutdown = new();
     private readonly object _gate = new();
     private Task? _loading;
@@ -26,7 +28,7 @@ public sealed class AppStartupService : IAsyncDisposable
     public AppStartupService(IMcpManager mcp, AppStartupViewModel state, Action<Action>? publish = null,
         IWorktreeCreationIntents? creationIntents = null, IAttachmentSnapshotReaper? reaper = null,
         IArtifactSessionJournal? artifactJournal = null, ISubagentRunJournal? runJournal = null,
-        IBrowserSessionJournal? browserJournal = null)
+        IBrowserSessionJournal? browserJournal = null, IPluginPackageInstaller? pluginInstaller = null)
     {
         _mcp = mcp;
         _state = state;
@@ -36,6 +38,7 @@ public sealed class AppStartupService : IAsyncDisposable
         _artifactJournal = artifactJournal;
         _runJournal = runJournal;
         _browserJournal = browserJournal;
+        _pluginInstaller = pluginInstaller;
     }
 
     public Task StartAsync()
@@ -92,6 +95,18 @@ public sealed class AppStartupService : IAsyncDisposable
         if (_browserJournal is not null)
         {
             try { await _browserJournal.ReconcileAsync(_shutdown.Token).ConfigureAwait(false); }
+            catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { return; }
+            catch (Exception) { storageWarning = true; }
+        }
+        // Clears interrupted-install staging trees and reports payloads without a row;
+        // orphaned finals are never deleted or executed automatically.
+        if (_pluginInstaller is not null)
+        {
+            try
+            {
+                var result = await _pluginInstaller.ReconcileAsync(_shutdown.Token).ConfigureAwait(false);
+                storageWarning |= result.OrphanedFinals.Count > 0;
+            }
             catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { return; }
             catch (Exception) { storageWarning = true; }
         }
