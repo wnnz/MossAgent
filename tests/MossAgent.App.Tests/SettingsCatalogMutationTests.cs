@@ -77,7 +77,7 @@ public sealed class SettingsCatalogMutationTests : IAsyncLifetime
         {
             var server = Assert.IsType<McpServerProfile>(target);
             var saved = Assert.Single(fixture.Mcp!.Repository.Items, item => item.Id == server.Id);
-            Assert.Equal(server with { Name = "Z updated last item" }, saved);
+            Assert.Equal(server with { Name = "Z updated last item", Revision = server.Revision + 1 }, saved);
             Assert.Equal(30, fixture.Mcp.Repository.Items.Count);
         }
     }
