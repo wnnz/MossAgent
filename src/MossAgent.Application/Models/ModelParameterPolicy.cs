@@ -102,10 +102,11 @@ public static class ModelParameterPolicy
                 if (objectName is null) continue;
                 if (property.Value.ValueKind != JsonValueKind.Object)
                     return new(ModelParameterViolationKind.MergeableNotObject, property.Name);
-                var nested = property.Value.EnumerateObject()
-                    .FirstOrDefault(item => IsManagedNested(protocol, objectName, item.Name));
-                if (nested.Name is not null)
-                    return new(ModelParameterViolationKind.ManagedNested, nested.Name);
+                foreach (var item in property.Value.EnumerateObject())
+                {
+                    if (IsManagedNested(protocol, objectName, item.Name))
+                        return new(ModelParameterViolationKind.ManagedNested, item.Name);
+                }
             }
         }
 
