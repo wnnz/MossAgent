@@ -15,6 +15,7 @@ public sealed class WorkspaceConversationPreferences : IDisposable
     private readonly Dictionary<Guid, ConversationModelPreference?> _cache = [];
     private readonly Dictionary<Guid, ConversationModelPreference> _pending = [];
     private readonly HashSet<Guid> _failedWrites = [];
+    private readonly object _readLock = new();
     private CancellationTokenSource? _readCancellation;
     private Task? _writeTask;
     private Guid? _taskId;
@@ -68,7 +69,7 @@ public sealed class WorkspaceConversationPreferences : IDisposable
     {
         _stopping = true;
         _generation++;
-        _readCancellation?.Cancel();
+        CancelRead();
         await FlushAsync();
     }
 
@@ -104,9 +105,9 @@ public sealed class WorkspaceConversationPreferences : IDisposable
     private async Task ReadAsync(Guid? taskId, CancellationToken cancellationToken = default)
     {
         var generation = ++_generation;
-        _readCancellation?.Cancel();
-        using var read = _operations.CreateOperation(cancellationToken);
-        _readCancellation = read;
+        CancelRead();
+        var read = _operations.CreateOperation(cancellationToken);
+        lock (_readLock) _readCancellation = read;
         _loaded = false;
         _applied = false;
         _models.SetConversationState(true, "ConversationPreferenceLoading");
@@ -128,8 +129,17 @@ public sealed class WorkspaceConversationPreferences : IDisposable
         }
         finally
         {
-            if (ReferenceEquals(_readCancellation, read)) _readCancellation = null;
+            lock (_readLock)
+            {
+                if (ReferenceEquals(_readCancellation, read)) _readCancellation = null;
+                read.Dispose();
+            }
         }
+    }
+
+    private void CancelRead()
+    {
+        lock (_readLock) _readCancellation?.Cancel();
     }
 
     private void ApplyIfReady()
@@ -168,7 +178,7 @@ public sealed class WorkspaceConversationPreferences : IDisposable
     {
         if (_disposed || _stopping || _restoring || Capture() is not { } preference) return;
         _generation++;
-        _readCancellation?.Cancel();
+        CancelRead();
         _currentPreference = preference;
         _loaded = true;
         _applied = true;
