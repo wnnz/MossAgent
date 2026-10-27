@@ -20,6 +20,8 @@ internal sealed class HistoryContinuationModelServer : IAsyncDisposable
     private readonly int _startingTurn;
     private readonly Task _serving;
     private string _readHash = string.Empty;
+    private const string Completed =
+        "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"fixture-response\",\"status\":\"completed\"}}\n\n";
 
     public HistoryContinuationModelServer(string path, bool mutation, CancellationToken token, int startingTurn = 0)
     {
@@ -48,7 +50,7 @@ internal sealed class HistoryContinuationModelServer : IAsyncDisposable
             var request = document.RootElement;
             _requests.Enqueue(request.Clone());
             var response = CreateResponse(request, turn);
-            var bytes = Encoding.UTF8.GetBytes($"data: {response}\n\ndata: [DONE]\n\n");
+            var bytes = Encoding.UTF8.GetBytes($"data: {response}\n\n" + Completed + "data: [DONE]\n\n");
             var header = Encoding.ASCII.GetBytes($"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n"
                 + $"Content-Length: {bytes.Length}\r\nConnection: close\r\n\r\n");
             await stream.WriteAsync(header, token);

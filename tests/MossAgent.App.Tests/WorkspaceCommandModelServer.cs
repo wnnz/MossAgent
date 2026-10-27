@@ -14,6 +14,8 @@ internal sealed class WorkspaceCommandModelServer : IAsyncDisposable
     private readonly string _command;
     private readonly string _workingDirectory;
     private readonly Task _serving;
+    private const string Completed =
+        "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"fixture-response\",\"status\":\"completed\"}}\n\n";
 
     public WorkspaceCommandModelServer(string command, string workingDirectory, CancellationToken token)
     {
@@ -39,7 +41,7 @@ internal sealed class WorkspaceCommandModelServer : IAsyncDisposable
             _requests.Enqueue(body);
             using var document = JsonDocument.Parse(body);
             var response = CreateResponse(document.RootElement, turn);
-            var bytes = Encoding.UTF8.GetBytes($"data: {response}\n\ndata: [DONE]\n\n");
+            var bytes = Encoding.UTF8.GetBytes($"data: {response}\n\n" + Completed + "data: [DONE]\n\n");
             var header = Encoding.ASCII.GetBytes($"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n"
                 + $"Content-Length: {bytes.Length}\r\nConnection: close\r\n\r\n");
             await stream.WriteAsync(header, token);

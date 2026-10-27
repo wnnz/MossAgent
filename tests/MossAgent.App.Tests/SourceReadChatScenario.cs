@@ -32,7 +32,9 @@ internal static class SourceReadChatScenario
                 .FirstOrDefault(name => name.StartsWith(prefix, StringComparison.Ordinal)) ?? tool;
             var frame = JsonSerializer.Serialize(new { type = "response.function_call_arguments.done", name = wireName, call_id = "source-read", arguments = arguments.GetRawText() });
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-            { Content = new StringContent("data: " + frame + "\n\ndata: [DONE]\n\n", Encoding.UTF8, "text/event-stream") });
+            { Content = new StringContent("data: " + frame + "\n\n"
+                + "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"fixture-response\",\"status\":\"completed\"}}\n\n"
+                + "data: [DONE]\n\n", Encoding.UTF8, "text/event-stream") });
         };
     }
 

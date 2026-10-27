@@ -12,7 +12,7 @@ internal static class SubagentProtocolResponses
     public const string ParentReply = "父任务已接收子代理结果。";
 
     public static string Parent(JsonElement request, int turn) => turn == 0
-        ? Frames(new
+        ? ResponsesFrames(new
         {
             type = "response.output_item.done",
             item = new
@@ -23,7 +23,7 @@ internal static class SubagentProtocolResponses
                 arguments = JsonSerializer.Serialize(new { agent = "protocol-review", task = "仅检查合成文件" })
             }
         })
-        : Frames(new { type = "response.output_text.delta", delta = ParentReply });
+        : ResponsesFrames(new { type = "response.output_text.delta", delta = ParentReply });
 
     public static string Child(JsonElement request, int turn, ProviderProtocol protocol, string path)
     {
@@ -31,7 +31,7 @@ internal static class SubagentProtocolResponses
         var name = ToolName(request, protocol, "filesystem_read_file__");
         return protocol switch
         {
-            ProviderProtocol.OpenAiResponses => Frames(ResponseCall(name, "child-read", path)),
+            ProviderProtocol.OpenAiResponses => ResponsesFrames(ResponseCall(name, "child-read", path)),
             ProviderProtocol.OpenAiCompatible => Frames(new
             {
                 choices = new[] { new { index = 0, delta = new { tool_calls = new[]
@@ -59,7 +59,7 @@ internal static class SubagentProtocolResponses
 
     private static string Reply(ProviderProtocol protocol) => protocol switch
     {
-        ProviderProtocol.OpenAiResponses => Frames(new { type = "response.output_text.delta", delta = ChildReply }),
+        ProviderProtocol.OpenAiResponses => ResponsesFrames(new { type = "response.output_text.delta", delta = ChildReply }),
         ProviderProtocol.OpenAiCompatible => Frames(new { choices = new[] { new { index = 0, delta = new { content = ChildReply }, finish_reason = "stop" } } }),
         ProviderProtocol.GeminiGenerateContent => Frames(new { candidates = new[] { new { index = 0, content = new { parts = new[] { new { text = ChildReply } } }, finishReason = "STOP" } } }),
         ProviderProtocol.AnthropicMessages => SerializeFrames([
@@ -83,6 +83,11 @@ internal static class SubagentProtocolResponses
                 : tool.GetProperty("name").GetString()!)
             .Single(name => name.StartsWith(prefix, StringComparison.Ordinal));
     }
+
+    private static string ResponsesFrames(params object[] values) =>
+        SerializeFrames(values)
+        + "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"fixture-response\",\"status\":\"completed\"}}\n\n"
+        + "data: [DONE]\n\n";
 
     private static string Frames(params object[] values) =>
         SerializeFrames(values) + "data: [DONE]\n\n";
