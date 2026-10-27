@@ -10,10 +10,13 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
     private readonly HashSet<ProjectAuthorizationLease> _leases = [];
     private readonly Dictionary<Guid, long> _highest = [];
     private readonly Dictionary<Guid, AuthorizationDrainState> _drainStates = [];
+    private readonly Dictionary<Guid, AuthorizationDrainState> _published = [];
     private readonly IProjectAuthorizationReader _reader;
     private readonly IProjectAuthorizationChanges _changes;
     private readonly TimeProvider _time;
     private readonly IRootIdentitySessionFactory? _roots;
+    private readonly IProjectDrainStateBoard? _board;
+    private Task _publishTail = Task.CompletedTask;
     private bool _disposed;
     private Task? _disposal;
 
@@ -21,15 +24,24 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
     /// exceeding it marks the lease release-failed (cleanup unknown) and retains the admission barrier.</summary>
     public static readonly TimeSpan DrainTimeout = TimeSpan.FromSeconds(30);
 
+    /// <summary>Shared-board rows untouched longer than this window count as CleanupUnknown:
+    /// their owner instance is unreachable, so its cleanup cannot be confirmed finished.</summary>
+    public static readonly TimeSpan BoardStaleWindow = TimeSpan.FromSeconds(120);
+
     public ProjectAuthorizationMonitor(IProjectAuthorizationReader reader, IProjectAuthorizationChanges changes,
-        TimeProvider? timeProvider = null, IRootIdentitySessionFactory? roots = null)
+        TimeProvider? timeProvider = null, IRootIdentitySessionFactory? roots = null,
+        IProjectDrainStateBoard? board = null)
     {
         _reader = reader;
         _changes = changes;
         _time = timeProvider ?? TimeProvider.System;
         _roots = roots;
+        _board = board;
         changes.Changed += RevokeOlder;
     }
+
+    /// <summary>Identity this process publishes under on the shared drain-state board.</summary>
+    public Guid InstanceId { get; } = Guid.NewGuid();
 
     public event Action<Guid>? DrainStateChanged;
 
@@ -59,10 +71,52 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
         return true;
     }
 
+    /// <summary>Worst of the local drain state and every instance's shared-board row.
+    /// Board failures degrade to the local state so the badge never breaks.</summary>
+    public async Task<AuthorizationDrainState> ObserveDrainStateAsync(Guid projectId,
+        CancellationToken cancellationToken = default)
+    {
+        var local = DrainState(projectId);
+        if (_board is null) return local;
+        AuthorizationDrainState shared;
+        try
+        {
+            shared = await _board.AggregateAsync(projectId,
+                _time.GetUtcNow() - BoardStaleWindow, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+        catch { return local; }
+        return shared > local ? shared : local;
+    }
+
     private void RaiseDrainStateChanged(Guid projectId)
     {
+        QueueBoardPublish(projectId);
         try { DrainStateChanged?.Invoke(projectId); }
         catch { /* Observer failures cannot affect lease cleanup or admission. */ }
+    }
+
+    private void QueueBoardPublish(Guid projectId)
+    {
+        if (_board is null) return;
+        lock (_sync)
+        {
+            var state = DrainStateLocked(projectId);
+            if (_published.TryGetValue(projectId, out var last) && last == state) return;
+            _published[projectId] = state;
+            var at = _time.GetUtcNow();
+            _publishTail = _publishTail
+                .ContinueWith(_ => PublishBoardSafelyAsync(projectId, state, at), CancellationToken.None,
+                    TaskContinuationOptions.None, TaskScheduler.Default)
+                .Unwrap();
+        }
+    }
+
+    private async Task PublishBoardSafelyAsync(Guid projectId, AuthorizationDrainState state,
+        DateTimeOffset at)
+    {
+        try { await _board!.PublishAsync(projectId, InstanceId, state, at, CancellationToken.None).ConfigureAwait(false); }
+        catch { /* The board is best-effort bookkeeping; it must never affect revocation or admission. */ }
     }
 
     public async Task ValidateAsync(ProjectProfile expected, CancellationToken cancellationToken)
@@ -190,14 +244,34 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
         return new(completion.Task);
     }
 
-    private static async Task DisposeOwnedAsync(ProjectAuthorizationLease[] leases, TaskCompletionSource completion)
+    private async Task DisposeOwnedAsync(ProjectAuthorizationLease[] leases, TaskCompletionSource completion)
     {
+        Exception? failure = null;
         try
         {
             foreach (var lease in leases) lease.Revoke();
             await Task.WhenAll(leases.Select(lease => lease.DisposeAsync().AsTask())).ConfigureAwait(false);
-            completion.SetResult();
         }
-        catch (Exception exception) { completion.SetException(exception); }
+        catch (Exception exception) { failure = exception; }
+        await ClearBoardAsync().ConfigureAwait(false);
+        if (failure is null) completion.SetResult();
+        else completion.SetException(failure);
+    }
+
+    /// <summary>Best-effort removal of this instance's board rows on clean exit. Bounded so a
+    /// stuck board write can never hang disposal; failures leave rows to the staleness rule.</summary>
+    private async Task ClearBoardAsync()
+    {
+        if (_board is null) return;
+        try
+        {
+            Task pending;
+            lock (_sync) pending = _publishTail;
+            await pending.ConfigureAwait(false);
+            using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(5), _time);
+            await _board.ClearInstanceAsync(InstanceId, deadline.Token)
+                .WaitAsync(deadline.Token).ConfigureAwait(false);
+        }
+        catch { /* Row cleanup is best-effort; leftover rows age out via the staleness window. */ }
     }
 }

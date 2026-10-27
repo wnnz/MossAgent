@@ -104,6 +104,7 @@ internal static class AppComposition
         services.AddSingleton<IProjectAuthorizationReader>(static provider =>
             provider.GetRequiredService<IWorkspaceRepository>() as IProjectAuthorizationReader
             ?? new WorkspaceProjectAuthorizationReader(provider.GetRequiredService<IWorkspaceRepository>()));
+        services.AddSingleton<IProjectDrainStateBoard, SqliteProjectDrainStateBoard>();
         services.AddSingleton<ProjectAuthorizationMonitor>();
         services.AddSingleton<IConversationPreferenceRepository, SqliteConversationPreferenceRepository>();
         services.AddSingleton<IConversationDraftRepository, SqliteConversationDraftRepository>();
