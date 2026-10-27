@@ -1,7 +1,9 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Microsoft.Data.Sqlite;
+using MossAgent.Application.Networking;
 using MossAgent.Domain;
 using MossAgent.Infrastructure.Networking;
 using MossAgent.Infrastructure.Persistence;
@@ -128,6 +130,132 @@ public sealed class ProviderHttpClientFactoryTests
             proxyCancellation.Cancel();
             try { await proxyRequest; } catch (OperationCanceledException) { }
             HttpClient.DefaultProxy = previousProxy;
+            SqliteTestPool.Clear(root);
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task CreateAsync_ConcurrentProxyEditResolvesCoherentCredentials()
+    {
+        const int rounds = 10;
+        var root = CreateRoot();
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(15));
+        try
+        {
+            using var listener = StartListener(out var proxyPort);
+            var cancellationToken = timeout.Token;
+            var repository = await CreateRepositoryAsync(root, cancellationToken);
+            var proxy = new ProxyProfile(
+                Guid.NewGuid(), "race-fixture", ProxyProtocol.Http,
+                "127.0.0.1", proxyPort, "user-one", "pass-one", false, true);
+            await repository.SaveProxyAsync(proxy, cancellationToken);
+            var provider = new AiProvider(
+                Guid.NewGuid(), "fixture", ProviderProtocol.OpenAiResponses,
+                new Uri("http://models.example.test/v1/"), "fixture-key",
+                proxy.Id, false, true, new Dictionary<string, string>());
+            var factory = new ProviderHttpClientFactory(repository);
+            var authorizations = new ConcurrentQueue<string>();
+            var accept = Task.Run(async () =>
+            {
+                for (var i = 0; i < rounds; i++)
+                    authorizations.Enqueue(await ReceiveAuthenticatedProxyRequestAsync(listener, cancellationToken));
+            }, CancellationToken.None);
+            var expected = new HashSet<string>(StringComparer.Ordinal)
+            {
+                "Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes("user-one:pass-one")),
+                "Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes("user-two:pass-two")),
+            };
+
+            for (var i = 0; i < rounds; i++)
+            {
+                var save = repository.SaveProxyAsync(proxy with
+                {
+                    Username = i % 2 == 0 ? "user-one" : "user-two",
+                    Password = i % 2 == 0 ? "pass-one" : "pass-two",
+                }, cancellationToken);
+                using var client = await factory.CreateAsync(provider, cancellationToken);
+                using var response = await client.GetAsync("models", cancellationToken);
+                await save;
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            }
+
+            await accept;
+            Assert.Equal(rounds, authorizations.Count);
+            Assert.All(authorizations, value => Assert.Contains(value, expected));
+        }
+        finally
+        {
+            SqliteTestPool.Clear(root);
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task CreateAsync_ConcurrentProxyDisableStaysFailClosed()
+    {
+        const int rounds = 8;
+        var root = CreateRoot();
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(15));
+        try
+        {
+            using var listener = StartListener(out var proxyPort);
+            var cancellationToken = timeout.Token;
+            var repository = await CreateRepositoryAsync(root, cancellationToken);
+            var proxy = new ProxyProfile(
+                Guid.NewGuid(), "disable-race", ProxyProtocol.Http,
+                "127.0.0.1", proxyPort, null, null, false, true);
+            await repository.SaveProxyAsync(proxy, cancellationToken);
+            var provider = new AiProvider(
+                Guid.NewGuid(), "fixture", ProviderProtocol.OpenAiResponses,
+                new Uri("http://models.example.test/v1/"), "fixture-key",
+                proxy.Id, false, true, new Dictionary<string, string>());
+            var factory = new ProviderHttpClientFactory(repository);
+            var requests = new ConcurrentQueue<string>();
+            using var acceptCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var accept = Task.Run(async () =>
+            {
+                try
+                {
+                    while (true)
+                        requests.Enqueue(await ReceiveProxyRequestAsync(listener, acceptCancellation.Token));
+                }
+                catch (OperationCanceledException) { }
+            }, CancellationToken.None);
+            var succeeded = 0;
+            var unavailable = 0;
+
+            for (var i = 0; i < rounds; i++)
+            {
+                var save = repository.SaveProxyAsync(proxy with { IsEnabled = i % 2 == 0 }, cancellationToken);
+                try
+                {
+                    using var client = await factory.CreateAsync(provider, cancellationToken);
+                    using var response = await client.GetAsync("models", cancellationToken);
+                    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                    succeeded++;
+                }
+                catch (ProviderProxyUnavailableException)
+                {
+                    unavailable++;
+                }
+                await save;
+            }
+
+            Assert.Equal(rounds, succeeded + unavailable);
+            Assert.True(succeeded > 0 && unavailable > 0,
+                $"Expected the toggling edit to produce both snapshots, got {succeeded}/{unavailable}.");
+            acceptCancellation.Cancel();
+            await accept;
+            Assert.Equal(succeeded, requests.Count);
+            Assert.All(requests, value => Assert.Equal("GET http://models.example.test/v1/models HTTP/1.1", value));
+        }
+        finally
+        {
             SqliteTestPool.Clear(root);
             Directory.Delete(root, recursive: true);
         }
