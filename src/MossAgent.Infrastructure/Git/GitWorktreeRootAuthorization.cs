@@ -33,6 +33,39 @@ internal sealed class GitWorktreeRootAuthorization(IRootIdentitySessionFactory r
         await _store.InsertAsync(project, new(taskId, project.Id, Guid.NewGuid(), session.Roots[0]), expected, token).ConfigureAwait(false);
     }
 
+    // Re-enrolls the live replacement object after the caller proved it is a registered
+    // worktree of the same repository. Fails closed when the enrolled object still matches
+    // (another re-authorization may have landed) or when the persisted snapshot moved on.
+    public async Task ReauthorizeAsync(ProjectProfile project, Guid taskId, string path, AgentTask expected,
+        Func<CancellationToken, Task> validate, CancellationToken token)
+    {
+        var grant = await _store.ReadAsync(taskId, token).ConfigureAwait(false);
+        if (grant is null || grant.ProjectId != project.Id || !GitWorktreePaths.Same(grant.Identity.Path, path))
+            throw new WorktreeAuthorizationException();
+        using var session = await OpenRootAsync(path, token).ConfigureAwait(false);
+        if (SameObject(grant.Identity, session.Roots[0])) throw new WorktreeAuthorizationException();
+        await validate(token).ConfigureAwait(false);
+        await _store.ReplaceAsync(project, new(taskId, project.Id, Guid.NewGuid(), session.Roots[0]),
+            expected, grant.Identity, token).ConfigureAwait(false);
+    }
+
+    // Best-effort classification for UI recovery: the grant is re-read so the identity
+    // comparison stays consistent, and any local failure means the panel cannot verify.
+    public async Task<WorktreeEnrollmentState> ProbeAsync(Guid taskId, string path, CancellationToken token)
+    {
+        var grant = await _store.ReadAsync(taskId, token).ConfigureAwait(false);
+        if (grant is null) return WorktreeEnrollmentState.Unconfirmed;
+        if (!GitWorktreePaths.Same(grant.Identity.Path, path)) return WorktreeEnrollmentState.Unverifiable;
+        try
+        {
+            using var session = await OpenRootAsync(path, token).ConfigureAwait(false);
+            return SameObject(grant.Identity, session.Roots[0])
+                ? WorktreeEnrollmentState.Enrolled : WorktreeEnrollmentState.Replaced;
+        }
+        catch (OperationCanceledException) { throw; }
+        catch { return WorktreeEnrollmentState.Unverifiable; }
+    }
+
     private async Task<IRootIdentitySession> OpenRootAsync(string path, CancellationToken token)
     {
         IRootIdentitySession session;

@@ -77,6 +77,52 @@ public sealed class WorktreeObjectRuntimeTests
     }
 
     [Fact]
+    public async Task ReplacedWorktreeObjectRequiresExplicitReauthorizationThenAdmitsRuns()
+    {
+        await using var owner = await WorkspaceWorktreeGitFixture.CreateAsync();
+        var fixture = owner.Fixture;
+        var task = await CreateTaskAsync(owner);
+        var path = task.WorktreePath!;
+        await owner.GitAsync(["worktree", "remove", "--force", path]);
+        await owner.GitAsync(["worktree", "add", path, $"mossagent/{task.Id:N}"]);
+        var denied = await ReadAsync(owner, task, "replaced-before-reauthorize");
+        Assert.Equal("workspace_denied", denied.ErrorCode);
+        var workspace = fixture.Workspace;
+        workspace.Catalog.UpsertTask(task, select: false);
+        workspace.Catalog.SelectedTask = task;
+        var authorization = workspace.Catalog.WorktreeAuthorization;
+        await fixture.WaitUntilAsync(() => !authorization.IsBusy && authorization.ConfirmCommand.CanExecute(null));
+        Assert.Equal(WorkspaceText.Get("WorktreeObjectReplaced"), authorization.Status);
+        Assert.Equal(WorkspaceText.Get("WorktreeObjectReauthorize"), authorization.ConfirmLabel);
+        await authorization.ConfirmCommand.ExecuteAsync(null);
+        await fixture.WaitUntilAsync(() => !authorization.IsBusy);
+        Assert.False(authorization.ConfirmCommand.CanExecute(null));
+        Assert.Equal(WorkspaceText.Get("WorktreeObjectEnrolled"), authorization.Status);
+        var grants = Assert.IsAssignableFrom<IGitWorktreeAuthorizationService>(fixture.Worktrees);
+        Assert.NotNull(await grants.ReadAuthorizationAsync(task.Id, fixture.Token));
+        var read = await ReadAsync(owner, task, "replaced-after-reauthorize");
+        Assert.True(read.IsSuccess, read.Summary);
+        Assert.Contains("committed baseline", read.Content);
+        Assert.Empty(fixture.Server.Requests);
+    }
+
+    [Fact]
+    public async Task IntactEnrolledWorktreeKeepsConfirmDisabled()
+    {
+        await using var owner = await WorkspaceWorktreeGitFixture.CreateAsync();
+        var fixture = owner.Fixture;
+        var task = await CreateTaskAsync(owner);
+        var workspace = fixture.Workspace;
+        workspace.Catalog.UpsertTask(task, select: false);
+        workspace.Catalog.SelectedTask = task;
+        var authorization = workspace.Catalog.WorktreeAuthorization;
+        await fixture.WaitUntilAsync(() => !authorization.IsBusy
+            && authorization.Status == WorkspaceText.Get("WorktreeObjectEnrolled"));
+        Assert.False(authorization.ConfirmCommand.CanExecute(null));
+        Assert.Empty(fixture.Server.Requests);
+    }
+
+    [Fact]
     public async Task CancellingActualModelStreamReleasesWorktreeLeaseWithoutReplayingOnReopen()
     {
         await using var owner = await WorkspaceWorktreeGitFixture.CreateAsync(pauseResponse: true);
@@ -99,6 +145,10 @@ public sealed class WorktreeObjectRuntimeTests
         Assert.Single(fixture.Server.Requests);
         Assert.False(restored.IsRunning);
     }
+
+    private static Task<ToolResult> ReadAsync(WorkspaceWorktreeGitFixture owner, AgentTask task, string callId) =>
+        owner.Fixture.Tools.ExecuteAsync(new(callId, "filesystem.read_file", JsonSerializer.SerializeToElement(new { path = "README.md" })),
+            owner.Fixture.Panels.CreateContext(task, owner.Project), owner.Fixture.Token);
 
     internal static async Task<AgentTask> CreateTaskAsync(WorkspaceWorktreeGitFixture owner, bool legacy = false,
         ApprovalPolicy policy = ApprovalPolicy.ReadOnly)

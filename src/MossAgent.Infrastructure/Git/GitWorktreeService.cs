@@ -186,6 +186,48 @@ public sealed class GitWorktreeService(AppDataPaths paths, GitProcessRunner git,
         finally { gate.Release(); }
     }, token);
 
+    // Re-authorization is an explicit user decision for a verified replacement object;
+    // the drain gate plus the persisted compare-and-swap keep it out of cleanup races.
+    public Task ReauthorizeReplacedAsync(ProjectProfile project, AgentTask task, CancellationToken token) => Task.Run(async () =>
+    {
+        if (_authorization is null || task.ProjectId != project.Id || task.WorktreePath is null
+            || task.Status is AgentTaskStatus.Running or AgentTaskStatus.WaitingForApproval) throw new WorktreeAuthorizationException();
+        await using var scope = await OpenScopeAsync(project, token).ConfigureAwait(false);
+        var target = ValidateTaskPath(task.Id, task.WorktreePath);
+        var gate = await _drain.WaitAsync(task.Id, scope.Token).ConfigureAwait(false);
+        try
+        {
+            if (_cleanupIntents is not null
+                && await _cleanupIntents.HasLiveIntentAsync(task.Id, scope.Token).ConfigureAwait(false))
+                throw new WorktreeAuthorizationException();
+            var source = await _inspector.ReadProjectAsync(project, false, scope.Token).ConfigureAwait(false);
+            await _authorization.ReauthorizeAsync(project, task.Id, target, task,
+                ct => _inspector.ValidateTargetAsync(source, target, ct), scope.Token).ConfigureAwait(false);
+        }
+        finally { gate.Release(); }
+    }, token);
+
+    // Read-only classification for the authorization panel. It deliberately skips the
+    // drain gate: a stale probe result is harmless because the re-authorization
+    // compare-and-swap still fails closed on the persisted snapshot.
+    public Task<WorktreeEnrollmentState> ProbeAuthorizationAsync(ProjectProfile project, AgentTask task, CancellationToken token) =>
+        Task.Run(async () =>
+        {
+            if (_authorization is null || task.ProjectId != project.Id || task.WorktreePath is null)
+                return WorktreeEnrollmentState.Unverifiable;
+            await using var scope = await OpenScopeAsync(project, token).ConfigureAwait(false);
+            try
+            {
+                var target = ValidateTaskPath(task.Id, task.WorktreePath);
+                var grant = await _authorization.ReadAsync(task.Id, scope.Token).ConfigureAwait(false);
+                if (grant is null) return WorktreeEnrollmentState.Unconfirmed;
+                if (!GitWorktreePaths.Same(grant.Identity.Path, target)) return WorktreeEnrollmentState.Unverifiable;
+                return await _authorization.ProbeAsync(task.Id, target, scope.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch { return WorktreeEnrollmentState.Unverifiable; }
+        }, token);
+
     public Task<string> CreateAsync(
         ProjectProfile project,
         Guid taskId,

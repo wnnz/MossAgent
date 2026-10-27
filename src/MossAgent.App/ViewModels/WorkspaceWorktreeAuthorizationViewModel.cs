@@ -14,6 +14,7 @@ public sealed class WorkspaceWorktreeAuthorizationViewModel(IGitWorktreeAuthoriz
     private bool _available;
     private bool _isBusy;
     private bool _hasGrant;
+    private bool _replaced;
     private bool _isLoaded;
     private bool _disposed;
     private Guid? _confirmationTaskId;
@@ -25,7 +26,7 @@ public sealed class WorkspaceWorktreeAuthorizationViewModel(IGitWorktreeAuthoriz
     public bool IsVisible => service is not null && _task?.WorktreePath is not null;
     public bool IsBusy { get => _isBusy; private set { if (SetProperty(ref _isBusy, value)) NotifyCommands(); } }
     public string Status { get => _status; private set => SetProperty(ref _status, value); }
-    public string ConfirmLabel => WorkspaceText.Get("WorktreeObjectConfirm");
+    public string ConfirmLabel => WorkspaceText.Get(_replaced ? "WorktreeObjectReauthorize" : "WorktreeObjectConfirm");
     public string RetryLabel => WorkspaceText.Get("WorktreeObjectRefresh");
     public IAsyncRelayCommand ConfirmCommand => _confirm ??= new AsyncRelayCommand(ConfirmAsync, CanConfirm);
     public IRelayCommand RefreshCommand => _retry ??= new RelayCommand(Refresh, () => !_disposed && !IsBusy && IsVisible);
@@ -39,14 +40,16 @@ public sealed class WorkspaceWorktreeAuthorizationViewModel(IGitWorktreeAuthoriz
         _project = project;
         _task = task;
         _hasGrant = false;
+        _replaced = false;
         _isLoaded = false;
+        OnPropertyChanged(nameof(ConfirmLabel));
         OnPropertyChanged(nameof(Path));
         OnPropertyChanged(nameof(IsVisible));
         if (IsVisible && !IsBusy) Refresh();
         NotifyCommands();
     }
 
-    private bool CanConfirm() => !_disposed && _available && IsVisible && _isLoaded && !_hasGrant && !IsBusy;
+    private bool CanConfirm() => !_disposed && _available && IsVisible && _isLoaded && (!_hasGrant || _replaced) && !IsBusy;
 
     private void Refresh()
     {
@@ -72,13 +75,24 @@ public sealed class WorkspaceWorktreeAuthorizationViewModel(IGitWorktreeAuthoriz
         Status = WorkspaceText.Get("WorktreeObjectChecking");
         try
         {
-            if (confirm) await service.ConfirmLegacyAsync(project, task, operation.Token);
+            // The confirm choice reuses the state captured by this refresh; the persisted
+            // compare-and-swap makes a stale decision fail closed instead of overwriting.
+            if (confirm)
+            {
+                if (_hasGrant && _replaced) await service.ReauthorizeReplacedAsync(project, task, operation.Token);
+                else await service.ConfirmLegacyAsync(project, task, operation.Token);
+            }
             var grant = await service.ReadAuthorizationAsync(task.Id, operation.Token);
+            var state = grant is null ? WorktreeEnrollmentState.Unconfirmed
+                : await ProbeAuthorizationAsync(project, task, operation.Token);
             operation.Token.ThrowIfCancellationRequested();
             if (_project != project || _task != task || _disposed) return;
             _hasGrant = grant is not null;
+            _replaced = state == WorktreeEnrollmentState.Replaced;
             _isLoaded = true;
-            Status = WorkspaceText.Get(_hasGrant ? "WorktreeObjectEnrolled" : "WorktreeObjectLegacyNotice");
+            OnPropertyChanged(nameof(ConfirmLabel));
+            Status = WorkspaceText.Get(_replaced ? "WorktreeObjectReplaced"
+                : _hasGrant ? "WorktreeObjectEnrolled" : "WorktreeObjectLegacyNotice");
         }
         catch (OperationCanceledException) { if (!_disposed && _task == task) Status = WorkspaceText.Get("WorktreeObjectCancelled"); }
         catch (Exception) { if (!_disposed && _task == task) Status = WorkspaceText.Get("WorktreeObjectFailure"); }
@@ -89,6 +103,12 @@ public sealed class WorkspaceWorktreeAuthorizationViewModel(IGitWorktreeAuthoriz
             IsBusy = false;
             if (!_disposed && (_task != task || _project != project) && IsVisible) Refresh();
         }
+    }
+
+    private async Task<WorktreeEnrollmentState> ProbeAuthorizationAsync(ProjectProfile project, AgentTask task, CancellationToken token)
+    {
+        try { return await service!.ProbeAuthorizationAsync(project, task, token); }
+        catch { return WorktreeEnrollmentState.Unverifiable; }
     }
 
     private void NotifyCommands()

@@ -54,4 +54,44 @@ internal sealed class SqliteWorktreeRootAuthorizations(SqliteConnectionFactory c
         catch (SqliteException exception) when (exception.SqliteErrorCode == 19) { throw new WorktreeAuthorizationException(); }
         await transaction.CommitAsync(token);
     }
+
+    // Rebinds an existing grant to a verified replacement object. The compare-and-swap
+    // pins the enrolled identity, the project revision, and the exact task snapshot so a
+    // concurrent re-authorization or task edit loses the race instead of overwriting it.
+    public async Task ReplaceAsync(ProjectProfile project, WorktreeRootAuthorization grant, AgentTask expected,
+        DirectoryObjectIdentity replacedIdentity, CancellationToken token)
+    {
+        await using var connection = connections.Create();
+        await connection.OpenAsync(token);
+        await using var transaction = connection.BeginTransaction();
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = """
+            UPDATE worktree_root_authorizations
+            SET grant_id=$grant,volume_id=$volume,file_id=$file
+            WHERE task_id=$task AND volume_id=$oldVolume AND file_id=$oldFile
+              AND EXISTS(SELECT 1 FROM projects WHERE id=$project AND authorization_revision=$revision)
+              AND EXISTS(SELECT 1 FROM agent_tasks WHERE id=$task AND project_id=$project AND worktree_path=$path
+                  AND updated_at=$updated AND status=$status AND status NOT IN ($running,$approval));
+            """;
+        command.Parameters.AddWithValue("$task", grant.TaskId.ToString());
+        command.Parameters.AddWithValue("$project", project.Id.ToString());
+        command.Parameters.AddWithValue("$grant", grant.GrantId.ToString());
+        command.Parameters.AddWithValue("$path", expected.WorktreePath);
+        command.Parameters.AddWithValue("$volume", grant.Identity.VolumeId);
+        command.Parameters.AddWithValue("$file", grant.Identity.FileId);
+        command.Parameters.AddWithValue("$oldVolume", replacedIdentity.VolumeId);
+        command.Parameters.AddWithValue("$oldFile", replacedIdentity.FileId);
+        command.Parameters.AddWithValue("$revision", project.AuthorizationRevision);
+        command.Parameters.AddWithValue("$updated", expected.UpdatedAt.ToString("O"));
+        command.Parameters.AddWithValue("$status", (int)expected.Status);
+        command.Parameters.AddWithValue("$running", (int)AgentTaskStatus.Running);
+        command.Parameters.AddWithValue("$approval", (int)AgentTaskStatus.WaitingForApproval);
+        try
+        {
+            if (await command.ExecuteNonQueryAsync(token) != 1) throw new WorktreeAuthorizationException();
+        }
+        catch (SqliteException exception) when (exception.SqliteErrorCode == 19) { throw new WorktreeAuthorizationException(); }
+        await transaction.CommitAsync(token);
+    }
 }
