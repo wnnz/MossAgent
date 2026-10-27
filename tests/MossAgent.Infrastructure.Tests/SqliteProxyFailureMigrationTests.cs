@@ -26,7 +26,7 @@ public sealed class SqliteProxyFailureMigrationTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(45, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(46, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(old with { IsPinned = true }, Assert.Single(await fixture.Repository.GetTasksAsync(old.ProjectId, fixture.Token)));
         Assert.Equal(archived, Assert.Single(await fixture.Repository.GetArchivedTasksAsync(old.ProjectId, fixture.Token)));
         Assert.Equal(message, Assert.Single(await fixture.Repository.GetMessagesAsync(old.Id, fixture.Token)));
@@ -61,7 +61,7 @@ public sealed class SqliteProxyFailureMigrationTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_ten;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(45, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(46, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(old, Assert.Single(await fixture.Repository.GetTasksAsync(old.ProjectId, fixture.Token)));
     }
 

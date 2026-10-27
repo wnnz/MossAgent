@@ -41,7 +41,7 @@ public sealed class SourceReviewReadModePersistenceTests
         await fixture.Storage.Initializer.InitializeAsync(fixture.Token);
         await fixture.Storage.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(45, await fixture.Storage.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(46, await fixture.Storage.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(fixture.Binding, await new SqliteSourceReviewChats(fixture.Storage.Connections).GetAsync(task.Id, fixture.Token));
         Assert.Equal(message, Assert.Single(await fixture.Storage.Repository.GetMessagesAsync(task.Id, fixture.Token)));
         Assert.Equal(task.Id, Assert.Single(await fixture.Storage.Repository.GetPinnedTasksAsync(fixture.Token)).Id);

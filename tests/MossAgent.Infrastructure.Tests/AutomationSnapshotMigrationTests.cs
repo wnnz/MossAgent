@@ -12,7 +12,7 @@ public sealed class AutomationSnapshotMigrationTests
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
 
-        Assert.Equal(45, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(46, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='automation_snapshots';"));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM automation_snapshots;"));
@@ -46,7 +46,7 @@ public sealed class AutomationSnapshotMigrationTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(45, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(46, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var restored = Assert.Single(await repository.GetAllAsync(fixture.Token));
         Assert.Equal(plan.Id, restored.Id);
         Assert.Null(restored.AuthorizationSnapshot);

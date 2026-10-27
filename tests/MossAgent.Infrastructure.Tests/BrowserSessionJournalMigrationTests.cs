@@ -12,7 +12,7 @@ public sealed class BrowserSessionJournalMigrationTests
     public async Task FreshDatabaseCreatesBrowserJournalAtVersionFortyThree()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
-        Assert.Equal(45, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(46, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='browser_session_records';"));
         Assert.Equal(1, await fixture.CountAsync(
@@ -60,13 +60,13 @@ public sealed class BrowserSessionJournalMigrationTests
             WHEN NEW.version=43 BEGIN SELECT RAISE(ABORT,'synthetic migration failure'); END;
             """);
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Initializer.InitializeAsync(fixture.Token));
-        Assert.Equal(44, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(45, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='browser_session_records';"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_forty_three;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(45, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(46, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM schema_versions WHERE version=43;"));
         Assert.Equal(1, await fixture.CountAsync(
@@ -86,7 +86,7 @@ public sealed class BrowserSessionJournalMigrationTests
 
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(45, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(46, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         var stored = Assert.Single(await journal.ReadSessionsAsync(fixture.Task.Id, fixture.Token));
         Assert.Equal(BrowserEngine.Chrome, stored.Engine);
         Assert.Equal(BrowserSessionState.Attached, stored.State);

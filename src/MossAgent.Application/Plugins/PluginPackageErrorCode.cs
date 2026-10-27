@@ -10,4 +10,6 @@ public static class PluginPackageErrorCode
     public const string ManifestMissing = "plugin_manifest_missing";
     public const string ManifestInvalid = "plugin_manifest_invalid";
     public const string McpInvalid = "plugin_mcp_invalid";
+    public const string InstallConflict = "plugin_install_conflict";
+    public const string InstallFailed = "plugin_install_failed";
 }

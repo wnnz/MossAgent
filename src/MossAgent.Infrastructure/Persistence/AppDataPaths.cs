@@ -14,6 +14,7 @@ public sealed class AppDataPaths
     public string ArtifactsPath => Path.Combine(Root, "artifacts");
     public string BrowserProfilesPath => Path.Combine(Root, "browser-profiles");
     public string WorktreesPath => Path.Combine(Root, "worktrees");
+    public string PluginsPath => Path.Combine(Root, "plugins");
 
     public void EnsureCreated()
     {

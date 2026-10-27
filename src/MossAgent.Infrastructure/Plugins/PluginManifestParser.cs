@@ -26,7 +26,7 @@ internal static class PluginManifestParser
         var overlay = HasOpenAiExtension(root)
             ? PluginOverlaySource.ExtensionsObject
             : await ReadCompatibilityOverlayAsync(entries, token);
-        return new PluginManifestData(RequiredText(root, "name"), RequiredText(root, "version"),
+        return new PluginManifestData(RequiredText(root, "name", 200), RequiredText(root, "version", 100),
             OptionalText(root, "description"), overlay);
     }
 
@@ -47,12 +47,14 @@ internal static class PluginManifestParser
         return PluginOverlaySource.CompatibilityFile;
     }
 
-    private static string RequiredText(JsonElement root, string property)
+    private static string RequiredText(JsonElement root, string property, int maximumLength)
     {
-        if (!root.TryGetProperty(property, out var value) || value.ValueKind != JsonValueKind.String
-            || string.IsNullOrWhiteSpace(value.GetString()))
+        if (!root.TryGetProperty(property, out var value) || value.ValueKind != JsonValueKind.String)
             throw Invalid($"root plugin.json requires a non-empty '{property}' string");
-        return value.GetString()!;
+        var text = value.GetString()!;
+        if (string.IsNullOrWhiteSpace(text) || text.Length > maximumLength)
+            throw Invalid($"root plugin.json requires a non-empty '{property}' string");
+        return text;
     }
 
     private static string? OptionalText(JsonElement root, string property)

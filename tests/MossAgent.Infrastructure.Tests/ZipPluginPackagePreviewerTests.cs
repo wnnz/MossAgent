@@ -112,9 +112,11 @@ public sealed class ZipPluginPackagePreviewerTests
     [InlineData("empty-name")]
     [InlineData("blank-name")]
     [InlineData("number-name")]
+    [InlineData("long-name")]
     [InlineData("no-version")]
     [InlineData("empty-version")]
     [InlineData("number-version")]
+    [InlineData("long-version")]
     [InlineData("number-description")]
     public async Task InvalidManifestIsRejectedWithoutDegrading(string scenario)
     {
@@ -128,9 +130,11 @@ public sealed class ZipPluginPackagePreviewerTests
             "empty-name" => """{"name":"","version":"1"}""",
             "blank-name" => """{"name":"   ","version":"1"}""",
             "number-name" => """{"name":7,"version":"1"}""",
+            "long-name" => $$"""{"name":"{{new string('x', 201)}}","version":"1"}""",
             "no-version" => """{"name":"x"}""",
             "empty-version" => """{"name":"x","version":""}""",
             "number-version" => """{"name":"x","version":2}""",
+            "long-version" => $$"""{"name":"x","version":"{{new string('x', 101)}}"}""",
             _ => """{"name":"x","version":"1","description":[]}"""
         };
         var path = fixture.WritePackage(PluginTestEntry.Text("plugin.json", manifest));
