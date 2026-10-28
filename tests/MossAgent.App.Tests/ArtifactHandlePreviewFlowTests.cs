@@ -46,7 +46,9 @@ public sealed class ArtifactHandlePreviewFlowTests
         Assert.Equal(scenario == "success", pane.Active!.IsReady);
         Assert.Equal(scenario == "success" ? "beta\n" : "", pane.Active.Text);
         Assert.Equal(1, writes.PreviewCreates);
-        Assert.Equal(scenario == "write-refused" ? 0 : 1, reads.ArtifactReads);
+        Assert.True(reads.ArtifactReads == (scenario == "write-refused" ? 0 : 1),
+            $"expected {(scenario == "write-refused" ? 0 : 1)} artifact read(s), got {reads.ArtifactReads}:\n"
+            + string.Join("\n---\n", reads.Stacks));
         if (scenario != "write-refused") Assert.False(reads.ArtifactStream!.CanRead);
         if (scenario != "success") Assert.Equal(InspectorText.Get(scenario == "cancelled" ? "PreviewCancelled" : "PreviewFailed"), pane.Active.Status);
         Assert.DoesNotContain("synthetic", pane.Active.Status);
