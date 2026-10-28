@@ -16,7 +16,7 @@ public sealed class SqliteInstalledPluginStoreTests
     private static InstalledPlugin Row(string name, string version, string hash, Guid? id = null) =>
         new(id ?? Guid.NewGuid(), name, version, hash, $"{name}-{version}-{hash[..8]}",
             InstalledPluginState.Installed, "/tmp/pkg.mossplugin", DateTimeOffset.UnixEpoch,
-            Components, Servers, PluginOverlaySource.ExtensionsObject);
+            Components, Servers, PluginOverlaySource.ExtensionsObject, 1);
 
     [Fact]
     public async Task InsertOfIdenticalContentIsIdempotentAndReturnsTheStoredRow()
@@ -74,7 +74,7 @@ public sealed class SqliteInstalledPluginStoreTests
             "demo-1-0-aaaaaaaa", InstalledPluginState.Installed, "/tmp/p.mossplugin",
             DateTimeOffset.UnixEpoch,
             [new PluginComponentDescriptor(PluginComponentKind.Asset, new string('n', 9000), "n")],
-            [], PluginOverlaySource.None);
+            [], PluginOverlaySource.None, 1);
         var error = await Assert.ThrowsAsync<PluginPackageException>(() =>
             fixture.Store().InsertAsync(oversized, new Dictionary<string, string>(), fixture.Token));
         Assert.Equal(PluginPackageErrorCode.InstallFailed, error.Code);
@@ -89,11 +89,11 @@ public sealed class SqliteInstalledPluginStoreTests
         var row = await store.InsertAsync(Row("demo", "1.0", new string('a', 64)),
             new Dictionary<string, string>(), fixture.Token);
         Assert.Equal(InstalledPluginState.Installed, row.State);
-        PluginRowAssert.Equal(row with { State = InstalledPluginState.Enabled },
+        PluginRowAssert.Equal(row with { State = InstalledPluginState.Enabled, TrustRevision = 2 },
             await store.SetStateAsync(row.Id, InstalledPluginState.Enabled, fixture.Token));
-        PluginRowAssert.Equal(row with { State = InstalledPluginState.Disabled },
+        PluginRowAssert.Equal(row with { State = InstalledPluginState.Disabled, TrustRevision = 3 },
             await store.SetStateAsync(row.Id, InstalledPluginState.Disabled, fixture.Token));
-        PluginRowAssert.Equal(row with { State = InstalledPluginState.Enabled },
+        PluginRowAssert.Equal(row with { State = InstalledPluginState.Enabled, TrustRevision = 4 },
             await store.SetStateAsync(row.Id, InstalledPluginState.Enabled, fixture.Token));
         Assert.Equal(InstalledPluginState.Enabled, (await store.GetAsync(row.Id, fixture.Token))!.State);
     }
@@ -195,7 +195,7 @@ public sealed class SqliteInstalledPluginStoreTests
             new Dictionary<string, string>(), fixture.Token);
         var badSource = new InstalledPlugin(Guid.NewGuid(), "demo", "2.0", new string('b', 64),
             "demo-2-0-bbbbbbbb", InstalledPluginState.Installed, new string('s', 1100),
-            DateTimeOffset.UnixEpoch, Components, Servers, PluginOverlaySource.None);
+            DateTimeOffset.UnixEpoch, Components, Servers, PluginOverlaySource.None, 1);
 
         var error = await Assert.ThrowsAsync<PluginPackageException>(() =>
             store.ReplaceByNameAsync(badSource, new Dictionary<string, string>(), fixture.Token));
@@ -224,7 +224,7 @@ public sealed class SqliteInstalledPluginStoreTests
         await using var fixture = await PluginInstallFixture.CreateAsync();
         var badSource = new InstalledPlugin(Guid.NewGuid(), "demo", "1.0", new string('a', 64),
             "demo-1-0-aaaaaaaa", InstalledPluginState.Installed, new string('s', 1100),
-            DateTimeOffset.UnixEpoch, Components, Servers, PluginOverlaySource.None);
+            DateTimeOffset.UnixEpoch, Components, Servers, PluginOverlaySource.None, 1);
         var error = await Assert.ThrowsAsync<PluginPackageException>(() =>
             fixture.Store().InsertAsync(badSource, new Dictionary<string, string>(), fixture.Token));
         Assert.Equal(PluginPackageErrorCode.InstallFailed, error.Code);
@@ -348,11 +348,11 @@ public sealed class SqliteInstalledPluginStoreTests
         var row = await store.InsertAsync(Row("demo", "1.0", new string('a', 64)),
             new Dictionary<string, string>(), fixture.Token);
 
-        PluginRowAssert.Equal(row with { State = InstalledPluginState.Drifted },
+        PluginRowAssert.Equal(row with { State = InstalledPluginState.Drifted, TrustRevision = 2 },
             await store.SetStateAsync(row.Id, InstalledPluginState.Drifted, fixture.Token));
         Assert.Equal(InstalledPluginState.Drifted,
             (await store.GetAsync(row.Id, fixture.Token))!.State);
-        PluginRowAssert.Equal(row with { State = InstalledPluginState.Disabled },
+        PluginRowAssert.Equal(row with { State = InstalledPluginState.Disabled, TrustRevision = 3 },
             await store.SetStateAsync(row.Id, InstalledPluginState.Disabled, fixture.Token));
     }
 }

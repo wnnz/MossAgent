@@ -7,7 +7,10 @@ namespace MossAgent.Infrastructure.Persistence;
 /// reinstall under a new plugin id starts fresh. The state check cannot be altered in place,
 /// so plugin_packages is rebuilt with the Drifted value admitted while component settings and
 /// hash rows stay intact under foreign_keys=OFF; the rebuild is replay-safe because it copies
-/// from and back into the same table. The version row gates the migration as usual.</summary>
+/// from and back into the same table. The copy lists columns explicitly instead of SELECT * so a
+/// replay on a table widened by later versions does not fail on the column count; columns added
+/// after v50 are re-created by their own migrations' column gates. The version row gates the
+/// migration as usual.</summary>
 internal static class PluginComponentHashDatabaseSchema
 {
     public const string VersionFifty = """
@@ -26,7 +29,10 @@ internal static class PluginComponentHashDatabaseSchema
             overlay_source INTEGER NOT NULL CHECK(overlay_source IN (0,1,2)),
             UNIQUE(name,version)
         );
-        INSERT INTO plugin_packages_v50 SELECT * FROM plugin_packages;
+        INSERT INTO plugin_packages_v50(id,name,version,content_hash,install_path,state,source_path,
+            installed_at,components_json,declared_mcp_json,overlay_source)
+        SELECT id,name,version,content_hash,install_path,state,source_path,installed_at,components_json,
+            declared_mcp_json,overlay_source FROM plugin_packages;
         DROP TABLE plugin_packages;
         ALTER TABLE plugin_packages_v50 RENAME TO plugin_packages;
         CREATE INDEX IF NOT EXISTS plugin_packages_by_hash ON plugin_packages(name,version,content_hash);

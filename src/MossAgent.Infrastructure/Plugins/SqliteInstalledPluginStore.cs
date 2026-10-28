@@ -13,11 +13,13 @@ namespace MossAgent.Infrastructure.Plugins;
 /// the new row plus its baseline committed in one transaction, so a failed replace leaves the
 /// old rows untouched. Per-component payload hashes are written in the same transaction as
 /// their plugin row and only ever inserted, never replaced, so the first recorded baseline
-/// stays authoritative.</summary>
+/// stays authoritative. trust_revision is the store-owned trust generation counter: inserted
+/// and replaced rows always start at 1 and SetState bumps it once per real transition, so a
+/// dispatch-time snapshot can name the exact revision it ran under.</summary>
 public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connections) : IInstalledPluginStore
 {
     private const string Columns =
-        "id,name,version,content_hash,install_path,state,source_path,installed_at,components_json,declared_mcp_json,overlay_source";
+        "id,name,version,content_hash,install_path,state,source_path,installed_at,components_json,declared_mcp_json,overlay_source,trust_revision";
 
     public async Task<InstalledPlugin?> GetAsync(Guid id, CancellationToken cancellationToken)
     {
@@ -49,6 +51,8 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
     public async Task<InstalledPlugin> InsertAsync(InstalledPlugin plugin,
         IReadOnlyDictionary<string, string> payloadHashes, CancellationToken cancellationToken)
     {
+        // Every fresh row starts at trust revision 1; the store owns the counter, not the caller.
+        plugin = plugin with { TrustRevision = 1 };
         var components = InstalledPluginJson.SerializeComponents(plugin.Components);
         var servers = InstalledPluginJson.SerializeServers(plugin.DeclaredMcpServers);
         await using var connection = await OpenAsync(cancellationToken);
@@ -65,7 +69,7 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
         await using var command = connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = $"INSERT INTO plugin_packages({Columns}) "
-            + "VALUES($id,$name,$version,$hash,$path,$state,$source,$at,$components,$servers,$overlay);";
+            + "VALUES($id,$name,$version,$hash,$path,$state,$source,$at,$components,$servers,$overlay,$trust);";
         AddParameters(command, plugin, components, servers);
         try
         {
@@ -98,6 +102,8 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
     public async Task<InstalledPlugin> ReplaceByNameAsync(InstalledPlugin plugin,
         IReadOnlyDictionary<string, string> payloadHashes, CancellationToken cancellationToken)
     {
+        // A replaced row is a fresh trust generation: the counter restarts at 1 like any insert.
+        plugin = plugin with { TrustRevision = 1 };
         var components = InstalledPluginJson.SerializeComponents(plugin.Components);
         var servers = InstalledPluginJson.SerializeServers(plugin.DeclaredMcpServers);
         await using var connection = await OpenAsync(cancellationToken);
@@ -110,7 +116,7 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
         await using var insert = connection.CreateCommand();
         insert.Transaction = transaction;
         insert.CommandText = $"INSERT INTO plugin_packages({Columns}) "
-            + "VALUES($id,$name,$version,$hash,$path,$state,$source,$at,$components,$servers,$overlay);";
+            + "VALUES($id,$name,$version,$hash,$path,$state,$source,$at,$components,$servers,$overlay,$trust);";
         AddParameters(insert, plugin, components, servers);
         try
         {
@@ -127,23 +133,23 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
         return plugin;
     }
 
+    /// <summary>One guarded UPDATE bumps trust_revision exactly when the transition is real —
+    /// a same-state call is a no-op that still returns the row — then the row is read back, so
+    /// the returned record carries the post-transition revision. Drift marking Drifted to
+    /// Drifted therefore does not mint a new generation.</summary>
     public async Task<InstalledPlugin?> SetStateAsync(Guid id, InstalledPluginState state,
         CancellationToken cancellationToken)
     {
         await using var connection = await OpenAsync(cancellationToken);
         await using var transaction = connection.BeginTransaction();
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = "UPDATE plugin_packages SET state=$state, trust_revision=trust_revision+1 "
+            + "WHERE id=$id AND state<>$state;";
+        command.Parameters.AddWithValue("$state", (int)state);
+        command.Parameters.AddWithValue("$id", id.ToString());
+        await command.ExecuteNonQueryAsync(cancellationToken);
         var row = await FindByIdAsync(connection, transaction, id, cancellationToken);
-        if (row is null) return null;
-        if (row.State != state)
-        {
-            await using var command = connection.CreateCommand();
-            command.Transaction = transaction;
-            command.CommandText = "UPDATE plugin_packages SET state=$state WHERE id=$id;";
-            command.Parameters.AddWithValue("$state", (int)state);
-            command.Parameters.AddWithValue("$id", id.ToString());
-            if (await command.ExecuteNonQueryAsync(cancellationToken) == 0) return null;
-            row = row with { State = state };
-        }
         await transaction.CommitAsync(cancellationToken);
         return row;
     }
@@ -265,6 +271,7 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
         command.Parameters.AddWithValue("$components", components);
         command.Parameters.AddWithValue("$servers", servers);
         command.Parameters.AddWithValue("$overlay", (int)plugin.OverlaySource);
+        command.Parameters.AddWithValue("$trust", plugin.TrustRevision);
     }
 
     private static InstalledPlugin Map(SqliteDataReader reader) =>
@@ -273,7 +280,7 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
             DateTimeOffset.Parse(reader.GetString(7), CultureInfo.InvariantCulture),
             InstalledPluginJson.DeserializeComponents(reader.GetString(8)),
             InstalledPluginJson.DeserializeServers(reader.GetString(9)),
-            (PluginOverlaySource)reader.GetInt32(10));
+            (PluginOverlaySource)reader.GetInt32(10), reader.GetInt64(11));
 
     private static bool SameContent(InstalledPlugin stored, InstalledPlugin plugin) =>
         stored.ContentHash.Equals(plugin.ContentHash, StringComparison.Ordinal);

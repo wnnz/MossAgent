@@ -13,7 +13,7 @@ public sealed class PluginPackagesViewModelTests
         new(Guid.NewGuid(), name, "1.0.0", "hashabc", $"plugins/{name}-1.0.0-hashabc8", state,
             $@"D:\packages\{name}.mossplugin", DateTimeOffset.UtcNow,
             [new PluginComponentDescriptor(PluginComponentKind.Skill, "review", "skills/review/SKILL.md")],
-            [], PluginOverlaySource.None);
+            [], PluginOverlaySource.None, 1);
 
     private static PluginPackagePreview Preview => new("demo-plugin", "1.2.3", "demo package", PackagePath,
         "deadbeefcafe1234567890", 2, 512,
@@ -124,7 +124,7 @@ public sealed class PluginPackagesViewModelTests
         var sameVersion = new InstalledPlugin(Guid.NewGuid(), "demo-plugin", "1.2.3", "hashabc",
             "plugins/demo-plugin-1.2.3-hashabc8", InstalledPluginState.Installed,
             @"D:\packages\demo-plugin.mossplugin", DateTimeOffset.UtcNow, [], [],
-            PluginOverlaySource.None);
+            PluginOverlaySource.None, 1);
         var (viewModel, _, previewer, _, _) = Create(sameVersion);
         previewer.Result = Preview;
         using var _ = viewModel;
@@ -324,7 +324,7 @@ public sealed class PluginPackagesViewModelTests
             "plugins/plain-1.0.0-hashabc8", InstalledPluginState.Enabled,
             @"D:\packages\plain.mossplugin", DateTimeOffset.UtcNow,
             [new PluginComponentDescriptor(PluginComponentKind.Asset, "logo", "assets/logo.png")],
-            [], PluginOverlaySource.None);
+            [], PluginOverlaySource.None, 1);
         var (viewModel, _, _, _, settings) = Create(plugin, plain);
         settings.Seed(plugin.Id, "skills/review/SKILL.md", false);
         using var _ = viewModel;

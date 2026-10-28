@@ -11,7 +11,7 @@ public sealed class WorkspaceSkillPickerViewModelTests
         params PluginComponentDescriptor[] components) =>
         new(Guid.NewGuid(), name, "1.0.0", "hashabc", $"plugins/{name}-1.0.0-hashabc8", state,
             $@"D:\packages\{name}.mossplugin", DateTimeOffset.UtcNow, components,
-            [], PluginOverlaySource.None);
+            [], PluginOverlaySource.None, 1);
 
     private static PluginComponentDescriptor Skill(string name, string path) =>
         new(PluginComponentKind.Skill, name, path);

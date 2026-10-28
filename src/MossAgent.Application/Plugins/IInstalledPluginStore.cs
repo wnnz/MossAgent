@@ -10,7 +10,10 @@ namespace MossAgent.Application.Plugins;
 /// atomically removes every same-name row and commits the new row, so at most one version of a
 /// name is installed and two enabled same-name rows can never coexist. Each row also owns a
 /// per-component payload-hash baseline recorded at install time; dispatch verifies on-disk
-/// bytes against it and marks the row Drifted on any missing entry or mismatch.</summary>
+/// bytes against it and marks the row Drifted on any missing entry or mismatch. Every row
+/// carries a store-owned trust_revision: inserted and replaced rows start at 1 and
+/// <see cref="SetStateAsync"/> increments it on each real state transition, so the revision
+/// identifies the exact trust generation a dispatch ran under.</summary>
 public interface IInstalledPluginStore
 {
     Task<InstalledPlugin?> GetAsync(Guid id, CancellationToken cancellationToken);
@@ -36,14 +39,17 @@ public interface IInstalledPluginStore
     /// by name unconditionally. The new row's state is whatever <paramref name="plugin"/>
     /// carries — install always supplies <see cref="InstalledPluginState.Installed"/> so a
     /// replaced payload must be re-trusted by an explicit enable, never inheriting the old
-    /// row's trust. The caller owns payload-directory cleanup after commit.</summary>
+    /// row's trust; the new row's trust revision likewise resets to 1. The caller owns
+    /// payload-directory cleanup after commit.</summary>
     Task<InstalledPlugin> ReplaceByNameAsync(InstalledPlugin plugin,
         IReadOnlyDictionary<string, string> payloadHashes, CancellationToken cancellationToken);
 
     /// <summary>Single-statement state transition. Lifecycle transitions are total and
     /// idempotent, so no expected-state check is needed; Drifted is reachable from any state.
-    /// Enablement of a drifted row is refused at the installer layer, not here. Returns the
-    /// updated row or null when the id no longer exists.</summary>
+    /// Enablement of a drifted row is refused at the installer layer, not here. A real
+    /// transition also increments the row's trust revision; a same-state call is a no-op that
+    /// leaves the revision untouched. Returns the updated row or null when the id no longer
+    /// exists.</summary>
     Task<InstalledPlugin?> SetStateAsync(Guid id, InstalledPluginState state, CancellationToken cancellationToken);
 
     /// <summary>Removes the row and returns it as stored, or null when the id no longer

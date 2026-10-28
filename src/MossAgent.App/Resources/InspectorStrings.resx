@@ -255,7 +255,9 @@
   <data name="AuditSubagentShareOff" xml:space="preserve"><value>独立上下文</value></data>
   <data name="AuditSkillActivationsTitle" xml:space="preserve"><value>插件技能激活（{0}）</value></data>
   <data name="AuditSkillInjected" xml:space="preserve"><value>已注入提示词</value></data>
-  <data name="AuditSkillActivationMetadata" xml:space="preserve"><value>{0} · 哈希 {1} · {2:yyyy/MM/dd HH:mm:ss}</value></data>
+  <data name="AuditSkillActivationMetadata" xml:space="preserve"><value>{0} · 哈希 {1} · {2:yyyy/MM/dd HH:mm:ss} · r{3}</value></data>
+  <data name="AuditSkillPluginRemoved" xml:space="preserve"><value>插件已移除</value></data>
+  <data name="AuditSkillTrustChanged" xml:space="preserve"><value>信任已变化（r{0}→r{1}）</value></data>
   <data name="AuditBrowserSessionsTitle" xml:space="preserve"><value>浏览器会话（{0}）</value></data>
   <data name="AuditBrowserSessionSummary" xml:space="preserve"><value>{0} · {1}</value></data>
   <data name="AuditBrowserSessionAttached" xml:space="preserve"><value>已附加</value></data>

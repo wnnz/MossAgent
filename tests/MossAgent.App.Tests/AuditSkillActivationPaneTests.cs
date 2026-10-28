@@ -21,9 +21,10 @@ public sealed class AuditSkillActivationPaneTests : IAsyncLifetime
     private static ToolExecutionAuditRecord Record(Guid taskId) => new(Guid.NewGuid(), taskId, "call", "file.read",
         ToolRiskLevel.ReadOnly, ApprovalPolicy.ReadOnly, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, true, true, null, 1, 0);
 
-    private static TaskSkillActivation Activation(Guid taskId, string? text = null) => new(Guid.NewGuid(), taskId,
+    private static TaskSkillActivation Activation(Guid taskId, string? text = null,
+        long trustRevision = 1) => new(Guid.NewGuid(), taskId,
         Guid.NewGuid(), "demo-plugin", "1.2.0", new string('a', 64), "skills/a/SKILL.md",
-        text ?? "bounded skill body", DateTimeOffset.UnixEpoch);
+        text ?? "bounded skill body", DateTimeOffset.UnixEpoch, trustRevision);
 
     private static InspectorProbeAuditReader ReaderWithExecution(Guid taskId) => new()
     {

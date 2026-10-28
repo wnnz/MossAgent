@@ -46,9 +46,10 @@ public sealed class PluginPackageInstaller(
             MoveIntoPlace(staging, final);
             return hashes;
         });
+        // The store writes trust_revision=1 regardless; the new row is a fresh trust generation.
         var plugin = new InstalledPlugin(Guid.NewGuid(), preview.Name, preview.Version, preview.ContentHash,
             relative, InstalledPluginState.Installed, preview.SourcePath, _time.GetUtcNow(),
-            preview.Components, preview.DeclaredMcpServers, preview.OverlaySource);
+            preview.Components, preview.DeclaredMcpServers, preview.OverlaySource, 1);
         var installed = await GuardedAsync(final, "the installed plugin row could not be written",
             () => replaced.Count == 0
                 ? store.InsertAsync(plugin, payloadHashes, cancellationToken)

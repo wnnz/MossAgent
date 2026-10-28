@@ -11,13 +11,13 @@ public sealed class PluginComponentHashMigrationTests
         new(id, "demo", "1.0", new string('a', 64), "demo-1-0-aaaaaaaa",
             InstalledPluginState.Installed, "/tmp/p.mossplugin", DateTimeOffset.UnixEpoch,
             [new PluginComponentDescriptor(PluginComponentKind.Skill, "a", "skills/a/SKILL.md")],
-            [], PluginOverlaySource.None);
+            [], PluginOverlaySource.None, 1);
 
     [Fact]
     public async Task FreshDatabaseCreatesPluginComponentHashesAtVersionFifty()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
-        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(52, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='plugin_component_hashes';"));
         var plugin = await new SqliteInstalledPluginStore(fixture.Connections)
@@ -62,7 +62,7 @@ public sealed class PluginComponentHashMigrationTests
             WHEN NEW.version=50 BEGIN SELECT RAISE(ABORT,'synthetic migration failure'); END;
             """);
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Initializer.InitializeAsync(fixture.Token));
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='plugin_component_hashes';"));
         Assert.Equal(0, await fixture.CountAsync(
@@ -74,7 +74,7 @@ public sealed class PluginComponentHashMigrationTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_fifty;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(52, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM schema_versions WHERE version=50;"));
         Assert.Equal(1, await fixture.CountAsync(
@@ -97,7 +97,7 @@ public sealed class PluginComponentHashMigrationTests
         await fixture.ExecuteAsync("DELETE FROM schema_versions WHERE version=50;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(52, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(new string('a', 64),
             (await store.ListPayloadHashesAsync(plugin.Id, fixture.Token))["skills/a/SKILL.md"]);
         Assert.False(await settings.IsSkillEnabledAsync(plugin.Id, "skills/a/SKILL.md", fixture.Token));

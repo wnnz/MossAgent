@@ -55,7 +55,8 @@ public sealed class PluginSkillActivator(
             entries.Add(entry);
             total += extra;
             rows.Add(new TaskSkillActivation(Guid.NewGuid(), taskId, plugin.Id, plugin.Name,
-                plugin.Version, plugin.ContentHash, component.RelativePath, content, _time.GetUtcNow()));
+                plugin.Version, plugin.ContentHash, component.RelativePath, content,
+                _time.GetUtcNow(), plugin.TrustRevision));
         }
         await activations.SaveForTaskAsync(taskId, rows, cancellationToken);
         return entries.Count == 0 ? null : string.Join('\n', entries);

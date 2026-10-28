@@ -139,7 +139,7 @@ public sealed class PluginPackageInstallerTests
         var first = await fixture.Installer().InstallAsync(path, fixture.Token);
         var seeded = new InstalledPlugin(Guid.NewGuid(), "demo-plugin", "9.9.9", new string('b', 64),
             "demo-plugin-9-9-9-bbbbbbbb", InstalledPluginState.Enabled, "/tmp/seeded.mossplugin",
-            DateTimeOffset.UnixEpoch, [], [], PluginOverlaySource.None);
+            DateTimeOffset.UnixEpoch, [], [], PluginOverlaySource.None, 1);
         await fixture.Store().InsertAsync(seeded, new Dictionary<string, string>(), fixture.Token);
         Assert.Equal(2, await fixture.CountAsync("SELECT COUNT(*) FROM plugin_packages;"));
         fixture.Packages.WritePackage(

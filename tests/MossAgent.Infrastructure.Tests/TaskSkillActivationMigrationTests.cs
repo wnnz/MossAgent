@@ -11,15 +11,15 @@ public sealed class TaskSkillActivationMigrationTests
     public async Task FreshDatabaseCreatesTaskSkillActivationsAtVersionFortySeven()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
-        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(52, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='task_skill_activations';"));
         var hash = new string('a', 64);
         var orphaned = await Assert.ThrowsAsync<SqliteException>(() => fixture.ExecuteAsync(
-            $"INSERT INTO task_skill_activations VALUES('a','{Guid.NewGuid()}','p','demo','1.0','{hash}','skills/a/SKILL.md','body','t');"));
+            $"INSERT INTO task_skill_activations VALUES('a','{Guid.NewGuid()}','p','demo','1.0','{hash}','skills/a/SKILL.md','body','t',1);"));
         Assert.Equal(19, orphaned.SqliteErrorCode);
         var oversized = await Assert.ThrowsAsync<SqliteException>(() => fixture.ExecuteAsync(
-            $"INSERT INTO task_skill_activations VALUES('b','{fixture.Task.Id}','p','demo','1.0','{hash}','skills/a/SKILL.md','{new string('x', 8193)}','t');"));
+            $"INSERT INTO task_skill_activations VALUES('b','{fixture.Task.Id}','p','demo','1.0','{hash}','skills/a/SKILL.md','{new string('x', 8193)}','t',1);"));
         Assert.Equal(19, oversized.SqliteErrorCode);
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM pragma_foreign_key_check;"));
     }
@@ -35,13 +35,13 @@ public sealed class TaskSkillActivationMigrationTests
             WHEN NEW.version=47 BEGIN SELECT RAISE(ABORT,'synthetic migration failure'); END;
             """);
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Initializer.InitializeAsync(fixture.Token));
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='task_skill_activations';"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_forty_seven;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(52, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM schema_versions WHERE version=47;"));
         Assert.Equal(1, await fixture.CountAsync(
@@ -55,12 +55,12 @@ public sealed class TaskSkillActivationMigrationTests
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
         var store = new SqliteTaskSkillActivationStore(fixture.Connections);
         var row = new TaskSkillActivation(Guid.NewGuid(), fixture.Task.Id, Guid.NewGuid(), "demo",
-            "1.0", new string('a', 64), "skills/a/SKILL.md", "pinned body", DateTimeOffset.UnixEpoch);
+            "1.0", new string('a', 64), "skills/a/SKILL.md", "pinned body", DateTimeOffset.UnixEpoch, 1);
         await store.SaveForTaskAsync(fixture.Task.Id, [row], fixture.Token);
         await fixture.ExecuteAsync("DELETE FROM schema_versions WHERE version=47;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(52, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal([row], await store.ListForTaskAsync(fixture.Task.Id, fixture.Token));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM pragma_foreign_key_check;"));
     }

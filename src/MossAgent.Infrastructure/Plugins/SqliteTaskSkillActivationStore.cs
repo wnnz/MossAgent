@@ -12,7 +12,7 @@ namespace MossAgent.Infrastructure.Plugins;
 public sealed class SqliteTaskSkillActivationStore(SqliteConnectionFactory connections) : ITaskSkillActivationStore
 {
     private const string Columns =
-        "id,task_id,plugin_id,plugin_name,plugin_version,content_hash,component_path,skill_text,activated_at";
+        "id,task_id,plugin_id,plugin_name,plugin_version,content_hash,component_path,skill_text,activated_at,trust_revision";
 
     public async Task SaveForTaskAsync(Guid taskId, IReadOnlyList<TaskSkillActivation> rows,
         CancellationToken cancellationToken)
@@ -29,7 +29,7 @@ public sealed class SqliteTaskSkillActivationStore(SqliteConnectionFactory conne
             await using var command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = $"INSERT INTO task_skill_activations({Columns}) "
-                + "VALUES($id,$task,$plugin,$name,$version,$hash,$path,$text,$at);";
+                + "VALUES($id,$task,$plugin,$name,$version,$hash,$path,$text,$at,$trust);";
             AddParameters(command, taskId, row);
             await command.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -69,10 +69,12 @@ public sealed class SqliteTaskSkillActivationStore(SqliteConnectionFactory conne
         command.Parameters.AddWithValue("$path", row.ComponentPath);
         command.Parameters.AddWithValue("$text", row.SkillText);
         command.Parameters.AddWithValue("$at", row.ActivatedAt.ToString("O"));
+        command.Parameters.AddWithValue("$trust", row.TrustRevision);
     }
 
     private static TaskSkillActivation Map(SqliteDataReader reader) =>
         new(Guid.Parse(reader.GetString(0)), Guid.Parse(reader.GetString(1)), Guid.Parse(reader.GetString(2)),
             reader.GetString(3), reader.GetString(4), reader.GetString(5), reader.GetString(6),
-            reader.GetString(7), DateTimeOffset.Parse(reader.GetString(8), CultureInfo.InvariantCulture));
+            reader.GetString(7), DateTimeOffset.Parse(reader.GetString(8), CultureInfo.InvariantCulture),
+            reader.GetInt64(9));
 }

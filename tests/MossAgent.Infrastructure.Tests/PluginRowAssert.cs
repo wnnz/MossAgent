@@ -21,6 +21,7 @@ internal static class PluginRowAssert
         Assert.Equal(expected.Components, row.Components);
         Assert.Equal(expected.DeclaredMcpServers, row.DeclaredMcpServers);
         Assert.Equal(expected.OverlaySource, row.OverlaySource);
+        Assert.Equal(expected.TrustRevision, row.TrustRevision);
         return row;
     }
 }

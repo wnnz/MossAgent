@@ -23,8 +23,13 @@ public sealed class PluginSkillActivatorTests : IDisposable
 
     private static InstalledPlugin Plugin(string name, InstalledPluginState state,
         params PluginComponentDescriptor[] components) =>
+        Plugin(name, state, 1, components);
+
+    private static InstalledPlugin Plugin(string name, InstalledPluginState state, long trustRevision,
+        params PluginComponentDescriptor[] components) =>
         new(Guid.NewGuid(), name, "1.0", new string('a', 64), $"{name}-1-0-aaaaaaaa", state,
-            "/tmp/pkg.mossplugin", DateTimeOffset.UnixEpoch, components, [], PluginOverlaySource.None);
+            "/tmp/pkg.mossplugin", DateTimeOffset.UnixEpoch, components, [], PluginOverlaySource.None,
+            trustRevision);
 
     private static PluginComponentDescriptor Skill(string relativePath) =>
         new(PluginComponentKind.Skill, relativePath, relativePath);
@@ -71,6 +76,20 @@ public sealed class PluginSkillActivatorTests : IDisposable
         Assert.Equal("skills/a/SKILL.md", row.ComponentPath);
         Assert.Equal("do the bounded thing", row.SkillText);
         Assert.Equal(_time.GetUtcNow(), row.ActivatedAt);
+        Assert.Equal(1, row.TrustRevision);
+    }
+
+    [Fact]
+    public async Task ActivationRowsCarryThePluginsTrustRevisionAtDispatch()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled, 7, Skill("skills/a/SKILL.md"));
+        WriteSkill(plugin, "skills/a/SKILL.md", "revisioned body");
+
+        var text = await Subject([plugin]).BuildSkillInstructionsAsync(Guid.NewGuid(),
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(text);
+        Assert.Equal(7, Assert.Single(Assert.Single(_activations.Saves).Rows).TrustRevision);
     }
 
     [Theory]

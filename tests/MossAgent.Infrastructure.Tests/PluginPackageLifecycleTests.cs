@@ -22,7 +22,7 @@ public sealed class PluginPackageLifecycleTests
         Assert.Equal(InstalledPluginState.Installed, installed.State);
         Assert.Equal(InstalledPluginState.Enabled,
             (await installer.EnableAsync(installed.Id, fixture.Token))!.State);
-        PluginRowAssert.Equal(installed with { State = InstalledPluginState.Enabled },
+        PluginRowAssert.Equal(installed with { State = InstalledPluginState.Enabled, TrustRevision = 2 },
             await fixture.Store().GetAsync(installed.Id, fixture.Token));
         Assert.Equal(InstalledPluginState.Disabled,
             (await installer.DisableAsync(installed.Id, fixture.Token))!.State);
@@ -119,7 +119,7 @@ public sealed class PluginPackageLifecycleTests
         Assert.Equal(InstalledPluginState.Drifted,
             (await store.GetAsync(installed.Id, fixture.Token))!.State);
 
-        PluginRowAssert.Equal(drifted with { State = InstalledPluginState.Disabled },
+        PluginRowAssert.Equal(drifted with { State = InstalledPluginState.Disabled, TrustRevision = 3 },
             await installer.DisableAsync(installed.Id, fixture.Token));
 
         await store.SetStateAsync(installed.Id, InstalledPluginState.Drifted, fixture.Token);

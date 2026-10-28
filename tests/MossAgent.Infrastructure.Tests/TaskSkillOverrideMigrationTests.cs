@@ -11,13 +11,13 @@ public sealed class TaskSkillOverrideMigrationTests
         new(id, "demo", "1.0", new string('a', 64), "demo-1-0-aaaaaaaa",
             InstalledPluginState.Installed, "/tmp/p.mossplugin", DateTimeOffset.UnixEpoch,
             [new PluginComponentDescriptor(PluginComponentKind.Skill, "a", "skills/a/SKILL.md")],
-            [], PluginOverlaySource.None);
+            [], PluginOverlaySource.None, 1);
 
     [Fact]
     public async Task FreshDatabaseCreatesTaskSkillOverridesAtVersionFiftyOne()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
-        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(52, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='task_skill_overrides';"));
         var orphaned = await Assert.ThrowsAsync<SqliteException>(() => fixture.ExecuteAsync(
@@ -46,7 +46,7 @@ public sealed class TaskSkillOverrideMigrationTests
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(52, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='task_skill_overrides';"));
         Assert.False(await settings.IsSkillEnabledAsync(plugin.Id, "skills/a/SKILL.md", fixture.Token));
@@ -64,13 +64,13 @@ public sealed class TaskSkillOverrideMigrationTests
             WHEN NEW.version=51 BEGIN SELECT RAISE(ABORT,'synthetic migration failure'); END;
             """);
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Initializer.InitializeAsync(fixture.Token));
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='task_skill_overrides';"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_fifty_one;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(52, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM schema_versions WHERE version=51;"));
         Assert.Equal(1, await fixture.CountAsync(
@@ -89,7 +89,7 @@ public sealed class TaskSkillOverrideMigrationTests
         await fixture.ExecuteAsync("DELETE FROM schema_versions WHERE version=51;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(52, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal([new TaskSkillOverride(fixture.Task.Id, pluginId, "skills/a/SKILL.md", false)],
             await overrides.ListForTaskAsync(fixture.Task.Id, fixture.Token));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM pragma_foreign_key_check;"));

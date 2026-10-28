@@ -5,10 +5,13 @@ using MossAgent.Domain.Plugins;
 namespace MossAgent.App.ViewModels;
 
 /// <summary>Projects one persisted <see cref="TaskSkillActivation"/> into the audit pane. The
-/// row shows which plugin version and component injected instructions into this task's prompt;
-/// the detail is a bounded excerpt of the exact stored skill text so the snapshot stays
-/// auditable without replaying it.</summary>
-public sealed class AuditSkillActivationViewModel(TaskSkillActivation record)
+/// row shows which plugin version and component injected instructions into this task's prompt
+/// and the plugin trust revision recorded at dispatch; the detail is a bounded excerpt of the
+/// exact stored skill text so the snapshot stays auditable without replaying it. When the pane
+/// could resolve the plugin's current row (<paramref name="pluginChecked"/>), a missing row is
+/// marked as removed and a differing current revision is marked as changed since dispatch.</summary>
+public sealed class AuditSkillActivationViewModel(TaskSkillActivation record,
+    long? currentTrustRevision = null, bool pluginChecked = false)
 {
     private const int DetailLimit = 500;
 
@@ -16,10 +19,19 @@ public sealed class AuditSkillActivationViewModel(TaskSkillActivation record)
     public string ProfileName => $"{LimitName(Record.PluginName)} v{LimitName(Record.PluginVersion)}";
     public string OutcomeKind => "success";
     public string OutcomeLabel => InspectorText.Get("AuditSkillInjected");
-    public string Metadata => InspectorText.Format("AuditSkillActivationMetadata",
+    public string Metadata => Marked(InspectorText.Format("AuditSkillActivationMetadata",
         Record.ComponentPath, Record.ContentHash[..Math.Min(8, Record.ContentHash.Length)],
-        Record.ActivatedAt.ToLocalTime());
+        Record.ActivatedAt.ToLocalTime(), Record.TrustRevision));
     public string Detail => Limit(Record.SkillText, DetailLimit);
+
+    private string Marked(string metadata)
+    {
+        if (pluginChecked && currentTrustRevision is null)
+            return $"{metadata} · {InspectorText.Get("AuditSkillPluginRemoved")}";
+        if (currentTrustRevision is { } current && current != Record.TrustRevision)
+            return $"{metadata} · {InspectorText.Format("AuditSkillTrustChanged", Record.TrustRevision, current)}";
+        return metadata;
+    }
 
     private static string LimitName(string value) => Limit(value, 160);
 

@@ -11,7 +11,7 @@ public sealed class SqlitePluginComponentSettingsTests
         new(Guid.NewGuid(), name, "1.0", new string('a', 64), $"{name}-1-0-aaaaaaaa",
             InstalledPluginState.Installed, "/tmp/p.mossplugin", DateTimeOffset.UnixEpoch,
             [new PluginComponentDescriptor(PluginComponentKind.Skill, "a", "skills/a/SKILL.md")],
-            [], PluginOverlaySource.None);
+            [], PluginOverlaySource.None, 1);
 
     [Fact]
     public async Task AbsentRowsReportTheDefaultEnabledStateAndNoOverrides()

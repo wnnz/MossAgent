@@ -70,6 +70,7 @@ public sealed class SqliteDatabaseInitializer(
         await ApplyVersionAsync(connection, 49, PluginComponentSettingsDatabaseSchema.VersionFortyNine, cancellationToken);
         await PluginComponentHashMigration.ApplyAsync(connection, cancellationToken);
         await ApplyVersionAsync(connection, 51, TaskSkillOverrideDatabaseSchema.VersionFiftyOne, cancellationToken);
+        await PluginTrustRevisionMigration.ApplyAsync(connection, cancellationToken);
         await SqliteInterruptedWorkRecovery.RecoverAsync(connection, cancellationToken);
     }
 

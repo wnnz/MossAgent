@@ -10,7 +10,7 @@ public sealed class SqliteTaskSkillActivationStoreTests
 {
     private static TaskSkillActivation Row(Guid taskId, string name, string path, string? text = null) =>
         new(Guid.NewGuid(), taskId, Guid.NewGuid(), name, "1.0", new string('a', 64), path,
-            text ?? $"body of {path}", DateTimeOffset.UnixEpoch);
+            text ?? $"body of {path}", DateTimeOffset.UnixEpoch, 1);
 
     [Fact]
     public async Task SaveAndListRoundTripsRowsInNameThenPathOrder()

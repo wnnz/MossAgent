@@ -15,6 +15,7 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
     private readonly ISubagentRunJournal? _runJournal;
     private readonly IBrowserSessionJournal? _browserJournal;
     private readonly ITaskSkillActivationStore? _skillActivations;
+    private readonly IInstalledPluginStore? _installedPlugins;
     private Guid? _taskId;
     private ToolExecutionAuditRecord? _selectedExecution;
     private AuditSubagentRunViewModel? _selectedSubagentRun;
@@ -28,12 +29,14 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
     private int _artifactVersion;
 
     public AuditPaneViewModel(IToolExecutionAuditReader reader, ISubagentRunJournal? runJournal = null,
-        IBrowserSessionJournal? browserJournal = null, ITaskSkillActivationStore? skillActivations = null)
+        IBrowserSessionJournal? browserJournal = null, ITaskSkillActivationStore? skillActivations = null,
+        IInstalledPluginStore? installedPlugins = null)
     {
         _reader = reader;
         _runJournal = runJournal;
         _browserJournal = browserJournal;
         _skillActivations = skillActivations;
+        _installedPlugins = installedPlugins;
         RefreshCommand = new AsyncRelayCommand(RefreshAsync, () => HasTask && !IsLoading);
     }
 
@@ -153,8 +156,10 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
             SubagentRuns.ReplaceWith(runs.Where(run => run.TaskId == taskId).DistinctBy(run => run.RunId)
                 .Select(run => new AuditSubagentRunViewModel(run)));
             BrowserSessions.ReplaceWith(sessions);
-            SkillActivations.ReplaceWith(skills.Where(item => item.TaskId == taskId).DistinctBy(item => item.Id)
-                .Select(item => new AuditSkillActivationViewModel(item)));
+            var activationItems = await ProjectSkillActivationsAsync(
+                skills.Where(item => item.TaskId == taskId).DistinctBy(item => item.Id), token);
+            if (_disposed || generation != _generation) return;
+            SkillActivations.ReplaceWith(activationItems);
             SelectedExecution = Executions.FirstOrDefault(record => record.Id == selectionId) ?? Executions.FirstOrDefault();
             SelectedSubagentRun = SubagentRuns.FirstOrDefault(run => run.Record.RunId == selectedRunId)
                 ?? SubagentRuns.FirstOrDefault();
@@ -205,6 +210,28 @@ public sealed class AuditPaneViewModel : ObservableObject, IDisposable
         if (_skillActivations is null) return [];
         try { return await _skillActivations.ListForTaskAsync(taskId, token); }
         catch (Exception) { return []; }
+    }
+
+    // The current plugin lookup is best-effort too: without a store the row keeps only its
+    // recorded revision, and a failed or empty lookup degrades to the removed marker —
+    // neither outcome may break the audit path.
+    private async Task<IReadOnlyList<AuditSkillActivationViewModel>> ProjectSkillActivationsAsync(
+        IEnumerable<TaskSkillActivation> items, CancellationToken token)
+    {
+        var projected = new List<AuditSkillActivationViewModel>();
+        foreach (var item in items)
+        {
+            InstalledPlugin? current = null;
+            if (_installedPlugins is not null)
+            {
+                try { current = await _installedPlugins.GetAsync(item.PluginId, token); }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+                catch (Exception) { current = null; }
+            }
+            projected.Add(new AuditSkillActivationViewModel(item, current?.TrustRevision,
+                _installedPlugins is not null));
+        }
+        return projected;
     }
 
     private async Task LoadArtifactsAsync(ToolExecutionAuditRecord? execution, int version)
