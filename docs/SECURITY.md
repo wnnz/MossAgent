@@ -93,7 +93,10 @@ Microsoft.Mxc.Sdk 引用已从 `MossAgent.Platform.Windows` 与集中包管理�
   cmdlet 对已授予 DACL 的路径仍返回拒绝访问（PowerShell provider 路径解析在未注册
   AppContainer 中退化）；`[IO.File]`/`[IO.Directory]` 原始 API 正常。进程的 NT 工作目录
   正确落在授权根，但 PowerShell `$PWD` 只显示 `C:\`（provider 表象，非真实 cwd）。
-- 待验矩阵：网络 capability 行为、链接/重解析点、UNC、
+- 已实测：junction 逃逸到根外被拒（`SandboxBoundaryTests`）、多授权根同时可达、
+  `filesystem.search_text` 的真实 rg 在容器内运行且不能越出授权根（rg 目录不可授予时
+  按环境前置跳过）、网络 capability SID 打包与禁网容器 socket 拒绝（`SandboxNetworkTests`）。
+- 待验矩阵：UNC 路径、
   发布单文件包内运行时依赖定位，以及在可授权 Git/shell 机器上的完整验收。
 
 系统预置如确有需要，应先准备可审阅的具体变更和回收方案，再按实际范围取得授权。
