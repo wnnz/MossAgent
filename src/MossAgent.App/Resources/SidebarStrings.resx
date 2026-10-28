@@ -20,6 +20,7 @@
   <data name="DragFailed" xml:space="preserve"><value>拖动未完成，请重试，或使用项目菜单中的向上移动和向下移动。</value></data>
   <data name="ProjectDrainActive" xml:space="preserve"><value>授权已更新，相关资源仍在退出</value></data>
   <data name="ProjectDrainUnknown" xml:space="preserve"><value>运行资源退出状态未知，重启后请核实</value></data>
+  <data name="ProjectDrainVerify" xml:space="preserve"><value>重新核实</value></data>
   <data name="LoadFailed" xml:space="preserve"><value>无法读取侧边栏排序设置。请检查数据目录权限或修复 sidebar-settings.json 后重新加载；原文件不会被覆盖。</value></data>
   <data name="SaveFailed" xml:space="preserve"><value>排序设置未能完成，已保留当前顺序。请检查数据目录权限和 sidebar-settings.json，重新加载后再试。</value></data>
 </root>

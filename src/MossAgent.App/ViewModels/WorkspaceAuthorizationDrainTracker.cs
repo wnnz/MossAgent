@@ -33,6 +33,15 @@ internal sealed class WorkspaceAuthorizationDrainTracker : IDisposable
 
     public void Refresh(WorkspaceProjectNavigationViewModel row) => _ = RefreshAsync(row);
 
+    /// <summary>人工核实该项目的清理未知租约：监视器复核每个失败租约的清理步骤，
+    /// 确认释放的租约被移除并恢复准入；核实后再显式刷新行徽标，
+    /// 保证状态未变化时徽标也立即落定。</summary>
+    public async Task VerifyCleanupAsync(Guid projectId, CancellationToken cancellationToken = default)
+    {
+        await _monitor.VerifyCleanupAsync(projectId, cancellationToken).ConfigureAwait(false);
+        if (_findRow(projectId) is { } row) await RefreshAsync(row).ConfigureAwait(false);
+    }
+
     public void Dispose()
     {
         _monitor.DrainStateChanged -= HandleDrainStateChanged;

@@ -3,7 +3,8 @@ using MossAgent.Tools.Abstractions.Files;
 
 namespace MossAgent.App.Tests;
 
-internal sealed class DrainBadgeRootFactory(IReadOnlyList<DirectoryObjectIdentity> roots) : IRootIdentitySessionFactory
+internal sealed class DrainBadgeRootFactory(IReadOnlyList<DirectoryObjectIdentity> roots,
+    int failAttempts = int.MaxValue) : IRootIdentitySessionFactory
 {
     private int _opens;
 
@@ -12,6 +13,6 @@ internal sealed class DrainBadgeRootFactory(IReadOnlyList<DirectoryObjectIdentit
         cancellationToken.ThrowIfCancellationRequested();
         var failure = Interlocked.Increment(ref _opens) == 2
             ? new InvalidOperationException("synthetic drain badge release failure") : null;
-        return Task.FromResult<IRootIdentitySession>(new DrainBadgeRootSession(roots, failure));
+        return Task.FromResult<IRootIdentitySession>(new DrainBadgeRootSession(roots, failure, failAttempts));
     }
 }

@@ -177,6 +177,12 @@
                   </ui:AppProjectNavigationRow>
                   <ui:AppText Text="{Binding DrainLabel}" Classes="subtle type-10"
                               IsVisible="{Binding HasDrainBadge}" Margin="26,0,8,2" TextWrapping="Wrap" />
+                  <ui:AppActionButton Label="{Binding DrainVerifyLabel}"
+                                      Classes="ghost menu-option align-leading" HorizontalAlignment="Stretch"
+                                      IsVisible="{Binding CanVerifyDrain}" IsEnabled="{Binding !IsVerifyingDrain}"
+                                      Margin="26,0,8,4"
+                                      Command="{Binding $parent[Window].DataContext.Workspace.Catalog.VerifyDrainCommand}"
+                                      CommandParameter="{Binding}" />
                   <ui:AppItemsControl Classes="sidebar-task-list" ItemsSource="{Binding TaskPreview.Items}"
                                       IsVisible="{Binding IsExpanded}">
                     <ItemsControl.ItemTemplate>

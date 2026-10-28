@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using MossAgent.Application.Authorization;
 using MossAgent.Application.Git;
 using MossAgent.Application.Persistence;
+using MossAgent.App.Browser;
 using MossAgent.App.Services;
 using MossAgent.Domain;
 namespace MossAgent.App.ViewModels;
@@ -58,6 +59,7 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         EditProjectCommand = new RelayCommand<WorkspaceProjectNavigationViewModel>(
             OpenProjectEditor, _ => !IsLocked);
         SelectTaskCommand = new RelayCommand<AgentTask>(SelectTask);
+        VerifyDrainCommand = new AsyncRelayCommand<WorkspaceProjectNavigationViewModel>(VerifyDrainAsync);
         _navigation = new WorkspaceNavigationController(() => (SelectedProject?.Id, SelectedTask?.Id),
             () => !IsLocked, NavigateToHistoryTarget);
         NavigateBackCommand = _navigation.BackCommand;
@@ -85,6 +87,8 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
     public IRelayCommand<ProjectProfile> SelectProjectCommand { get; }
     public IRelayCommand<WorkspaceProjectNavigationViewModel> EditProjectCommand { get; }
     public IRelayCommand<AgentTask> SelectTaskCommand { get; }
+    /// <summary>侧栏项目行的人工核实入口：仅对清理未知行触发租约级复核。</summary>
+    public IAsyncRelayCommand<WorkspaceProjectNavigationViewModel> VerifyDrainCommand { get; }
     public IRelayCommand NavigateBackCommand { get; }
     public IRelayCommand NavigateForwardCommand { get; }
     public ProjectProfile? SelectedProject
@@ -331,6 +335,24 @@ public sealed class WorkspaceCatalogViewModel : ObservableObject
         if (group is null) return;
         group.IsSummaryOpen = false;
         ProjectEditor.Edit(group.Project);
+    }
+
+    /// <summary>对清理未知项目行触发人工核实；进行中与未知以外的状态直接忽略。</summary>
+    private async Task VerifyDrainAsync(WorkspaceProjectNavigationViewModel? row,
+        CancellationToken cancellationToken)
+    {
+        if (_drainTracker is null
+            || row?.AuthorizationDrain != AuthorizationDrainState.CleanupUnknown
+            || row.IsVerifyingDrain) return;
+        await AvaloniaUiThread.RunAsync(() => row.IsVerifyingDrain = true, cancellationToken);
+        try
+        {
+            await _drainTracker.VerifyCleanupAsync(row.Project.Id, cancellationToken);
+        }
+        finally
+        {
+            await AvaloniaUiThread.RunAsync(() => row.IsVerifyingDrain = false, CancellationToken.None);
+        }
     }
 
     private void UpdateProject(ProjectProfile project)

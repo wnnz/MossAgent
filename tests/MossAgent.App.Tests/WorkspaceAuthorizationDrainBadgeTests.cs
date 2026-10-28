@@ -120,6 +120,63 @@ public sealed class WorkspaceAuthorizationDrainBadgeTests
         Assert.Equal(AuthorizationDrainState.Idle, row.AuthorizationDrain);
     }
 
+    [Fact]
+    public void VerifyAffordanceOnlyAppearsForCleanupUnknown()
+    {
+        var project = new ProjectProfile(Guid.NewGuid(), "授权项目", Path.GetTempPath(),
+            [Path.GetTempPath()], DateTimeOffset.UtcNow);
+        var row = new WorkspaceProjectNavigationViewModel(project);
+        Assert.False(row.CanVerifyDrain);
+        row.AuthorizationDrain = AuthorizationDrainState.Draining;
+        Assert.False(row.CanVerifyDrain);
+        row.AuthorizationDrain = AuthorizationDrainState.CleanupUnknown;
+        Assert.True(row.CanVerifyDrain);
+        row.AuthorizationDrain = AuthorizationDrainState.Idle;
+        Assert.False(row.CanVerifyDrain);
+    }
+
+    [Fact]
+    public async Task VerifyCommandResolvesUnknownBadgeAndRestoresAdmission()
+    {
+        var path = Path.GetTempPath();
+        var identity = new DirectoryObjectIdentity(path, "synthetic-volume", Guid.NewGuid().ToString("N"));
+        var project = new ProjectProfile(Guid.NewGuid(), "授权项目", path, [path], DateTimeOffset.UtcNow)
+            with { RootAuthorizations = [new ProjectRootAuthorization(Guid.NewGuid(), identity)] };
+        var repository = new TestWorkspaceRepository { ProjectItems = [project] };
+        var changes = new ProjectAuthorizationChanges();
+        var monitor = new ProjectAuthorizationMonitor(
+            new WorkspaceProjectAuthorizationReader(repository), changes,
+            roots: new DrainBadgeRootFactory([identity], failAttempts: 2));
+        var catalog = Catalog(repository, monitor);
+        await catalog.ReloadAsync();
+        var row = Assert.Single(catalog.ProjectNavigation);
+        Assert.False(row.CanVerifyDrain);
+
+        // The command is a no-op outside the cleanup-unknown state.
+        await catalog.VerifyDrainCommand.ExecuteAsync(row);
+        Assert.False(row.IsVerifyingDrain);
+        Assert.Equal(AuthorizationDrainState.Idle, row.AuthorizationDrain);
+
+        var lease = await monitor.AcquireAsync(project, Token);
+        repository.ProjectItems = [project with { AuthorizationRevision = 2 }];
+        changes.Publish(project.Id, 2);
+        await Assert.ThrowsAnyAsync<Exception>(() => lease.DisposeAsync().AsTask());
+        await WaitForAsync(() => row.AuthorizationDrain == AuthorizationDrainState.CleanupUnknown);
+        Assert.True(row.CanVerifyDrain);
+        Assert.Equal(SidebarText.Get("ProjectDrainVerify"), row.DrainVerifyLabel);
+
+        // The root session fails twice for the auto-drain; the manual verify attempt succeeds.
+        await catalog.VerifyDrainCommand.ExecuteAsync(row);
+        Assert.False(row.IsVerifyingDrain);
+        await WaitForAsync(() => row.AuthorizationDrain == AuthorizationDrainState.Idle);
+        Assert.False(row.HasDrainBadge);
+        Assert.False(row.CanVerifyDrain);
+
+        await using var next = await monitor.AcquireAsync(repository.ProjectItems[0], Token);
+        Assert.False(next.IsRevoked);
+        await monitor.DisposeAsync();
+    }
+
     private static WorkspaceCatalogViewModel Catalog(TestWorkspaceRepository repository,
         ProjectAuthorizationMonitor monitor) => new(repository, null,
         new WorkspaceProjectService(repository, new TestFolderPickerService()), authorizations: monitor);

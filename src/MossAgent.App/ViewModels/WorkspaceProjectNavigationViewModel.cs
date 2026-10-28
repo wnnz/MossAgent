@@ -28,6 +28,8 @@ public sealed class WorkspaceProjectNavigationViewModel : ObservableObject
     private bool _isVisible = true;
     /// <summary>本项目租约的撤权排空状态，由授权监视器推送。</summary>
     private AuthorizationDrainState _authorizationDrain;
+    /// <summary>是否正在对该项目的清理未知状态执行人工核实。</summary>
+    private bool _isVerifyingDrain;
 
     /// <summary>
     /// 项目资料，点击标题时用于切换当前工作区。
@@ -57,10 +59,24 @@ public sealed class WorkspaceProjectNavigationViewModel : ObservableObject
             if (!SetProperty(ref _authorizationDrain, value)) return;
             OnPropertyChanged(nameof(HasDrainBadge));
             OnPropertyChanged(nameof(DrainLabel));
+            OnPropertyChanged(nameof(CanVerifyDrain));
         }
     }
 
     public bool HasDrainBadge => AuthorizationDrain != AuthorizationDrainState.Idle;
+
+    /// <summary>仅清理未知状态展示人工核实入口；其余排空状态不需要该操作。</summary>
+    public bool CanVerifyDrain => AuthorizationDrain == AuthorizationDrainState.CleanupUnknown;
+
+    /// <summary>人工核实进行中：行内按钮据此禁用，防重复触发。</summary>
+    public bool IsVerifyingDrain
+    {
+        get => _isVerifyingDrain;
+        set => SetProperty(ref _isVerifyingDrain, value);
+    }
+
+    /// <summary>清理未知行的人工核实操作文案。</summary>
+    public string DrainVerifyLabel => SidebarText.Get("ProjectDrainVerify");
 
     public string DrainLabel => AuthorizationDrain switch
     {

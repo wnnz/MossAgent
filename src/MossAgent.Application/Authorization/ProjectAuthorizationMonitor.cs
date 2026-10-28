@@ -188,6 +188,26 @@ public sealed class ProjectAuthorizationMonitor : IAsyncDisposable
         catch { await lease.DisposeAsync().ConfigureAwait(false); throw; }
     }
 
+    /// <summary>Operator-triggered cleanup verification: each release-failed lease for the
+    /// project re-checks its disposal steps under a bounded verify deadline. A lease whose
+    /// steps all confirm (root session retried once if needed) is removed, which lifts the
+    /// admission barrier; any still-incomplete or still-failing step keeps the lease
+    /// registered, so the drain stays CleanupUnknown and admission stays denied.</summary>
+    public async Task<AuthorizationDrainState> VerifyCleanupAsync(Guid projectId,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ProjectAuthorizationLease[] failed;
+        lock (_sync)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            failed = _leases.Where(lease => lease.ProjectId == projectId && lease.ReleaseFailed).ToArray();
+        }
+        await Task.WhenAll(failed.Select(lease => lease.VerifyReleasedAsync(cancellationToken)))
+            .ConfigureAwait(false);
+        return DrainState(projectId);
+    }
+
     private void RevokeOlder(Guid projectId, long revision)
     {
         ProjectAuthorizationLease[] leases;

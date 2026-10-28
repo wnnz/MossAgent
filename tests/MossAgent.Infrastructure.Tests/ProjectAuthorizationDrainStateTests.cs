@@ -191,6 +191,280 @@ public sealed class ProjectAuthorizationDrainStateTests
     }
 
     [Fact]
+    public async Task ManualVerifyReleasesLeaseWhenRootDisposalEventuallySucceeds()
+    {
+        var project = Enrolled();
+        var changes = new ProjectAuthorizationChanges();
+        var reader = new ProjectAuthorizationReaderProbe(project);
+        var identity = project.RootAuthorizations[0]!.Identity;
+        using var gate = new ManualResetEventSlim(true);
+        // Auto-drain exhausts its two attempts; the manual verify attempt succeeds.
+        var session = new BlockingRootIdentitySession(identity, gate,
+            new InvalidOperationException("transient-release-failure"), failAttempts: 2);
+        var opens = 0;
+        var roots = new RootIdentityProbe
+        {
+            Override = (_, _) => Task.FromResult<IRootIdentitySession>(Interlocked.Increment(ref opens) == 2
+                ? session : new RootIdentityProbeSession([identity], () => { }))
+        };
+        var time = new MossAgent.Testing.ManualToolTimeProvider();
+        await using var monitor = new ProjectAuthorizationMonitor(reader, changes, time, roots: roots);
+        var observed = new List<AuthorizationDrainState>();
+        monitor.DrainStateChanged += projectId => observed.Add(monitor.DrainState(projectId));
+        var lease = await monitor.AcquireAsync(project, Token);
+        reader.Current = project with { AuthorizationRevision = 2 };
+        changes.Publish(project.Id, 2);
+
+        var disposing = lease.DisposeAsync().AsTask();
+        for (var i = 0; i < 10 && !disposing.IsCompleted; i++)
+        {
+            time.Advance(ProjectAuthorizationMonitor.RootReleaseRetryDelay);
+            await Task.Delay(20, Token);
+        }
+        await Assert.ThrowsAnyAsync<Exception>(() => disposing.WaitAsync(TimeSpan.FromSeconds(5), Token));
+        Assert.Equal(AuthorizationDrainState.CleanupUnknown, monitor.DrainState(project.Id));
+        Assert.Equal(2, session.Attempts);
+        await Assert.ThrowsAsync<WorkspaceAuthorizationException>(() => monitor.AcquireAsync(reader.Current, Token));
+
+        Assert.Equal(AuthorizationDrainState.Idle, await monitor.VerifyCleanupAsync(project.Id, Token));
+        Assert.Equal(3, session.Attempts);
+        Assert.True(session.Completed);
+        Assert.Equal([AuthorizationDrainState.Draining, AuthorizationDrainState.CleanupUnknown,
+            AuthorizationDrainState.Idle], observed);
+        await using var next = await monitor.AcquireAsync(reader.Current, Token);
+        Assert.False(next.IsRevoked);
+    }
+
+    [Fact]
+    public async Task ManualVerifyRetainsBarrierWhenRootDisposalKeepsFailing()
+    {
+        var project = Enrolled();
+        var changes = new ProjectAuthorizationChanges();
+        var reader = new ProjectAuthorizationReaderProbe(project);
+        var identity = project.RootAuthorizations[0]!.Identity;
+        using var gate = new ManualResetEventSlim(true);
+        var session = new BlockingRootIdentitySession(identity, gate,
+            new InvalidOperationException("persistent-release-failure"), failAttempts: int.MaxValue);
+        var opens = 0;
+        var roots = new RootIdentityProbe
+        {
+            Override = (_, _) => Task.FromResult<IRootIdentitySession>(Interlocked.Increment(ref opens) == 2
+                ? session : new RootIdentityProbeSession([identity], () => { }))
+        };
+        var time = new MossAgent.Testing.ManualToolTimeProvider();
+        var monitor = new ProjectAuthorizationMonitor(reader, changes, time, roots: roots);
+        var lease = await monitor.AcquireAsync(project, Token);
+        reader.Current = project with { AuthorizationRevision = 2 };
+        changes.Publish(project.Id, 2);
+
+        var disposing = lease.DisposeAsync().AsTask();
+        for (var i = 0; i < 10 && !disposing.IsCompleted; i++)
+        {
+            time.Advance(ProjectAuthorizationMonitor.RootReleaseRetryDelay);
+            await Task.Delay(20, Token);
+        }
+        await Assert.ThrowsAnyAsync<Exception>(() => disposing.WaitAsync(TimeSpan.FromSeconds(5), Token));
+        Assert.Equal(AuthorizationDrainState.CleanupUnknown, monitor.DrainState(project.Id));
+
+        Assert.Equal(AuthorizationDrainState.CleanupUnknown, await monitor.VerifyCleanupAsync(project.Id, Token));
+        Assert.Equal(3, session.Attempts);
+        Assert.False(session.Completed);
+        await Assert.ThrowsAsync<WorkspaceAuthorizationException>(() => monitor.AcquireAsync(reader.Current, Token));
+        await Assert.ThrowsAnyAsync<Exception>(() => monitor.DisposeAsync().AsTask());
+    }
+
+    [Fact]
+    public async Task ManualVerifyWithoutFailedLeaseReturnsIdleAndChangesNothing()
+    {
+        var project = Project();
+        var changes = new ProjectAuthorizationChanges();
+        var reader = new ProjectAuthorizationReaderProbe(project);
+        await using var monitor = new ProjectAuthorizationMonitor(reader, changes);
+        var notified = new List<Guid>();
+        monitor.DrainStateChanged += notified.Add;
+
+        Assert.Equal(AuthorizationDrainState.Idle, await monitor.VerifyCleanupAsync(project.Id, Token));
+        var lease = await monitor.AcquireAsync(project, Token);
+        Assert.Equal(AuthorizationDrainState.Idle, await monitor.VerifyCleanupAsync(project.Id, Token));
+        Assert.False(lease.IsRevoked);
+        Assert.Empty(notified);
+        await lease.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task ConcurrentManualVerifyCallsShareASingleAttempt()
+    {
+        var project = Enrolled();
+        var changes = new ProjectAuthorizationChanges();
+        var reader = new ProjectAuthorizationReaderProbe(project);
+        var identity = project.RootAuthorizations[0]!.Identity;
+        using var gate = new ManualResetEventSlim(true);
+        var session = new BlockingRootIdentitySession(identity, gate,
+            new InvalidOperationException("verify-dedup"), failAttempts: 2);
+        var opens = 0;
+        var roots = new RootIdentityProbe
+        {
+            Override = (_, _) => Task.FromResult<IRootIdentitySession>(Interlocked.Increment(ref opens) == 2
+                ? session : new RootIdentityProbeSession([identity], () => { }))
+        };
+        var time = new MossAgent.Testing.ManualToolTimeProvider();
+        await using var monitor = new ProjectAuthorizationMonitor(reader, changes, time, roots: roots);
+        var lease = await monitor.AcquireAsync(project, Token);
+        reader.Current = project with { AuthorizationRevision = 2 };
+        changes.Publish(project.Id, 2);
+
+        var disposing = lease.DisposeAsync().AsTask();
+        for (var i = 0; i < 10 && !disposing.IsCompleted; i++)
+        {
+            time.Advance(ProjectAuthorizationMonitor.RootReleaseRetryDelay);
+            await Task.Delay(20, Token);
+        }
+        await Assert.ThrowsAnyAsync<Exception>(() => disposing.WaitAsync(TimeSpan.FromSeconds(5), Token));
+
+        // Both verify calls overlap the same in-flight re-dispose: only one attempt runs.
+        gate.Reset();
+        var first = monitor.VerifyCleanupAsync(project.Id, Token);
+        var second = monitor.VerifyCleanupAsync(project.Id, Token);
+        gate.Set();
+        var states = await Task.WhenAll(first, second);
+        Assert.All(states, state => Assert.Equal(AuthorizationDrainState.Idle, state));
+        Assert.Equal(3, session.Attempts);
+        Assert.True(session.Completed);
+    }
+
+    [Fact]
+    public async Task ManualVerifyOnDisposedMonitorThrows()
+    {
+        var project = Project();
+        var changes = new ProjectAuthorizationChanges();
+        var reader = new ProjectAuthorizationReaderProbe(project);
+        var monitor = new ProjectAuthorizationMonitor(reader, changes);
+        await monitor.DisposeAsync();
+        await Assert.ThrowsAsync<ObjectDisposedException>(
+            () => monitor.VerifyCleanupAsync(project.Id, Token));
+    }
+
+    [Fact]
+    public async Task ManualVerifyRefusesWhenDrainStepWasNeverConfirmed()
+    {
+        var project = Project();
+        var changes = new ProjectAuthorizationChanges();
+        var reader = new ProjectAuthorizationReaderProbe(project);
+        var time = new MossAgent.Testing.ManualToolTimeProvider();
+        var monitor = new ProjectAuthorizationMonitor(reader, changes, time);
+        var lease = await monitor.AcquireAsync(project, Token);
+        var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        lease.Revocation.Register((_, _) => new ValueTask(pending.Task), null);
+        reader.Current = project with { AuthorizationRevision = 2 };
+        changes.Publish(project.Id, 2);
+
+        var disposing = lease.DisposeAsync().AsTask();
+        time.Advance(ProjectAuthorizationMonitor.DrainTimeout + TimeSpan.FromSeconds(1));
+        await Assert.ThrowsAsync<TimeoutException>(() => disposing.WaitAsync(TimeSpan.FromSeconds(5), Token));
+        Assert.Equal(AuthorizationDrainState.CleanupUnknown, monitor.DrainState(project.Id));
+
+        // The revocation callback is still hung: verify cannot confirm the release.
+        Assert.Equal(AuthorizationDrainState.CleanupUnknown,
+            await monitor.VerifyCleanupAsync(project.Id, Token));
+
+        // Flags record what the drain observed: a step that timed out is never
+        // re-confirmed by verify, even after the underlying task completes late.
+        pending.TrySetResult();
+        await Task.Delay(50, Token);
+        Assert.Equal(AuthorizationDrainState.CleanupUnknown,
+            await monitor.VerifyCleanupAsync(project.Id, Token));
+        await Assert.ThrowsAsync<WorkspaceAuthorizationException>(() => monitor.AcquireAsync(reader.Current, Token));
+        await Assert.ThrowsAnyAsync<Exception>(() => monitor.DisposeAsync().AsTask());
+    }
+
+    [Fact]
+    public async Task ManualVerifyDuringStillBlockedRootDisposalStaysUnknown()
+    {
+        var project = Enrolled();
+        var changes = new ProjectAuthorizationChanges();
+        var reader = new ProjectAuthorizationReaderProbe(project);
+        var identity = project.RootAuthorizations[0]!.Identity;
+        using var gate = new ManualResetEventSlim();
+        var session = new BlockingRootIdentitySession(identity, gate,
+            new InvalidOperationException("still-blocked"), failAttempts: int.MaxValue);
+        var opens = 0;
+        var roots = new RootIdentityProbe
+        {
+            Override = (_, _) => Task.FromResult<IRootIdentitySession>(Interlocked.Increment(ref opens) == 2
+                ? session : new RootIdentityProbeSession([identity], () => { }))
+        };
+        var time = new MossAgent.Testing.ManualToolTimeProvider();
+        var monitor = new ProjectAuthorizationMonitor(reader, changes, time, roots);
+        var lease = await monitor.AcquireAsync(project, Token);
+        reader.Current = project with { AuthorizationRevision = 2 };
+        changes.Publish(project.Id, 2);
+
+        var disposing = lease.DisposeAsync().AsTask();
+        await session.DisposeStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        time.Advance(ProjectAuthorizationMonitor.DrainTimeout + TimeSpan.FromSeconds(1));
+        await Assert.ThrowsAsync<TimeoutException>(() => disposing.WaitAsync(TimeSpan.FromSeconds(5), Token));
+        Assert.Equal(AuthorizationDrainState.CleanupUnknown, monitor.DrainState(project.Id));
+
+        try
+        {
+            // The original dispose attempt is still blocked: the verify retry is itself
+            // bounded by a fresh drain deadline and cannot confirm the release.
+            var verifying = monitor.VerifyCleanupAsync(project.Id, Token);
+            time.Advance(ProjectAuthorizationMonitor.DrainTimeout + TimeSpan.FromSeconds(1));
+            Assert.Equal(AuthorizationDrainState.CleanupUnknown,
+                await verifying.WaitAsync(TimeSpan.FromSeconds(5), Token));
+            await Assert.ThrowsAsync<WorkspaceAuthorizationException>(() => monitor.AcquireAsync(reader.Current, Token));
+        }
+        finally
+        {
+            gate.Set();
+        }
+        await Assert.ThrowsAnyAsync<Exception>(() => monitor.DisposeAsync().AsTask());
+    }
+
+    [Fact]
+    public async Task ManualVerifyConfirmsReleaseAfterBlockedDisposalFinishes()
+    {
+        var project = Enrolled();
+        var changes = new ProjectAuthorizationChanges();
+        var reader = new ProjectAuthorizationReaderProbe(project);
+        var identity = project.RootAuthorizations[0]!.Identity;
+        using var gate = new ManualResetEventSlim();
+        // Once the gate opens the in-flight dispose succeeds; failAttempts 0 means the
+        // blocked first attempt completes after release, and the verify observes that
+        // same call instead of starting a concurrent second Dispose.
+        var session = new BlockingRootIdentitySession(identity, gate,
+            new InvalidOperationException("unused"), failAttempts: 0);
+        var opens = 0;
+        var roots = new RootIdentityProbe
+        {
+            Override = (_, _) => Task.FromResult<IRootIdentitySession>(Interlocked.Increment(ref opens) == 2
+                ? session : new RootIdentityProbeSession([identity], () => { }))
+        };
+        var time = new MossAgent.Testing.ManualToolTimeProvider();
+        await using var monitor = new ProjectAuthorizationMonitor(reader, changes, time, roots: roots);
+        var lease = await monitor.AcquireAsync(project, Token);
+        reader.Current = project with { AuthorizationRevision = 2 };
+        changes.Publish(project.Id, 2);
+
+        var disposing = lease.DisposeAsync().AsTask();
+        await session.DisposeStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        time.Advance(ProjectAuthorizationMonitor.DrainTimeout + TimeSpan.FromSeconds(1));
+        await Assert.ThrowsAsync<TimeoutException>(() => disposing.WaitAsync(TimeSpan.FromSeconds(5), Token));
+        Assert.Equal(AuthorizationDrainState.CleanupUnknown, monitor.DrainState(project.Id));
+
+        // Let the abandoned first attempt actually finish, then re-check: the verify
+        // adopts the completed in-flight call rather than issuing a second Dispose.
+        gate.Set();
+        for (var i = 0; i < 50 && !session.Completed; i++) await Task.Delay(20, Token);
+        Assert.True(session.Completed);
+        Assert.Equal(AuthorizationDrainState.Idle, await monitor.VerifyCleanupAsync(project.Id, Token));
+        Assert.Equal(1, session.Attempts);
+        await using var next = await monitor.AcquireAsync(reader.Current, Token);
+        Assert.False(next.IsRevoked);
+    }
+
+    [Fact]
     public async Task ThrowingObserverCannotBreakRevocationOrLeaseCleanup()
     {
         var project = Project();
