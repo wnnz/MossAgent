@@ -52,7 +52,8 @@ internal sealed class FileChangeDiffRunner(GitCommandRunner git, IDiffInputFileS
         var result = await git.RunAsync(context.WorkingDirectory,
             ["-c", "core.quotepath=false", "-c", "core.safecrlf=false", "-c", "core.autocrlf=false", "--literal-pathspecs", "diff", "--no-index",
              "--no-ext-diff", "--no-textconv", "--no-color", "--text", statistics ? "--numstat" : "--unified=3", "--", before, after],
-            context with { MaximumOutputCharacters = limit }, token, acceptExitCodeOne: true);
+            context with { MaximumOutputCharacters = limit }, token, acceptExitCodeOne: true,
+            extraReadOnlyPaths: [before, after]);
         if (!result.IsSuccess) throw new FileEditException("snapshot_review_failed", "ReviewChangeFailed");
         if ((result.Content?.Length ?? 0) >= limit) throw new FileEditException("snapshot_review_too_large", "ReviewChangeTooLarge");
         return result.Content ?? string.Empty;

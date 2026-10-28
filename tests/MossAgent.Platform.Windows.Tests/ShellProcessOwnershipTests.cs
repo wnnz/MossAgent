@@ -26,21 +26,19 @@ public sealed class ShellProcessOwnershipTests
         Task<ToolResult>? execution = null;
         try
         {
-            var child = "[IO.File]::WriteAllText('child.pid.tmp', [string]$PID); "
-                + "[IO.File]::Move('child.pid.tmp', 'child.pid', $true); Start-Sleep -Seconds 30; "
-                + "[IO.File]::WriteAllText('late.txt', 'late')";
+            var child = $"[IO.File]::WriteAllText('{root}\\child.pid', [string]$PID); "
+                + $"Start-Sleep -Seconds 30; [IO.File]::WriteAllText('{root}\\late.txt', 'late')";
             await File.WriteAllTextAsync(Path.Combine(root, "child.ps1"), child, TestContext.Current.CancellationToken);
-            var command = Launch("child.ps1");
+            var command = Launch(Path.Combine(root, "child.ps1"));
             if (intermediate)
             {
                 await File.WriteAllTextAsync(Path.Combine(root, "middle.ps1"),
-                    command + "; [IO.File]::WriteAllText('middle.pid.tmp', [string]$PID); "
-                    + "[IO.File]::Move('middle.pid.tmp', 'middle.pid', $true); "
-                    + "while (!(Test-Path 'release-middle')) { Start-Sleep -Milliseconds 20 }",
+                    command + $"; [IO.File]::WriteAllText('{root}\\middle.pid', [string]$PID); "
+                    + $"while (!(Test-Path '{root}\\release-middle')) {{ Start-Sleep -Milliseconds 20 }}",
                     TestContext.Current.CancellationToken);
-                command = Launch("middle.ps1");
+                command = Launch(Path.Combine(root, "middle.ps1"));
             }
-            command += "; while (!(Test-Path 'release-parent')) { Start-Sleep -Milliseconds 20 }; "
+            command += $"; while (!(Test-Path '{root}\\release-parent')) {{ Start-Sleep -Milliseconds 20 }}; "
                 + "[Console]::Out.Write('parent-ok')";
             var tool = new ShellRunTool(new AuthorizedPathResolver(), new WindowsTaskProcessLauncher());
             var executor = new ToolExecutor(new ToolRegistry([tool]),
@@ -82,9 +80,10 @@ public sealed class ShellProcessOwnershipTests
         }
     }
 
+    // [Diagnostics.Process]::Start bypasses PowerShell's provider path resolution,
+    // which is unavailable inside an AppContainer (Start-Process throws DriveNotFound).
     private static string Launch(string script) =>
-        "Start-Process pwsh -WindowStyle Hidden -WorkingDirectory (Get-Location).Path "
-        + "-ArgumentList '-NoProfile','-File','" + script + "'";
+        "$null = [Diagnostics.Process]::Start('powershell.exe', '-NoProfile -File \"" + script + "\"')";
 
     private static async Task<Process> BindAsync(string root, string name, Task<ToolResult> execution)
     {

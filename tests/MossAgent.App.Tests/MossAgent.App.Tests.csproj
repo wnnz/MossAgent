@@ -31,6 +31,7 @@
     <Compile Include="../Shared/Socks5TestHandshake.cs" Link="Testing/Socks5TestHandshake.cs" />
     <Compile Include="../Shared/AuthenticatedProxyTestServer.cs" Link="Testing/AuthenticatedProxyTestServer.cs" />
     <Compile Include="../Shared/ProxyTestRequestReader.cs" Link="Testing/ProxyTestRequestReader.cs" />
+    <Compile Include="../Shared/SandboxedGitSupport.cs" Link="Testing/SandboxedGitSupport.cs" />
     <Using Include="MossAgent.Testing" />
   </ItemGroup>
 </Project>

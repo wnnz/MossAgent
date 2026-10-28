@@ -1,10 +1,11 @@
-using System.Diagnostics;
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Processes;
 using MossAgent.Tools.BuiltIn.Processes;
 
 namespace MossAgent.Tools.BuiltIn.Files;
 
-public sealed class SearchTextTool(AuthorizedPathResolver paths) : IAgentTool, IToolRequestPrevalidator
+public sealed class SearchTextTool(AuthorizedPathResolver paths, ITaskProcessLauncher processes)
+    : IAgentTool, IToolRequestPrevalidator
 {
     public ToolDescriptor Descriptor { get; } = new(
         "filesystem.search_text", "使用 ripgrep 搜索授权目录中的文本。",
@@ -26,20 +27,10 @@ public sealed class SearchTextTool(AuthorizedPathResolver paths) : IAgentTool, I
             request.Arguments.GetOptionalString("path") ?? context.WorkingDirectory,
             context);
         var maximum = Math.Clamp(request.Arguments.GetOptionalInt32("maximumMatches") ?? 500, 1, 2000);
-        var startInfo = new ProcessStartInfo("rg")
-        {
-            WorkingDirectory = path,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-        foreach (var argument in BuildArguments(request, query, maximum))
-        {
-            startInfo.ArgumentList.Add(argument);
-        }
-
-        return await RunAsync(startInfo, context.MaximumOutputCharacters, cancellationToken);
+        var startRequest = new TaskProcessStartRequest("rg", path,
+            BuildArguments(request, query, maximum).ToArray(),
+            Isolation: context.CreateProcessIsolation());
+        return await RunAsync(startRequest, context.MaximumOutputCharacters, cancellationToken);
     }
 
     private static IEnumerable<string> BuildArguments(
@@ -63,33 +54,37 @@ public sealed class SearchTextTool(AuthorizedPathResolver paths) : IAgentTool, I
         yield return ".";
     }
 
-    private static async Task<ToolResult> RunAsync(
-        ProcessStartInfo startInfo,
+    private async Task<ToolResult> RunAsync(
+        TaskProcessStartRequest startRequest,
         int outputLimit,
         CancellationToken cancellationToken)
     {
         var output = new BoundedTextBuffer(outputLimit);
-        using var process = new Process { StartInfo = startInfo };
-        process.OutputDataReceived += (_, eventArgs) => output.AppendLine(eventArgs.Data);
-        process.ErrorDataReceived += (_, eventArgs) => output.AppendLine(eventArgs.Data);
-        process.Start();
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
+        await using var process = processes.Start(startRequest, cancellationToken);
+        var stdout = PumpAsync(process.StandardOutput, output, cancellationToken);
+        var stderr = PumpAsync(process.StandardError, output, cancellationToken);
+        var readers = Task.WhenAll(stdout, stderr);
         try
         {
             await process.WaitForExitAsync(cancellationToken);
         }
-        catch (OperationCanceledException)
+        finally
         {
-            if (!process.HasExited)
-            {
-                process.Kill(entireProcessTree: true);
-            }
-
-            throw;
+            try { await process.TerminateAsync(); }
+            finally { await readers.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing); }
         }
+        await readers;
         return process.ExitCode is 0 or 1
             ? ToolResult.Success("搜索完成。", output.ToString())
             : ToolResult.Failure(output.ToString(), "search_failed");
+    }
+
+    private static async Task PumpAsync(
+        TextReader reader, BoundedTextBuffer output, CancellationToken cancellationToken)
+    {
+        var buffer = new char[4096];
+        int count;
+        while ((count = await reader.ReadAsync(buffer, cancellationToken)) > 0)
+            output.Append(buffer.AsSpan(0, count));
     }
 }

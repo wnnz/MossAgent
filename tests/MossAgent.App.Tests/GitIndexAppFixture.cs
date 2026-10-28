@@ -30,6 +30,7 @@ internal sealed class GitIndexAppFixture : IAsyncDisposable
 
     public static async Task<GitIndexAppFixture> CreateAsync()
     {
+        await SandboxedGitSupport.RequireAsync();
         var fixture = new GitIndexAppFixture();
         try
         {

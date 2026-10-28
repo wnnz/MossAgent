@@ -17,6 +17,7 @@ public sealed class GitWorkspaceCompositionTests
     public async Task CompositionRoutesGitToolsAndBackgroundWorktreesThroughTheOwnedLauncherAndAudit()
     {
         var token = TestContext.Current.CancellationToken;
+        await MossAgent.Testing.SandboxedGitSupport.RequireAsync();
         var root = Path.Combine(Path.GetTempPath(), "MossAgent.Tests", Guid.NewGuid().ToString("N"));
         var data = Path.Combine(root, "data");
         var directory = Directory.CreateDirectory(Path.Combine(root, "repository")).FullName;

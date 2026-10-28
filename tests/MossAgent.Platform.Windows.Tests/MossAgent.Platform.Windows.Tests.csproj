@@ -16,6 +16,7 @@
     <Compile Include="../MossAgent.Tools.Tests/TestDirectoryJunction.cs" Link="Fixtures/TestDirectoryJunction.cs" />
     <Compile Include="../Shared/ManualToolTimeProvider.cs" Link="Fixtures/ManualToolTimeProvider.cs" />
     <Compile Include="../Shared/OneShotToolTestTimer.cs" Link="Fixtures/OneShotToolTestTimer.cs" />
+    <Compile Include="../Shared/SandboxedGitSupport.cs" Link="Fixtures/SandboxedGitSupport.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />

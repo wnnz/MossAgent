@@ -33,7 +33,7 @@ public sealed class ToolPreflightTests
                 (new PathDeleteTool(resolver), new { path = root }),
                 (new PathMoveTool(resolver), new { source = root, destination = outside }),
                 (new PathMoveTool(resolver), new { source = root, destination = Path.Combine(root, "moved") }),
-                (new SearchTextTool(resolver), new { query = "x", path = outside }),
+                (new SearchTextTool(resolver, new RejectingTaskProcessLauncher()), new { query = "x", path = outside }),
                 (new TextReplaceTool(resolver), new { path = outside, oldText = "x", newText = "y" }),
                 (new GitStatusTool(resolver, git), new { repository = outside }),
                 (new GitLogTool(resolver, git), new { repository = outside }),

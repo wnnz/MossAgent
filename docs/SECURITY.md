@@ -43,43 +43,43 @@
 
 ## 已确定的命令隔离路线
 
-采用 **原生 MXC，在支持它的独立 Windows 验收环境实施**。用户已选择该路线；
-独立环境尚未就绪，因此先推进本地文件安全修复。无需重新选择路线，也没有授权升级当前
-系统、启用 Windows 功能、更改 ACL/所有权/服务或将日常环境切换为另一执行基线。
+采用 **Windows 原生 AppContainer 进程沙箱**。此前的 MXC 路线已被替换；
+Microsoft.Mxc.Sdk 引用已从 `MossAgent.Platform.Windows` 与集中包管理中移除。
+历史决策记录与探针细节保留在[安全归档](archive/SECURITY.md#windows-isolation-backend-decision)，
+不作为生产实现。
 
-[主机与 SDK 决策记录](archive/SECURITY.md#windows-isolation-backend-decision)中的历史普通用户探针显示：
+当前实现（`MossAgent.Platform.Windows/Sandbox` + `Processes`）：
 
-- 当前研究主机为 Windows 11 23H2 22631.3880；Microsoft.Mxc.Sdk 1.0.1 的
-  `IsSupported=true` 不代表具备原生隔离：实际 request Probe 选择 `AppContainerDacl`，
-  `BaseContainerApiPresent=false`，并要求 DACL augmentation。
-- 普通 AppContainer/LPAC 的包组可见性不满足严格任务根白名单。KnownDll ACL 租约路线
-  已被实际拒绝；相关一次性管理员授权已用完，不延伸为再次提权或绕过系统保护的许可。
-- Windows Sandbox 的单实例限制、未验证的 Windows 容器/VM 和现有 Linux Docker
-  都不能当作原生 Windows 并发任务隔离的已完成替代。
+- 任务进程统一经过 `ITaskProcessLauncher`；`ProcessIsolationSpec` 由
+  `ToolExecutionContextIsolation` 从任务上下文派生，携带授权可写根、只读运行时路径、
+  私有 temp 目录与网络开关。
+- 容器身份按 `mossagent-<taskId>-<rootsHash>` 复用，`CreateAppContainerProfile`
+  幂等创建；引用计数归零的 profile 与授权共享 5 分钟宽限，由后台扫描或 Dispose
+  `DeleteAppContainerProfile` 回收（立即删除会让同 key 在途 CreateProcess 失靶）。
+- ACL 授权经引用计数台账（`WindowsSandboxGrantLedger`/`Entry`/`Release`）：授予
+  Modify（目录/文件）或 ReadAndExecute（可执行），宽限期 5 分钟、扫描与 Dispose 回收；
+  启动失败按序回滚已授予项并释放 SID 引用。
+- `CreateProcess` 挂起创建，`PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES` 附带
+  容器与 capability SID，同时保留继承句柄列表与 Job 列表属性；全部 setup 成功后才
+  `ResumeThread`。Job kill-on-close 覆盖超时、取消、释放与失败路径。
+- 私有 temp 目录按任务创建并获 Modify 授权，启动时叠加 TMP/TEMP 环境覆盖；
+  实际运行中命名 profile 还会把 TMP/TEMP 重定向到 `Packages\<key>`（平台行为覆盖）。
+- 启动失败 fail-closed：沙箱授权或资源准备失败直接抛错，不回退到普通主机进程。
+- `ShellRunTool`、`GitCommandRunner`（含 `FileChangeDiffRunner` 的 diff 临时输入）、
+  `SearchTextTool` 已走 launcher；`GitProcessRunner`、`StdioMcpClient` 因缺少任务
+  上下文本切片保持原样，不走沙箱。
 
-## 实施门槛与顺序
+## 已验证行为与当前主机限制
 
-1. **先验证独立环境**：只读采集系统/SDK 能力、实际请求隔离层级和依赖版本。
-   启动时必须保证实际使用原生层级，覆盖 probe 到 launch 之间的能力变化；不得弱回退
-   到主机令牌或 DACL 修改，也不能只依据启动前一次 `Probe`。
-2. **扩展既有端口**：Tools.Abstractions 表达不可变任务进程 scope，包含任务身份、授权根、
-   明确只读运行时依赖和任务私有 temp/cache；Platform.Windows 实现 SDK/原生适配。
-   Application 保留生命周期/恢复职责，UI 不获得原生访问。
-3. **定义进程所有权与失败清理**：复用 Job Object、管道、审批、审计和输出预算，验证部分
-   setup、启动失败、超时、取消、迟到子进程和清理错误。SDK `RunAsync` 取消停止等待
-   不等于工作负载终止，必须实现并证明 task-owned termination/draining。
-4. **贯通交互终端**：审查 SDK ProcessContainer 与 ConPTY 的实际互操作。
-   历史 SDK PTY 便捷 API 使用的 IsolationSession 有不同网络要求，成功执行有管道命令
-   不能代替终端验收。正常 pwsh/provider/module、SDK、Git 与任务并发都必须保留。
-5. **收紧运行范围**：明确运行时只读依赖、环境变量、网络和凭据，不继承任意主机密钥；
-   不给整个用户目录/磁盘根宽泛授权。覆盖多根、相对/绝对路径、链接、硬链接、UNC、
-   继承句柄、外部并发修改和运行中撤权。MCP/Git 执行入口使用同一隔离边界。
-6. **贯通恢复与发布**：恢复仅清理已知所属资源，未知副作用要求人工核实；
-   在 JIT Windows x64 自包含单文件包中验证 native DLL/helper/Node 依赖定位与生命周期，
-   不启用 AOT、裁剪或放宽策略来通过测试。
-7. **关闭验收反例**：生产 App → ToolExecutor → 真实进程验证授权根内成功、根外读写和
-   子进程逃逸拒绝、外部标记不变、ReadOnly 拒绝、审批/取消/超时和审计完整。
-   完成任务并发、进程树清理、原生 ConPTY、聚焦负例、完整构建/回归及对应 Release 验证。
+- 已验证：容器内执行、授权根内读写、根外写入拒绝且外部标记不变、私有 temp、
+  子孙进程随 Job 终止、取消/超时/释放路径、缺失授权目标与不可授权可执行 fail-closed。
+- **Git 不可沙箱**：本机 `D:\Program Files\Git` 的 DACL 无包可读项且当前用户无权
+  改写，task-path Git 在沙箱内无法启动；`MissingGrantTarget_*` 等用例直接断言该
+  fail-closed 行为，需要真实沙箱 Git 的工作流用例按环境前置显式跳过，不做弱化。
+- **pwsh 7 受限**：未注册 AppContainer 中 PowerShell 7 命令发现退化（标准 cmdlet 缺失），
+  `ShellRunTool` 因此改用收件 `powershell.exe`（Windows PowerShell 5.1，容器内功能完整）；
+  交互终端 `PtyTerminalSession` 仍跑 `pwsh`（该入口尚未沙箱化，见待验矩阵）。
+- 待验矩阵：网络 capability 行为、链接/重解析点、UNC、ConPTY 交互终端、
+  发布单文件包内运行时依赖定位，以及在可授权 Git/shell 机器上的完整验收。
 
 系统预置如确有需要，应先准备可审阅的具体变更和回收方案，再按实际范围取得授权。
-历史诊断细节保留在[启动实验](archive/SECURITY.md#command-bootstrap-probe)，不作为生产实现。

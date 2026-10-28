@@ -9,17 +9,21 @@ internal sealed class WindowsProcessAttributes : IDisposable
     private bool _initialized;
     public nint Handle { get; private set; }
 
-    public WindowsProcessAttributes(SafeFileHandle job, params nint[] inheritedHandles)
+    public WindowsProcessAttributes(SafeFileHandle job, nint securityCapabilities = 0, params nint[] inheritedHandles)
     {
+        var attributeCount = securityCapabilities == 0 ? 2 : 3;
         nuint size = 0;
-        _ = WindowsProcessNative.InitializeProcThreadAttributeList(0, 2, 0, ref size);
+        _ = WindowsProcessNative.InitializeProcThreadAttributeList(0, attributeCount, 0, ref size);
         try
         {
             Handle = Marshal.AllocHGlobal(checked((nint)size));
-            WindowsProcessNative.Require(WindowsProcessNative.InitializeProcThreadAttributeList(Handle, 2, 0, ref size));
+            WindowsProcessNative.Require(WindowsProcessNative.InitializeProcThreadAttributeList(Handle, attributeCount, 0, ref size));
             _initialized = true;
             Add(WindowsProcessNative.ProcessAttributeHandleList, inheritedHandles);
             Add(WindowsProcessNative.ProcessAttributeJobList, [job.DangerousGetHandle()]);
+            if (securityCapabilities != 0)
+                AddValue(Sandbox.WindowsAppContainerNative.ProcessAttributeSecurityCapabilities,
+                    securityCapabilities, (nuint)Marshal.SizeOf<Sandbox.WindowsSecurityCapabilities>());
         }
         catch { Dispose(); throw; }
     }
@@ -33,6 +37,10 @@ internal sealed class WindowsProcessAttributes : IDisposable
         WindowsProcessNative.Require(WindowsProcessNative.UpdateProcThreadAttribute(Handle, 0,
             attribute, value, (nuint)size, 0, 0));
     }
+
+    private void AddValue(nuint attribute, nint value, nuint size) =>
+        WindowsProcessNative.Require(WindowsProcessNative.UpdateProcThreadAttribute(Handle, 0,
+            attribute, value, size, 0, 0));
 
     public void Dispose()
     {

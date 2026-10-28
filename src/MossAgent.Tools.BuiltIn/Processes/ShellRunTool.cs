@@ -29,7 +29,7 @@ public sealed class ShellRunTool(AuthorizedPathResolver paths, ITaskProcessLaunc
         var requestedDirectory = request.Arguments.GetOptionalString("workingDirectory");
         var workingDirectory = ResolveWorkingDirectory(requestedDirectory, context);
         var output = new BoundedTextBuffer(context.MaximumOutputCharacters);
-        await using var process = processes.Start(CreateRequest(command, workingDirectory), cancellationToken);
+        await using var process = processes.Start(CreateRequest(command, workingDirectory, context), cancellationToken);
         var standardOutput = ReadOutputAsync(process.StandardOutput, output, cancellationToken);
         var standardError = ReadOutputAsync(process.StandardError, output, cancellationToken);
 
@@ -59,13 +59,18 @@ public sealed class ShellRunTool(AuthorizedPathResolver paths, ITaskProcessLaunc
             output.Append(buffer.AsSpan(0, count));
     }
 
-    private static TaskProcessStartRequest CreateRequest(string command, string workingDirectory)
+    private static TaskProcessStartRequest CreateRequest(string command, string workingDirectory,
+        ToolExecutionContext context)
     {
         var script = "[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); "
             + "$OutputEncoding = [Console]::OutputEncoding; & ([ScriptBlock]::Create('"
             + command.Replace("'", "''", StringComparison.Ordinal) + "'))";
-        return new TaskProcessStartRequest("pwsh", workingDirectory,
-            ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script]);
+        // powershell.exe (Windows PowerShell 5.1, inbox) is required: pwsh 7 inside an
+        // AppContainer degrades to a small allowlisted command set (no Write-Output,
+        // Get-Location, etc.) so sandboxed commands cannot run at all there.
+        return new TaskProcessStartRequest("powershell", workingDirectory,
+            ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script],
+            Isolation: context.CreateProcessIsolation());
     }
 
     private string ResolveWorkingDirectory(string? requested, ToolExecutionContext context) =>

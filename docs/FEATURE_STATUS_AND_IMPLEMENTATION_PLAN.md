@@ -106,7 +106,7 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 | 首轮 App 全套尝试 | 修复前程序集手动停止；已报告 5,074 通过、28 失败、合计 5,102；28 个完整测试名称在最终两配置均复验通过 | 不将中止记录或后续精选写为全量通过，也不把测试准备修复说成所有产品失败均已解决 |
 | 输入和结构 | 两配置前后/配置间及当时工作区 2,688 项源码配置一致；2,494 个 C# 文件单类型/规模检查零违规，文件最大 500 行、方法最大 78 行 | 不用输入一致和结构检查替代功能验收 |
 | 本地真实资源 | 对应专项使用真实 NTFS、Git、SQLite、Chrome、ConPTY 和独立宿主进程，具体组合分项记录 | “原生 NTFS/ConPTY”不等于原生 GUI；模拟模型不等于真实 AI 服务 |
-| UI 证据 | 组件/Headless 明暗、窄/宽窗口及键盘检查；历史有部分独立 EXE 记录 | 当前全部关键原生窗口、高 DPI、真实模型、真实 PR 账号及 MXC 仍待验收 |
+| UI 证据 | 组件/Headless 明暗、窄/宽窗口及键盘检查；历史有部分独立 EXE 记录 | 当前全部关键原生窗口、高 DPI、真实模型、真实 PR 账号及沙箱内交互终端仍待验收 |
 
 本轮为文档盘点：读取代码入口和已有证据，没有重新执行付费服务、系统提权、原生窗口操作、
 发布或全套测试；上述构建/测试数字属于明确记录的运行检查点。
@@ -118,7 +118,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 
 | 编号 | 当前状态 | 未完成的功能或边界 | 优先级/依赖 |
 | --- | --- | --- | --- |
-| R01 | 部分完成；安全阻断 | 命令/PTY/Git hooks/helpers/stdio MCP 等代码执行的真实文件系统隔离 | P0；原生 MXC 独立环境尚未就绪 |
+| R01 | 部分完成；安全阻断缓解 | 命令/PTY/Git hooks/helpers/stdio MCP 等代码执行的真实文件系统隔离 | P0；原生 AppContainer 沙箱已落地（任务上下文命令 fail-closed），PTY/MCP/后台 Git 残余未接管 |
 | R02 | 部分完成、部分未验证 | 产物/diff/SDK 暂存输入会话恢复期刊已落地（schema 37–38：创建即登记、阶段分级、持久化尺寸配额、启动对账、恢复面板人工核实），附件快照引用回收已落地（schema 33）；浏览器下载已落地暂存尺寸中途轮询取消与 64 KiB 有界流出复制（字节级网络配额 Playwright 无 API，仍不可能）；本进程撤权排空状态已可观察并按项目行分层显示（撤销中/退出状态未知，释放失败仍阻断准入，30 秒排空限时超时归 CleanupUnknown，根会话释放失败经 2 秒延迟单次有界重试自愈瞬时失败）；跨实例排空聚合已落地（schema 48 `project_drain_states` 共享板：本机三态转移即在锁外尽力发布、Idle 删行、实例退出清行，徽标取本机与板上最坏态，超 120 秒未更新按 CleanupUnknown 计入并由任一观察者顺手回收该行——崩溃实例的排空随下一次观察收敛而非永久未知，徽标对非 Idle 行每约 30 秒做一次有界延迟再观察，读失败回退本机——是尽力告示板而非共识协议）；持续型 CleanupUnknown 已落地操作员触发的逐租约重新核实（侧栏项目行“重新核实”入口逐租约复核清理步骤：仍有挂起步骤或根会话再释放失败即保持未知并继续阻断准入，全部确认释放即移除租约、排空解为 Idle 并恢复准入）；剩余缺口为真实网络/缓存配额及 R01 依赖项 | P0；复用已有句柄端口和 schema 26–28 |
 | R03 | 附件 Steer 与发送偏好已落地；其他矩阵未验证 | schema 39 附件引导已接入（原子 receipt/草稿消费、模型图像能力门控、上下文预算）；附件接收回滚、重启中断与 Steer/入队草稿消费竞争去重已覆盖，陈旧快照重排/移除/编辑 CAS 冲突的 VM 端用例已补齐，完整宿主终止矩阵及 IME 验收仍缺 | P1；R02/R05 |
 | R04 | 部分完成 | 创建/清理 intent 生命周期、恢复面板、重试移除、注册槽级元数据清理、Windows 句柄级删除守卫、清理前新运行准入联锁（drain 门）与替换对象 CAS 重新授权已落地；非 Windows 守卫及完整崩溃生命周期仍缺 | P1；R01/R02 |
@@ -166,25 +166,52 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 
 ### R01：Windows 命令、终端及其他代码执行隔离
 
-**现状：** 生产链路已复现普通命令读取授权根外标记。用户选定原生 MXC，支持它的独立
-Windows 验收环境尚未就绪；本机已有诊断只获得较弱 DACL 层，不能作为通过结果。
-`Microsoft.Mxc.Sdk 1.0.1` 已引入 `MossAgent.Platform.Windows`（构建通过），本次
-`GetAvailableBackends` 复探仍为 ProcessContainer→AppContainerDacl、Hyperlight 无层级，
-与既有诊断一致——SDK 已备可写适配，原生层级验收仍待受支持环境。
+**现状：** 原生 AppContainer 沙箱已落地（派生 SID + DACL 白名单 + Job + 私有 temp，
+fail-closed），替代了此前选定的 MXC 路线（`Microsoft.Mxc.Sdk` 引用已移除）。
+所有带任务上下文的进程启动（`shell.run`、`git.*`、`filesystem.search_text`）经
+`ITaskProcessLauncher` + `ProcessIsolationSpec` 统一走沙箱；启动失败的任一步骤只
+抛"沙箱授权失败/沙箱进程启动失败"，绝不退回普通宿主进程。`GitProcessRunner`
+（后台应用层 Git）与 `StdioMcpClient` 没有任务上下文，本切片明确不接管。
 
-1. 在 Tools.Abstractions 定义不可变执行范围：task/run、授权根及访问模式、只读运行时
-   依赖、私有 temp/cache、网络策略和后端身份。Platform.Windows 实现适配器，统一供 shell、
-   PTY、Git hooks/helpers 和 stdio MCP 使用；不得只修一条命令入口。
-2. 环境到位后先做实际 SDK/tier 探针和 pwsh7/.NET SDK/Git/ConPTY 正常用例；按**每次启动**
-   实际授予的隔离层验证，拒绝 AppContainerDacl 弱回退，不能只依赖 `IsSupported`。
-3. 将启动、能力变更、任务进程树、继承句柄和 PTY 桥接纳入同一所有权交接；失败禁止
-   退回普通宿主进程。若某 PTY 桥接要求超出网络策略，应拒绝该组合并设计合格桥接。
-4. 用限时 drain 等待子进程及晚启动资源结束。SDK 的停止等待不能直接当作进程已终止；
-   后端失效显示可操作错误。必要的系统预置另做可审阅安装/撤销方案，不修改全盘或 KnownDlls ACL。
+已落地的机制：`CreateAppContainerProfile`/`DeriveAppContainerSidFromAppContainerName`
+按 `mossagent-<taskId>-<rootsHash>` 建 profile；`WindowsSandboxGrantLedger` 进程级
+授权台账按 (sid, path) 引用计数写 DACL（授权根 Modify、只读项与可执行目录
+ReadAndExecute），释放后至少 5 分钟宽限再由后台清扫回收，Dispose 强制移除自管 ACE；
+`SECURITY_CAPABILITIES` 经第三进程属性随 Job/句柄表一起进入挂起的 `CreateProcessW`；
+容器运行时把 TMP/TEMP 重定向到 `Packages\<key>` 私有存储（平台行为覆盖环境覆盖层）。
+子进程继承容器令牌与 Job kill-on-close，测试验证命令/孙进程均无法读取或写入授权根外
+路径，取消即整树终止。
 
-**验收：** 根内命令/SDK/Git/PTY可用；绝对/相对路径、链接、子进程和继承句柄的根外访问
-均拒绝且外部标记不变；多根、多任务互不越权。覆盖启动失败、后端消失、撤权、取消/超时和崩溃。
-**依赖：** 可访问的受支持 MXC 验收机。本方案不复用已消费的一次性管理员授权，也不自动改换后端。
+本机实测残余限制与意外行为：
+- `pwsh`（PowerShell 7）在未注册包的 AppContainer 内只剩约 80 条白名单命令
+  （`Write-Output`/`Get-Location`/`Get-ChildItem` 均不可用），故 `shell.run` 改用
+  收件箱 `powershell.exe`（Windows PowerShell 5.1，容器内功能完整）。这是对原始
+  规格的必要偏离，后续可评估注册包或自定义宿主。
+- 容器内 `Start-Process`/`Test-Path` 的 PowerShell 提供程序路径解析报
+  DriveNotFound；`[Diagnostics.Process]::Start` + 绝对路径可用。
+- `D:\Program Files\Git` 无 `ALL APPLICATION PACKAGES`/RAP ACE 且本机账户无
+  WRITE_DAC，git 不可授予 → 该安装下的 `git.*` 工具 fail-closed
+  （`沙箱授权失败：D:\Program Files\Git\cmd`）；装在 `C:\Program Files` 或
+  用户目录下的 git（AAP 继承或可授予）可正常工作。容器根进程镜像经父令牌加载，
+  但容器内再派生的子进程只认包可读/已授予的镜像。
+- `ALL APPLICATION PACKAGES`/LPAC 可读资源（含 `C:\Program Files`、`System32`）
+  对容器仍可读；DACL 只收未授权路径，不隐藏这些运行时必需区域。
+- `cmd` 的 `dir` 在容器内对卷标查询失败（`type`/`for` 枚举/重定向写均正常）；
+  容器令牌对 `C:\` 根的枚举受限，属平台行为。
+- `CreateAppContainerProfile` 的 description 传 null 会返回 E_INVALIDARG；
+  空可写根的 spec 在抽象层即拒绝构造。
+- 网络能力 SID（S-1-15-3-1/2/3）随 spec 授予，`AllowOutboundNetwork=false` 时
+  不授予；未做真实出站流量矩阵验证。
+- 崩溃残留的 profile（HKCU AppContainer Storage 项）与宽限期内的 ACE 目前惰性
+  无害；尚无跨进程持久清扫器。
+- PTY 终端（`Porta.Pty` ConPTY）与 stdio MCP 进程尚未纳入沙箱；`rg` 未在本机
+  PATH，`filesystem.search_text` 的真实集成启动未实测。
+
+**验收：** 授权根内 powershell 命令/文件读写正常；根外读/写、孙进程逃逸均被拒；
+取消/超时整树终止；台账复用不重复写 ACE、宽限内保留、Dispose 清除。仍待：多根与
+并发任务的越权矩阵、撤权/后端消失矩阵、PTY 与 stdio MCP 接管、以及装有可用 git
+环境的整机验收。
+**依赖：** 不再需要 MXC 验收机；后续如恢复 MXC/Hyperlight 层级需另行评估。
 参考：[隔离方案](archive/SECURITY.md#command-filesystem-isolation-plan)、[后端决策](archive/SECURITY.md#windows-isolation-backend-decision)。
 
 ### R02：最终路径边界、严格撤权、产物与恢复
@@ -994,7 +1021,7 @@ restore 裁切有修复前后同场景证据，DPI转换与稳定后布局通过
 | 阶段 | 工作 | 交付物和退出条件 |
 | --- | --- | --- |
 | S0：闭合本地安全边界 | 环境未就绪时继续 R02，并优先研究 R04 的创建认领/清理交接；同时准备 R01 独立环境探针 | 端口/阶段设计、迁移、受控竞态反例和生产管线验证；未证明的边界仍明确开放 |
-| S1：命令隔离 | 支持 MXC 的独立环境到位后实现 R01，并复验所有代码执行入口 | pwsh/SDK/Git/PTY 正常，根外/子进程/继承句柄越权拒绝，无弱回退；本地文件工具安全不被误当替代 |
+| S1：命令隔离 | AppContainer 沙箱已落地（替代 MXC），继续复验所有代码执行入口 | 受支持 shell/Git/PTY 在容器内正常，根外/子进程/继承句柄越权拒绝，无弱回退；本地文件工具安全不被误当替代 |
 | S2：核心工作流完整性 | R03–R10，结合 R05/R06 的文件和协议能力；分支发现与工作树恢复收尾 | 每项设置/保存→真实运行→结果→取消/并发→手动恢复闭环；逐项原生及真实依赖证据 |
 | S3：协作和扩展 | R11–R14：Git细粒度操作、PR、插件和桌面控制 | 预览/明确确认/写入/失败核实及权限边界可验证；本地基础能力与官方/远端接入分别验收 |
 | S4：其他参考入口 | R15–R22 的接口核实与分项实施；只读调研可提前 | 每入口有语义/依赖结论；开放能力真实运行，封闭接口保留缺口与待决策方案，不自行删范围 |
@@ -1007,7 +1034,7 @@ restore 裁切有修复前后同场景证据，DPI转换与稳定后布局通过
 
 | 项目 | 已知情况 | 推进方式 |
 | --- | --- | --- |
-| 原生 MXC 验收环境 | 路线已由用户选定，独立环境尚未就绪 | 保留 R01 开放，继续本地 R02/R04；环境就绪后先读系统/SDK实际层级，再实施兼容及隔离测试 |
+| 沙箱可执行资源（Git/shell） | 本机 `D:\Program Files\Git` 非包可读且用户无权改 ACL；pwsh 7 在未注册 AppContainer 中命令发现退化 | 准备包可读 Git 安装或 auditable 授权路径后复验 task-path Git；选定受支持 shell（Windows PowerShell 5.1 可用）或对不支持组合 fail-closed |
 | 真实提供商/代理/PR账号 | 当前已有确定性与部分历史原生证据，不能覆盖所有当前真实服务 | 按具体协议、模型、仓库和授权动作准备验收，使用临时数据和脱敏结论 |
 | 官方目录、登录、云与跨产品接口 | 参考盘点是历史记录，开放程度和 Windows 支持需逐项复核 | 先形成公开接口/注册/计划/数据流表；缺接口时给独立方案及差异，待范围决策，不能默认替代 |
 | 麦克风、真实外设、原生自动化环境 | 需要设备/权限；原生黑帧/输入拒绝会限制证据 | 可控模拟先行，实际设备和独立 Windows 实例另验；不修改用户日常窗口或系统配置来凑通过 |
@@ -1021,4 +1048,7 @@ restore 裁切有修复前后同场景证据，DPI转换与稳定后布局通过
 - 自动化/模拟服务、Headless、真实本地资源、原生 GUI、真实外部账号和发布包分别计证据，
   不以任何一种替代另一种；完整回归只对运行时的固定候选成立。
 - 这份文档列举的是可交付能力和未关闭事项，不提供没有依据的整体完成百分比。
-  当前仍以“核心链路已有、产品未完成、命令隔离为阻断”作为交付结论。
+  当前仍以“核心链路已有、产品未完成”作为交付结论；命令隔离（R01）实现已落地。
+  本机 `D:\Program Files\Git` 不可沙箱授权：依赖沙箱 Git 的 5 个 Platform 与 6 个
+  App 用例按环境前置显式跳过（fail-closed 由 `MissingGrantTarget_*` 与网络/授权
+  断言直接覆盖），验收在受支持机器上重验前不算闭合。

@@ -14,7 +14,8 @@ public sealed class GitCommandRunner(ITaskProcessLauncher processes)
         bool acceptExitCodeOne = false,
         string? standardInput = null,
         BoundedTextBuffer? standardOutput = null,
-        IReadOnlyDictionary<string, string?>? environment = null)
+        IReadOnlyDictionary<string, string?>? environment = null,
+        IReadOnlyList<string>? extraReadOnlyPaths = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var output = new BoundedTextBuffer(context.MaximumOutputCharacters);
@@ -22,9 +23,16 @@ public sealed class GitCommandRunner(ITaskProcessLauncher processes)
         // nulling every ambient GIT_* name instead of the launcher prefix removal, so the
         // tool-provided values (e.g. GIT_TERMINAL_PROMPT) survive while ambient ones cannot.
         var overrides = environment is null ? null : IsolateGitEnvironment(environment);
+        var isolation = context.CreateProcessIsolation();
+        if (extraReadOnlyPaths is { Count: > 0 } readOnlyPaths)
+            isolation = isolation with
+            {
+                ReadOnlyPaths = isolation.ReadOnlyPaths.Concat(readOnlyPaths).ToArray()
+            };
         await using var process = processes.Start(new TaskProcessStartRequest("git", repository, arguments,
             RedirectStandardInput: standardInput is not null, Environment: overrides,
-            RemovedEnvironmentPrefixes: overrides is null ? ["GIT_"] : null), cancellationToken);
+            RemovedEnvironmentPrefixes: overrides is null ? ["GIT_"] : null,
+            Isolation: isolation), cancellationToken);
         if (standardInput is not null && process.StandardInput is null)
             throw new InvalidOperationException("Process launcher did not provide a standard input stream.");
         var stdout = PumpAsync(process.StandardOutput, output, cancellationToken, standardOutput);

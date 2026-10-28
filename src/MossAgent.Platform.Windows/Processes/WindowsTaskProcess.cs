@@ -5,7 +5,7 @@ namespace MossAgent.Platform.Windows.Processes;
 
 internal sealed class WindowsTaskProcess(
     Process process, WindowsProcessJob job, TextReader standardOutput, TextReader standardError,
-    TextWriter? standardInput = null) : ITaskProcess
+    TextWriter? standardInput = null, IAsyncDisposable? release = null) : ITaskProcess
 {
     private bool _disposed;
     public int Id => process.Id;
@@ -35,6 +35,8 @@ internal sealed class WindowsTaskProcess(
             standardError.Dispose();
             process.Dispose();
             job.Dispose();
+            if (release is not null)
+                await release.DisposeAsync().ConfigureAwait(false);
         }
     }
 }
