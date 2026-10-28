@@ -168,6 +168,9 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 
 **现状：** 生产链路已复现普通命令读取授权根外标记。用户选定原生 MXC，支持它的独立
 Windows 验收环境尚未就绪；本机已有诊断只获得较弱 DACL 层，不能作为通过结果。
+`Microsoft.Mxc.Sdk 1.0.1` 已引入 `MossAgent.Platform.Windows`（构建通过），本次
+`GetAvailableBackends` 复探仍为 ProcessContainer→AppContainerDacl、Hyperlight 无层级，
+与既有诊断一致——SDK 已备可写适配，原生层级验收仍待受支持环境。
 
 1. 在 Tools.Abstractions 定义不可变执行范围：task/run、授权根及访问模式、只读运行时
    依赖、私有 temp/cache、网络策略和后端身份。Platform.Windows 实现适配器，统一供 shell、
