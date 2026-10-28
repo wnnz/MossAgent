@@ -48,6 +48,7 @@ public sealed class WorkspaceFollowupLifecycleTests
         workspace.ComposerText = "second-task-queued";
         await workspace.Queue.EnqueueCommand.ExecuteAsync(null);
         workspace.ComposerText = "second-task-next-draft";
+        await fixture.WaitUntilAsync(() => !workspace.Catalog.IsLocked);
         workspace.Catalog.SelectTaskCommand.Execute(first);
         await workspace.Drafts.LoadCurrentAsync();
         await workspace.Queue.RefreshCommand.ExecuteAsync(null);

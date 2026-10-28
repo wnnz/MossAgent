@@ -27,10 +27,14 @@ internal sealed class TrackedArtifactReadValidator : IFileReadHandleValidator
             Xunit.Assert.Equal(0, stream.Position);
             var stack = Environment.StackTrace;
             _stacks.Add(stack);
-            ArtifactStream = stream;
-            // The cancel hook targets the pane's artifact read; an unrelated authorized open
-            // (change statistics, snapshot validation) must not pre-fire the cancellation.
-            if (stack.Contains(nameof(TaskArtifactContentReader))) BeforeArtifactRead?.Invoke();
+            // Preview-path state (stream handle and the cancel hook) tracks only the pane's
+            // artifact read; an unrelated authorized open (change statistics, snapshot
+            // validation) must not pre-fire the cancellation or claim the tracked handle.
+            if (stack.Contains(nameof(TaskArtifactContentReader)))
+            {
+                ArtifactStream = stream;
+                BeforeArtifactRead?.Invoke();
+            }
             if (Refuse) throw new UnauthorizedAccessException("synthetic private diagnostics must remain hidden");
         }
         new WindowsFileReadHandleValidator().Validate(stream, roots);
