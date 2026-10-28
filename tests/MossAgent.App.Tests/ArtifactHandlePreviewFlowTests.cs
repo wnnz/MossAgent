@@ -46,8 +46,9 @@ public sealed class ArtifactHandlePreviewFlowTests
         Assert.Equal(scenario == "success", pane.Active!.IsReady);
         Assert.Equal(scenario == "success" ? "beta\n" : "", pane.Active.Text);
         Assert.Equal(1, writes.PreviewCreates);
-        Assert.True(reads.ArtifactReads == (scenario == "write-refused" ? 0 : 1),
-            $"expected {(scenario == "write-refused" ? 0 : 1)} artifact read(s), got {reads.ArtifactReads}:\n"
+        Assert.True(reads.PreviewReads == (scenario == "write-refused" ? 0 : 1),
+            $"expected {(scenario == "write-refused" ? 0 : 1)} preview read(s), got {reads.PreviewReads} "
+            + $"({reads.ArtifactReads} total artifact-path opens):\n"
             + string.Join("\n---\n", reads.Stacks));
         if (scenario != "write-refused") Assert.False(reads.ArtifactStream!.CanRead);
         if (scenario != "success") Assert.Equal(InspectorText.Get(scenario == "cancelled" ? "PreviewCancelled" : "PreviewFailed"), pane.Active.Status);

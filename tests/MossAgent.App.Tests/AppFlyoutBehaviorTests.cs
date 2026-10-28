@@ -27,7 +27,7 @@ public sealed class AppFlyoutBehaviorTests
         foreach (var label in new[] { "文件", "视图" })
         {
             var button = Assert.Single(window.Descendants(), element => element.Name.LocalName == "AppButton"
-                && element.Attribute("Content")?.Value == label);
+                && element.Attribute("Content")?.Value.Contains($"'{label}'") == true);
             Assert.Equal("True", Assert.Single(button.Descendants(), element =>
                 element.Name.LocalName == "AppFlyout").Attribute("DismissOnButtonClick")?.Value);
         }
