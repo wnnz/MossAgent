@@ -6,9 +6,11 @@
 
 ## 尚未关闭的阻断
 
-**命令和 ConPTY 终端仍可访问任务授权根之外的文件。** 工作目录校验、Job Object、
-审批和文件工具句柄安全都不能替代操作系统级文件隔离。Git hooks/凭据 helper、MCP server
-等代码执行入口也必须一并盘点；不能只限制 Shell 就宣称整个任务隔离完成。
+**命令工具和授权交互终端已落入每任务 AppContainer，但其余代码执行入口仍可访问
+任务授权根之外的文件。** 工作目录校验、Job Object、审批和文件工具句柄安全都不能
+替代操作系统级文件隔离。GitProcessRunner、应用后台 Git、stdio MCP server 与未走
+授权路径的终端入口仍按宿主身份运行；不能只限制 Shell 和 terminal.start 就宣称
+整个任务隔离完成。
 
 原生产管线反例与研究保存在[命令隔离记录](archive/SECURITY.md#command-filesystem-isolation-plan)。
 在该缺口和关键工作流验收关闭前，不宣称产品安全完成或具备发布条件。
@@ -62,12 +64,20 @@ Microsoft.Mxc.Sdk 引用已从 `MossAgent.Platform.Windows` 与集中包管理�
 - `CreateProcess` 挂起创建，`PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES` 附带
   容器与 capability SID，同时保留继承句柄列表与 Job 列表属性；全部 setup 成功后才
   `ResumeThread`。Job kill-on-close 覆盖超时、取消、释放与失败路径。
+- 交互终端（`terminal.start` 授权路径）使用自实现 ConPTY：两条匿名管道 +
+  `CreatePseudoConsole`，子进程经 `PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE`（lpValue 直接
+  传 HPCON，而非指向它的指针）挂到伪控制台，同时附带 `SECURITY_CAPABILITIES` 与
+  `JOB_LIST`；`STARTF_USESTDHANDLES` 置位且标准句柄留空，否则子进程继承宿主 stdio、
+  ConPTY 管道被完全旁路。授权失败同样 fail-closed，不回退 `PtyProvider.SpawnAsync`。
+- 终端与命令 launcher 共享同一个 `WindowsSandboxGrantLedger` 单例（DI 注入），
+  同 key 的 profile/ACL 授予不会因某一侧提前释放而被对侧剥离。
 - 私有 temp 目录按任务创建并获 Modify 授权，启动时叠加 TMP/TEMP 环境覆盖；
   实际运行中命名 profile 还会把 TMP/TEMP 重定向到 `Packages\<key>`（平台行为覆盖）。
 - 启动失败 fail-closed：沙箱授权或资源准备失败直接抛错，不回退到普通主机进程。
 - `ShellRunTool`、`GitCommandRunner`（含 `FileChangeDiffRunner` 的 diff 临时输入）、
-  `SearchTextTool` 已走 launcher；`GitProcessRunner`、`StdioMcpClient` 因缺少任务
-  上下文本切片保持原样，不走沙箱。
+  `SearchTextTool` 与授权 `terminal.start` 已走沙箱；`GitProcessRunner`、`StdioMcpClient`、
+  应用后台 Git 与无授权根的 `terminal.start`（宿主兼容路径）因缺少任务上下文切片
+  保持原样，不走沙箱。
 
 ## 已验证行为与当前主机限制
 
@@ -77,9 +87,13 @@ Microsoft.Mxc.Sdk 引用已从 `MossAgent.Platform.Windows` 与集中包管理�
   改写，task-path Git 在沙箱内无法启动；`MissingGrantTarget_*` 等用例直接断言该
   fail-closed 行为，需要真实沙箱 Git 的工作流用例按环境前置显式跳过，不做弱化。
 - **pwsh 7 受限**：未注册 AppContainer 中 PowerShell 7 命令发现退化（标准 cmdlet 缺失），
-  `ShellRunTool` 因此改用收件 `powershell.exe`（Windows PowerShell 5.1，容器内功能完整）；
-  交互终端 `PtyTerminalSession` 仍跑 `pwsh`（该入口尚未沙箱化，见待验矩阵）。
-- 待验矩阵：网络 capability 行为、链接/重解析点、UNC、ConPTY 交互终端、
+  `ShellRunTool` 与沙箱化终端因此改用收件 `powershell.exe`（Windows PowerShell 5.1，
+  容器内功能完整）；无授权根的终端兼容路径仍用 `pwsh` 经 `PtyProvider.SpawnAsync`。
+- **容器内 FileSystem provider 受限**：`Set-Location`、`Set-Content`、`Move-Item` 等
+  cmdlet 对已授予 DACL 的路径仍返回拒绝访问（PowerShell provider 路径解析在未注册
+  AppContainer 中退化）；`[IO.File]`/`[IO.Directory]` 原始 API 正常。进程的 NT 工作目录
+  正确落在授权根，但 PowerShell `$PWD` 只显示 `C:\`（provider 表象，非真实 cwd）。
+- 待验矩阵：网络 capability 行为、链接/重解析点、UNC、
   发布单文件包内运行时依赖定位，以及在可授权 Git/shell 机器上的完整验收。
 
 系统预置如确有需要，应先准备可审阅的具体变更和回收方案，再按实际范围取得授权。

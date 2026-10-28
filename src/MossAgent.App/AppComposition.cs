@@ -29,6 +29,7 @@ using MossAgent.Tools.BuiltIn.Files;
 using MossAgent.Tools.BuiltIn.Processes;
 using MossAgent.Tools.BuiltIn.Git;
 using MossAgent.Platform.Windows.Capture;
+using MossAgent.Platform.Windows.Sandbox;
 using MossAgent.Platform.Windows.Windowing;
 using MossAgent.Platform.Windows.Terminal;
 using MossAgent.Platform.Windows.Processes;
@@ -215,6 +216,9 @@ internal static class AppComposition
         services.AddSingleton<IBrowserTakeoverController>(
             static provider => provider.GetRequiredService<TaskBrowserSessionManager>());
         services.AddSingleton<BrowserTakeoverViewModel>();
+        // Shared per-process grant ledger: terminal sessions and command processes
+        // of one task must share sandbox keys so neither side releases ACEs early.
+        services.AddSingleton<WindowsSandboxGrantLedger>();
         services.AddSingleton<ITerminalSessionManager, PtyTerminalSessionManager>();
         services.AddSingleton<ITaskProcessLauncher, WindowsTaskProcessLauncher>();
         services.AddSingleton<IAgentTool, FileReadTool>();

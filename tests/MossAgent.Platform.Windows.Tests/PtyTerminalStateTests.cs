@@ -29,7 +29,7 @@ public sealed class PtyTerminalStateTests
     public async Task NaturalExitRetiresOwnerAndAllowsExplicitRestart(int exitCode)
     {
         var connections = new ConcurrentQueue<PtyTestConnection>();
-        await using var manager = new PtyTerminalSessionManager((_, output, _) =>
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) =>
         {
             var connection = new PtyTestConnection();
             connections.Enqueue(connection);
@@ -60,7 +60,7 @@ public sealed class PtyTerminalStateTests
     public async Task ExitBeforeSubscriptionIsDetectedByZeroWaitProbe()
     {
         var connection = new PtyTestConnection { HasExited = true, ExitCode = 7 };
-        await using var manager = new PtyTerminalSessionManager((_, output, _) => Task.FromResult(Session(connection, output)));
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) => Task.FromResult(Session(connection, output)));
         var task = Guid.NewGuid();
         await manager.StartAsync(task, Path.GetTempPath(), Token);
         var snapshot = await WaitStateAsync(manager, task, TerminalSessionState.Exited);
@@ -77,7 +77,7 @@ public sealed class PtyTerminalStateTests
         var first = new PtyTestConnection { Disposing = () => { entered.TrySetResult(); release.Wait(cancellationToken); } };
         var second = new PtyTestConnection();
         var calls = 0;
-        await using var manager = new PtyTerminalSessionManager((_, output, _) =>
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) =>
             Task.FromResult(Session(Interlocked.Increment(ref calls) == 1 ? first : second, output)));
         var firstTask = Guid.NewGuid();
         var secondTask = Guid.NewGuid();
@@ -105,7 +105,7 @@ public sealed class PtyTerminalStateTests
     public async Task StartupFailureIsSafeAndCanBeRetried()
     {
         var calls = 0;
-        await using var manager = new PtyTerminalSessionManager((_, output, _) =>
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) =>
             ++calls == 1 ? Task.FromException<PtyTerminalSession>(new IOException("secret-api-key")) : Task.FromResult(Session(new(), output)));
         var task = Guid.NewGuid();
         await Assert.ThrowsAsync<IOException>(() => manager.StartAsync(task, Path.GetTempPath(), Token));
@@ -122,7 +122,7 @@ public sealed class PtyTerminalStateTests
         var reader = new MemoryStream();
         reader.Dispose();
         var connection = new PtyTestConnection { ReaderStream = reader };
-        await using var manager = new PtyTerminalSessionManager((_, output, _) => Task.FromResult(Session(connection, output)));
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) => Task.FromResult(Session(connection, output)));
         var task = Guid.NewGuid();
         await manager.StartAsync(task, Path.GetTempPath(), Token);
         await WaitStateAsync(manager, task, TerminalSessionState.Failed);
@@ -134,7 +134,7 @@ public sealed class PtyTerminalStateTests
     {
         var connection = new PtyTestConnection { Disposing = () => throw new IOException("secret-cleanup-key") };
         var calls = 0;
-        var manager = new PtyTerminalSessionManager((_, output, _) => { calls++; return Task.FromResult(Session(connection, output)); });
+        var manager = new PtyTerminalSessionManager((_, output, _, _) => { calls++; return Task.FromResult(Session(connection, output)); });
         var task = Guid.NewGuid();
         try
         {
@@ -160,7 +160,7 @@ public sealed class PtyTerminalStateTests
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(Token);
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource<PtyTerminalSession>(TaskCreationOptions.RunContinuationsAsynchronously);
-        await using var manager = new PtyTerminalSessionManager((_, _, _) => { entered.SetResult(); return release.Task; });
+        await using var manager = new PtyTerminalSessionManager((_, _, _, _) => { entered.SetResult(); return release.Task; });
         var task = Guid.NewGuid();
         var starting = manager.StartAsync(task, Path.GetTempPath(), cancellation.Token);
         await entered.Task.WaitAsync(Deadline, Token);
@@ -189,7 +189,7 @@ public sealed class PtyTerminalStateTests
     {
         var states = new ConcurrentQueue<TerminalSessionSnapshot>();
         var connection = new PtyTestConnection();
-        await using var manager = new PtyTerminalSessionManager((_, output, _) => Task.FromResult(Session(connection, output)));
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) => Task.FromResult(Session(connection, output)));
         manager.StateChanged += (_, _) => throw new IOException("observer-secret");
         manager.StateChanged += (_, args) => states.Enqueue(args.Snapshot);
         var task = Guid.NewGuid();

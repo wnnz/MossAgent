@@ -37,7 +37,7 @@ public sealed class ProjectAuthorizationPtyDrainTests
         var connections = new Queue<PtyTestConnection>();
         connections.Enqueue(blocked);
         connections.Enqueue(healthy);
-        await using var manager = new PtyTerminalSessionManager((_, _, _) => Task.FromResult(Session(connections.Dequeue())));
+        await using var manager = new PtyTerminalSessionManager((_, _, _, _) => Task.FromResult(Session(connections.Dequeue())));
         var task = Guid.NewGuid();
         await manager.StartAuthorizedAsync(fixture.Context(task), Token);
         fixture.Revoke();
@@ -65,7 +65,7 @@ public sealed class ProjectAuthorizationPtyDrainTests
         await using var fixture = new ProjectAuthorizationPtyFixture(Path.GetTempPath());
         var connection = new PtyTestConnection { Disposing = () => throw new InvalidOperationException("synthetic pty cleanup secret") };
         var failed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var manager = new PtyTerminalSessionManager((_, _, _) => Task.FromResult(Session(connection)));
+        var manager = new PtyTerminalSessionManager((_, _, _, _) => Task.FromResult(Session(connection)));
         var task = Guid.NewGuid();
         manager.StateChanged += (_, state) => { if (state.Snapshot.State == TerminalSessionState.CleanupFailed) failed.TrySetResult(); };
         try

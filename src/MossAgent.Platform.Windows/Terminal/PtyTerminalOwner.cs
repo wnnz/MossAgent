@@ -1,5 +1,6 @@
 using MossAgent.Tools.Abstractions.Terminal;
 using MossAgent.Tools.Abstractions;
+using MossAgent.Tools.Abstractions.Processes;
 
 namespace MossAgent.Platform.Windows.Terminal;
 
@@ -9,8 +10,9 @@ internal sealed class PtyTerminalOwner
     private readonly object _resizeSync = new();
     private readonly CancellationTokenSource _shutdown = new();
     private readonly CancellationToken _token;
-    private readonly Func<string, Action<string>, CancellationToken, Task<PtyTerminalSession>> _factory;
+    private readonly Func<string, Action<string>, ProcessIsolationSpec?, CancellationToken, Task<PtyTerminalSession>> _factory;
     private readonly Action<string> _output;
+    private readonly ProcessIsolationSpec? _isolation;
     private Task<PtyTerminalSession>? _starting;
     private Task? _stopping;
     private PtyTerminalSession? _session;
@@ -19,12 +21,13 @@ internal sealed class PtyTerminalOwner
     private CancellationTokenRegistration _authorizationRegistration;
 
     public PtyTerminalOwner(string workingDirectory,
-        Func<string, Action<string>, CancellationToken, Task<PtyTerminalSession>> factory, Action<string> output,
-        ITaskWorkspaceLease? authorization = null)
+        Func<string, Action<string>, ProcessIsolationSpec?, CancellationToken, Task<PtyTerminalSession>> factory,
+        Action<string> output, ProcessIsolationSpec? isolation = null, ITaskWorkspaceLease? authorization = null)
     {
         WorkingDirectory = workingDirectory;
         _factory = factory;
         _output = output;
+        _isolation = isolation;
         _token = _shutdown.Token;
         Authorization = authorization;
     }
@@ -73,7 +76,7 @@ internal sealed class PtyTerminalOwner
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _token);
         linked.Token.ThrowIfCancellationRequested();
-        var session = await _factory(WorkingDirectory, _output, linked.Token).ConfigureAwait(false);
+        var session = await _factory(WorkingDirectory, _output, _isolation, linked.Token).ConfigureAwait(false);
         lock (_sync) _session = session;
         if (linked.IsCancellationRequested)
         {

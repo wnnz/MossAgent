@@ -13,7 +13,7 @@ public sealed class PtyTerminalCleanupBoundaryTests
     {
         using var writer = new PtyPendingWriteStream();
         var connection = new PtyTestConnection { WriterStream = writer };
-        await using var manager = new PtyTerminalSessionManager((_, output, _) =>
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) =>
             Task.FromResult(new PtyTerminalSession(connection, new CancellationTokenSource(), output)));
         var task = Guid.NewGuid();
         await manager.StartAsync(task, Path.GetTempPath(), Token);
@@ -46,7 +46,7 @@ public sealed class PtyTerminalCleanupBoundaryTests
         var failed = new PtyTestConnection { Disposing = () => throw new IOException("synthetic-close-failure") };
         var healthy = new PtyTestConnection();
         var calls = 0;
-        var manager = new PtyTerminalSessionManager((_, output, _) =>
+        var manager = new PtyTerminalSessionManager((_, output, _, _) =>
             Task.FromResult(new PtyTerminalSession(++calls == 1 ? failed : healthy, new CancellationTokenSource(), output)));
         try
         {
@@ -73,7 +73,7 @@ public sealed class PtyTerminalCleanupBoundaryTests
     {
         var publishers = new List<Action<string>>();
         var received = new List<string>();
-        await using var manager = new PtyTerminalSessionManager((_, output, _) =>
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) =>
         {
             publishers.Add(output);
             return Task.FromResult(new PtyTerminalSession(new PtyTestConnection(), new CancellationTokenSource(), output));

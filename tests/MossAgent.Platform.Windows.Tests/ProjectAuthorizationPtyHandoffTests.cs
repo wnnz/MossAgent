@@ -23,7 +23,7 @@ public sealed class ProjectAuthorizationPtyHandoffTests
         using var deliverCancellation = new ManualResetEventSlim();
         var connection = new PtyTestConnection();
         CancellationToken spawnToken = default;
-        await using var manager = new PtyTerminalSessionManager((_, _, startup) =>
+        await using var manager = new PtyTerminalSessionManager((_, _, _, startup) =>
         {
             spawnToken = startup;
             entered.TrySetResult();

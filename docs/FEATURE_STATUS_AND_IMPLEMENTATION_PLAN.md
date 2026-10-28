@@ -9,9 +9,10 @@ MossAgent 已具备桌面 Coding Agent 的主要本地运行链路：项目/无�
 文件工具、Git、终端、提供商/模型/代理、浏览器、MCP、子代理、定时任务及只读 PR 审阅。
 但这些大类仍有功能缺口、安全边界或实机验收缺口，**整个产品目标尚未完成，也尚不满足发布验收条件**。
 
-目前最重要的阻断是：**命令和终端仍能访问任务授权根之外的文件**。已有审批、工作目录
-验证、进程树和文件工具的句柄保护，均不能替代命令文件系统隔离。工作树创建/清理的
-最终对象交接、严格撤权排空、当前版本全套与关键原生工作流，也仍需完成。
+目前最重要的阻断是：**命令与授权终端虽已进入每任务 AppContainer，但 Git 进程、
+后台 Git、stdio MCP 与未授权终端入口仍按宿主身份运行，可访问任务授权根之外的文件**。
+已有审批、工作目录验证、进程树和文件工具的句柄保护，均不能替代命令文件系统隔离。
+工作树创建/清理的最终对象交接、严格撤权排空、当前版本全套与关键原生工作流，也仍需完成。
 
 本文使用以下状态，不能互相替代：
 
@@ -60,7 +61,7 @@ R01–R24 沿用[历史阶段交付清单](archive/OVERVIEW.md#delivery-status-a
 | C15 | 文件级暂存/取消暂存、已暂存内容预览确认提交、捕获 commit 的单分支预览确认推送；审批后复核 HEAD/索引/远端，不自动 stage-all 或强推 | [暂存](archive/GIT_WORKTREES.md#git-staging-acceptance)、[提交](archive/GIT_WORKTREES.md#git-commit-acceptance)、[推送](archive/GIT_WORKTREES.md#git-push-acceptance)；区块、远端配置和真实认证见 R11 |
 | C16 | 独立工作树创建、手工选择分支/标签/提交并固定基准 commit、有界本地分支/标签搜索分页及 commit 预览、连续对话、重开、工具守卫和确认清理；失败目录保留供核实 | [基准选择](archive/GIT_WORKTREES.md#worktree-base-reference-acceptance)、[工作树路径](archive/GIT_WORKTREES.md#worktree-path-safety-acceptance)；远端获取、创建/清理竞态及崩溃见 R04 |
 | C17 | schema 28 绑定工作树自身的 task/project/grant/目录对象身份；恢复拒绝同路径替换，即使复制 Git 元数据；Agent/工具/PTY 持续持有根链；旧工作树明确确认，不消耗草稿或续跑 | [工作树对象授权](archive/GIT_WORKTREES.md#worktree-object-authorization-acceptance)；替换对象重新授权、最终交接见 R02/R04 |
-| C18 | PowerShell 命令及 ConPTY 交互终端基础：输入/输出、VT、剪贴板/输入法、任务所属进程树、时限、有界输出和停止链路 | [命令](archive/TERMINAL_TOOLS.md#command-execution-acceptance)、[终端](archive/TERMINAL_TOOLS.md#terminal-interaction-acceptance)；**不具备严格文件系统隔离**，见 R01 |
+| C18 | PowerShell 命令及 ConPTY 交互终端基础：输入/输出、VT、剪贴板/输入法、任务所属进程树、时限、有界输出和停止链路；授权 `terminal.start` 已与命令同处每任务 AppContainer | [命令](archive/TERMINAL_TOOLS.md#command-execution-acceptance)、[终端](archive/TERMINAL_TOOLS.md#terminal-interaction-acceptance)；无授权根终端与剩余进程面未隔离，见 R01 |
 
 ### 2.3 提供商、工具、浏览器、MCP 和扩展代理
 
@@ -118,7 +119,7 @@ P0 是安全阻断，P1 是现有核心闭环，P2 是编码协作及扩展，P3
 
 | 编号 | 当前状态 | 未完成的功能或边界 | 优先级/依赖 |
 | --- | --- | --- | --- |
-| R01 | 部分完成；安全阻断缓解 | 命令/PTY/Git hooks/helpers/stdio MCP 等代码执行的真实文件系统隔离 | P0；原生 AppContainer 沙箱已落地（任务上下文命令 fail-closed），PTY/MCP/后台 Git 残余未接管 |
+| R01 | 部分完成；安全阻断缓解 | 命令/PTY/Git hooks/helpers/stdio MCP 等代码执行的真实文件系统隔离 | P0；原生 AppContainer 沙箱已落地（任务上下文命令与授权 `terminal.start` fail-closed，PTY 走自实现 ConPTY+CreateProcessW 同一容器），stdio MCP/GitProcessRunner/后台 Git/未授权终端残余未接管 |
 | R02 | 部分完成、部分未验证 | 产物/diff/SDK 暂存输入会话恢复期刊已落地（schema 37–38：创建即登记、阶段分级、持久化尺寸配额、启动对账、恢复面板人工核实），附件快照引用回收已落地（schema 33）；浏览器下载已落地暂存尺寸中途轮询取消与 64 KiB 有界流出复制（字节级网络配额 Playwright 无 API，仍不可能）；本进程撤权排空状态已可观察并按项目行分层显示（撤销中/退出状态未知，释放失败仍阻断准入，30 秒排空限时超时归 CleanupUnknown，根会话释放失败经 2 秒延迟单次有界重试自愈瞬时失败）；跨实例排空聚合已落地（schema 48 `project_drain_states` 共享板：本机三态转移即在锁外尽力发布、Idle 删行、实例退出清行，徽标取本机与板上最坏态，超 120 秒未更新按 CleanupUnknown 计入并由任一观察者顺手回收该行——崩溃实例的排空随下一次观察收敛而非永久未知，徽标对非 Idle 行每约 30 秒做一次有界延迟再观察，读失败回退本机——是尽力告示板而非共识协议）；持续型 CleanupUnknown 已落地操作员触发的逐租约重新核实（侧栏项目行“重新核实”入口逐租约复核清理步骤：仍有挂起步骤或根会话再释放失败即保持未知并继续阻断准入，全部确认释放即移除租约、排空解为 Idle 并恢复准入）；剩余缺口为真实网络/缓存配额及 R01 依赖项 | P0；复用已有句柄端口和 schema 26–28 |
 | R03 | 附件 Steer 与发送偏好已落地；其他矩阵未验证 | schema 39 附件引导已接入（原子 receipt/草稿消费、模型图像能力门控、上下文预算）；附件接收回滚、重启中断与 Steer/入队草稿消费竞争去重已覆盖，陈旧快照重排/移除/编辑 CAS 冲突的 VM 端用例已补齐，完整宿主终止矩阵及 IME 验收仍缺 | P1；R02/R05 |
 | R04 | 部分完成 | 创建/清理 intent 生命周期、恢复面板、重试移除、注册槽级元数据清理、Windows 句柄级删除守卫、清理前新运行准入联锁（drain 门）与替换对象 CAS 重新授权已落地；非 Windows 守卫及完整崩溃生命周期仍缺 | P1；R01/R02 |

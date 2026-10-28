@@ -21,7 +21,7 @@ public sealed class PtyTerminalPipelineBoundaryTests
     public async Task DeniedWriteOrStopCannotMutateAnActiveSession(ApprovalPolicy policy, string tool, string error)
     {
         var connection = new PtyTestConnection();
-        await using var manager = new PtyTerminalSessionManager((_, output, _) =>
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) =>
             Task.FromResult(new PtyTerminalSession(connection, new CancellationTokenSource(), output)));
         var task = Guid.NewGuid();
         var root = Path.GetTempPath();
@@ -49,7 +49,7 @@ public sealed class PtyTerminalPipelineBoundaryTests
         var pending = new TaskCompletionSource<PtyTerminalSession>(TaskCreationOptions.RunContinuationsAsynchronously);
         var connection = new PtyTestConnection();
         var calls = 0;
-        await using var manager = new PtyTerminalSessionManager(async (_, output, cancellationToken) =>
+        await using var manager = new PtyTerminalSessionManager(async (_, output, _, cancellationToken) =>
         {
             if (++calls > 1) return new PtyTerminalSession(new PtyTestConnection(), new CancellationTokenSource(), output);
             using var registration = cancellationToken.Register(() => cancelled.TrySetResult());

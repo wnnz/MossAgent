@@ -27,7 +27,7 @@ public sealed class TerminalControlBoundaryTests
     {
         var resizes = 0;
         var connection = new PtyTestConnection { Resizing = (_, _) => resizes++ };
-        await using var manager = new PtyTerminalSessionManager((_, output, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
         var context = new ToolExecutionContext(Guid.NewGuid(), Path.GetTempPath(), [Path.GetTempPath()], policy);
         await manager.StartAsync(context.TaskId, context.WorkingDirectory, Token);
         var before = manager.GetSnapshot(context.TaskId)!;
@@ -49,7 +49,7 @@ public sealed class TerminalControlBoundaryTests
         var calls = 0;
         var resizes = 0;
         var connection = new PtyTestConnection { Resizing = (_, _) => resizes++ };
-        await using var manager = new PtyTerminalSessionManager((_, output, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
         var root = Path.GetTempPath();
         var roots = new List<string> { revokeAfterApproval ? root : Path.Combine(root, "unrelated") };
         var context = new ToolExecutionContext(Guid.NewGuid(), root, roots, ApprovalPolicy.AskEveryTime);
@@ -70,7 +70,7 @@ public sealed class TerminalControlBoundaryTests
     {
         var connections = new List<PtyTestConnection>();
         var resizes = 0;
-        await using var manager = new PtyTerminalSessionManager((_, output, _) =>
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) =>
         {
             var connection = new PtyTestConnection { Resizing = (_, _) => resizes++ };
             connections.Add(connection);
@@ -103,7 +103,7 @@ public sealed class TerminalControlBoundaryTests
     {
         var approvals = 0;
         var connection = new PtyTestConnection { Resizing = (_, _) => Assert.Fail("unexpected resize") };
-        await using var manager = new PtyTerminalSessionManager((_, output, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
         var context = new ToolExecutionContext(Guid.NewGuid(), Path.GetTempPath(), [Path.GetTempPath()], ApprovalPolicy.AskEveryTime);
         await manager.StartAsync(context.TaskId, context.WorkingDirectory, Token);
         var session = scenario == "malformed" ? "invalid" : manager.GetSnapshot(context.TaskId)!.SessionId.ToString("D");

@@ -1,4 +1,6 @@
 using System.Text;
+using MossAgent.Platform.Windows.Sandbox;
+using MossAgent.Tools.Abstractions.Processes;
 using Porta.Pty;
 
 namespace MossAgent.Platform.Windows.Terminal;
@@ -42,6 +44,18 @@ internal sealed class PtyTerminalSession : IAsyncDisposable
 
     public static Task<PtyTerminalSession> StartAsync(string workingDirectory, Action<string> output, CancellationToken cancellationToken) =>
         StartAsync(workingDirectory, output, cancellationToken, PtyProvider.SpawnAsync);
+
+    internal static Task<PtyTerminalSession> StartAsync(string workingDirectory, Action<string> output,
+        ProcessIsolationSpec spec, WindowsSandboxGrantLedger ledger, CancellationToken cancellationToken) =>
+        StartAsync(workingDirectory, output, cancellationToken, async (options, token) =>
+        {
+            // pwsh 7 loses command/provider discovery inside an unregistered
+            // AppContainer; inbox powershell.exe keeps full functionality.
+            options.App = "powershell.exe";
+            // PSReadLine cannot write its history file inside the container.
+            options.CommandLine[^1] += "; try { Set-PSReadLineOption -HistorySaveStyle SaveNothing } catch { }";
+            return await SandboxedPtyConnection.SpawnAsync(options, spec, ledger, token).ConfigureAwait(false);
+        });
 
     internal static async Task<PtyTerminalSession> StartAsync(string workingDirectory, Action<string> output,
         CancellationToken cancellationToken, Func<PtyOptions, CancellationToken, Task<IPtyConnection>> spawn)

@@ -19,7 +19,7 @@ public sealed class WindowsSandboxGrantLedger : IDisposable
     private readonly Task _sweeper;
     private bool _disposed;
 
-    internal WindowsSandboxGrantLedger() => _sweeper = Task.Run(SweepLoopAsync);
+    public WindowsSandboxGrantLedger() => _sweeper = Task.Run(SweepLoopAsync);
 
     public IAsyncDisposable Acquire(string sidString, SecurityIdentifier identity,
         IReadOnlyList<(string Path, bool Writable)> grants, string profileName)

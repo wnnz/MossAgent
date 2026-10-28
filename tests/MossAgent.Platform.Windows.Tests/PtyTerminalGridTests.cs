@@ -15,7 +15,7 @@ public sealed class PtyTerminalGridTests
     {
         var sizes = new ConcurrentQueue<(int Columns, int Rows)>();
         var connection = new PtyTestConnection { Resizing = (columns, rows) => sizes.Enqueue((columns, rows)) };
-        await using var manager = new PtyTerminalSessionManager((_, output, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
         var task = Guid.NewGuid();
         await manager.StartAsync(task, Path.GetTempPath(), Token);
         var before = manager.GetSnapshot(task)!;
@@ -36,7 +36,7 @@ public sealed class PtyTerminalGridTests
     public async Task ResizeFailureCannotPublishUnappliedDimensions()
     {
         var connection = new PtyTestConnection { Resizing = (_, _) => throw new IOException("synthetic-secret") };
-        await using var manager = new PtyTerminalSessionManager((_, output, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
         var task = Guid.NewGuid();
         await manager.StartAsync(task, Path.GetTempPath(), Token);
         var before = manager.GetSnapshot(task)!;
@@ -49,7 +49,7 @@ public sealed class PtyTerminalGridTests
     {
         var connections = new List<PtyTestConnection>();
         var resizes = new ConcurrentQueue<(int, int)>();
-        await using var manager = new PtyTerminalSessionManager((_, output, _) =>
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) =>
         {
             var connection = new PtyTestConnection { Resizing = (columns, rows) => resizes.Enqueue((columns, rows)) };
             connections.Add(connection);
@@ -75,7 +75,7 @@ public sealed class PtyTerminalGridTests
     {
         var calls = 0;
         var connection = new PtyTestConnection { Resizing = (_, _) => Interlocked.Increment(ref calls) };
-        await using var manager = new PtyTerminalSessionManager((_, output, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
         var task = Guid.NewGuid();
         await manager.StartAsync(task, Path.GetTempPath(), Token);
         using var cancelled = new CancellationTokenSource();

@@ -17,7 +17,7 @@ public sealed class PtyTerminalOutputTests
         var connection = new PtyTestConnection
         { ReaderStream = new PtyChunkedReadStream(Encoding.UTF8.GetBytes(expected), chunkSize) };
         var output = new StringBuilder();
-        await using var manager = new PtyTerminalSessionManager((_, publish, _) =>
+        await using var manager = new PtyTerminalSessionManager((_, publish, _, _) =>
             Task.FromResult(new PtyTerminalSession(connection, new CancellationTokenSource(), publish)));
         var task = Guid.NewGuid();
         manager.OutputReceived += (_, args) => { if (args.TaskId == task) output.Append(args.Output); };
@@ -32,7 +32,7 @@ public sealed class PtyTerminalOutputTests
         var connection = new PtyTestConnection
         { ReaderStream = new PtyChunkedReadStream(Encoding.UTF8.GetBytes("healthy-output"), 1) };
         var output = new StringBuilder();
-        await using var manager = new PtyTerminalSessionManager((_, publish, _) =>
+        await using var manager = new PtyTerminalSessionManager((_, publish, _, _) =>
             Task.FromResult(new PtyTerminalSession(connection, new CancellationTokenSource(), publish)));
         manager.OutputReceived += (_, _) => throw new IOException("synthetic-observer-failure");
         manager.OutputReceived += (_, args) => output.Append(args.Output);

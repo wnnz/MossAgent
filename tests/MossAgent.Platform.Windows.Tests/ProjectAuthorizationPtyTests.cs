@@ -18,7 +18,7 @@ public sealed class ProjectAuthorizationPtyTests
         await using var other = new ProjectAuthorizationPtyFixture(Path.GetTempPath());
         var connections = new Queue<PtyTestConnection>([new(), new(), new()]);
         var retired = connections.Peek();
-        await using var manager = new PtyTerminalSessionManager((_, _, _) => Task.FromResult(Session(connections.Dequeue())));
+        await using var manager = new PtyTerminalSessionManager((_, _, _, _) => Task.FromResult(Session(connections.Dequeue())));
         var task = Guid.NewGuid();
         var otherTask = Guid.NewGuid();
         await manager.StartAuthorizedAsync(first.Context(task), Token);
@@ -47,7 +47,7 @@ public sealed class ProjectAuthorizationPtyTests
         var pending = new TaskCompletionSource<PtyTerminalSession>(TaskCreationOptions.RunContinuationsAsynchronously);
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var connection = new PtyTestConnection();
-        await using var manager = new PtyTerminalSessionManager((_, _, _) => { entered.TrySetResult(); return pending.Task; });
+        await using var manager = new PtyTerminalSessionManager((_, _, _, _) => { entered.TrySetResult(); return pending.Task; });
         var task = Guid.NewGuid();
         var starting = manager.StartAuthorizedAsync(fixture.Context(task), Token);
         await entered.Task.WaitAsync(Deadline, Token);
@@ -66,7 +66,7 @@ public sealed class ProjectAuthorizationPtyTests
         await using var fixture = new ProjectAuthorizationPtyFixture(Path.GetTempPath());
         var connection = new PtyTestConnection { Disposing = () => throw new InvalidOperationException("synthetic cleanup failure") };
         var failed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var manager = new PtyTerminalSessionManager((_, _, _) => Task.FromResult(Session(connection)));
+        var manager = new PtyTerminalSessionManager((_, _, _, _) => Task.FromResult(Session(connection)));
         var task = Guid.NewGuid();
         manager.StateChanged += (_, state) => { if (state.Snapshot.State == TerminalSessionState.CleanupFailed) failed.TrySetResult(); };
         try

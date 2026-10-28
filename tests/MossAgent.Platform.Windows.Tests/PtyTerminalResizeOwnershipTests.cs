@@ -22,7 +22,7 @@ public sealed class PtyTerminalResizeOwnershipTests
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var calls = 0;
         var connection = new PtyTestConnection { Resizing = (_, _) => { Interlocked.Increment(ref calls); entered.TrySetResult(); release.Wait(Token); } };
-        await using var manager = new PtyTerminalSessionManager((_, output, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
         var task = Guid.NewGuid();
         await manager.StartAsync(task, Path.GetTempPath(), Token);
         var session = manager.GetSnapshot(task)!.SessionId;
@@ -48,7 +48,7 @@ public sealed class PtyTerminalResizeOwnershipTests
         using var release = new ManualResetEventSlim();
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var connection = new PtyTestConnection { Resizing = (_, _) => { entered.TrySetResult(); release.Wait(Token); } };
-        await using var manager = new PtyTerminalSessionManager((_, output, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
         var task = Guid.NewGuid();
         await manager.StartAsync(task, Path.GetTempPath(), Token);
         var resize = manager.ResizeAsync(task, manager.GetSnapshot(task)!.SessionId, Path.GetTempPath(), new(40, 10), Token);
@@ -76,7 +76,7 @@ public sealed class PtyTerminalResizeOwnershipTests
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var connection = new PtyTestConnection { Resizing = (_, _) => { entered.TrySetResult(); release.Wait(Token); } };
         var clock = new ManualToolTimeProvider();
-        await using var manager = new PtyTerminalSessionManager((_, output, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) => Task.FromResult(new PtyTerminalSession(connection, new(), output)));
         var context = new ToolExecutionContext(Guid.NewGuid(), Path.GetTempPath(), [Path.GetTempPath()], ApprovalPolicy.FullAccess, Timeout: TimeSpan.FromMilliseconds(100));
         await manager.StartAsync(context.TaskId, context.WorkingDirectory, Token);
         var executor = new ToolExecutor(new ToolRegistry([new TerminalResizeTool(manager, new AuthorizedPathResolver())]),

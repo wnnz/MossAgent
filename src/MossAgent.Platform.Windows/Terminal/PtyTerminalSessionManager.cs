@@ -1,6 +1,8 @@
 using MossAgent.Tools.Abstractions.Terminal;
 using MossAgent.Tools.Abstractions;
 using MossAgent.Domain;
+using MossAgent.Platform.Windows.Sandbox;
+using MossAgent.Tools.Abstractions.Processes;
 
 namespace MossAgent.Platform.Windows.Terminal;
 
@@ -9,12 +11,27 @@ public sealed class PtyTerminalSessionManager : ITerminalSessionManager, ITermin
     private readonly object _sync = new();
     private readonly Dictionary<Guid, PtyTerminalOwner> _sessions = [];
     private readonly PtyTerminalStateRegistry _states = new();
-    private readonly Func<string, Action<string>, CancellationToken, Task<PtyTerminalSession>> _start;
+    private readonly Func<string, Action<string>, ProcessIsolationSpec?, CancellationToken, Task<PtyTerminalSession>> _start;
+    private readonly WindowsSandboxGrantLedger? _ledger;
+    private readonly bool _ownsLedger;
     private Task? _disposal;
     private bool _disposed;
 
-    public PtyTerminalSessionManager() : this(PtyTerminalSession.StartAsync) { }
-    internal PtyTerminalSessionManager(Func<string, Action<string>, CancellationToken, Task<PtyTerminalSession>> start) => _start = start;
+    public PtyTerminalSessionManager() : this((WindowsSandboxGrantLedger?)null) { }
+
+    public PtyTerminalSessionManager(WindowsSandboxGrantLedger? ledger)
+    {
+        _ownsLedger = ledger is null;
+        var effective = ledger ?? new WindowsSandboxGrantLedger();
+        _ledger = effective;
+        _start = (workingDirectory, output, spec, cancellationToken) => spec is null
+            ? PtyTerminalSession.StartAsync(workingDirectory, output, cancellationToken)
+            : PtyTerminalSession.StartAsync(workingDirectory, output, spec, effective, cancellationToken);
+    }
+
+    internal PtyTerminalSessionManager(
+        Func<string, Action<string>, ProcessIsolationSpec?, CancellationToken, Task<PtyTerminalSession>> start) =>
+        _start = start;
 
     public event EventHandler<TerminalOutputEventArgs>? OutputReceived;
     public event EventHandler<TerminalStateEventArgs>? StateChanged
@@ -30,8 +47,11 @@ public sealed class PtyTerminalSessionManager : ITerminalSessionManager, ITermin
         var lease = await provider.AcquireAsync(context, cancellationToken).ConfigureAwait(false);
         try
         {
+            // A lease without authorized roots cannot produce an isolation spec;
+            // the session then runs unguarded exactly like the StartAsync path.
+            var spec = context.AuthorizedRoots is { Count: > 0 } ? context.CreateProcessIsolation() : null;
             using var startup = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lease.Revocation);
-            await StartCoreAsync(context.TaskId, context.WorkingDirectory, startup.Token, lease).ConfigureAwait(false);
+            await StartCoreAsync(context.TaskId, context.WorkingDirectory, startup.Token, lease, spec).ConfigureAwait(false);
         }
         finally
         {
@@ -41,7 +61,8 @@ public sealed class PtyTerminalSessionManager : ITerminalSessionManager, ITermin
         }
     }
 
-    private async Task StartCoreAsync(Guid taskId, string workingDirectory, CancellationToken cancellationToken, ITaskWorkspaceLease? authorization)
+    private async Task StartCoreAsync(Guid taskId, string workingDirectory, CancellationToken cancellationToken,
+        ITaskWorkspaceLease? authorization, ProcessIsolationSpec? isolation = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
         ArgumentException.ThrowIfNullOrWhiteSpace(workingDirectory);
@@ -58,7 +79,7 @@ public sealed class PtyTerminalSessionManager : ITerminalSessionManager, ITermin
             if (created)
             {
                 PtyTerminalOwner? captured = null;
-                owner = new PtyTerminalOwner(workingDirectory, _start, output => Publish(taskId, captured!, output), authorization);
+                owner = new PtyTerminalOwner(workingDirectory, _start, output => Publish(taskId, captured!, output), isolation, authorization);
                 captured = owner;
                 _sessions.Add(taskId, owner);
                 owner.ObserveAuthorization(() => StopRevokedAsync(taskId, owner));
@@ -183,6 +204,10 @@ public sealed class PtyTerminalSessionManager : ITerminalSessionManager, ITermin
             completion.SetResult();
         }
         catch (Exception exception) { completion.SetException(exception); }
+        finally
+        {
+            if (_ownsLedger) _ledger?.Dispose();
+        }
     }
 
     private async Task ObserveAsync(Guid taskId, PtyTerminalOwner owner, Task<PtyTerminalSession> starting)

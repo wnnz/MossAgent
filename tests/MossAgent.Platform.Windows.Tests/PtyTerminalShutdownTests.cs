@@ -16,7 +16,7 @@ public sealed class PtyTerminalShutdownTests
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var connection = new PtyTestConnection { Disposing = () => { entered.SetResult(); release.Task.GetAwaiter().GetResult(); } };
-        await using var manager = new PtyTerminalSessionManager((_, output, _) => Task.FromResult(Session(connection, output)));
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) => Task.FromResult(Session(connection, output)));
         var task = Guid.NewGuid();
         await manager.StartAsync(task, Path.GetTempPath(), Token);
         var first = manager.StopAsync(task);
@@ -42,7 +42,7 @@ public sealed class PtyTerminalShutdownTests
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var pending = new TaskCompletionSource<PtyTerminalSession>(TaskCreationOptions.RunContinuationsAsynchronously);
         var connection = new PtyTestConnection();
-        await using var manager = new PtyTerminalSessionManager((_, _, _) => { entered.SetResult(); return pending.Task; });
+        await using var manager = new PtyTerminalSessionManager((_, _, _, _) => { entered.SetResult(); return pending.Task; });
         var task = Guid.NewGuid();
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(Token);
         var first = manager.StartAsync(task, Path.GetTempPath(), Token);
@@ -69,7 +69,7 @@ public sealed class PtyTerminalShutdownTests
     {
         var calls = 0;
         var connection = new PtyTestConnection();
-        await using var manager = new PtyTerminalSessionManager((_, output, _) =>
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) =>
         { calls++; return Task.FromResult(Session(connection, output)); });
         var task = Guid.NewGuid();
         await manager.StartAsync(task, Path.GetTempPath(), Token);
@@ -84,7 +84,7 @@ public sealed class PtyTerminalShutdownTests
     {
         var calls = 0;
         var connection = new PtyTestConnection();
-        await using var manager = new PtyTerminalSessionManager((_, output, _) => ++calls == 1
+        await using var manager = new PtyTerminalSessionManager((_, output, _, _) => ++calls == 1
             ? Task.FromException<PtyTerminalSession>(new IOException("synthetic-start-failure"))
             : Task.FromResult(Session(connection, output)));
         var task = Guid.NewGuid();

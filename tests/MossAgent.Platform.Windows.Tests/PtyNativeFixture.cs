@@ -40,8 +40,10 @@ internal sealed class PtyNativeFixture : IAsyncDisposable
         Assert.True(result.IsSuccess, $"{tool}: {result.ErrorCode}: {result.Summary}");
     }
 
+    // Two-argument Move: the three-argument overload does not exist on the
+    // .NET Framework runtime inside Windows PowerShell 5.1 children.
     public static string PublishPid(string name) =>
-        $"[IO.File]::WriteAllText('{name}.tmp', [string]$PID); [IO.File]::Move('{name}.tmp', '{name}', $true); [IO.File]::WriteAllText('{name}.ready', '')";
+        $"[IO.File]::WriteAllText('{name}.tmp', [string]$PID); if ([IO.File]::Exists('{name}')) {{ [IO.File]::Delete('{name}') }}; [IO.File]::Move('{name}.tmp', '{name}'); [IO.File]::WriteAllText('{name}.ready', '')";
 
     public async Task CreateChildScriptAsync()
     {
@@ -49,8 +51,12 @@ internal sealed class PtyNativeFixture : IAsyncDisposable
         await File.WriteAllTextAsync(Path.Combine(Root, "child.ps1"), script, Token);
     }
 
+    // Inside an AppContainer Start-Process hits DriveNotFound on provider path
+    // resolution and pwsh 7 loses its cmdlet surface; Process.Start with inbox
+    // powershell.exe works in both sandboxed and plain sessions.
     public static string LaunchChild =>
-        "Start-Process pwsh -WindowStyle Hidden -WorkingDirectory (Get-Location).Path -ArgumentList '-NoProfile','-File','child.ps1'";
+        "[Diagnostics.Process]::Start('powershell.exe', '-NoProfile -ExecutionPolicy Bypass -File \"'"
+        + " + [IO.Path]::Combine([IO.Directory]::GetCurrentDirectory(), 'child.ps1') + '\"')";
 
     public async Task<Process> BindAsync(string name)
     {

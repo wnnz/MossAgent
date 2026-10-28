@@ -13,7 +13,7 @@ public sealed class WindowsTaskProcessLauncher : ITaskProcessLauncher, IDisposab
 
     public WindowsTaskProcessLauncher() : this(null) { }
 
-    internal WindowsTaskProcessLauncher(Sandbox.WindowsSandboxGrantLedger? ledger)
+    public WindowsTaskProcessLauncher(Sandbox.WindowsSandboxGrantLedger? ledger)
     {
         _ownsLedger = ledger is null;
         _ledger = ledger ?? new Sandbox.WindowsSandboxGrantLedger();

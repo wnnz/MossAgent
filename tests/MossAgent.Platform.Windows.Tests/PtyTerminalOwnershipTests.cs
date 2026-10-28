@@ -25,7 +25,7 @@ public sealed class PtyTerminalOwnershipTests
         var pending = Pending();
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var connection = new PtyTestConnection();
-        await using var manager = new PtyTerminalSessionManager((_, _, _) => { entered.SetResult(); return pending.Task; });
+        await using var manager = new PtyTerminalSessionManager((_, _, _, _) => { entered.SetResult(); return pending.Task; });
         var task = Guid.NewGuid();
         var starting = manager.StartAsync(task, Root, Token);
         await entered.Task.WaitAsync(Deadline, Token);
@@ -52,7 +52,7 @@ public sealed class PtyTerminalOwnershipTests
     {
         var calls = 0;
         var connection = new PtyTestConnection();
-        await using var manager = new PtyTerminalSessionManager((_, _, _) => { calls++; return Task.FromResult(Session(connection)); });
+        await using var manager = new PtyTerminalSessionManager((_, _, _, _) => { calls++; return Task.FromResult(Session(connection)); });
         await manager.DisposeAsync();
         try
         {
@@ -69,7 +69,7 @@ public sealed class PtyTerminalOwnershipTests
         var calls = 0;
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var connection = new PtyTestConnection();
-        await using var manager = new PtyTerminalSessionManager((_, _, _) => { Interlocked.Increment(ref calls); entered.TrySetResult(); return pending.Task; });
+        await using var manager = new PtyTerminalSessionManager((_, _, _, _) => { Interlocked.Increment(ref calls); entered.TrySetResult(); return pending.Task; });
         var task = Guid.NewGuid();
         var first = manager.StartAsync(task, Root, Token);
         await entered.Task.WaitAsync(Deadline, Token);
@@ -92,7 +92,7 @@ public sealed class PtyTerminalOwnershipTests
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var connection = new PtyTestConnection();
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(Token);
-        await using var manager = new PtyTerminalSessionManager((_, _, _) => { entered.SetResult(); return pending.Task; });
+        await using var manager = new PtyTerminalSessionManager((_, _, _, _) => { entered.SetResult(); return pending.Task; });
         var task = Guid.NewGuid();
         var starting = manager.StartAsync(task, Root, cancellation.Token);
         await entered.Task.WaitAsync(Deadline, Token);
@@ -114,7 +114,7 @@ public sealed class PtyTerminalOwnershipTests
         var slowRoot = Path.Combine(Root, "synthetic-slow");
         var fast = new PtyTestConnection();
         var slow = new PtyTestConnection();
-        await using var manager = new PtyTerminalSessionManager((root, _, _) => root == slowRoot
+        await using var manager = new PtyTerminalSessionManager((root, _, _, _) => root == slowRoot
             ? pending.Task : Task.FromResult(Session(fast)));
         var slowTask = Guid.NewGuid();
         var fastTask = Guid.NewGuid();
@@ -134,7 +134,7 @@ public sealed class PtyTerminalOwnershipTests
     public async Task ExitedProcessKillFailureCannotSkipConnectionCleanup()
     {
         var connection = new PtyTestConnection { KillThrows = true };
-        await using var manager = new PtyTerminalSessionManager((_, _, _) => Task.FromResult(Session(connection)));
+        await using var manager = new PtyTerminalSessionManager((_, _, _, _) => Task.FromResult(Session(connection)));
         var task = Guid.NewGuid();
         await manager.StartAsync(task, Root, Token);
         try { await manager.StopAsync(task); }
