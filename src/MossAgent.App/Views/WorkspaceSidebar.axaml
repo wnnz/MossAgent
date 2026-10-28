@@ -178,6 +178,7 @@
                   <ui:AppText Text="{Binding DrainLabel}" Classes="subtle type-10"
                               IsVisible="{Binding HasDrainBadge}" Margin="26,0,8,2" TextWrapping="Wrap" />
                   <ui:AppActionButton Label="{Binding DrainVerifyLabel}"
+                                      IconData="{StaticResource UiIconRefresh}"
                                       Classes="ghost menu-option align-leading" HorizontalAlignment="Stretch"
                                       IsVisible="{Binding CanVerifyDrain}" IsEnabled="{Binding !IsVerifyingDrain}"
                                       Margin="26,0,8,4"
