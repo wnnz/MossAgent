@@ -75,7 +75,9 @@ public sealed class SharedControlStyleTests
     public void Cards_UseSharedBorderAndSubtleFourSidedShadow()
     {
         var document = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App", "App.axaml"));
-        var card = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Style"
+        var cardVariants = XDocument.Load(Path.Combine(RepositoryRoot(), "src", "MossAgent.App",
+            "Styles", "AppButtonVariants.axaml"));
+        var card = Assert.Single(cardVariants.Descendants(), element => element.Name.LocalName == "Style"
             && element.Attribute("Selector")?.Value == "controls|AppCard");
         Assert.Contains(card.Elements(), element => element.Attribute("Property")?.Value == "BorderBrush"
             && element.Attribute("Value")?.Value == "{DynamicResource CardBorderBrush}");
@@ -406,9 +408,10 @@ public sealed class SharedControlStyleTests
         var appPath = Path.Combine(RepositoryRoot(), "src", "MossAgent.App");
         var application = XDocument.Load(Path.Combine(appPath, "App.axaml"));
         var insets = XDocument.Load(Path.Combine(appPath, "Styles", "CardInsetVariants.axaml"));
+        var cardVariants = XDocument.Load(Path.Combine(appPath, "Styles", "AppButtonVariants.axaml"));
         Assert.Contains(application.Descendants(), element => element.Name.LocalName == "StyleInclude"
             && element.Attribute("Source")?.Value == "avares://MossAgent.App/Styles/CardInsetVariants.axaml");
-        var cardStyles = application.Descendants().Concat(insets.Descendants())
+        var cardStyles = application.Descendants().Concat(insets.Descendants()).Concat(cardVariants.Descendants())
             .Where(element => element.Name.LocalName == "Style"
                 && element.Attribute("Selector")?.Value.StartsWith("controls|AppCard", StringComparison.Ordinal) == true)
             .ToDictionary(element => element.Attribute("Selector")!.Value);
