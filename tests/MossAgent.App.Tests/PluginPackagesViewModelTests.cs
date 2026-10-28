@@ -92,6 +92,58 @@ public sealed class PluginPackagesViewModelTests
     }
 
     [Fact]
+    public async Task PickShowsTheUpgradeNoticeForAnOlderSameNameRowAndInstallStillSucceeds()
+    {
+        var installed = Plugin("demo-plugin");
+        var (viewModel, installer, previewer, _, _) = Create(installed);
+        previewer.Result = Preview;
+        installer.InstallHandler = _ =>
+        {
+            installer.Installed = [installed];
+            return installed;
+        };
+        using var _ = viewModel;
+        await viewModel.RefreshCommand.ExecuteAsync(null);
+
+        await viewModel.PickPackageCommand.ExecuteAsync(null);
+
+        var pending = Assert.IsType<PluginPackagePreviewViewModel>(viewModel.PendingPreview);
+        Assert.True(pending.HasReplaceNotice);
+        Assert.Equal("将替换已安装的 demo-plugin v1.0.0；安装后需重新启用。", pending.ReplaceNotice);
+
+        await viewModel.ConfirmInstallCommand.ExecuteAsync(null);
+
+        Assert.Equal([PackagePath], installer.InstallPaths);
+        Assert.Null(viewModel.PendingPreview);
+        Assert.False(viewModel.HasStatusError);
+    }
+
+    [Fact]
+    public async Task PickShowsNoUpgradeNoticeForTheSameVersionOrAFreshName()
+    {
+        var sameVersion = new InstalledPlugin(Guid.NewGuid(), "demo-plugin", "1.2.3", "hashabc",
+            "plugins/demo-plugin-1.2.3-hashabc8", InstalledPluginState.Installed,
+            @"D:\packages\demo-plugin.mossplugin", DateTimeOffset.UtcNow, [], [],
+            PluginOverlaySource.None);
+        var (viewModel, _, previewer, _, _) = Create(sameVersion);
+        previewer.Result = Preview;
+        using var _ = viewModel;
+        await viewModel.RefreshCommand.ExecuteAsync(null);
+
+        await viewModel.PickPackageCommand.ExecuteAsync(null);
+
+        var pending = Assert.IsType<PluginPackagePreviewViewModel>(viewModel.PendingPreview);
+        Assert.False(pending.HasReplaceNotice);
+        Assert.Equal(string.Empty, pending.ReplaceNotice);
+
+        var (fresh, _, freshPreviewer, _, _) = Create();
+        freshPreviewer.Result = Preview;
+        using var __ = fresh;
+        await fresh.PickPackageCommand.ExecuteAsync(null);
+        Assert.False(fresh.PendingPreview!.HasReplaceNotice);
+    }
+
+    [Fact]
     public async Task ConfirmInstallConflictShowsConflictStatusAndKeepsListUnchanged()
     {
         var existing = Plugin();

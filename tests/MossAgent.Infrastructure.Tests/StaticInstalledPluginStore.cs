@@ -23,7 +23,19 @@ internal sealed class StaticInstalledPluginStore(IReadOnlyList<InstalledPlugin> 
         CancellationToken cancellationToken) =>
         Task.FromResult(rows.FirstOrDefault(plugin => plugin.Name == name && plugin.Version == version));
 
+    public Task<IReadOnlyList<InstalledPlugin>> ListByNameAsync(string name,
+        CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<InstalledPlugin>>(
+            [.. rows.Where(plugin => plugin.Name == name)]);
+
     public Task<InstalledPlugin> InsertAsync(InstalledPlugin plugin,
+        IReadOnlyDictionary<string, string> payloadHashes, CancellationToken cancellationToken)
+    {
+        SaveHashes(plugin.Id, payloadHashes);
+        return Task.FromResult(plugin);
+    }
+
+    public Task<InstalledPlugin> ReplaceByNameAsync(InstalledPlugin plugin,
         IReadOnlyDictionary<string, string> payloadHashes, CancellationToken cancellationToken)
     {
         SaveHashes(plugin.Id, payloadHashes);

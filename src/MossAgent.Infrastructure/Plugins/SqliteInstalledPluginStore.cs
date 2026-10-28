@@ -9,7 +9,9 @@ namespace MossAgent.Infrastructure.Plugins;
 /// <summary>SQLite store for installed plugin rows. All reads and the compare-and-swap insert
 /// run in single statements or one transaction; a UNIQUE(name,version) violation is resolved by
 /// re-reading the committed row — same content hash means an idempotent reinstall, anything
-/// else is a conflict. Per-component payload hashes are written in the same transaction as
+/// else is a conflict. ReplaceByName is the upgrade path: every same-name row is deleted and
+/// the new row plus its baseline committed in one transaction, so a failed replace leaves the
+/// old rows untouched. Per-component payload hashes are written in the same transaction as
 /// their plugin row and only ever inserted, never replaced, so the first recorded baseline
 /// stays authoritative.</summary>
 public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connections) : IInstalledPluginStore
@@ -28,6 +30,20 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
     {
         await using var connection = await OpenAsync(cancellationToken);
         return await FindAsync(connection, null, name, version, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<InstalledPlugin>> ListByNameAsync(string name,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"SELECT {Columns} FROM plugin_packages WHERE name=$name ORDER BY version;";
+        command.Parameters.AddWithValue("$name", name);
+        var plugins = new List<InstalledPlugin>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+            plugins.Add(Map(reader));
+        return plugins;
     }
 
     public async Task<InstalledPlugin> InsertAsync(InstalledPlugin plugin,
@@ -66,6 +82,42 @@ public sealed class SqliteInstalledPluginStore(SqliteConnectionFactory connectio
                 await transaction.CommitAsync(cancellationToken);
                 return raced;
             }
+            throw new PluginPackageException(PluginPackageErrorCode.InstallFailed,
+                "the plugin row violated the storage schema", error);
+        }
+        await InsertHashesAsync(connection, transaction, plugin.Id, payloadHashes, false,
+            cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return plugin;
+    }
+
+    /// <summary>The upgrade path: deletes every same-name row — settings and hash children
+    /// cascade with their parent — then inserts the new row and writes its baseline strictly,
+    /// all inside one transaction. Any failure aborts the transaction so the replaced rows
+    /// survive intact; a delete-only outcome is impossible to commit.</summary>
+    public async Task<InstalledPlugin> ReplaceByNameAsync(InstalledPlugin plugin,
+        IReadOnlyDictionary<string, string> payloadHashes, CancellationToken cancellationToken)
+    {
+        var components = InstalledPluginJson.SerializeComponents(plugin.Components);
+        var servers = InstalledPluginJson.SerializeServers(plugin.DeclaredMcpServers);
+        await using var connection = await OpenAsync(cancellationToken);
+        await using var transaction = connection.BeginTransaction();
+        await using var delete = connection.CreateCommand();
+        delete.Transaction = transaction;
+        delete.CommandText = "DELETE FROM plugin_packages WHERE name=$name;";
+        delete.Parameters.AddWithValue("$name", plugin.Name);
+        await delete.ExecuteNonQueryAsync(cancellationToken);
+        await using var insert = connection.CreateCommand();
+        insert.Transaction = transaction;
+        insert.CommandText = $"INSERT INTO plugin_packages({Columns}) "
+            + "VALUES($id,$name,$version,$hash,$path,$state,$source,$at,$components,$servers,$overlay);";
+        AddParameters(insert, plugin, components, servers);
+        try
+        {
+            await insert.ExecuteNonQueryAsync(cancellationToken);
+        }
+        catch (SqliteException error) when (error.SqliteErrorCode == 19)
+        {
             throw new PluginPackageException(PluginPackageErrorCode.InstallFailed,
                 "the plugin row violated the storage schema", error);
         }

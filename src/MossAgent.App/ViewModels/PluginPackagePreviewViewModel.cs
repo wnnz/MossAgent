@@ -6,10 +6,12 @@ namespace MossAgent.App.ViewModels;
 
 /// <summary>Presentation of a local package preview awaiting install confirmation.
 /// <see cref="PackagePath"/> is the caller-picked file, not the preview's echoed source, so
-/// confirmation always installs the path the user selected.</summary>
+/// confirmation always installs the path the user selected. <see cref="ReplaceNotice"/> warns
+/// when confirmation will upgrade-replace already-installed rows of the same name.</summary>
 public sealed class PluginPackagePreviewViewModel
 {
-    public PluginPackagePreviewViewModel(PluginPackagePreview preview, string packagePath)
+    public PluginPackagePreviewViewModel(PluginPackagePreview preview, string packagePath,
+        IReadOnlyList<InstalledPlugin>? replaced = null)
     {
         PackagePath = packagePath;
         Name = preview.Name;
@@ -29,6 +31,10 @@ public sealed class PluginPackagePreviewViewModel
         HashText = string.Format(CultureInfo.CurrentCulture, SettingsText.Get("PluginPreviewHash"),
             preview.ContentHash.Length <= 12 ? preview.ContentHash : preview.ContentHash[..12]);
         SourceText = string.Format(CultureInfo.CurrentCulture, SettingsText.Get("PluginPreviewSource"), packagePath);
+        ReplaceNotice = replaced is { Count: > 0 } rows
+            ? string.Format(CultureInfo.CurrentCulture, SettingsText.Get("PluginUpgradeNotice"),
+                preview.Name, string.Join("、", rows.Select(static row => $"v{row.Version}")))
+            : string.Empty;
     }
 
     public string PackagePath { get; }
@@ -42,6 +48,8 @@ public sealed class PluginPackagePreviewViewModel
     public string McpServersText { get; }
     public string HashText { get; }
     public string SourceText { get; }
+    public string ReplaceNotice { get; }
+    public bool HasReplaceNotice => ReplaceNotice.Length > 0;
 
     private static string ComponentKindText(PluginComponentKind kind) => kind switch
     {

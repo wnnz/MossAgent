@@ -40,6 +40,8 @@
             <ui:AppText Text="{Binding McpServersText}" Classes="muted type-12" TextWrapping="Wrap" />
             <ui:AppText Text="{Binding HashText}" Classes="subtle type-11" />
             <ui:AppText Text="{Binding SourceText}" Classes="subtle type-11" TextWrapping="Wrap" />
+            <ui:AppText Text="{Binding ReplaceNotice}" Classes="type-12 status-warning" TextWrapping="Wrap"
+                        IsVisible="{Binding HasReplaceNotice}" />
             <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
               <ui:AppButton Classes="primary" Content="{x:Static labels:PluginPackageLabels.ConfirmInstall}"
                             Command="{Binding $parent[UserControl].DataContext.ConfirmInstallCommand}" />

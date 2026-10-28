@@ -8,6 +8,15 @@ namespace MossAgent.Application.Plugins;
 /// with a stable code and cancellation propagates unwrapped.</summary>
 public interface IPluginPackageInstaller
 {
+    /// <summary>Installs one package. The same name and version keeps compare-and-swap
+    /// semantics: identical content returns the stored row, different content throws
+    /// <see cref="PluginPackageErrorCode.InstallConflict"/>. A different version under an
+    /// already-installed name is an atomic upgrade-replace: every same-name row is deleted and
+    /// the new row committed in one transaction, and the replaced rows' payload directories
+    /// are removed best-effort afterwards (leftovers become orphans reported by
+    /// <see cref="ReconcileAsync"/>). The new row always starts
+    /// <see cref="InstalledPluginState.Installed"/> — never carrying over Enabled — because
+    /// the payload is different bytes that must be re-trusted by an explicit enable.</summary>
     Task<InstalledPlugin> InstallAsync(string packagePath, CancellationToken cancellationToken);
 
     Task<InstalledPlugin?> FindAsync(Guid id, CancellationToken cancellationToken);

@@ -17,7 +17,14 @@ internal sealed class CancelingInstalledPluginStore(CancellationTokenSource sour
         return Task.FromResult<InstalledPlugin?>(null);
     }
 
+    public Task<IReadOnlyList<InstalledPlugin>> ListByNameAsync(string name,
+        CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<InstalledPlugin>>([]);
+
     public Task<InstalledPlugin> InsertAsync(InstalledPlugin plugin,
+        IReadOnlyDictionary<string, string> payloadHashes, CancellationToken cancellationToken) =>
+        Task.FromResult(plugin);
+
+    public Task<InstalledPlugin> ReplaceByNameAsync(InstalledPlugin plugin,
         IReadOnlyDictionary<string, string> payloadHashes, CancellationToken cancellationToken) =>
         Task.FromResult(plugin);
 

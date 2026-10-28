@@ -107,6 +107,105 @@ public sealed class SqliteInstalledPluginStoreTests
     }
 
     [Fact]
+    public async Task ListByNameReturnsEveryVersionOfOneNameOnly()
+    {
+        await using var fixture = await PluginInstallFixture.CreateAsync();
+        var store = fixture.Store();
+        var first = await store.InsertAsync(Row("demo", "1.0", new string('a', 64)),
+            new Dictionary<string, string>(), fixture.Token);
+        var second = await store.InsertAsync(Row("demo", "2.0", new string('b', 64)),
+            new Dictionary<string, string>(), fixture.Token);
+        await store.InsertAsync(Row("other", "1.0", new string('c', 64)),
+            new Dictionary<string, string>(), fixture.Token);
+
+        var rows = await store.ListByNameAsync("demo", fixture.Token);
+
+        Assert.Equal(2, rows.Count);
+        PluginRowAssert.Equal(first, rows[0]);
+        PluginRowAssert.Equal(second, rows[1]);
+        Assert.Empty(await store.ListByNameAsync("absent", fixture.Token));
+    }
+
+    [Fact]
+    public async Task ReplaceByNameDeletesEverySameNameRowAndKeepsUnrelatedOnes()
+    {
+        await using var fixture = await PluginInstallFixture.CreateAsync();
+        var store = fixture.Store();
+        var first = await store.InsertAsync(Row("demo", "1.0", new string('a', 64)),
+            new Dictionary<string, string> { ["skills/a/SKILL.md"] = new string('a', 64) },
+            fixture.Token);
+        var second = await store.InsertAsync(Row("demo", "2.0", new string('b', 64)),
+            new Dictionary<string, string> { ["skills/b/SKILL.md"] = new string('b', 64) },
+            fixture.Token);
+        var other = await store.InsertAsync(Row("other", "1.0", new string('c', 64)),
+            new Dictionary<string, string>(), fixture.Token);
+
+        var third = await store.ReplaceByNameAsync(Row("demo", "3.0", new string('d', 64)),
+            new Dictionary<string, string> { ["skills/c/SKILL.md"] = new string('e', 64) },
+            fixture.Token);
+
+        var rows = await store.ListAsync(fixture.Token);
+        Assert.Equal(2, rows.Count);
+        PluginRowAssert.Equal(third, rows[0]);
+        PluginRowAssert.Equal(other, rows[1]);
+        Assert.Empty(await store.ListPayloadHashesAsync(first.Id, fixture.Token));
+        Assert.Empty(await store.ListPayloadHashesAsync(second.Id, fixture.Token));
+        var baseline = await store.ListPayloadHashesAsync(third.Id, fixture.Token);
+        Assert.Equal(new string('e', 64), baseline["skills/c/SKILL.md"]);
+        Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM plugin_component_hashes;"));
+        Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM pragma_foreign_key_check;"));
+    }
+
+    [Fact]
+    public async Task ReplaceByNameWithNoSameNameRowSimplyInserts()
+    {
+        await using var fixture = await PluginInstallFixture.CreateAsync();
+        var store = fixture.Store();
+        var row = await store.ReplaceByNameAsync(Row("demo", "1.0", new string('a', 64)),
+            new Dictionary<string, string> { ["skills/a/SKILL.md"] = new string('a', 64) },
+            fixture.Token);
+        PluginRowAssert.Equal(row, await store.GetAsync(row.Id, fixture.Token));
+        Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM plugin_component_hashes;"));
+    }
+
+    [Fact]
+    public async Task ReplaceByNameRollsBackTheDeletesWhenABaselineRowIsRejected()
+    {
+        await using var fixture = await PluginInstallFixture.CreateAsync();
+        var store = fixture.Store();
+        var first = await store.InsertAsync(Row("demo", "1.0", new string('a', 64)),
+            new Dictionary<string, string> { ["skills/a/SKILL.md"] = new string('a', 64) },
+            fixture.Token);
+        var oversized = new Dictionary<string, string> { [new string('p', 261)] = new string('a', 64) };
+
+        await Assert.ThrowsAsync<Microsoft.Data.Sqlite.SqliteException>(() =>
+            store.ReplaceByNameAsync(Row("demo", "2.0", new string('b', 64)), oversized, fixture.Token));
+
+        PluginRowAssert.Equal(first, await store.GetAsync(first.Id, fixture.Token));
+        Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM plugin_packages;"));
+        Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM plugin_component_hashes;"));
+    }
+
+    [Fact]
+    public async Task ReplaceByNameSchemaViolationIsAFailureAndKeepsTheOldRow()
+    {
+        await using var fixture = await PluginInstallFixture.CreateAsync();
+        var store = fixture.Store();
+        var first = await store.InsertAsync(Row("demo", "1.0", new string('a', 64)),
+            new Dictionary<string, string>(), fixture.Token);
+        var badSource = new InstalledPlugin(Guid.NewGuid(), "demo", "2.0", new string('b', 64),
+            "demo-2-0-bbbbbbbb", InstalledPluginState.Installed, new string('s', 1100),
+            DateTimeOffset.UnixEpoch, Components, Servers, PluginOverlaySource.None);
+
+        var error = await Assert.ThrowsAsync<PluginPackageException>(() =>
+            store.ReplaceByNameAsync(badSource, new Dictionary<string, string>(), fixture.Token));
+
+        Assert.Equal(PluginPackageErrorCode.InstallFailed, error.Code);
+        PluginRowAssert.Equal(first, await store.GetAsync(first.Id, fixture.Token));
+        Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM plugin_packages;"));
+    }
+
+    [Fact]
     public async Task DeleteReturnsTheStoredRowAndRemovesIt()
     {
         await using var fixture = await PluginInstallFixture.CreateAsync();

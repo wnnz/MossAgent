@@ -103,9 +103,10 @@ public sealed class PluginPackagesViewModel : ObservableObject, IDisposable
             var path = paths.FirstOrDefault();
             if (path is null || _disposed) return;
             var preview = await _previewer.PreviewAsync(path, operation.Token);
+            var replaced = await ReplacedRowsAsync(preview, operation.Token);
             operation.Token.ThrowIfCancellationRequested();
             if (_disposed) return;
-            PendingPreview = new PluginPackagePreviewViewModel(preview, path);
+            PendingPreview = new PluginPackagePreviewViewModel(preview, path, replaced);
             SetUninstallPending(null);
             SetStatus(Format("PluginPreviewReady", preview.Name, preview.Version));
         }
@@ -115,6 +116,28 @@ public sealed class PluginPackagesViewModel : ObservableObject, IDisposable
         }
         catch (PluginPackageException error) { SetStatus(MapPackageError(error.Code, "PluginPreviewFailed"), true); }
         catch (Exception) { SetStatus(SettingsText.Get("PluginPreviewFailed"), true); }
+    }
+
+    /// <summary>The same-name rows a confirming install would upgrade-replace — only a
+    /// different version counts, since the same version is an idempotent reinstall or a
+    /// conflict the installer resolves itself. A fresh list read is authoritative; when it
+    /// fails the already-loaded rows still answer honestly enough for an advisory notice, and
+    /// the install itself re-checks the store regardless.</summary>
+    private async Task<IReadOnlyList<InstalledPlugin>> ReplacedRowsAsync(PluginPackagePreview preview,
+        CancellationToken token)
+    {
+        try
+        {
+            var installed = await _installer.ListAsync(token);
+            return [.. installed.Where(plugin =>
+                plugin.Name == preview.Name && plugin.Version != preview.Version)];
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+        catch (Exception)
+        {
+            return [.. Items.Where(row => row.Name == preview.Name && row.Version != preview.Version)
+                .Select(row => row.Plugin)];
+        }
     }
 
     private async Task ConfirmInstallAsync(CancellationToken cancellationToken)

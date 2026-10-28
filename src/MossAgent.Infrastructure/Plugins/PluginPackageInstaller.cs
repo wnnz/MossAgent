@@ -7,7 +7,10 @@ namespace MossAgent.Infrastructure.Plugins;
 /// <summary>Orchestrates local installs: re-runs the full preview validation, extracts to a
 /// unique staging directory, moves the payload into an immutable content-addressed final
 /// directory, then records the row together with the per-component payload hashes the
-/// extraction produced. Any failure or cancellation removes the staging tree and leaves no
+/// extraction produced. A package whose name is already installed under a different version is
+/// an upgrade: the store atomically replaces every same-name row and the replaced payload
+/// directories are removed best-effort after commit, so two versions of one name never
+/// coexist. Any failure or cancellation removes the staging tree and leaves no
 /// row; a row-write failure removes the moved payload as best effort, leaving reconciliation
 /// to report what could not be cleaned. Enablement refuses drifted rows; reconciliation also
 /// backfills the hash baseline for rows installed before baselines existed, hashing only
@@ -29,6 +32,7 @@ public sealed class PluginPackageInstaller(
         var existing = await store.GetByNameVersionAsync(preview.Name, preview.Version, cancellationToken);
         if (existing is not null)
             return SameContent(existing, preview) ? existing : throw Conflict(preview);
+        var replaced = await store.ListByNameAsync(preview.Name, cancellationToken);
         var relative = PluginInstallDirectory.Name(preview.Name, preview.Version, preview.ContentHash);
         var staging = Path.Combine(_pluginRoot, StagingDirectoryName, Guid.NewGuid().ToString("N"));
         var final = Path.Combine(_pluginRoot, relative);
@@ -45,8 +49,18 @@ public sealed class PluginPackageInstaller(
         var plugin = new InstalledPlugin(Guid.NewGuid(), preview.Name, preview.Version, preview.ContentHash,
             relative, InstalledPluginState.Installed, preview.SourcePath, _time.GetUtcNow(),
             preview.Components, preview.DeclaredMcpServers, preview.OverlaySource);
-        return await GuardedAsync(final, "the installed plugin row could not be written",
-            () => store.InsertAsync(plugin, payloadHashes, cancellationToken));
+        var installed = await GuardedAsync(final, "the installed plugin row could not be written",
+            () => replaced.Count == 0
+                ? store.InsertAsync(plugin, payloadHashes, cancellationToken)
+                : store.ReplaceByNameAsync(plugin, payloadHashes, cancellationToken));
+        foreach (var row in replaced)
+        {
+            if (row.InstallPath.Equals(installed.InstallPath, StringComparison.OrdinalIgnoreCase))
+                continue;
+            var payload = PayloadPath(row.InstallPath);
+            if (payload is not null) TryDelete(payload);
+        }
+        return installed;
     }
 
     /// <summary>The install-time baseline: exactly the file-backed component paths, each

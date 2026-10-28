@@ -77,6 +77,31 @@ public sealed class PluginPackageLifecycleTests
     }
 
     [Fact]
+    public async Task UpgradingAnEnabledPluginLeavesOnlyTheNewRowSoOldSkillsCannotDispatch()
+    {
+        await using var fixture = await PluginInstallFixture.CreateAsync();
+        var path = fixture.Packages.WritePackage(
+            PluginTestEntry.Text("plugin.json", Manifest),
+            PluginTestEntry.Text("skills/a/SKILL.md", "skill a"));
+        var installer = fixture.Installer();
+        var first = await installer.InstallAsync(path, fixture.Token);
+        await installer.EnableAsync(first.Id, fixture.Token);
+        fixture.Packages.WritePackage(
+            PluginTestEntry.Text("plugin.json", """{"name":"demo-plugin","version":"1.2.4"}"""),
+            PluginTestEntry.Text("skills/a/SKILL.md", "skill a v2"));
+
+        var second = await installer.InstallAsync(path, fixture.Token);
+
+        // Regression for double skill injection: only one row can carry the name, so the
+        // activator can never see two enabled versions of it.
+        var row = Assert.Single(await installer.ListAsync(fixture.Token));
+        Assert.Equal(second.Id, row.Id);
+        Assert.Equal("1.2.4", row.Version);
+        Assert.Equal(InstalledPluginState.Installed, row.State);
+        Assert.Null(await fixture.Store().GetAsync(first.Id, fixture.Token));
+    }
+
+    [Fact]
     public async Task DriftedRowsRefuseEnableButStillDisableAndUninstall()
     {
         await using var fixture = await PluginInstallFixture.CreateAsync();
