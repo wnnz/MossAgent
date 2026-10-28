@@ -5,10 +5,11 @@ namespace MossAgent.Agent.Tests;
 /// <summary>
 /// In-memory <see cref="ISubagentRunJournal"/> double. <see cref="BeginResult"/> false mimics
 /// a missing parent task row; <see cref="BeginFailure"/>/<see cref="CompleteFailure"/> mimic
-/// storage outages.
+/// storage outages. Mutations are locked so concurrent delegations can be journaled safely.
 /// </summary>
 internal sealed class RecordingSubagentRunJournal : ISubagentRunJournal
 {
+    private readonly Lock _gate = new();
     public bool BeginResult { get; set; }
     public Exception? BeginFailure { get; set; }
     public Exception? CompleteFailure { get; set; }
@@ -19,7 +20,10 @@ internal sealed class RecordingSubagentRunJournal : ISubagentRunJournal
     public Task<bool> BeginAsync(SubagentRunRecord record, CancellationToken cancellationToken)
     {
         if (BeginFailure is not null) throw BeginFailure;
-        if (BeginResult) Began.Add(record);
+        if (BeginResult)
+        {
+            lock (_gate) Began.Add(record);
+        }
         return Task.FromResult(BeginResult);
     }
 
@@ -27,17 +31,21 @@ internal sealed class RecordingSubagentRunJournal : ISubagentRunJournal
         CancellationToken cancellationToken)
     {
         if (CompleteFailure is not null) throw CompleteFailure;
-        Completed.Add((runId, status, errorCode));
+        lock (_gate) Completed.Add((runId, status, errorCode));
         return Task.CompletedTask;
     }
 
     public Task<int> MarkInterruptedRunningAsync(CancellationToken cancellationToken)
     {
-        InterruptedCalls++;
+        lock (_gate) InterruptedCalls++;
         return Task.FromResult(0);
     }
 
     public Task<IReadOnlyList<SubagentRunRecord>> ReadTaskAsync(Guid taskId,
-        CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyList<SubagentRunRecord>>(Began.Where(item => item.TaskId == taskId).ToArray());
+        CancellationToken cancellationToken)
+    {
+        lock (_gate)
+            return Task.FromResult<IReadOnlyList<SubagentRunRecord>>(
+                Began.Where(item => item.TaskId == taskId).ToArray());
+    }
 }

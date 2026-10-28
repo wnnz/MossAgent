@@ -113,6 +113,12 @@ public sealed class ToolExecutor(
                             FileChangesTruncated = result.FileChangesTruncated, Dialogue = result.Dialogue ?? validation.Dialogue };
                 }
             }
+            // A cancelled execution can reach here before the lease's own revoke lands
+            // (caller-side cancellation wins the race inside the publisher's revoke loop);
+            // give in-flight revocation the same bounded attribution settle the approval
+            // path gets before the final IsRevoked check below.
+            if (!result.IsSuccess && !operation.IsRevoked && operation.Token.IsCancellationRequested)
+                await operation.AwaitRevocationAsync(RevocationAttributionWindow, _timeProvider).ConfigureAwait(false);
             if (operation.IsRevoked) result = AuthorizationChanged(result);
             return await CompleteAuditAsync(executionId, approved, result, context, request);
         }
