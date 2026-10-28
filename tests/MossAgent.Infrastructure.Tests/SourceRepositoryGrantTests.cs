@@ -27,7 +27,7 @@ public sealed class SourceRepositoryGrantTests
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM sqlite_master WHERE name='source_repository_grants';"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_nineteen;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(account.AccessToken, (await accounts.GetAsync(account.Id, fixture.Token))!.AccessToken);
         Assert.Equal(fixture.Task.Id, Assert.Single(await fixture.Repository.GetTasksAsync(fixture.Project.Id, fixture.Token)).Id);
     }

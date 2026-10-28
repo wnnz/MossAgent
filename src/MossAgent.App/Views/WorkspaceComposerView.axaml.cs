@@ -56,8 +56,11 @@ public sealed partial class WorkspaceComposerView : AppUserControl
         Grid.SetRow(ModelPickerButton, stacked ? 1 : 0);
         Grid.SetColumn(ModelPickerButton, stacked ? 0 : 2);
         Grid.SetColumnSpan(ModelPickerButton, stacked ? 3 : 1);
+        Grid.SetColumn(SkillPickerButton, stacked ? 2 : 3);
         Grid.SetRow(SendButton, stacked ? 1 : 0);
+        Grid.SetColumn(SendButton, stacked ? 4 : 5);
         Grid.SetRow(QueueButton, stacked ? 1 : 0);
+        Grid.SetColumn(QueueButton, stacked ? 3 : 4);
     }
 
     private void UpdateComposerMode()

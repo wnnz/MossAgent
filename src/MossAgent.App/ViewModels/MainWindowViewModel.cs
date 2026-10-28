@@ -442,6 +442,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     {
         if (!int.TryParse(tab, out var index) || index is < 0 or > 9 || (index == 7 && SourceAccounts is null)) return;
         Workspace.ModelPicker.IsPickerOpen = false;
+        if (Workspace.SkillPicker is not null) Workspace.SkillPicker.IsPickerOpen = false;
         SettingsTabIndex = index;
         IsSettingsOpen = true;
     }

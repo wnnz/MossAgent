@@ -330,4 +330,9 @@
 <data name="ArtifactRecoveryKindSdkTemp" xml:space="preserve"><value>浏览器下载暂存</value></data>
 <data name="ArtifactRecoveryDetail" xml:space="preserve"><value>任务 {0} · 记录于 {1}</value></data>
 <data name="ArtifactRecoveryLoadFailed" xml:space="preserve"><value>无法读取产物会话记录，请刷新重试。</value></data>
+<data name="WorkspaceComposerSkills" xml:space="preserve"><value>技能</value></data>
+<data name="WorkspaceSkillReset" xml:space="preserve"><value>重置为全局</value></data>
+<data name="WorkspaceSkillEmpty" xml:space="preserve"><value>没有已启用的插件技能</value></data>
+<data name="WorkspaceSkillSaveFailed" xml:space="preserve"><value>技能选择保存失败，请重试。</value></data>
+<data name="WorkspaceSkillLoadFailed" xml:space="preserve"><value>插件技能加载失败，请刷新重试。</value></data>
 </root>

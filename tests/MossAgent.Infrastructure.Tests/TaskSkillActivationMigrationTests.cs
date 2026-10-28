@@ -11,7 +11,7 @@ public sealed class TaskSkillActivationMigrationTests
     public async Task FreshDatabaseCreatesTaskSkillActivationsAtVersionFortySeven()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='task_skill_activations';"));
         var hash = new string('a', 64);
@@ -35,13 +35,13 @@ public sealed class TaskSkillActivationMigrationTests
             WHEN NEW.version=47 BEGIN SELECT RAISE(ABORT,'synthetic migration failure'); END;
             """);
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Initializer.InitializeAsync(fixture.Token));
-        Assert.Equal(49, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='task_skill_activations';"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_forty_seven;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM schema_versions WHERE version=47;"));
         Assert.Equal(1, await fixture.CountAsync(
@@ -60,7 +60,7 @@ public sealed class TaskSkillActivationMigrationTests
         await fixture.ExecuteAsync("DELETE FROM schema_versions WHERE version=47;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal([row], await store.ListForTaskAsync(fixture.Task.Id, fixture.Token));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM pragma_foreign_key_check;"));
     }

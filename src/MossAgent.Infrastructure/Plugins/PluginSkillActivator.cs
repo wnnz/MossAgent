@@ -19,7 +19,12 @@ namespace MossAgent.Infrastructure.Plugins;
 /// <paramref name="componentSettings"/> is supplied, a skill component the user explicitly
 /// disabled is skipped before any file read — disabled skills were never injected, so they
 /// leave no activation row; the overrides and the baseline map are each read once per plugin
-/// and read failures propagate like plugin-list failures. The rows persisted for the task are
+/// and read failures propagate like plugin-list failures. When
+/// <paramref name="taskOverrides"/> is supplied, the dispatching task's own choices are read
+/// once and outrank the global layer: the effective state is task row → global row →
+/// default-enabled, so a task can re-include a globally disabled skill as well as skip a
+/// globally enabled one; task-enabled skills face the same baseline drift verification as
+/// every other component. The rows persisted for the task are
 /// exactly the skills in the returned text — unreadable, excluded or unverified skills leave
 /// no row, and storage failures propagate.</summary>
 public sealed class PluginSkillActivator(
@@ -27,7 +32,8 @@ public sealed class PluginSkillActivator(
     ITaskSkillActivationStore activations,
     string pluginsRoot,
     TimeProvider? timeProvider = null,
-    IPluginComponentSettings? componentSettings = null) : IPluginSkillActivator
+    IPluginComponentSettings? componentSettings = null,
+    ITaskSkillOverrides? taskOverrides = null) : IPluginSkillActivator
 {
     internal const int MaximumSkillBytes = 8 * 1024;
     internal const int MaximumPromptCharacters = 24_000;
@@ -37,7 +43,7 @@ public sealed class PluginSkillActivator(
 
     public async Task<string?> BuildSkillInstructionsAsync(Guid taskId, CancellationToken cancellationToken)
     {
-        var included = await CollectAsync(cancellationToken);
+        var included = await CollectAsync(taskId, cancellationToken);
         var entries = new List<string>();
         var rows = new List<TaskSkillActivation>();
         var total = 0;
@@ -56,8 +62,9 @@ public sealed class PluginSkillActivator(
     }
 
     private async Task<IReadOnlyList<(InstalledPlugin Plugin, PluginComponentDescriptor Component, string Content)>>
-        CollectAsync(CancellationToken cancellationToken)
+        CollectAsync(Guid taskId, CancellationToken cancellationToken)
     {
+        var taskChoices = await ReadTaskChoicesAsync(taskId, cancellationToken);
         var found = new List<(InstalledPlugin Plugin, PluginComponentDescriptor Component, string Content)>();
         foreach (var plugin in await plugins.ListAsync(cancellationToken))
         {
@@ -66,16 +73,21 @@ public sealed class PluginSkillActivator(
             var drifted = false;
             IReadOnlyDictionary<string, bool>? overrides = null;
             IReadOnlyDictionary<string, string>? hashes = null;
+            Dictionary<string, bool>? taskChoice = null;
+            taskChoices?.TryGetValue(plugin.Id, out taskChoice);
             foreach (var component in plugin.Components)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (component.Kind != PluginComponentKind.Skill) continue;
-                if (componentSettings is not null)
+                var enabled = true;
+                if (taskChoice is not null && taskChoice.TryGetValue(component.RelativePath, out var taskEnabled))
+                    enabled = taskEnabled;
+                else if (componentSettings is not null)
                 {
                     overrides ??= await componentSettings.ListOverridesAsync(plugin.Id, cancellationToken);
-                    if (overrides.TryGetValue(component.RelativePath, out var enabled) && !enabled)
-                        continue;
+                    enabled = !overrides.TryGetValue(component.RelativePath, out var stored) || stored;
                 }
+                if (!enabled) continue;
                 hashes ??= await plugins.ListPayloadHashesAsync(plugin.Id, cancellationToken);
                 var (bytes, untrusted) = await TryReadBytesAsync(plugin, component.RelativePath, cancellationToken);
                 if (untrusted || (bytes is not null && !Verified(bytes, component.RelativePath, hashes)))
@@ -93,6 +105,26 @@ public sealed class PluginSkillActivator(
         return [.. found
             .OrderBy(item => item.Plugin.Name, StringComparer.Ordinal)
             .ThenBy(item => item.Component.RelativePath, StringComparer.Ordinal)];
+    }
+
+    /// <summary>Reads the dispatching task's own choices once and groups them per plugin with
+    /// path-case-insensitive keys. The task layer outranks the plugin-wide settings: a stored
+    /// row — enabled or disabled — is the effective state for that component; absent rows fall
+    /// through to the global layer and then the default-enabled state.</summary>
+    private async Task<Dictionary<Guid, Dictionary<string, bool>>?> ReadTaskChoicesAsync(
+        Guid taskId, CancellationToken cancellationToken)
+    {
+        if (taskOverrides is null) return null;
+        var rows = await taskOverrides.ListForTaskAsync(taskId, cancellationToken);
+        if (rows.Count == 0) return null;
+        var map = new Dictionary<Guid, Dictionary<string, bool>>();
+        foreach (var row in rows)
+        {
+            if (!map.TryGetValue(row.PluginId, out var choices))
+                choices = map[row.PluginId] = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            choices[row.ComponentPath] = row.Enabled;
+        }
+        return map;
     }
 
     private static bool Verified(byte[] bytes, string relativePath,

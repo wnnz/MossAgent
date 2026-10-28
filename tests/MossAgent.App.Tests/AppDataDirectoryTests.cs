@@ -32,6 +32,7 @@ public sealed class AppDataDirectoryTests
         Assert.IsType<ZipPluginPackagePreviewer>(services.GetRequiredService<IPluginPackagePreviewer>());
         Assert.IsType<SqliteInstalledPluginStore>(services.GetRequiredService<IInstalledPluginStore>());
         Assert.IsType<SqlitePluginComponentSettings>(services.GetRequiredService<IPluginComponentSettings>());
+        Assert.IsType<SqliteTaskSkillOverrides>(services.GetRequiredService<ITaskSkillOverrides>());
         Assert.NotNull(services.GetRequiredService<IPluginSkillActivator>());
         Assert.NotNull(services.GetRequiredService<PluginPackagesViewModel>());
         Assert.Equal(Path.Combine(expectedRoot, "plugins"), services.GetRequiredService<AppDataPaths>().PluginsPath);

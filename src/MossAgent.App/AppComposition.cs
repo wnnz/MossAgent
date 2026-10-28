@@ -142,12 +142,14 @@ internal static class AppComposition
             provider.GetRequiredService<TimeProvider>()));
         services.AddSingleton<ITaskSkillActivationStore, SqliteTaskSkillActivationStore>();
         services.AddSingleton<IPluginComponentSettings, SqlitePluginComponentSettings>();
+        services.AddSingleton<ITaskSkillOverrides, SqliteTaskSkillOverrides>();
         services.AddSingleton<IPluginSkillActivator>(static provider => new PluginSkillActivator(
             provider.GetRequiredService<IInstalledPluginStore>(),
             provider.GetRequiredService<ITaskSkillActivationStore>(),
             provider.GetRequiredService<AppDataPaths>().PluginsPath,
             provider.GetRequiredService<TimeProvider>(),
-            provider.GetRequiredService<IPluginComponentSettings>()));
+            provider.GetRequiredService<IPluginComponentSettings>(),
+            provider.GetRequiredService<ITaskSkillOverrides>()));
         services.AddSingleton<ITaskArtifactContentReader, TaskArtifactContentReader>();
         services.AddSingleton<IBrowserProfilePaths, BrowserProfilePaths>();
         services.AddSingleton<GitProcessRunner>();

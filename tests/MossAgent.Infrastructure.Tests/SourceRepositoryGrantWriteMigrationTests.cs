@@ -11,7 +11,7 @@ public sealed class SourceRepositoryGrantWriteMigrationTests
     public async Task FreshDatabaseAddsCanWriteColumnAtVersionFortyFive()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM pragma_table_info('source_repository_grants') WHERE name='can_write';"));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM pragma_foreign_key_check;"));
@@ -28,13 +28,13 @@ public sealed class SourceRepositoryGrantWriteMigrationTests
             WHEN NEW.version=45 BEGIN SELECT RAISE(ABORT,'synthetic migration failure'); END;
             """);
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Initializer.InitializeAsync(fixture.Token));
-        Assert.Equal(49, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync(
             "SELECT COUNT(*) FROM pragma_table_info('source_repository_grants') WHERE name='can_write';"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_forty_five;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM schema_versions WHERE version=45;"));
         Assert.Equal(1, await fixture.CountAsync(
@@ -54,7 +54,7 @@ public sealed class SourceRepositoryGrantWriteMigrationTests
         await fixture.ExecuteAsync("DELETE FROM schema_versions WHERE version=45;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM source_repository_grants WHERE can_write=1;"));
         Assert.Equal(scope, Assert.Single(await new SqliteSourceRepositoryGrants(fixture.Connections)
@@ -76,7 +76,7 @@ public sealed class SourceRepositoryGrantWriteMigrationTests
             DELETE FROM schema_versions WHERE version=45;
             """);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM source_repository_grants WHERE can_write=0;"));
         Assert.Equal(scope, await grants.GetAsync(scope.GrantId, fixture.Token));

@@ -57,7 +57,7 @@
       </ui:AppComposerInput>
 
       <Grid x:Name="ComposerToolbar" Grid.Row="3" Classes="composer-toolbar"
-            ColumnDefinitions="Auto,Auto,*,Auto,Auto" RowDefinitions="Auto,Auto"
+            ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" RowDefinitions="Auto,Auto"
             SizeChanged="HandleToolbarSizeChanged">
         <ui:AppIconButton Classes="composer-attach"
                 Command="{Binding Attachments.AddFilesCommand}"
@@ -85,7 +85,22 @@
           </Button.Flyout>
         </ui:AppActionButton>
 
-        <ui:AppButton x:Name="QueueButton" Grid.Column="3" Classes="ghost menu-option" Content="{Binding Queue.EnqueueLabel}"
+        <ui:AppActionButton x:Name="SkillPickerButton" Grid.Column="3" Classes="ghost composer-skill-picker"
+                Label="{Binding SkillPicker.Label}"
+                BadgeText="{Binding SkillPicker.Summary}"
+                TrailingIconData="{StaticResource UiIconChevronDown}"
+                IsVisible="{Binding SkillPicker, Converter={x:Static ObjectConverters.IsNotNull}}"
+                AutomationProperties.Name="{Binding SkillPicker.Label}"
+                ToolTip.Tip="{Binding SkillPicker.Label}">
+          <Button.Flyout>
+            <ui:AppFlyout Placement="TopEdgeAlignedRight"
+                          IsOpen="{Binding SkillPicker.IsPickerOpen, Mode=TwoWay}">
+              <views:SkillPickerFlyoutView DataContext="{Binding SkillPicker}" />
+            </ui:AppFlyout>
+          </Button.Flyout>
+        </ui:AppActionButton>
+
+        <ui:AppButton x:Name="QueueButton" Grid.Column="4" Classes="ghost menu-option" Content="{Binding Queue.EnqueueLabel}"
                       Command="{Binding Queue.EnqueueCommand}">
           <ui:AppButton.IsVisible>
             <MultiBinding Converter="{x:Static BoolConverters.And}">
@@ -93,7 +108,7 @@
             </MultiBinding>
           </ui:AppButton.IsVisible>
         </ui:AppButton>
-        <ui:AppIconButton x:Name="SendButton" Grid.Column="4" Classes="primary composer-send"
+        <ui:AppIconButton x:Name="SendButton" Grid.Column="5" Classes="primary composer-send"
                           Command="{Binding PrimaryActionCommand}" Label="{Binding PrimaryActionLabel}"
                           IconData="{StaticResource UiIconSend}"
                           AlternateIconData="{StaticResource UiIconStop}"

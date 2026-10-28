@@ -15,6 +15,7 @@ internal sealed class WorkspaceSendCoordinator(
     WorkspaceComposerDraftsViewModel drafts,
     WorkspaceSendPreparation preparation,
     WorkspaceConversationPreferences? preferences,
+    WorkspaceSkillPickerViewModel? skillPicker,
     WorkspaceRunPresentation presentation,
     Func<bool> isDisposed,
     Func<bool> isShuttingDown,
@@ -42,6 +43,7 @@ internal sealed class WorkspaceSendCoordinator(
             return;
         }
         preferences?.Remember(task.Id, request.Preference);
+        skillPicker?.RememberTask(task.Id);
         if (submission is null) drafts.AcceptSubmission(request.Scope, task.Id, request.Draft, attachmentIds);
         StartRun(request, task, prompt);
     }

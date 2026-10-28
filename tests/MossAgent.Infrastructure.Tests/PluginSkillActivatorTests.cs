@@ -17,9 +17,9 @@ public sealed class PluginSkillActivatorTests : IDisposable
 
     private PluginSkillActivator Subject(IReadOnlyList<InstalledPlugin> rows,
         ITaskSkillActivationStore? activations = null, IPluginComponentSettings? settings = null,
-        StaticInstalledPluginStore? store = null) =>
+        StaticInstalledPluginStore? store = null, ITaskSkillOverrides? taskOverrides = null) =>
         new(store ?? new StaticInstalledPluginStore(rows, _hashes), activations ?? _activations,
-            _root, _time, settings);
+            _root, _time, settings, taskOverrides);
 
     private static InstalledPlugin Plugin(string name, InstalledPluginState state,
         params PluginComponentDescriptor[] components) =>
@@ -312,6 +312,102 @@ public sealed class PluginSkillActivatorTests : IDisposable
 
         var text = await Subject([plugin], store: store)
             .BuildSkillInstructionsAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        Assert.Null(text);
+        Assert.Equal([(plugin.Id, InstalledPluginState.Drifted)], store.StateChanges);
+        Assert.Empty(Assert.Single(_activations.Saves).Rows);
+    }
+
+    [Fact]
+    public async Task TaskOverrideDisablesAGloballyEnabledSkillAndLeavesNoRow()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled,
+            Skill("skills/a/SKILL.md"), Skill("skills/b/SKILL.md"));
+        WriteSkill(plugin, "skills/a/SKILL.md", "alpha body");
+        WriteSkill(plugin, "skills/b/SKILL.md", "beta body");
+        var task = Guid.NewGuid();
+        var taskChoices = new StaticTaskSkillOverrides();
+        taskChoices.Seed(task, plugin.Id, "skills/b/SKILL.md", false);
+        var settings = new RecordingPluginComponentSettings();
+
+        var text = await Subject([plugin], settings: settings, taskOverrides: taskChoices)
+            .BuildSkillInstructionsAsync(task, TestContext.Current.CancellationToken);
+
+        Assert.Equal("### demo v1.0 — skills/a/SKILL.md\nalpha body", text);
+        Assert.Equal(["skills/a/SKILL.md"],
+            Assert.Single(_activations.Saves).Rows.Select(row => row.ComponentPath).ToArray());
+        Assert.Equal(1, taskChoices.ListCalls);
+        Assert.Equal(1, settings.ListCalls);
+    }
+
+    [Fact]
+    public async Task TaskOverrideReEnablesAGloballyDisabledSkillAgainstTheBaseline()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled, Skill("skills/a/SKILL.md"));
+        WriteSkill(plugin, "skills/a/SKILL.md", "alpha body");
+        var task = Guid.NewGuid();
+        var taskChoices = new StaticTaskSkillOverrides();
+        taskChoices.Seed(task, plugin.Id, "skills/a/SKILL.md", true);
+        var settings = new RecordingPluginComponentSettings();
+        settings.Seed(plugin.Id, "skills/a/SKILL.md", false);
+
+        var text = await Subject([plugin], settings: settings, taskOverrides: taskChoices)
+            .BuildSkillInstructionsAsync(task, TestContext.Current.CancellationToken);
+
+        Assert.Equal("### demo v1.0 — skills/a/SKILL.md\nalpha body", text);
+        Assert.Equal(["skills/a/SKILL.md"],
+            Assert.Single(_activations.Saves).Rows.Select(row => row.ComponentPath).ToArray());
+        Assert.Equal(0, settings.ListCalls);
+    }
+
+    [Fact]
+    public async Task TaskRowsForOtherTasksAreIgnored()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled, Skill("skills/a/SKILL.md"));
+        WriteSkill(plugin, "skills/a/SKILL.md", "alpha body");
+        var taskChoices = new StaticTaskSkillOverrides();
+        taskChoices.Seed(Guid.NewGuid(), plugin.Id, "skills/a/SKILL.md", false);
+        taskChoices.Seed(Guid.NewGuid(), plugin.Id, "skills/a/SKILL.md", false);
+
+        var text = await Subject([plugin], taskOverrides: taskChoices)
+            .BuildSkillInstructionsAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        Assert.Equal("### demo v1.0 — skills/a/SKILL.md\nalpha body", text);
+        Assert.Single(Assert.Single(_activations.Saves).Rows);
+        Assert.Equal(1, taskChoices.ListCalls);
+    }
+
+    [Fact]
+    public async Task TaskOverrideReadFailurePropagatesAndNoSnapshotIsWritten()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled, Skill("skills/a/SKILL.md"));
+        WriteSkill(plugin, "skills/a/SKILL.md", "body");
+        var failure = new InvalidOperationException("task overrides read failed");
+        var taskChoices = new StaticTaskSkillOverrides { ListFailure = failure };
+
+        var thrown = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            Subject([plugin], taskOverrides: taskChoices)
+                .BuildSkillInstructionsAsync(Guid.NewGuid(), TestContext.Current.CancellationToken));
+
+        Assert.Same(failure, thrown);
+        Assert.Empty(_activations.Saves);
+    }
+
+    [Fact]
+    public async Task TaskEnabledSkillIsStillDriftVerified()
+    {
+        var plugin = Plugin("demo", InstalledPluginState.Enabled, Skill("skills/a/SKILL.md"));
+        WriteSkill(plugin, "skills/a/SKILL.md", "honest baseline");
+        var store = new StaticInstalledPluginStore([plugin], _hashes);
+        File.WriteAllText(Path.Combine(_root, plugin.InstallPath, "skills/a/SKILL.md"), "tampered payload");
+        var task = Guid.NewGuid();
+        var taskChoices = new StaticTaskSkillOverrides();
+        taskChoices.Seed(task, plugin.Id, "skills/a/SKILL.md", true);
+        var settings = new RecordingPluginComponentSettings();
+        settings.Seed(plugin.Id, "skills/a/SKILL.md", false);
+
+        var text = await Subject([plugin], settings: settings, store: store, taskOverrides: taskChoices)
+            .BuildSkillInstructionsAsync(task, TestContext.Current.CancellationToken);
 
         Assert.Null(text);
         Assert.Equal([(plugin.Id, InstalledPluginState.Drifted)], store.StateChanges);

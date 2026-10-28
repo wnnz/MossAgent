@@ -11,7 +11,7 @@ public sealed class ProjectDrainStateMigrationTests
     public async Task FreshDatabaseCreatesProjectDrainStatesAtVersionFortyEight()
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='project_drain_states';"));
         var idle = await Assert.ThrowsAsync<SqliteException>(() => fixture.ExecuteAsync(
@@ -34,13 +34,13 @@ public sealed class ProjectDrainStateMigrationTests
             WHEN NEW.version=48 BEGIN SELECT RAISE(ABORT,'synthetic migration failure'); END;
             """);
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Initializer.InitializeAsync(fixture.Token));
-        Assert.Equal(49, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(0, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='project_drain_states';"));
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_forty_eight;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM schema_versions WHERE version=48;"));
         Assert.Equal(1, await fixture.CountAsync(
@@ -60,7 +60,7 @@ public sealed class ProjectDrainStateMigrationTests
         await fixture.ExecuteAsync("DELETE FROM schema_versions WHERE version=48;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
         await fixture.Initializer.InitializeAsync(fixture.Token);
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync("SELECT COUNT(*) FROM project_drain_states;"));
         Assert.Equal(AuthorizationDrainState.CleanupUnknown,
             await board.AggregateAsync(project, DateTimeOffset.MinValue, fixture.Token));

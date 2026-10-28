@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using MossAgent.Application.Agent;
 using MossAgent.Application.Git;
 using MossAgent.Application.Persistence;
+using MossAgent.Application.Plugins;
 using MossAgent.Application.Settings;
 using MossAgent.Domain;
 using MossAgent.App.Browser;
@@ -50,7 +51,8 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         WorkspaceFollowupServices? followups = null, IConversationSteeringRepository? steering = null,
         IWorktreeCreationIntents? creationIntents = null, IWorktreeCleanupIntents? cleanupIntents = null,
         IComposerPreferenceStore? composerPreferences = null, IGitWorktreeService? worktrees = null,
-        IArtifactSessionJournal? artifactJournal = null)
+        IArtifactSessionJournal? artifactJournal = null, IPluginPackageInstaller? pluginInstaller = null,
+        IPluginComponentSettings? pluginComponentSettings = null, ITaskSkillOverrides? taskSkillOverrides = null)
     {
         _runs = runs;
         _panels = panels;
@@ -92,8 +94,10 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         Catalog.WorktreeAuthorization.PropertyChanged += HandleTaskMutationChanged;
         ConversationPreferences = conversationPreferences is null ? null
             : new WorkspaceConversationPreferences(conversationPreferences, catalog, ModelPicker, AgentPicker);
+        SkillPicker = pluginInstaller is null || taskSkillOverrides is null ? null
+            : new WorkspaceSkillPickerViewModel(pluginInstaller, pluginComponentSettings, taskSkillOverrides, catalog);
         _sender = new(taskFactory, runs, runController, panels, catalog, attachments, Drafts, _preparation,
-            ConversationPreferences, new(PresentEventAsync, SetActivity, ApplyTaskUpdate, NotifyRunStateChanged),
+            ConversationPreferences, SkillPicker, new(PresentEventAsync, SetActivity, ApplyTaskUpdate, NotifyRunStateChanged),
             () => _disposed, () => IsShuttingDown, value => Activity = value);
         _sendActions = new(this, _preparation, runs, _sender, () => _disposed,
             value => HasSendPreparationError = value, value => Activity = value, OnPropertyChanged);
@@ -125,6 +129,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
     public ModelPickerViewModel ModelPicker { get; }
     public WorkspaceAgentPickerViewModel AgentPicker { get; }
     public WorkspaceConversationPreferences? ConversationPreferences { get; }
+    public WorkspaceSkillPickerViewModel? SkillPicker { get; }
     public WorkspaceComposerDraftsViewModel Drafts { get; }
     public WorkspaceFollowupQueueViewModel Queue { get; }
     public WorkspaceWorktreeRecoveryViewModel WorktreeRecovery { get; }
@@ -324,6 +329,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         ModelPicker.ModelSelected -= HandleModelSelected;
         AgentPicker.PropertyChanged -= HandleAgentPickerChanged;
         ConversationPreferences?.Dispose();
+        SkillPicker?.Dispose();
         Drafts.PropertyChanged -= HandleDraftChanged;
         _attachmentDrafts.Dispose();
         Drafts.Dispose();
@@ -347,6 +353,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
         await Catalog.WorktreeAuthorization.StopAsync(); await WorktreeRecovery.StopAsync(); await ArtifactRecovery.StopAsync();
         await Task.WhenAll(RepositoryStatus.StopAsync(), FileChanges.Statistics.StopAsync(), SidebarProjects.StopAsync());
         if (ConversationPreferences is not null) await ConversationPreferences.StopAsync();
+        if (SkillPicker is not null) await SkillPicker.StopAsync();
         await Drafts.StopAsync();
         Dispose();
     }
@@ -368,6 +375,7 @@ public sealed class WorkspaceViewModel : ObservableObject, IDisposable, IAsyncDi
                 await _runs.StopAsync();
                 await FileChanges.StopAsync();
                 if (ConversationPreferences is not null) await ConversationPreferences.StopAsync();
+                if (SkillPicker is not null) await SkillPicker.StopAsync();
                 await Drafts.StopAsync();
             }
             finally { await navigationStop; }

@@ -14,7 +14,7 @@ public sealed class AttachmentReclaimMigrationTests
     {
         await using var fixture = await SqliteFailurePersistenceFixture.CreateAsync();
 
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM sqlite_master WHERE name='attachment_reclaim_intents';"));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM attachment_reclaim_intents;"));
@@ -55,7 +55,7 @@ public sealed class AttachmentReclaimMigrationTests
         await fixture.ExecuteAsync("DROP TRIGGER reject_version_thirty_three;");
         await fixture.Initializer.InitializeAsync(fixture.Token);
 
-        Assert.Equal(50, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
+        Assert.Equal(51, await fixture.CountAsync("SELECT COUNT(*) FROM schema_versions;"));
         Assert.Equal(1, await fixture.CountAsync(
             "SELECT COUNT(*) FROM conversation_attachments WHERE message_id='" + messageId.ToString("D") + "';"));
         Assert.Equal(0, await fixture.CountAsync("SELECT COUNT(*) FROM pragma_foreign_key_check;"));
